@@ -94,9 +94,10 @@ export default function TripPlansPage(props: {
 
         const { data } = await supabase
             .from('plans')
-            .select('*')
+            .select('*, plan_urls(*)')
             .eq('trip_id', tripId)
             .order('start_datetime_local', { ascending: true })
+
 
         if (data) setPlans(data)
     }, [tripId, supabase])
