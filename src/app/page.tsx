@@ -83,7 +83,13 @@ export default async function Home() {
     )
   }
 
-  const nickname = user?.user_metadata?.nickname || user?.email?.split('@')[0] || '여행자'
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('nickname')
+    .eq('id', user.id)
+    .single()
+
+  const nickname = profile?.nickname || user?.email?.split('@')[0] || '여행자'
 
   // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
   const { data: memberTripData } = await supabase

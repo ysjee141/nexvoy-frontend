@@ -3,12 +3,14 @@
 import { useEffect, useState, useCallback } from 'react'
 import { css } from 'styled-system/css'
 import { Mail, Check, X, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { collaboration } from '@/utils/collaboration'
 
 export default function InvitationBanner() {
     const [invitations, setInvitations] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [processingId, setProcessingId] = useState<string | null>(null)
+    const router = useRouter()
 
     const fetchInvitations = useCallback(async () => {
         const { data } = await collaboration.getInvitedTrips()
@@ -25,6 +27,7 @@ export default function InvitationBanner() {
         const { error } = await collaboration.acceptInvite(id)
         if (!error) {
             setInvitations(prev => prev.filter(inv => inv.id !== id))
+            router.refresh() // 메인 페이지의 서버 컴포넌트 데이터 갱신
         } else {
             alert('초대 수락에 실패했습니다.')
         }
@@ -99,12 +102,6 @@ export default function InvitationBanner() {
                     ))}
                 </div>
             </div>
-            <style jsx>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
         </div>
     )
 }

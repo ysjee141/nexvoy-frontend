@@ -214,12 +214,6 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                     </p>
                 )}
             </div>
-            <style jsx global>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
         </div>
     )
 }

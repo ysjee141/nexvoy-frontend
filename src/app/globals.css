@@ -51,3 +51,14 @@ a:active {
 ::-webkit-scrollbar-thumb:hover {
     background: #ccc;
 }
+
+/* 애니메이션 */
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}

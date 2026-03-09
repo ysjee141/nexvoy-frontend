@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
@@ -9,8 +9,18 @@ import { LogIn, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 export default function LoginPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [rememberEmail, setRememberEmail] = useState(false)
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
     const [loading, setLoading] = useState(false)
+
+    // 페이지 로드 시 저장된 이메일 불러오기
+    useEffect(() => {
+        const savedEmail = localStorage.getItem('rememberedEmail')
+        if (savedEmail) {
+            setEmail(savedEmail)
+            setRememberEmail(true)
+        }
+    }, [])
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -27,6 +37,12 @@ export default function LoginPage() {
             setMessage({ type: 'error', text: error.message === 'Invalid login credentials' ? '이메일 또는 비밀번호가 일치하지 않습니다.' : error.message })
             setLoading(false)
         } else {
+            // 로그인 성공 시 이메일 기억하기 처리
+            if (rememberEmail) {
+                localStorage.setItem('rememberedEmail', email)
+            } else {
+                localStorage.removeItem('rememberedEmail')
+            }
             window.location.href = '/'
         }
     }
@@ -125,6 +141,47 @@ export default function LoginPage() {
                         />
                     </div>
 
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
+                        <div
+                            onClick={() => setRememberEmail(!rememberEmail)}
+                            className={css({
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                cursor: 'pointer',
+                                userSelect: 'none',
+                                fontSize: '14px',
+                                color: '#666',
+                                transition: 'all 0.2s',
+                                _hover: { color: '#111' }
+                            })}
+                        >
+                            <div className={css({
+                                w: '18px',
+                                h: '18px',
+                                borderRadius: '4px',
+                                border: '2px solid',
+                                borderColor: rememberEmail ? '#4285F4' : '#ddd',
+                                bg: rememberEmail ? '#4285F4' : 'transparent',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.2s'
+                            })}>
+                                {rememberEmail && <div className={css({
+                                    w: '5px',
+                                    h: '9px',
+                                    borderStyle: 'solid',
+                                    borderWidth: '0 2px 2px 0',
+                                    borderColor: 'white',
+                                    transform: 'rotate(45deg)',
+                                    mt: '-1px'
+                                })} />}
+                            </div>
+                            아이디 기억하기
+                        </div>
+                    </div>
+
                     {message && (
                         <div className={css({
                             p: '14px',
@@ -190,12 +247,6 @@ export default function LoginPage() {
                     </Link>
                 </div>
             </div>
-            <style jsx>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
         </div>
     )
 }
