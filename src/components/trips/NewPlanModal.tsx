@@ -259,7 +259,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '20px' })}>
+                <form onSubmit={handleSubmit} className={css({ p: { base: '16px', sm: '24px' }, display: 'flex', flexDirection: 'column', gap: '20px', overflowX: 'hidden' })}>
                     <div>
                         <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '6px' })}>일정 제목 *</label>
                         <input
@@ -308,7 +308,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                 required
                                 value={localDate}
                                 onChange={e => setLocalDate(e.target.value)}
-                                className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
                             />
                         </div>
                         <div>
@@ -320,7 +320,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                 required
                                 value={localTime}
                                 onChange={e => setLocalTime(e.target.value)}
-                                className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
                             />
                         </div>
                     </div>

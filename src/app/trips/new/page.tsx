@@ -99,7 +99,7 @@ export default function NewTripPage() {
                     새로운 여행 등록
                 </h1>
 
-                <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '20px' })}>
+                <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '20px', overflowX: 'hidden' })}>
                     <div>
                         <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>
                             여행지 (국가/도시)
@@ -155,6 +155,8 @@ export default function NewTripPage() {
                                 onChange={e => setStartDate(e.target.value)}
                                 className={css({
                                     w: '100%',
+                                    maxW: '100%',
+                                    boxSizing: 'border-box',
                                     p: '14px',
                                     border: '1px solid #ddd',
                                     borderRadius: '8px',
@@ -174,6 +176,8 @@ export default function NewTripPage() {
                                 onChange={e => setEndDate(e.target.value)}
                                 className={css({
                                     w: '100%',
+                                    maxW: '100%',
+                                    boxSizing: 'border-box',
                                     p: '14px',
                                     border: '1px solid #ddd',
                                     borderRadius: '8px',
