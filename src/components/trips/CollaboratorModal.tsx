@@ -118,8 +118,9 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
             backdropFilter: 'blur(4px)'
         })} onClick={onClose}>
             <div className={css({
-                bg: 'white', w: { base: '90%', sm: '480px' }, borderRadius: '24px', p: '32px',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.15)', position: 'relative'
+                bg: 'white', w: { base: '95%', sm: '480px' }, borderRadius: '24px', p: { base: '20px', sm: '32px' },
+                boxShadow: '0 20px 40px rgba(0,0,0,0.15)', position: 'relative',
+                maxW: '100%', boxSizing: 'border-box'
             })} onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className={css({
                     position: 'absolute', top: '24px', right: '24px', bg: 'transparent',
@@ -128,8 +129,8 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                     <X size={24} />
                 </button>
 
-                <h2 className={css({ fontSize: '22px', fontWeight: '800', mb: '24px', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <UserPlus size={24} color="#4285F4" /> 협업자 초대
+                <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', mb: { base: '16px', sm: '24px' }, display: 'flex', alignItems: 'center', gap: '8px' })}>
+                    <UserPlus size={20} color="#4285F4" /> 협업자 초대
                 </h2>
 
                 {/* 초대 폼 (소유자나 편집자만 가능) */}
@@ -166,10 +167,10 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                 type="submit"
                                 disabled={inviting}
                                 className={css({
-                                    px: '24px', bg: '#111', color: 'white', borderRadius: '12px',
-                                    fontWeight: 'bold', cursor: 'pointer', _hover: { bg: '#333' },
-                                    _disabled: { opacity: 0.5, cursor: 'not-allowed' },
-                                    display: 'flex', alignItems: 'center', gap: '6px'
+                                    px: { base: '16px', sm: '24px' }, py: '12px', bg: '#111', color: 'white',
+                                    borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: inviting ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s', fontSize: '14px', flexShrink: 0,
+                                    _hover: { bg: '#333' }, _disabled: { opacity: 0.7 }
                                 })}
                             >
                                 {inviting ? <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} /> : '초대'}

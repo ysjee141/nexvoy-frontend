@@ -70,8 +70,9 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
             backdropFilter: 'blur(4px)'
         })} onClick={onClose}>
             <div className={css({
-                bg: 'white', w: { base: '90%', sm: '480px' }, borderRadius: '24px', p: '32px',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.15)', position: 'relative'
+                bg: 'white', w: { base: '95%', sm: '480px' }, borderRadius: '24px', p: { base: '20px', sm: '32px' },
+                boxShadow: '0 20px 40px rgba(0,0,0,0.15)', position: 'relative',
+                maxW: '100%', boxSizing: 'border-box'
             })} onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className={css({
                     position: 'absolute', top: '24px', right: '24px', bg: 'transparent',
@@ -80,8 +81,8 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                     <X size={24} />
                 </button>
 
-                <h2 className={css({ fontSize: '22px', fontWeight: '800', mb: '24px', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <Share2 size={24} color="#34A853" /> 일정 공유하기
+                <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', mb: { base: '16px', sm: '24px' }, display: 'flex', alignItems: 'center', gap: '8px' })}>
+                    <Share2 size={20} color="#34A853" /> 일정 공유하기
                 </h2>
 
                 <div className={css({ mb: '24px' })}>
@@ -158,24 +159,11 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                     <div className={css({ bg: '#f9f9f9', p: '24px', borderRadius: '16px', border: '1px solid #f0f0f0' })}>
                         <h3 className={css({ fontSize: '13px', fontWeight: 'bold', color: '#888', mb: '8px' })}>공유 링크 URL</h3>
                         <div className={css({
-                            display: 'flex', bg: 'white', border: '1px solid #eee',
-                            borderRadius: '8px', overflow: 'hidden', mb: '16px'
+                            p: '12px', bg: 'white', borderRadius: '12px', border: '1px solid #ddd',
+                            fontSize: '13px', color: '#111', mb: '16px', lineHeight: 1.5,
+                            wordBreak: 'break-all'
                         })}>
-                            <input
-                                readOnly
-                                value={shareUrl}
-                                className={css({ flex: 1, border: 'none', outline: 'none', px: '12px', py: '10px', fontSize: '13px', color: '#666' })}
-                            />
-                            <button
-                                onClick={handleCopy}
-                                className={css({
-                                    px: '14px', bg: copied ? '#34A853' : '#f1f3f4', color: copied ? 'white' : '#111',
-                                    border: 'none', cursor: 'pointer', transition: 'all 0.2s',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                })}
-                            >
-                                {copied ? <Check size={18} /> : <Copy size={18} />}
-                            </button>
+                            {shareUrl}
                         </div>
 
                         <div className={css({ display: 'flex', gap: '12px' })}>
@@ -214,6 +202,6 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                     </p>
                 )}
             </div>
-        </div>
+        </div >
     )
 }

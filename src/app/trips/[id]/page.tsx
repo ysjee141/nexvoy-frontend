@@ -148,28 +148,28 @@ export default function TripPlansPage(props: {
     }
 
     return (
-        <div className={css({ bg: 'white', p: { base: '16px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
-            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'stretch', sm: 'flex-start' }, mb: '24px', flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
+        <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
+            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'stretch', sm: 'flex-start' }, mb: { base: '16px', sm: '24px' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
                 <div>
                     <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', mb: '12px' })}>일정표 (주간 캘린더)</h2>
 
                     {/* 시간 표시 옵션 토글 */}
-                    <div className={css({ display: 'inline-flex', bg: '#f1f3f4', p: '4px', borderRadius: '8px', gap: '2px', w: { base: '100%', sm: 'auto' } })}>
+                    <div className={css({ display: 'inline-flex', bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: { base: '100%', sm: 'auto' } })}>
                         <button
                             onClick={() => setTimeDisplayMode('local')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
+                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
                         >
                             현지 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('kst')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
+                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
                         >
                             한국 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('both')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
+                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
                         >
                             동시 표기
                         </button>
@@ -186,11 +186,11 @@ export default function TripPlansPage(props: {
                             gap: '6px',
                             bg: 'white',
                             color: '#111',
-                            px: '16px',
+                            px: { base: '10px', sm: '16px' },
                             py: '10px',
                             borderRadius: '8px',
                             fontWeight: '600',
-                            fontSize: '14px',
+                            fontSize: { base: '13px', sm: '14px' },
                             cursor: 'pointer',
                             border: '1px solid #ddd',
                             flex: { base: 1, sm: 'none' },
@@ -210,11 +210,11 @@ export default function TripPlansPage(props: {
                                 gap: '6px',
                                 bg: 'white',
                                 color: '#111',
-                                px: '16px',
+                                px: { base: '10px', sm: '16px' },
                                 py: '10px',
                                 borderRadius: '8px',
                                 fontWeight: '600',
-                                fontSize: '14px',
+                                fontSize: { base: '13px', sm: '14px' },
                                 cursor: 'pointer',
                                 border: '1px solid #ddd',
                                 flex: { base: 1, sm: 'none' },
@@ -239,11 +239,11 @@ export default function TripPlansPage(props: {
                                 gap: '6px',
                                 bg: '#4285F4',
                                 color: 'white',
-                                px: '16px',
+                                px: { base: '10px', sm: '16px' },
                                 py: '10px',
                                 borderRadius: '8px',
                                 fontWeight: '600',
-                                fontSize: '14px',
+                                fontSize: { base: '13px', sm: '14px' },
                                 cursor: 'pointer',
                                 border: 'none',
                                 flex: { base: 1, sm: 'none' },
@@ -281,7 +281,7 @@ export default function TripPlansPage(props: {
                     ).map(([dateStr, dayPlans]: [string, any]) => (
                         <div key={dateStr} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
                             <h3 className={css({
-                                fontSize: '18px',
+                                fontSize: { base: '16px', sm: '18px' },
                                 fontWeight: 'bold',
                                 color: '#111',
                                 pb: '8px',
@@ -298,7 +298,7 @@ export default function TripPlansPage(props: {
                                     <div
                                         key={plan.id}
                                         className={css({
-                                            p: '16px',
+                                            p: { base: '12px', sm: '16px' },
                                             bg: 'white',
                                             border: '1px solid #eaeaea',
                                             borderRadius: '12px',
@@ -340,7 +340,7 @@ export default function TripPlansPage(props: {
 
                                         <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexDirection: { base: 'column', md: 'row' }, gap: '12px', pr: { base: '0', md: '32px' } })}>
                                             <div className={css({ flex: 1, w: '100%' })}>
-                                                <h4 className={css({ fontWeight: 'bold', fontSize: '16px', color: '#222', mb: '4px' })}>{plan.title}</h4>
+                                                <h4 className={css({ fontWeight: 'bold', fontSize: { base: '15px', sm: '16px' }, color: '#222', mb: '4px' })}>{plan.title}</h4>
                                                 {plan.location && (
                                                     <p className={css({ fontSize: '14px', color: '#666', display: 'flex', alignItems: 'center', gap: '4px' })}>
                                                         📍 {plan.location}

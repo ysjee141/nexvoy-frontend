@@ -118,8 +118,8 @@ export default async function Home() {
   return (
     <div className={css({ w: '100%' })}>
       <InvitationBanner />
-      <div className={css({ maxW: 'screen-xl', mx: 'auto', py: '40px', px: '20px' })}>
-        <header className={css({ mb: '40px', display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
+      <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
+        <header className={css({ mb: { base: '24px', sm: '40px' }, display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
           <div>
             <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#111' })}>
               안녕하세요, {nickname}님! 👋
@@ -198,7 +198,7 @@ export default async function Home() {
                     className={css({
                       display: 'block',
                       bg: 'white',
-                      p: '24px',
+                      p: { base: '16px', sm: '24px' },
                       borderRadius: '16px',
                       boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
                       border: '1px solid #f0f0f0',
@@ -241,13 +241,14 @@ export default async function Home() {
                     </div>
                     <h3
                       className={css({
-                        fontSize: '20px',
+                        fontSize: { base: '18px', sm: '20px' },
                         fontWeight: '700',
                         mb: '16px',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px',
                         color: '#222',
+                        wordBreak: 'break-all',
                       })}
                     >
                       <MapPin size={20} color="#EA4335" />
