@@ -3,11 +3,12 @@
 import { useEffect, useState, use, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, MoreVertical, Pencil, Trash2, UserPlus, Share2 } from 'lucide-react'
+import { Plus, UserPlus, Share2 } from 'lucide-react'
 import NewPlanModal from '@/components/trips/NewPlanModal'
 import CollaboratorModal from '@/components/trips/CollaboratorModal'
 import ShareModal from '@/components/trips/ShareModal'
 import { collaboration } from '@/utils/collaboration'
+import PlanList from '@/components/trips/PlanList'
 
 export default function TripPlansPage(props: {
     params: Promise<{ id: string }>
@@ -269,145 +270,17 @@ export default function TripPlansPage(props: {
                     )}
                 </div>
             ) : (
-                <div className={css({ display: 'flex', flexDirection: 'column', gap: '32px' })}>
-                    {Object.entries(
-                        plans.reduce((acc, plan) => {
-                            // start_datetime_local은 현지 시간 문자열이므로 'Z' 없이 날짜 키만 추출
-                            const localIso = plan.start_datetime_local.replace(' ', 'T')
-                            const datePart = localIso.split('T')[0] // YYYY-MM-DD
-                            const [year, month, day] = datePart.split('-')
-                            const localDateString = `${year}년 ${month}월 ${day}일`
-
-                            if (!acc[localDateString]) acc[localDateString] = [];
-                            acc[localDateString].push(plan);
-                            return acc;
-                        }, {} as Record<string, any[]>)
-                    ).map(([dateStr, dayPlans]: [string, any]) => (
-                        <div key={dateStr} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
-                            <h3 className={css({
-                                fontSize: { base: '16px', sm: '18px' },
-                                fontWeight: 'bold',
-                                color: '#111',
-                                pb: '8px',
-                                borderBottom: '2px solid #eee',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                            })}>
-                                <span className={css({ w: '8px', h: '8px', borderRadius: '50%', bg: '#4285F4' })} />
-                                {dateStr}
-                            </h3>
-                            <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                                {dayPlans.map((plan: any) => (
-                                    <div
-                                        key={plan.id}
-                                        className={css({
-                                            p: { base: '12px', sm: '16px' },
-                                            bg: 'white',
-                                            border: '1px solid #eaeaea',
-                                            borderRadius: '12px',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            gap: '12px',
-                                            position: 'relative',
-                                            boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                                            transition: 'transform 0.2s',
-                                            _hover: { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }
-                                        })}
-                                    >
-                                        {/* 편집 권한이 있을 때만 더보기 메뉴 노출 */}
-                                        {(userRole === 'owner' || userRole === 'editor') && (
-                                            <div className={css({ position: 'absolute', top: '16px', right: '16px' })}>
-                                                <button
-                                                    onClick={() => setActiveDropdown(activeDropdown === plan.id ? null : plan.id)}
-                                                    className={css({ bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', borderRadius: '4px', color: '#888', _hover: { bg: '#f1f1f1', color: '#111' } })}
-                                                >
-                                                    <MoreVertical size={18} />
-                                                </button>
-
-                                                {/* 드롭다운 메뉴 (열렸을 때) */}
-                                                {activeDropdown === plan.id && (
-                                                    <div
-                                                        className={css({ position: 'absolute', right: 0, top: '28px', bg: 'white', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', w: '120px', zIndex: 10, display: 'flex', flexDirection: 'column', overflow: 'hidden' })}
-                                                        onMouseLeave={() => setActiveDropdown(null)}
-                                                    >
-                                                        <button onClick={() => handleEditPlan(plan)} className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '12px', py: '10px', bg: 'transparent', border: 'none', borderBottom: '1px solid #f0f0f0', w: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: '#333', _hover: { bg: '#f9f9f9' } })}>
-                                                            <Pencil size={14} /> 수정
-                                                        </button>
-                                                        <button onClick={() => handleDeletePlan(plan.id)} className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '12px', py: '10px', bg: 'transparent', border: 'none', w: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: '#dc2626', _hover: { bg: '#fee2e2' } })}>
-                                                            <Trash2 size={14} /> 삭제
-                                                        </button>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        )}
-
-                                        <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexDirection: { base: 'column', md: 'row' }, gap: '12px', pr: { base: '0', md: '32px' } })}>
-                                            <div className={css({ flex: 1, w: '100%' })}>
-                                                <h4 className={css({ fontWeight: 'bold', fontSize: { base: '15px', sm: '16px' }, color: '#222', mb: '4px' })}>{plan.title}</h4>
-                                                {plan.location && (
-                                                    <p className={css({ fontSize: '14px', color: '#666', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                                        📍 {plan.location}
-                                                    </p>
-                                                )}
-                                                {plan.memo && (
-                                                    <p className={css({ fontSize: '13px', color: '#888', mt: '8px', bg: '#f9f9f9', p: '8px', borderRadius: '6px' })}>
-                                                        📝 {plan.memo}
-                                                    </p>
-                                                )}
-                                            </div>
-                                            <div className={css({
-                                                display: 'flex',
-                                                flexDirection: 'row',
-                                                alignItems: 'center',
-                                                gap: '8px',
-                                                ml: { base: '0', md: 'auto' },
-                                                w: { base: '100%', md: 'auto' },
-                                                pt: { base: '8px', md: '0' },
-                                                borderTop: { base: '1px solid #f0f0f0', md: 'none' },
-                                                justifyContent: { base: 'flex-start', md: 'flex-end' },
-                                                flexWrap: 'wrap'
-                                            })}>
-                                                {(timeDisplayMode === 'local' || timeDisplayMode === 'both') && (
-                                                    <span className={css({
-                                                        fontSize: '13px', color: '#111', bg: '#f1f3f4', px: '8px', py: '4px', borderRadius: '6px',
-                                                        fontWeight: timeDisplayMode === 'local' ? 'bold' : '500',
-                                                        whiteSpace: 'nowrap',
-                                                        display: 'flex', alignItems: 'center', gap: '4px'
-                                                    })}>
-                                                        {formatLocalTime(plan.start_datetime_local)}
-                                                        {timeDisplayMode === 'both' && <small className={css({ fontSize: '10px', opacity: 0.6, fontWeight: 'normal' })}>(현지)</small>}
-                                                    </span>
-                                                )}
-                                                {timeDisplayMode === 'both' && <span className={css({ color: '#ccc', fontSize: '12px', display: { base: 'none', sm: 'inline' } })}>·</span>}
-                                                {(timeDisplayMode === 'kst' || timeDisplayMode === 'both') && (
-                                                    <span className={css({
-                                                        fontSize: '13px', color: '#1a73e8', bg: '#e8f0fe', px: '8px', py: '4px', borderRadius: '6px',
-                                                        fontWeight: timeDisplayMode === 'kst' ? 'bold' : '500',
-                                                        whiteSpace: 'nowrap',
-                                                        display: 'flex', alignItems: 'center', gap: '4px'
-                                                    })}>
-                                                        {formatKstTime(plan.start_datetime_local, plan.timezone_string || 'Asia/Seoul')}
-                                                        {timeDisplayMode === 'both' && <small className={css({ fontSize: '10px', opacity: 0.8, fontWeight: 'normal' })}>(한국)</small>}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* 예산/금액 정보 영역 */}
-                                        {plan.cost > 0 && (
-                                            <div className={css({ borderTop: '1px dashed #eee', pt: '10px', mt: '4px' })}>
-                                                <span className={css({ fontSize: '14px', fontWeight: '600', color: '#34A853' })}>
-                                                    💰 예산: {plan.cost.toLocaleString()}원
-                                                </span>
-                                            </div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <PlanList
+                    plans={plans}
+                    activeDropdown={activeDropdown}
+                    setActiveDropdown={setActiveDropdown}
+                    userRole={userRole}
+                    timeDisplayMode={timeDisplayMode}
+                    formatLocalTime={formatLocalTime}
+                    formatKstTime={formatKstTime}
+                    onEdit={handleEditPlan}
+                    onDelete={handleDeletePlan}
+                />
             )}
 
             {tripId && (

@@ -1,9 +1,10 @@
 import { createClient } from '@/utils/supabase/server'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, Users } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import TripTabNavigation from '@/components/trips/TripTabNavigation'
+import TripHeaderActions from '@/components/trips/TripHeaderActions'
 
 export default async function TripLayout(props: {
     children: React.ReactNode
@@ -22,9 +23,6 @@ export default async function TripLayout(props: {
     if (!trip) {
         notFound()
     }
-
-    const start = new Date(trip.start_date).toLocaleDateString()
-    const end = new Date(trip.end_date).toLocaleDateString()
 
     return (
         <div className={css({ w: '100%', py: '20px' })}>
@@ -54,16 +52,9 @@ export default async function TripLayout(props: {
                 })}>
                     {trip.destination} 여행
                 </h1>
-                <div className={css({ display: 'flex', flexDirection: 'column', gap: '6px' })}>
-                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' })}>
-                        <Calendar size={15} color="#4285F4" />
-                        {start} ~ {end}
-                    </p>
-                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' })}>
-                        <Users size={15} color="#34A853" />
-                        성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}
-                    </p>
-                </div>
+
+                {/* 날짜·인원 표시 + 수정/삭제 버튼 (클라이언트 컴포넌트) */}
+                <TripHeaderActions trip={trip} />
             </div>
 
             <TripTabNavigation tripId={id} />

@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
-import { X, MapPin, Clock, DollarSign, Link as LinkIcon, AlignLeft, ChevronLeft } from 'lucide-react'
+import { X, MapPin, Clock, Link as LinkIcon, AlignLeft, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
+import { getCurrencyFromTimezone } from '@/utils/currency'
 
 const libraries: ("places")[] = ["places"]
 
@@ -344,9 +345,19 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                     </div>
 
                     <div>
-                        <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
-                            <DollarSign size={16} /> 예상 금액
-                        </label>
+                        {/* 통화 심볼은 타임존 기반으로 자동 결정 */}
+                        {(() => {
+                            const currency = getCurrencyFromTimezone(timezoneString)
+                            return (
+                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
+                                    <span className={css({ fontSize: '15px', fontWeight: '700', color: '#4285F4', minW: '20px' })}>
+                                        {currency.symbol}
+                                    </span>
+                                    예상 금액
+                                    <span className={css({ fontSize: '12px', color: '#999', fontWeight: '400' })}>({currency.code})</span>
+                                </label>
+                            )
+                        })()}
                         <input
                             type="number"
                             value={cost}

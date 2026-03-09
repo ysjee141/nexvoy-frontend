@@ -9,6 +9,13 @@ export const metadata: Metadata = {
   description: '일정표 작성부터 체크리스트까지 한 곳에서 관리하는 여행 앱',
 }
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -34,10 +41,9 @@ export default function RootLayout({
           className={css({
             flex: 1,
             w: '100%',
-            maxW: 'screen-xl',
+            maxW: '1280px',
             mx: 'auto',
-            pt: '64px',
-            p: { base: '80px 16px 16px', md: '88px 24px 24px' },
+            p: { base: '80px 16px 24px', md: '88px 24px 32px' },
           })}
         >
           {children}
