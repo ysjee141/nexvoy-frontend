@@ -1,8 +1,8 @@
-# ✈️ Nexvoy (nexvoy-frontend)
+# ✈️ Next Voyage (nexvoy-frontend)
 
-**Nexvoy**는 복잡한 여행 계획을 한눈에 정리하고, 현지 시간과 체크리스트를 스마트하게 관리할 수 있도록 돕는 프리미엄 여행 플래너 웹 앱입니다.
+**Next Voyage**는 복잡한 여행 계획을 한눈에 정리하고, 현지 시간과 체크리스트를 스마트하게 관리할 수 있도록 돕는 프리미엄 여행 플래너 웹 앱입니다.
 
-![Nexvoy UI Mockup](https://via.placeholder.com/800x400.png?text=Nexvoy+Smart+Travel+Planner) *<!-- 실제 이미지가 있다면 교체 가능 -->*
+![Next Voyage UI Mockup](https://via.placeholder.com/800x400.png?text=Next+Voyage+Smart+Travel+Planner) *<!-- 실제 이미지가 있다면 교체 가능 -->*
 
 ## ✨ 주요 기능 (Key Features)
 
@@ -47,10 +47,10 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_google_maps_api_key
 ```bash
 pnpm dev
 ```
-이제 [http://localhost:3000](http://localhost:3000)에서 Nexvoy를 확인하실 수 있습니다.
+이제 [http://localhost:3000](http://localhost:3000)에서 Next Voyage를 확인하실 수 있습니다.
 
 ## 📱 반응형 디자인
-Nexvoy는 모바일 우선주의(Mobile-First) 원칙에 따라 설계되었습니다. iPhone SE부터 대화면 데스크톱까지 모든 해상도에서 최적화된 UI/UX를 제공합니다.
+Next Voyage는 모바일 우선주의(Mobile-First) 원칙에 따라 설계되었습니다. iPhone SE부터 대화면 데스크톱까지 모든 해상도에서 최적화된 UI/UX를 제공합니다.
 
 ---
-Nexvoy와 함께 더 편리하고 즐거운 여행을 계획해 보세요! 🗺️🧳
+Next Voyage와 함께 더 편리하고 즐거운 여행을 계획해 보세요! 🗺️🧳

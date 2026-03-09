@@ -70,7 +70,7 @@ export default function Navbar() {
                     })}
                 >
                     <Compass size={24} color="#4285F4" />
-                    <span className={css({ display: { base: 'none', sm: 'inline' } })}>Nexvoy</span>
+                    <span className={css({ display: { base: 'none', sm: 'inline' } })}>Next Voyage</span>
                 </Link>
 
                 <div className={css({ display: 'flex', alignItems: 'center', gap: { base: '16px', md: '24px' } })}>

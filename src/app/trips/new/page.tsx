@@ -5,8 +5,17 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { Plus, ArrowLeft } from 'lucide-react'
+import { useLoadScript, Autocomplete } from '@react-google-maps/api'
+
+const libraries: ("places")[] = ["places"]
 
 export default function NewTripPage() {
+    const { isLoaded } = useLoadScript({
+        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
+        libraries,
+        language: 'ko',
+    })
+
     const router = useRouter()
     const [loading, setLoading] = useState(false)
     const [destination, setDestination] = useState('')
@@ -15,6 +24,15 @@ export default function NewTripPage() {
     const [adults, setAdults] = useState(1)
     const [childrenCount, setChildren] = useState(0)
     const [errorMsg, setErrorMsg] = useState('')
+
+    const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
+
+    const onPlaceChanged = () => {
+        if (autocomplete !== null) {
+            const place = autocomplete.getPlace()
+            setDestination(place.name || place.formatted_address || '')
+        }
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -86,22 +104,43 @@ export default function NewTripPage() {
                         <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>
                             여행지 (국가/도시)
                         </label>
-                        <input
-                            type="text"
-                            required
-                            value={destination}
-                            onChange={e => setDestination(e.target.value)}
-                            placeholder="예: 일본 도쿄, 프랑스 파리"
-                            className={css({
-                                w: '100%',
-                                p: '14px',
-                                border: '1px solid #ddd',
-                                borderRadius: '8px',
-                                outline: 'none',
-                                transition: 'border-color 0.2s',
-                                _focus: { borderColor: '#4285F4', boxShadow: '0 0 0 2px rgba(66, 133, 244, 0.1)' },
-                            })}
-                        />
+                        {isLoaded ? (
+                            <Autocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
+                                <input
+                                    type="text"
+                                    required
+                                    value={destination}
+                                    onChange={e => setDestination(e.target.value)}
+                                    placeholder="예: 일본 도쿄, 프랑스 파리"
+                                    className={css({
+                                        w: '100%',
+                                        p: '14px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '8px',
+                                        outline: 'none',
+                                        transition: 'border-color 0.2s',
+                                        _focus: { borderColor: '#4285F4', boxShadow: '0 0 0 2px rgba(66, 133, 244, 0.1)' },
+                                    })}
+                                />
+                            </Autocomplete>
+                        ) : (
+                            <input
+                                type="text"
+                                required
+                                value={destination}
+                                onChange={e => setDestination(e.target.value)}
+                                placeholder="지도 로딩 중..."
+                                disabled
+                                className={css({
+                                    w: '100%',
+                                    p: '14px',
+                                    border: '1px solid #ddd',
+                                    borderRadius: '8px',
+                                    outline: 'none',
+                                    bg: '#f1f1f1'
+                                })}
+                            />
+                        )}
                     </div>
 
                     <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>

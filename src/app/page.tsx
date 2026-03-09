@@ -2,6 +2,7 @@ import { createClient } from '@/utils/supabase/server'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import { Plus, MapPin, CalendarDays, Luggage, User } from 'lucide-react'
+import InvitationBanner from '@/components/trips/InvitationBanner'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -17,7 +18,7 @@ export default async function Home() {
         {/* Hero Section */}
         <section className={css({ textAlign: 'center', mb: '80px' })}>
           <h1 className={css({ fontSize: { base: '32px', md: '56px' }, fontWeight: '900', color: '#111', mb: '20px', lineHeight: 1.1, letterSpacing: '-0.02em' })}>
-            Nexvoy와 함께하는<br />
+            Next Voyage와 함께하는<br />
             <span className={css({ color: '#4285F4' })}>완벽한 여행 계획</span>
           </h1>
           <p className={css({ fontSize: { base: '16px', md: '20px' }, color: '#666', maxW: '600px', mx: 'auto', mb: '40px', lineHeight: 1.6 })}>
@@ -67,7 +68,7 @@ export default async function Home() {
               <MapPin size={24} color="#FBBC05" />
             </div>
             <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>타임존 자동 계산</h3>
-            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. Nexvoy가 실시간으로 맞춰 드립니다.</p>
+            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. Next Voyage가 실시간으로 맞춰 드립니다.</p>
           </div>
 
           <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#EA4335', transform: 'translateY(-5px)' } })}>
@@ -84,170 +85,205 @@ export default async function Home() {
 
   const nickname = user?.user_metadata?.nickname || user?.email?.split('@')[0] || '여행자'
 
-  // 다가오는 여행 데이터 fetch (임시 정렬 로직 포함, 체크리스트 데이터 조인)
-  const { data: trips, error } = await supabase
+  // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
+  const { data: memberTripData } = await supabase
+    .from('trip_members')
+    .select('trip_id')
+    .eq('user_id', user?.id)
+    .eq('status', 'accepted')
+
+  const memberTripIds = memberTripData?.map(m => m.trip_id) || []
+
+  // 2. 내가 소유하거나 멤버인 여행 가져오기
+  let query = supabase
     .from('trips')
     .select('*, checklists(id, checklist_items(id, is_checked))')
-    .eq('user_id', user?.id)
+
+  if (memberTripIds.length > 0) {
+    query = query.or(`user_id.eq.${user?.id},id.in.(${memberTripIds.join(',')})`)
+  } else {
+    query = query.eq('user_id', user?.id)
+  }
+
+  const { data: trips, error } = await query
     .order('start_date', { ascending: true })
     .limit(3)
 
   return (
-    <div className={css({ w: '100%', py: '40px' })}>
-      <header className={css({ mb: '40px', display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
-        <div>
-          <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#111' })}>
-            안녕하세요, {nickname}님! 👋
-          </h1>
-          <p className={css({ color: '#666', mt: '4px', fontSize: { base: '14px', sm: '16px' } })}>
-            다가오는 여행 일정을 확인하고 새로운 계획을 세워보세요.
-          </p>
-        </div>
-        <Link
-          href="/trips/new"
-          className={css({
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            bg: '#111',
-            color: 'white',
-            px: '20px',
-            py: '12px',
-            borderRadius: '12px',
-            fontWeight: '600',
-            transition: 'all 0.2s',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-            w: { base: '100%', sm: 'auto' },
-            justifyContent: 'center',
-            _hover: { bg: '#333', transform: 'translateY(-2px) scale(1.02)', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' },
-            _active: { transform: 'translateY(0) scale(0.98)' }
-          })}
-        >
-          <Plus size={20} /> 새 여행 만들기
-        </Link>
-      </header>
-
-      <section>
-        <h2 className={css({ fontSize: '20px', fontWeight: '700', mb: '20px', color: '#222' })}>다가오는 여행</h2>
-
-        {(!trips || trips.length === 0) ? (
-          <div
-            className={css({
-              bg: 'white',
-              borderRadius: '16px',
-              p: { base: '40px 20px', sm: '60px' },
-              textAlign: 'center',
-              border: '2px dashed #ddd',
-              color: '#888',
-            })}
-          >
-            <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: '#ccc' })} />
-            <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: '#555' })}>
-              아직 계획된 여행이 없습니다.
+    <div className={css({ w: '100%' })}>
+      <InvitationBanner />
+      <div className={css({ maxW: 'screen-xl', mx: 'auto', py: '40px', px: '20px' })}>
+        <header className={css({ mb: '40px', display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
+          <div>
+            <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#111' })}>
+              안녕하세요, {nickname}님! 👋
+            </h1>
+            <p className={css({ color: '#666', mt: '4px', fontSize: { base: '14px', sm: '16px' } })}>
+              다가오는 여행 일정을 확인하고 새로운 계획을 세워보세요.
             </p>
-            <p className={css({ fontSize: '14px' })}>상단의 버튼을 눌러 첫 여행을 등록해보세요!</p>
           </div>
-        ) : (
-          <div
+          <Link
+            href="/trips/new"
             className={css({
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              bg: '#111',
+              color: 'white',
+              px: '20px',
+              py: '12px',
+              borderRadius: '12px',
+              fontWeight: '600',
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              w: { base: '100%', sm: 'auto' },
+              justifyContent: 'center',
+              _hover: { bg: '#333', transform: 'translateY(-2px) scale(1.02)', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' },
+              _active: { transform: 'translateY(0) scale(0.98)' }
             })}
           >
-            {trips.map((trip) => {
-              const start = new Date(trip.start_date).toLocaleDateString()
-              const end = new Date(trip.end_date).toLocaleDateString()
+            <Plus size={20} /> 새 여행 만들기
+          </Link>
+        </header>
 
-              // 첫 번째(메인) 체크리스트 가져오기
-              const mainChecklist = trip.checklists?.[0]
-              const items = mainChecklist?.checklist_items || []
-              const totalItems = items.length
-              const checkedItems = items.filter((item: any) => item.is_checked).length
-              const progressPercent = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0
+        <section>
+          <h2 className={css({ fontSize: '20px', fontWeight: '700', mb: '20px', color: '#222' })}>다가오는 여행</h2>
 
-              return (
-                <Link
-                  key={trip.id}
-                  href={`/trips/${trip.id}`}
-                  className={css({
-                    display: 'block',
-                    bg: 'white',
-                    p: '24px',
-                    borderRadius: '16px',
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                    border: '1px solid #f0f0f0',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    _hover: {
-                      transform: 'translateY(-6px) scale(1.01)',
-                      boxShadow: '0 15px 30px rgba(0,0,0,0.1)',
-                      borderColor: '#4285F4',
-                    },
-                  })}
-                >
-                  {/* Card Decoration */}
-                  <div
+          {(!trips || trips.length === 0) ? (
+            <div
+              className={css({
+                bg: 'white',
+                borderRadius: '16px',
+                p: { base: '40px 20px', sm: '60px' },
+                textAlign: 'center',
+                border: '2px dashed #ddd',
+                color: '#888',
+              })}
+            >
+              <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: '#ccc' })} />
+              <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: '#555' })}>
+                아직 계획된 여행이 없습니다.
+              </p>
+              <p className={css({ fontSize: '14px' })}>상단의 버튼을 눌러 첫 여행을 등록해보세요!</p>
+            </div>
+          ) : (
+            <div
+              className={css({
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '24px',
+              })}
+            >
+              {trips.map((trip) => {
+                const start = new Date(trip.start_date).toLocaleDateString()
+                const end = new Date(trip.end_date).toLocaleDateString()
+
+                // 첫 번째(메인) 체크리스트 가져오기
+                const mainChecklist = trip.checklists?.[0]
+                const items = mainChecklist?.checklist_items || []
+                const totalItems = items.length
+                const checkedItems = items.filter((item: any) => item.is_checked).length
+                const progressPercent = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0
+
+                return (
+                  <Link
+                    key={trip.id}
+                    href={`/trips/${trip.id}`}
                     className={css({
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      w: '4px',
-                      h: '100%',
-                      bg: 'linear-gradient(to bottom, #4285F4, #34A853)',
-                    })}
-                  />
-                  <h3
-                    className={css({
-                      fontSize: '20px',
-                      fontWeight: '700',
-                      mb: '16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      color: '#222',
+                      display: 'block',
+                      bg: 'white',
+                      p: '24px',
+                      borderRadius: '16px',
+                      boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
+                      border: '1px solid #f0f0f0',
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      _hover: {
+                        transform: 'translateY(-6px) scale(1.01)',
+                        boxShadow: '0 15px 30px rgba(0,0,0,0.1)',
+                        borderColor: '#4285F4',
+                      },
                     })}
                   >
-                    <MapPin size={20} color="#EA4335" />
-                    {trip.destination}
-                  </h3>
-                  <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', color: '#666', mb: '20px' })}>
-                    <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' })}>
-                      <CalendarDays size={16} color="#888" /> {start} ~ {end}
-                    </p>
-                    <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' })}>
-                      <User size={16} color="#888" /> 성인 {trip.adults_count}명
-                      {trip.children_count > 0 && `, 아이 ${trip.children_count}명`}
-                    </p>
-                  </div>
+                    {/* Card Decoration */}
+                    <div
+                      className={css({
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        w: '4px',
+                        h: '100%',
+                        bg: trip.user_id === user?.id ? 'linear-gradient(to bottom, #4285F4, #34A853)' : 'linear-gradient(to bottom, #FBBC05, #EA4335)',
+                      })}
+                    />
+                    <div className={css({ mb: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+                      <span className={css({
+                        fontSize: '11px',
+                        fontWeight: '800',
+                        px: '8px',
+                        py: '4px',
+                        borderRadius: '6px',
+                        bg: trip.user_id === user?.id ? '#e8f0fe' : '#fef7e0',
+                        color: trip.user_id === user?.id ? '#1a73e8' : '#ea8600',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      })}>
+                        {trip.user_id === user?.id ? '내 여정' : '참여 중'}
+                      </span>
+                    </div>
+                    <h3
+                      className={css({
+                        fontSize: '20px',
+                        fontWeight: '700',
+                        mb: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        color: '#222',
+                      })}
+                    >
+                      <MapPin size={20} color="#EA4335" />
+                      {trip.destination}
+                    </h3>
+                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', color: '#666', mb: '20px' })}>
+                      <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' })}>
+                        <CalendarDays size={16} color="#888" /> {start} ~ {end}
+                      </p>
+                      <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px' })}>
+                        <User size={16} color="#888" /> 성인 {trip.adults_count}명
+                        {trip.children_count > 0 && `, 아이 ${trip.children_count}명`}
+                      </p>
+                    </div>
 
-                  {/* Checklist Progress */}
-                  <div className={css({ borderTop: '1px solid #eee', pt: '16px', mt: 'auto' })}>
-                    <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '8px' })}>
-                      <span className={css({ fontSize: '13px', fontWeight: '600', color: '#555' })}>
-                        준비물 챙기기
-                      </span>
-                      <span className={css({ fontSize: '13px', fontWeight: 'bold', color: progressPercent === 100 ? '#34A853' : '#4285F4' })}>
-                        {progressPercent}%
-                      </span>
+                    {/* Checklist Progress */}
+                    <div className={css({ borderTop: '1px solid #eee', pt: '16px', mt: 'auto' })}>
+                      <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '8px' })}>
+                        <span className={css({ fontSize: '13px', fontWeight: '600', color: '#555' })}>
+                          준비물 챙기기
+                        </span>
+                        <span className={css({ fontSize: '13px', fontWeight: 'bold', color: progressPercent === 100 ? '#34A853' : '#4285F4' })}>
+                          {progressPercent}%
+                        </span>
+                      </div>
+                      <div className={css({ w: '100%', h: '6px', bg: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' })}>
+                        <div
+                          className={css({ h: '100%', bg: progressPercent === 100 ? '#34A853' : '#4285F4', transition: 'width 0.6s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      {totalItems === 0 && (
+                        <p className={css({ fontSize: '12px', color: '#999', mt: '6px', textAlign: 'right' })}>아직 추가된 항목이 없습니다</p>
+                      )}
                     </div>
-                    <div className={css({ w: '100%', h: '6px', bg: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' })}>
-                      <div
-                        className={css({ h: '100%', bg: progressPercent === 100 ? '#34A853' : '#4285F4', transition: 'width 0.6s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                    {totalItems === 0 && (
-                      <p className={css({ fontSize: '12px', color: '#999', mt: '6px', textAlign: 'right' })}>아직 추가된 항목이 없습니다</p>
-                    )}
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-      </section>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   )
 }

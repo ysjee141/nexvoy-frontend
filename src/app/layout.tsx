@@ -5,7 +5,7 @@ import NotificationBanner from '@/components/layout/NotificationBanner'
 import { css } from 'styled-system/css'
 
 export const metadata: Metadata = {
-  title: 'Nexvoy - 당신의 친절한 여행 동반자',
+  title: 'Next Voyage - 당신의 친절한 여행 동반자',
   description: '일정표 작성부터 체크리스트까지 한 곳에서 관리하는 여행 앱',
 }
 

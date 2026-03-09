@@ -3,8 +3,10 @@
 import { useEffect, useState, use, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { Plus, MoreVertical, Pencil, Trash2, UserPlus, Share2 } from 'lucide-react'
 import NewPlanModal from '@/components/trips/NewPlanModal'
+import CollaboratorModal from '@/components/trips/CollaboratorModal'
+import ShareModal from '@/components/trips/ShareModal'
 
 export default function TripPlansPage(props: {
     params: Promise<{ id: string }>
@@ -15,7 +17,10 @@ export default function TripPlansPage(props: {
     // Supabase client instance (stable across renders if used carefully, but better kept inside useCallback or useMemo if it's deeply depending on renders, though createClient maps to same client mostly)
     const supabase = createClient()
     const [plans, setPlans] = useState<any[]>([])
+    const [trip, setTrip] = useState<any>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] = useState(false)
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false)
     const [timeDisplayMode, setTimeDisplayMode] = useState<'local' | 'kst' | 'both'>('local')
 
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -75,6 +80,12 @@ export default function TripPlansPage(props: {
         }
     }
 
+    const fetchTrip = useCallback(async () => {
+        if (!tripId) return
+        const { data } = await supabase.from('trips').select('*').eq('id', tripId).single()
+        if (data) setTrip(data)
+    }, [tripId, supabase])
+
     const fetchPlans = useCallback(async () => {
         if (!tripId) return
 
@@ -88,8 +99,9 @@ export default function TripPlansPage(props: {
     }, [tripId, supabase])
 
     useEffect(() => {
+        fetchTrip()
         fetchPlans()
-    }, [fetchPlans])
+    }, [fetchTrip, fetchPlans])
 
     // 드롭다운 외부 클릭 감지를 위한 이벤트 리스너 (심플 버전으로 대체)
 
@@ -155,32 +167,80 @@ export default function TripPlansPage(props: {
                     </div>
                 </div>
 
-                <button
-                    onClick={() => {
-                        setEditingPlan(null) // 신규 생성 모드
-                        setIsModalOpen(true)
-                    }}
-                    className={css({
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        bg: '#4285F4',
-                        color: 'white',
-                        px: '16px',
-                        py: '10px',
-                        borderRadius: '8px',
-                        fontWeight: '600',
-                        fontSize: '14px',
-                        cursor: 'pointer',
-                        border: 'none',
-                        w: { base: '100%', sm: 'auto' },
-                        _hover: { bg: '#3367d6', transform: 'translateY(-1px)' },
-                        _active: { transform: 'translateY(0)' }
-                    })}
-                >
-                    <Plus size={16} /> 일정 추가
-                </button>
+                <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
+                    <button
+                        onClick={() => setIsCollaboratorModalOpen(true)}
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            bg: 'white',
+                            color: '#111',
+                            px: '16px',
+                            py: '10px',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            border: '1px solid #ddd',
+                            flex: { base: 1, sm: 'none' },
+                            _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
+                            _active: { transform: 'translateY(0)' }
+                        })}
+                    >
+                        <UserPlus size={16} /> 협업
+                    </button>
+                    <button
+                        onClick={() => setIsShareModalOpen(true)}
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            bg: 'white',
+                            color: '#111',
+                            px: '16px',
+                            py: '10px',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            border: '1px solid #ddd',
+                            flex: { base: 1, sm: 'none' },
+                            _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
+                            _active: { transform: 'translateY(0)' }
+                        })}
+                    >
+                        <Share2 size={16} /> 공유
+                    </button>
+                    <button
+                        onClick={() => {
+                            setEditingPlan(null) // 신규 생성 모드
+                            setIsModalOpen(true)
+                        }}
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            bg: '#4285F4',
+                            color: 'white',
+                            px: '16px',
+                            py: '10px',
+                            borderRadius: '8px',
+                            fontWeight: '600',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            border: 'none',
+                            flex: { base: 1, sm: 'none' },
+                            _hover: { bg: '#3367d6', transform: 'translateY(-1px)' },
+                            _active: { transform: 'translateY(0)' }
+                        })}
+                    >
+                        <Plus size={16} /> 일정 추가
+                    </button>
+                </div>
             </div>
 
             {(!plans || plans.length === 0) ? (
@@ -335,6 +395,22 @@ export default function TripPlansPage(props: {
                     onClose={handleModalClose}
                     onSuccess={handleModalSuccess}
                     editData={editingPlan}
+                />
+            )}
+            {tripId && (
+                <CollaboratorModal
+                    tripId={tripId}
+                    isOpen={isCollaboratorModalOpen}
+                    onClose={() => setIsCollaboratorModalOpen(false)}
+                    tripTitle={trip?.destination || '여행'}
+                />
+            )}
+            {tripId && (
+                <ShareModal
+                    tripId={tripId}
+                    isOpen={isShareModalOpen}
+                    onClose={() => setIsShareModalOpen(false)}
+                    tripTitle={trip?.destination || '여행'}
                 />
             )}
         </div>
