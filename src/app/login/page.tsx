@@ -48,28 +48,31 @@ export default function LoginPage() {
     }
 
     return (
+        // 모바일(330px)에서는 배경과 카드를 통합: 전체 높이를 카드로 채워 여백 손실 최소화
+        // sm(640px) 이상에서는 기존 그라디언트 배경 위에 카드를 띄우는 구조 유지
         <div className={css({
             minH: '100vh',
             display: 'flex',
-            alignItems: 'center',
+            alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center',
-            bg: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
-            p: '20px'
+            bg: { base: 'white', sm: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' },
+            p: { base: '0', sm: '20px' },
         })}>
             <div className={css({
-                bg: 'rgba(255, 255, 255, 0.9)',
-                backdropFilter: 'blur(10px)',
-                p: { base: '32px 24px', md: '48px' },
-                borderRadius: '24px',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
-                maxW: '440px',
+                bg: { base: 'white', sm: 'rgba(255, 255, 255, 0.9)' },
+                backdropFilter: { base: 'none', sm: 'blur(10px)' },
+                p: { base: '40px 20px', sm: '40px 32px', md: '48px' },
+                borderRadius: { base: '0', sm: '24px' },
+                boxShadow: { base: 'none', sm: '0 20px 40px rgba(0,0,0,0.1)' },
+                maxW: { base: '100%', sm: '440px' },
                 w: '100%',
-                border: '1px solid rgba(255, 255, 255, 0.3)'
+                minH: { base: '100vh', sm: 'auto' },
+                border: { base: 'none', sm: '1px solid rgba(255, 255, 255, 0.3)' },
             })}>
-                <div className={css({ textAlign: 'center', mb: '32px' })}>
+                <div className={css({ textAlign: 'center', mb: '28px' })}>
                     <div className={css({
-                        w: '64px',
-                        h: '64px',
+                        w: '60px',
+                        h: '60px',
                         bg: '#4285F4',
                         color: 'white',
                         borderRadius: '16px',
@@ -77,20 +80,28 @@ export default function LoginPage() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         mx: 'auto',
-                        mb: '20px',
+                        mb: '16px',
                         boxShadow: '0 8px 16px rgba(66, 133, 244, 0.2)'
                     })}>
-                        <LogIn size={32} />
+                        <LogIn size={28} />
                     </div>
-                    <h1 className={css({ fontSize: '28px', fontWeight: '800', color: '#111', mb: '8px', letterSpacing: '-0.02em' })}>
+                    <h1 className={css({
+                        fontSize: { base: '24px', sm: '28px' },
+                        fontWeight: '800',
+                        color: '#111',
+                        mb: '8px',
+                        letterSpacing: '-0.02em',
+                        wordBreak: 'keep-all',
+                        lineHeight: 1.3,
+                    })}>
                         반가워요! 다시 오셨네요.
                     </h1>
-                    <p className={css({ fontSize: '15px', color: '#666', lineHeight: 1.5 })}>
+                    <p className={css({ fontSize: { base: '14px', sm: '15px' }, color: '#666', lineHeight: 1.5, wordBreak: 'keep-all' })}>
                         Next Voyage와 함께 당신의 모험을 기록해 보세요.
                     </p>
                 </div>
 
-                <form onSubmit={handleLogin} className={css({ display: 'flex', flexDirection: 'column', gap: '20px' })}>
+                <form onSubmit={handleLogin} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
                         <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
                             <Mail size={16} /> 이메일
@@ -102,7 +113,7 @@ export default function LoginPage() {
                             required
                             className={css({
                                 w: '100%',
-                                p: '14px 16px',
+                                p: '13px 16px',
                                 bg: '#f9f9f9',
                                 border: '1px solid #eee',
                                 borderRadius: '12px',
@@ -116,11 +127,9 @@ export default function LoginPage() {
                     </div>
 
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
-                        <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                            <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
-                                <Lock size={16} /> 비밀번호
-                            </label>
-                        </div>
+                        <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
+                            <Lock size={16} /> 비밀번호
+                        </label>
                         <input
                             type="password"
                             value={password}
@@ -128,7 +137,7 @@ export default function LoginPage() {
                             required
                             className={css({
                                 w: '100%',
-                                p: '14px 16px',
+                                p: '13px 16px',
                                 bg: '#f9f9f9',
                                 border: '1px solid #eee',
                                 borderRadius: '12px',
@@ -201,7 +210,7 @@ export default function LoginPage() {
                         disabled={loading}
                         className={css({
                             w: '100%',
-                            py: '16px',
+                            py: '15px',
                             bg: '#111',
                             color: 'white',
                             fontWeight: 'bold',
@@ -216,7 +225,7 @@ export default function LoginPage() {
                             _hover: { bg: '#333', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' },
                             _active: { transform: 'translateY(0)' },
                             _disabled: { opacity: 0.7, transform: 'none' },
-                            mt: '8px',
+                            mt: '4px',
                         })}
                     >
                         {loading ? <Loader2 size={20} className={css({ animation: 'spin 1s linear infinite' })} /> : (
@@ -226,8 +235,8 @@ export default function LoginPage() {
                 </form>
 
                 <div className={css({
-                    mt: '32px',
-                    pt: '24px',
+                    mt: '28px',
+                    pt: '20px',
                     borderTop: '1px solid #eee',
                     textAlign: 'center',
                     fontSize: '15px',

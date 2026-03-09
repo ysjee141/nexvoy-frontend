@@ -155,44 +155,45 @@ export default function ProfilePage() {
     const packingRate = stats.totalItems > 0 ? Math.round((stats.totalChecked / stats.totalItems) * 100) : 0
 
     return (
-        <div className={css({ maxW: '720px', mx: 'auto', py: '40px', display: 'flex', flexDirection: 'column', gap: '24px' })}>
+        <div className={css({ maxW: '720px', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '0', sm: '0' }, display: 'flex', flexDirection: 'column', gap: '16px' })}>
             {/* 헤더 */}
-            <div className={css({ display: 'flex', alignItems: 'center', gap: '16px', mb: '8px' })}>
+            <div className={css({ display: 'flex', alignItems: 'center', gap: '16px', mb: '4px' })}>
                 <div className={css({
-                    w: '64px', h: '64px', borderRadius: '50%',
+                    w: { base: '56px', sm: '64px' }, h: { base: '56px', sm: '64px' }, borderRadius: '50%',
                     bg: 'linear-gradient(135deg, #4285F4, #34A853)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontSize: '28px', fontWeight: 'bold', flexShrink: 0
+                    color: 'white', fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', flexShrink: 0
                 })}>
                     {displayName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                    <h1 className={css({ fontSize: '24px', fontWeight: 'bold', color: '#111' })}>{displayName}</h1>
+                    <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#111' })}>{displayName}</h1>
                     <p className={css({ color: '#888', fontSize: '14px', mt: '2px' })}>{user.email}</p>
                 </div>
             </div>
 
             {/* 활동 통계 */}
-            <section className={css({ bg: 'white', borderRadius: '16px', p: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '16px', fontWeight: 'bold', mb: '20px', color: '#222' })}>활동 요약</h2>
-                <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', textAlign: 'center' })}>
+            <section className={css({ bg: 'white', borderRadius: '16px', p: { base: '16px', sm: '24px' }, boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+                <h2 className={css({ fontSize: '15px', fontWeight: 'bold', mb: '16px', color: '#222' })}>활동 요약</h2>
+                {/* 모바일: 2x2 grid / 데스크탑: 4열 */}
+                <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '10px', textAlign: 'center' })}>
                     {[
                         { label: '총 여행', value: stats.totalTrips, icon: '✈️' },
                         { label: '일정 수', value: stats.totalPlans, icon: '📅' },
-                        { label: '나만의 템플릿', value: stats.totalTemplates, icon: '📦' },
+                        { label: '내 템플릿', value: stats.totalTemplates, icon: '📦' },
                         { label: '짐 준비율', value: `${packingRate}%`, icon: '🧳' },
                     ].map(item => (
-                        <div key={item.label} className={css({ p: '16px', bg: '#fafafa', borderRadius: '12px' })}>
-                            <div className={css({ fontSize: '24px', mb: '8px' })}>{item.icon}</div>
-                            <div className={css({ fontSize: '22px', fontWeight: 'bold', color: '#111' })}>{item.value}</div>
-                            <div className={css({ fontSize: '12px', color: '#888', mt: '4px' })}>{item.label}</div>
+                        <div key={item.label} className={css({ p: { base: '12px 8px', sm: '16px' }, bg: '#fafafa', borderRadius: '12px' })}>
+                            <div className={css({ fontSize: '22px', mb: '6px' })}>{item.icon}</div>
+                            <div className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: 'bold', color: '#111' })}>{item.value}</div>
+                            <div className={css({ fontSize: '12px', color: '#888', mt: '4px', whiteSpace: 'nowrap' })}>{item.label}</div>
                         </div>
                     ))}
                 </div>
             </section>
 
             {/* 프로필 정보 수정 */}
-            <section className={css({ bg: 'white', borderRadius: '16px', p: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+            <section className={css({ bg: 'white', borderRadius: '16px', p: { base: '16px', sm: '24px' }, boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
                 <h2 className={css({ fontSize: '16px', fontWeight: 'bold', mb: '20px', color: '#222', display: 'flex', alignItems: 'center', gap: '8px' })}>
                     <User size={18} />프로필 정보
                 </h2>
@@ -244,7 +245,7 @@ export default function ProfilePage() {
             </section>
 
             {/* 비밀번호 변경 */}
-            <section className={css({ bg: 'white', borderRadius: '16px', p: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+            <section className={css({ bg: 'white', borderRadius: '16px', p: { base: '16px', sm: '24px' }, boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
                 <h2 className={css({ fontSize: '16px', fontWeight: 'bold', mb: '20px', color: '#222', display: 'flex', alignItems: 'center', gap: '8px' })}>
                     <Lock size={18} />비밀번호 변경
                 </h2>

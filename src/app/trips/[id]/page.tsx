@@ -176,33 +176,11 @@ export default function TripPlansPage(props: {
                     </div>
                 </div>
 
-                <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
-                    <button
-                        onClick={() => setIsCollaboratorModalOpen(true)}
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            bg: 'white',
-                            color: '#111',
-                            px: { base: '10px', sm: '16px' },
-                            py: '10px',
-                            borderRadius: '8px',
-                            fontWeight: '600',
-                            fontSize: { base: '13px', sm: '14px' },
-                            cursor: 'pointer',
-                            border: '1px solid #ddd',
-                            flex: { base: 1, sm: 'none' },
-                            _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
-                            _active: { transform: 'translateY(0)' }
-                        })}
-                    >
-                        <UserPlus size={16} /> 협업
-                    </button>
-                    {userRole === 'owner' && (
+                {/* 버튼 영역: 모바일에서는 협업/공유 2열 grid + 일정추가 전체 너비 */}
+                <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
+                    <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr 1fr', sm: 'auto auto' }, gap: '8px' })}>
                         <button
-                            onClick={() => setIsShareModalOpen(true)}
+                            onClick={() => setIsCollaboratorModalOpen(true)}
                             className={css({
                                 display: 'flex',
                                 alignItems: 'center',
@@ -210,26 +188,51 @@ export default function TripPlansPage(props: {
                                 gap: '6px',
                                 bg: 'white',
                                 color: '#111',
-                                px: { base: '10px', sm: '16px' },
+                                px: '12px',
                                 py: '10px',
                                 borderRadius: '8px',
                                 fontWeight: '600',
-                                fontSize: { base: '13px', sm: '14px' },
+                                fontSize: '13px',
                                 cursor: 'pointer',
                                 border: '1px solid #ddd',
-                                flex: { base: 1, sm: 'none' },
+                                whiteSpace: 'nowrap',
                                 _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
                                 _active: { transform: 'translateY(0)' }
                             })}
                         >
-                            <Share2 size={16} /> 공유
+                            <UserPlus size={15} /> 협업
                         </button>
-                    )}
+                        {userRole === 'owner' && (
+                            <button
+                                onClick={() => setIsShareModalOpen(true)}
+                                className={css({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '6px',
+                                    bg: 'white',
+                                    color: '#111',
+                                    px: '12px',
+                                    py: '10px',
+                                    borderRadius: '8px',
+                                    fontWeight: '600',
+                                    fontSize: '13px',
+                                    cursor: 'pointer',
+                                    border: '1px solid #ddd',
+                                    whiteSpace: 'nowrap',
+                                    _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
+                                    _active: { transform: 'translateY(0)' }
+                                })}
+                            >
+                                <Share2 size={15} /> 공유
+                            </button>
+                        )}
+                    </div>
                     {/* 편집 권한이 있을 때만 일정 추가 버튼 노출 */}
                     {(userRole === 'owner' || userRole === 'editor') && (
                         <button
                             onClick={() => {
-                                setEditingPlan(null) // 신규 생성 모드
+                                setEditingPlan(null)
                                 setIsModalOpen(true)
                             }}
                             className={css({
@@ -239,19 +242,20 @@ export default function TripPlansPage(props: {
                                 gap: '6px',
                                 bg: '#4285F4',
                                 color: 'white',
-                                px: { base: '10px', sm: '16px' },
+                                px: '16px',
                                 py: '10px',
                                 borderRadius: '8px',
                                 fontWeight: '600',
-                                fontSize: { base: '13px', sm: '14px' },
+                                fontSize: '13px',
                                 cursor: 'pointer',
                                 border: 'none',
-                                flex: { base: 1, sm: 'none' },
+                                w: '100%',
+                                whiteSpace: 'nowrap',
                                 _hover: { bg: '#3367d6', transform: 'translateY(-1px)' },
                                 _active: { transform: 'translateY(0)' }
                             })}
                         >
-                            <Plus size={16} /> 일정 추가
+                            <Plus size={15} /> 일정 추가
                         </button>
                     )}
                 </div>

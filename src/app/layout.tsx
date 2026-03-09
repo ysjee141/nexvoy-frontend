@@ -36,7 +36,8 @@ export default function RootLayout({
             w: '100%',
             maxW: 'screen-xl',
             mx: 'auto',
-            p: { base: '16px', md: '24px' },
+            pt: '64px',
+            p: { base: '80px 16px 16px', md: '88px 24px 24px' },
           })}
         >
           {children}

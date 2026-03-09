@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
-import { X, MapPin, Clock, DollarSign, Link as LinkIcon, AlignLeft } from 'lucide-react'
+import { X, MapPin, Clock, DollarSign, Link as LinkIcon, AlignLeft, ChevronLeft } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 
@@ -185,34 +185,76 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
     if (!isOpen) return null
 
     return (
+        // sm 미만(모바일): 전체 화면 표시 / sm 이상(데스크탑): dim 오버레이 위에 모달
         <div
             className={css({
                 position: 'fixed',
                 inset: 0,
                 zIndex: 100,
-                backgroundColor: 'rgba(0,0,0,0.4)',
+                backgroundColor: { base: 'white', sm: 'rgba(0,0,0,0.4)' },
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: { base: 'flex-start', sm: 'center' },
                 justifyContent: 'center',
-                p: '20px',
+                p: { base: '0', sm: '20px' },
             })}
         >
             <div
                 className={css({
                     bg: 'white',
                     w: '100%',
-                    maxW: '500px',
-                    maxH: '90vh',
+                    maxW: { base: '100%', sm: '500px' },
+                    h: { base: '100%', sm: 'auto' },
+                    maxH: { base: '100dvh', sm: '90vh' },
                     overflowY: 'auto',
-                    borderRadius: '16px',
-                    boxShadow: '0 10px 40px rgba(0,0,0,0.1)',
+                    borderRadius: { base: '0', sm: '16px' },
+                    boxShadow: { base: 'none', sm: '0 10px 40px rgba(0,0,0,0.1)' },
                     display: 'flex',
                     flexDirection: 'column',
                 })}
             >
-                <div className={css({ p: '20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10 })}>
-                    <h2 className={css({ fontSize: '18px', fontWeight: 'bold' })}>새 일정 추가</h2>
-                    <button onClick={onClose} className={css({ bg: 'transparent', border: 'none', cursor: 'pointer', color: '#666', _hover: { color: '#111' } })}>
+                {/* 헤더: 모바일은 iOS 스타일 ← 뒤로가기, 데스크탑은 X 닫기 */}
+                <div className={css({ p: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10 })}>
+                    {/* 모바일: 뒤로가기 버튼 위치 */}
+                    <button
+                        onClick={onClose}
+                        className={css({
+                            display: { base: 'flex', sm: 'none' },
+                            alignItems: 'center',
+                            bg: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#4285F4',
+                            p: '0',
+                            zIndex: 1,
+                        })}
+                    >
+                        <ChevronLeft size={26} />
+                    </button>
+                    {/* 타이틀: 모바일에서 absolute로 완전 중앙 고정 */}
+                    <h2 className={css({
+                        fontSize: '17px',
+                        fontWeight: 'bold',
+                        position: { base: 'absolute', sm: 'static' },
+                        left: { base: '50%', sm: 'auto' },
+                        transform: { base: 'translateX(-50%)', sm: 'none' },
+                        textAlign: { base: 'center', sm: 'left' },
+                        flex: { base: 'none', sm: 1 },
+                        whiteSpace: 'nowrap',
+                    })}>
+                        {editData ? '일정 수정' : '새 일정 추가'}
+                    </h2>
+                    {/* 데스크탑: X 닫기 버튼 */}
+                    <button
+                        onClick={onClose}
+                        className={css({
+                            display: { base: 'none', sm: 'flex' },
+                            bg: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: '#666',
+                            _hover: { color: '#111' }
+                        })}
+                    >
                         <X size={24} />
                     </button>
                 </div>

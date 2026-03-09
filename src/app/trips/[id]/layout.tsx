@@ -1,7 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Calendar, Users } from 'lucide-react'
 import { notFound } from 'next/navigation'
 import TripTabNavigation from '@/components/trips/TripTabNavigation'
 
@@ -37,18 +37,33 @@ export default async function TripLayout(props: {
                         alignItems: 'center',
                         gap: '4px',
                         color: '#666',
-                        mb: '16px',
+                        fontSize: '14px',
+                        mb: '12px',
                         _hover: { color: '#111' },
                     })}
                 >
-                    <ArrowLeft size={18} /> 목록으로
+                    <ArrowLeft size={16} /> 목록으로
                 </Link>
-                <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#111', mb: '8px' })}>
+                <h1 className={css({
+                    fontSize: { base: '22px', sm: '28px' },
+                    fontWeight: 'bold',
+                    color: '#111',
+                    mb: '10px',
+                    wordBreak: 'keep-all',
+                    lineHeight: 1.3,
+                })}>
                     {trip.destination} 여행
                 </h1>
-                <p className={css({ color: '#555', fontSize: '15px' })}>
-                    {start} ~ {end} (성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''})
-                </p>
+                <div className={css({ display: 'flex', flexDirection: 'column', gap: '6px' })}>
+                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                        <Calendar size={15} color="#4285F4" />
+                        {start} ~ {end}
+                    </p>
+                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                        <Users size={15} color="#34A853" />
+                        성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}
+                    </p>
+                </div>
             </div>
 
             <TripTabNavigation tripId={id} />

@@ -38,13 +38,16 @@ export default function Navbar() {
     return (
         <nav
             className={css({
-                position: 'sticky',
+                position: 'fixed',
                 top: 0,
+                left: 0,
+                right: 0,
                 zIndex: 50,
                 w: '100%',
-                bg: 'white',
+                bg: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(8px)',
                 borderBottom: '1px solid #eaeaea',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
             })}
         >
             <div
