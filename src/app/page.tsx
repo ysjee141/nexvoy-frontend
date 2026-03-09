@@ -11,6 +11,77 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser()
 
+  if (!user) {
+    return (
+      <div className={css({ w: '100%', py: { base: '40px', md: '80px' } })}>
+        {/* Hero Section */}
+        <section className={css({ textAlign: 'center', mb: '80px' })}>
+          <h1 className={css({ fontSize: { base: '32px', md: '56px' }, fontWeight: '900', color: '#111', mb: '20px', lineHeight: 1.1, letterSpacing: '-0.02em' })}>
+            Nexvoy와 함께하는<br />
+            <span className={css({ color: '#4285F4' })}>완벽한 여행 계획</span>
+          </h1>
+          <p className={css({ fontSize: { base: '16px', md: '20px' }, color: '#666', maxW: '600px', mx: 'auto', mb: '40px', lineHeight: 1.6 })}>
+            복잡한 여행 계획부터 꼼꼼한 체크리스트까지.<br />
+            당신의 여행을 더 스마트하고 즐겁게 만들어 드립니다.
+          </p>
+          <div className={css({ display: 'flex', gap: '16px', justifyContent: 'center', flexDirection: { base: 'column', sm: 'row' } })}>
+            <Link
+              href="/login"
+              className={css({
+                bg: '#111', color: 'white', px: '32px', py: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.2s', _hover: { transform: 'translateY(-2px)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }
+              })}
+            >
+              지금 시작하기
+            </Link>
+            <Link
+              href="/login"
+              className={css({
+                bg: 'white', color: '#111', px: '32px', py: '16px', borderRadius: '12px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.2s', _hover: { bg: '#f9f9f9', transform: 'translateY(-2px)' }
+              })}
+            >
+              로그인하기
+            </Link>
+          </div>
+        </section>
+
+        {/* Features Grid */}
+        <section className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: '24px' })}>
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#4285F4', transform: 'translateY(-5px)' } })}>
+            <div className={css({ w: '48px', h: '48px', bg: '#e8f0fe', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
+              <CalendarDays size={24} color="#4285F4" />
+            </div>
+            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>스마트 일정표</h3>
+            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>주간 캘린더를 통해 여행 일정을 한눈에 파악하고 드래그하듯 간편하게 관리하세요.</p>
+          </div>
+
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#34A853', transform: 'translateY(-5px)' } })}>
+            <div className={css({ w: '48px', h: '48px', bg: '#e6f4ea', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
+              <Luggage size={24} color="#34A853" />
+            </div>
+            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>꼼꼼한 체크리스트</h3>
+            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>준비물 템플릿을 활용하고 진행률을 확인하며 빠짐없이 여행을 준비하세요.</p>
+          </div>
+
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#FBBC05', transform: 'translateY(-5px)' } })}>
+            <div className={css({ w: '48px', h: '48px', bg: '#fef7e0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
+              <MapPin size={24} color="#FBBC05" />
+            </div>
+            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>타임존 자동 계산</h3>
+            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. Nexvoy가 실시간으로 맞춰 드립니다.</p>
+          </div>
+
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#EA4335', transform: 'translateY(-5px)' } })}>
+            <div className={css({ w: '48px', h: '48px', bg: '#fce8e6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
+              <Plus size={24} color="#EA4335" />
+            </div>
+            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>실시간 스마트 알림</h3>
+            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>설정한 일정에 맞춰 브라우저 알림을 보내드려 소중한 계획을 놓치지 않게 합니다.</p>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
   const nickname = user?.user_metadata?.nickname || user?.email?.split('@')[0] || '여행자'
 
   // 다가오는 여행 데이터 fetch (임시 정렬 로직 포함, 체크리스트 데이터 조인)

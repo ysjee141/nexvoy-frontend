@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { css } from 'styled-system/css'
@@ -10,9 +11,27 @@ export default function Navbar() {
     const router = useRouter()
     const supabase = createClient()
 
+    const [user, setUser] = useState<any>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            setUser(user)
+            setLoading(false)
+        }
+        fetchUser()
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null)
+        })
+
+        return () => subscription.unsubscribe()
+    }, [supabase])
+
     const handleSignOut = async () => {
         await supabase.auth.signOut()
-        router.push('/login')
+        router.push('/')
         router.refresh()
     }
 
@@ -55,55 +74,80 @@ export default function Navbar() {
                 </Link>
 
                 <div className={css({ display: 'flex', alignItems: 'center', gap: { base: '16px', md: '24px' } })}>
-                    <Link
-                        href="/"
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            color: '#555',
-                            _hover: { color: '#111' },
-                        })}
-                    >
-                        <Home size={18} />
-                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>홈</span>
-                    </Link>
-                    <Link
-                        href="/profile"
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            color: '#555',
-                            _hover: { color: '#111' },
-                        })}
-                    >
-                        <User size={18} />
-                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>마이페이지</span>
-                    </Link>
-                    <button
-                        onClick={handleSignOut}
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            color: '#d32f2f',
-                            ml: { base: '4px', sm: '12px' },
-                            cursor: 'pointer',
-                            bg: 'transparent',
-                            border: 'none',
-                            _hover: { textDecoration: 'underline' },
-                        })}
-                    >
-                        <LogOut size={18} />
-                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>로그아웃</span>
-                    </button>
+                    {!loading && (
+                        <>
+                            {user ? (
+                                <>
+                                    <Link
+                                        href="/"
+                                        className={css({
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            color: '#555',
+                                            _hover: { color: '#111' },
+                                        })}
+                                    >
+                                        <Home size={18} />
+                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>홈</span>
+                                    </Link>
+                                    <Link
+                                        href="/profile"
+                                        className={css({
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            color: '#555',
+                                            _hover: { color: '#111' },
+                                        })}
+                                    >
+                                        <User size={18} />
+                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>마이페이지</span>
+                                    </Link>
+                                    <button
+                                        onClick={handleSignOut}
+                                        className={css({
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            color: '#d32f2f',
+                                            ml: { base: '4px', sm: '12px' },
+                                            cursor: 'pointer',
+                                            bg: 'transparent',
+                                            border: 'none',
+                                            _hover: { textDecoration: 'underline' },
+                                        })}
+                                    >
+                                        <LogOut size={18} />
+                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>로그아웃</span>
+                                    </button>
+                                </>
+                            ) : (
+                                <Link
+                                    href="/login"
+                                    className={css({
+                                        bg: '#111',
+                                        color: 'white',
+                                        px: '16px',
+                                        py: '8px',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        fontWeight: '600',
+                                        transition: 'all 0.2s',
+                                        _hover: { bg: '#333', transform: 'translateY(-1px)' }
+                                    })}
+                                >
+                                    로그인
+                                </Link>
+                            )}
+                        </>
+                    )}
                 </div>
             </div>
         </nav>

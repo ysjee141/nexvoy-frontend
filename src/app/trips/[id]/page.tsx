@@ -274,22 +274,40 @@ export default function TripPlansPage(props: {
                                                     </p>
                                                 )}
                                             </div>
-                                            <div className={css({ display: 'flex', flexDirection: { base: 'row', md: 'column' }, alignItems: { base: 'center', md: 'flex-end' }, gap: '12px', ml: { base: '0', md: 'auto' }, w: { base: '100%', md: 'auto' }, pt: { base: '8px', md: '0' }, borderTop: { base: '1px solid #f0f0f0', md: 'none' } })}>
+                                            <div className={css({
+                                                display: 'flex',
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                gap: '8px',
+                                                ml: { base: '0', md: 'auto' },
+                                                w: { base: '100%', md: 'auto' },
+                                                pt: { base: '8px', md: '0' },
+                                                borderTop: { base: '1px solid #f0f0f0', md: 'none' },
+                                                justifyContent: { base: 'flex-start', md: 'flex-end' },
+                                                flexWrap: 'wrap'
+                                            })}>
                                                 {(timeDisplayMode === 'local' || timeDisplayMode === 'both') && (
-                                                    <div className={css({ display: 'flex', flexDirection: 'column', alignItems: { base: 'flex-start', md: 'flex-end' }, flex: 1 })}>
-                                                        <span className={css({ fontSize: '10px', color: '#888', mb: '2px' })}>현지 타임존</span>
-                                                        <span className={css({ fontSize: '13px', color: '#111', bg: '#f1f3f4', px: '8px', py: '3px', borderRadius: '6px', fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', whiteSpace: 'nowrap' })}>
-                                                            {formatLocalTime(plan.start_datetime_local)}
-                                                        </span>
-                                                    </div>
+                                                    <span className={css({
+                                                        fontSize: '13px', color: '#111', bg: '#f1f3f4', px: '8px', py: '4px', borderRadius: '6px',
+                                                        fontWeight: timeDisplayMode === 'local' ? 'bold' : '500',
+                                                        whiteSpace: 'nowrap',
+                                                        display: 'flex', alignItems: 'center', gap: '4px'
+                                                    })}>
+                                                        {formatLocalTime(plan.start_datetime_local)}
+                                                        {timeDisplayMode === 'both' && <small className={css({ fontSize: '10px', opacity: 0.6, fontWeight: 'normal' })}>(현지)</small>}
+                                                    </span>
                                                 )}
+                                                {timeDisplayMode === 'both' && <span className={css({ color: '#ccc', fontSize: '12px', display: { base: 'none', sm: 'inline' } })}>·</span>}
                                                 {(timeDisplayMode === 'kst' || timeDisplayMode === 'both') && (
-                                                    <div className={css({ display: 'flex', flexDirection: 'column', alignItems: { base: 'flex-start', md: 'flex-end' }, flex: 1 })}>
-                                                        <span className={css({ fontSize: '10px', color: '#1a73e8', mb: '2px' })}>한국 기준</span>
-                                                        <span className={css({ fontSize: '13px', color: '#1a73e8', bg: '#e8f0fe', px: '8px', py: '3px', borderRadius: '6px', fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', whiteSpace: 'nowrap' })}>
-                                                            {formatKstTime(plan.start_datetime_local, plan.timezone_string || 'Asia/Seoul')}
-                                                        </span>
-                                                    </div>
+                                                    <span className={css({
+                                                        fontSize: '13px', color: '#1a73e8', bg: '#e8f0fe', px: '8px', py: '4px', borderRadius: '6px',
+                                                        fontWeight: timeDisplayMode === 'kst' ? 'bold' : '500',
+                                                        whiteSpace: 'nowrap',
+                                                        display: 'flex', alignItems: 'center', gap: '4px'
+                                                    })}>
+                                                        {formatKstTime(plan.start_datetime_local, plan.timezone_string || 'Asia/Seoul')}
+                                                        {timeDisplayMode === 'both' && <small className={css({ fontSize: '10px', opacity: 0.8, fontWeight: 'normal' })}>(한국)</small>}
+                                                    </span>
                                                 )}
                                             </div>
                                         </div>
