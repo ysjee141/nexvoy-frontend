@@ -9,11 +9,13 @@ export const collaboration = {
     async inviteMember(tripId: string, email: string, role: 'editor' | 'viewer' = 'editor') {
         const { data, error } = await supabase
             .from('trip_members')
-            .insert({
+            .upsert({
                 trip_id: tripId,
                 invited_email: email,
                 role,
                 status: 'pending'
+            }, {
+                onConflict: 'trip_id,invited_email'
             })
             .select()
             .single()

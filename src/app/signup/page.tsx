@@ -4,31 +4,34 @@ import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
-import { LogIn, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
+import { UserPlus, Mail, Lock, Sparkles, Loader2, CheckCircle2 } from 'lucide-react'
 
-export default function LoginPage() {
+export default function SignUpPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
     const [loading, setLoading] = useState(false)
 
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault()
         setLoading(true)
         setMessage(null)
         const supabase = createClient()
 
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signUp({
             email,
             password,
+            options: {
+                emailRedirectTo: `${location.origin}/auth/callback`,
+            },
         })
 
         if (error) {
-            setMessage({ type: 'error', text: error.message === 'Invalid login credentials' ? '이메일 또는 비밀번호가 일치하지 않습니다.' : error.message })
-            setLoading(false)
+            setMessage({ type: 'error', text: error.message })
         } else {
-            window.location.href = '/'
+            setMessage({ type: 'success', text: '가입 확인 이메일이 발송되었습니다. 이메일을 확인해 주세요!' })
         }
+        setLoading(false)
     }
 
     return (
@@ -37,7 +40,7 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            bg: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            bg: 'linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%)',
             p: '20px'
         })}>
             <div className={css({
@@ -54,7 +57,7 @@ export default function LoginPage() {
                     <div className={css({
                         w: '64px',
                         h: '64px',
-                        bg: '#4285F4',
+                        bg: '#34A853',
                         color: 'white',
                         borderRadius: '16px',
                         display: 'flex',
@@ -62,19 +65,19 @@ export default function LoginPage() {
                         justifyContent: 'center',
                         mx: 'auto',
                         mb: '20px',
-                        boxShadow: '0 8px 16px rgba(66, 133, 244, 0.2)'
+                        boxShadow: '0 8px 16px rgba(52, 168, 83, 0.2)'
                     })}>
-                        <LogIn size={32} />
+                        <UserPlus size={32} />
                     </div>
                     <h1 className={css({ fontSize: '28px', fontWeight: '800', color: '#111', mb: '8px', letterSpacing: '-0.02em' })}>
-                        반가워요! 다시 오셨네요.
+                        새로운 여행의 시작 🌿
                     </h1>
                     <p className={css({ fontSize: '15px', color: '#666', lineHeight: 1.5 })}>
-                        Next Voyage와 함께 당신의 모험을 기록해 보세요.
+                        Next Voyage와 함께 당신만의 특별한 일정을 만들어보세요.
                     </p>
                 </div>
 
-                <form onSubmit={handleLogin} className={css({ display: 'flex', flexDirection: 'column', gap: '20px' })}>
+                <form onSubmit={handleSignUp} className={css({ display: 'flex', flexDirection: 'column', gap: '20px' })}>
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
                         <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
                             <Mail size={16} /> 이메일
@@ -93,23 +96,22 @@ export default function LoginPage() {
                                 outline: 'none',
                                 transition: 'all 0.2s',
                                 fontSize: '15px',
-                                _focus: { bg: 'white', borderColor: '#4285F4', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
+                                _focus: { bg: 'white', borderColor: '#34A853', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
                             })}
                             placeholder="you@example.com"
                         />
                     </div>
 
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
-                        <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                            <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
-                                <Lock size={16} /> 비밀번호
-                            </label>
-                        </div>
+                        <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
+                            <Lock size={16} /> 비밀번호
+                        </label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            minLength={6}
                             className={css({
                                 w: '100%',
                                 p: '14px 16px',
@@ -119,9 +121,9 @@ export default function LoginPage() {
                                 outline: 'none',
                                 transition: 'all 0.2s',
                                 fontSize: '15px',
-                                _focus: { bg: 'white', borderColor: '#4285F4', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
+                                _focus: { bg: 'white', borderColor: '#34A853', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
                             })}
-                            placeholder="••••••••"
+                            placeholder="6자리 이상 입력해 주세요"
                         />
                     </div>
 
@@ -133,8 +135,12 @@ export default function LoginPage() {
                             fontSize: '14px',
                             fontWeight: '500',
                             borderRadius: '10px',
-                            border: `1px solid ${message.type === 'error' ? '#fbd0cc' : '#ceead6'}`
+                            border: `1px solid ${message.type === 'error' ? '#fbd0cc' : '#ceead6'}`,
+                            display: 'flex',
+                            gap: '8px',
+                            alignItems: 'flex-start'
                         })}>
+                            {message.type === 'success' && <CheckCircle2 size={18} className={css({ flexShrink: 0 })} />}
                             {message.text}
                         </div>
                     )}
@@ -145,7 +151,7 @@ export default function LoginPage() {
                         className={css({
                             w: '100%',
                             py: '16px',
-                            bg: '#111',
+                            bg: '#34A853',
                             color: 'white',
                             fontWeight: 'bold',
                             fontSize: '16px',
@@ -156,14 +162,14 @@ export default function LoginPage() {
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
-                            _hover: { bg: '#333', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' },
+                            _hover: { bg: '#2d8a45', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(52, 168, 83, 0.2)' },
                             _active: { transform: 'translateY(0)' },
                             _disabled: { opacity: 0.7, transform: 'none' },
                             mt: '8px',
                         })}
                     >
                         {loading ? <Loader2 size={20} className={css({ animation: 'spin 1s linear infinite' })} /> : (
-                            <>로그인 <ArrowRight size={18} /></>
+                            <>무료로 시작하기 <Sparkles size={18} /></>
                         )}
                     </button>
                 </form>
@@ -176,17 +182,17 @@ export default function LoginPage() {
                     fontSize: '15px',
                     color: '#666'
                 })}>
-                    계정이 없으신가요?{' '}
+                    이미 계정이 있으신가요?{' '}
                     <Link
-                        href="/signup"
+                        href="/login"
                         className={css({
-                            color: '#4285F4',
+                            color: '#34A853',
                             fontWeight: '700',
                             textDecoration: 'none',
                             _hover: { textDecoration: 'underline' },
                         })}
                     >
-                        회원가입하기
+                        로그인하기
                     </Link>
                 </div>
             </div>

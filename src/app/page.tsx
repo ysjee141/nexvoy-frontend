@@ -27,7 +27,7 @@ export default async function Home() {
           </p>
           <div className={css({ display: 'flex', gap: '16px', justifyContent: 'center', flexDirection: { base: 'column', sm: 'row' } })}>
             <Link
-              href="/login"
+              href="/signup"
               className={css({
                 bg: '#111', color: 'white', px: '32px', py: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.2s', _hover: { transform: 'translateY(-2px)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }
               })}
