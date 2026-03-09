@@ -6,6 +6,18 @@
     box-sizing: border-box;
 }
 
+/* iOS/Android Chrome에서 input[type=date/time]은 브라우저가 min-width를 강제 부여함.
+   -webkit-appearance: none + min-width: 0으로 오버플로우를 근본적으로 차단 */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
 html,
 body {
     max-width: 100vw;

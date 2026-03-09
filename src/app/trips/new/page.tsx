@@ -148,43 +148,49 @@ export default function NewTripPage() {
                             <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>
                                 가는 날 (시작일)
                             </label>
-                            <input
-                                type="date"
-                                required
-                                value={startDate}
-                                onChange={e => setStartDate(e.target.value)}
-                                className={css({
-                                    w: '100%',
-                                    maxW: '100%',
-                                    boxSizing: 'border-box',
-                                    p: '14px',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '8px',
-                                    outline: 'none',
-                                    _focus: { borderColor: '#4285F4' },
-                                })}
-                            />
+                            <div style={{ overflow: 'hidden', width: '100%' }}>
+                                <input
+                                    type="date"
+                                    required
+                                    value={startDate}
+                                    onChange={e => setStartDate(e.target.value)}
+                                    style={{ minWidth: 0 }}
+                                    className={css({
+                                        w: '100%',
+                                        maxW: '100%',
+                                        boxSizing: 'border-box',
+                                        p: '14px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '8px',
+                                        outline: 'none',
+                                        _focus: { borderColor: '#4285F4' },
+                                    })}
+                                />
+                            </div>
                         </div>
                         <div>
                             <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>
                                 오는 날 (종료일)
                             </label>
-                            <input
-                                type="date"
-                                required
-                                value={endDate}
-                                onChange={e => setEndDate(e.target.value)}
-                                className={css({
-                                    w: '100%',
-                                    maxW: '100%',
-                                    boxSizing: 'border-box',
-                                    p: '14px',
-                                    border: '1px solid #ddd',
-                                    borderRadius: '8px',
-                                    outline: 'none',
-                                    _focus: { borderColor: '#4285F4' },
-                                })}
-                            />
+                            <div style={{ overflow: 'hidden', width: '100%' }}>
+                                <input
+                                    type="date"
+                                    required
+                                    value={endDate}
+                                    onChange={e => setEndDate(e.target.value)}
+                                    style={{ minWidth: 0 }}
+                                    className={css({
+                                        w: '100%',
+                                        maxW: '100%',
+                                        boxSizing: 'border-box',
+                                        p: '14px',
+                                        border: '1px solid #ddd',
+                                        borderRadius: '8px',
+                                        outline: 'none',
+                                        _focus: { borderColor: '#4285F4' },
+                                    })}
+                                />
+                            </div>
                         </div>
                     </div>
 

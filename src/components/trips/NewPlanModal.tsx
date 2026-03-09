@@ -303,25 +303,31 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
                                 <Clock size={16} /> 현지 날짜 *
                             </label>
-                            <input
-                                type="date"
-                                required
-                                value={localDate}
-                                onChange={e => setLocalDate(e.target.value)}
-                                className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
-                            />
+                            <div style={{ overflow: 'hidden', width: '100%' }}>
+                                <input
+                                    type="date"
+                                    required
+                                    value={localDate}
+                                    onChange={e => setLocalDate(e.target.value)}
+                                    style={{ minWidth: 0 }}
+                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                />
+                            </div>
                         </div>
                         <div>
                             <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
                                 <Clock size={16} /> 현지 시작 시간 *
                             </label>
-                            <input
-                                type="time"
-                                required
-                                value={localTime}
-                                onChange={e => setLocalTime(e.target.value)}
-                                className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
-                            />
+                            <div style={{ overflow: 'hidden', width: '100%' }}>
+                                <input
+                                    type="time"
+                                    required
+                                    value={localTime}
+                                    onChange={e => setLocalTime(e.target.value)}
+                                    style={{ minWidth: 0 }}
+                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                />
+                            </div>
                         </div>
                     </div>
 
