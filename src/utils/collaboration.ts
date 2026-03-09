@@ -106,5 +106,79 @@ export const collaboration = {
             .single()
 
         return { data, error }
+    },
+
+    /**
+     * 협업자 역할 업데이트
+     */
+    async updateMemberRole(memberId: string, role: 'editor' | 'viewer') {
+        const { data, error } = await supabase
+            .from('trip_members')
+            .update({ role })
+            .eq('id', memberId)
+            .select()
+            .single()
+
+        return { data, error }
+    },
+
+    /**
+     * 협업자 삭제
+     */
+    async removeMember(memberId: string) {
+        const { error } = await supabase
+            .from('trip_members')
+            .delete()
+            .eq('id', memberId)
+
+        return { error }
+    },
+
+    /**
+     * 현재 사용자 정보 조회
+     */
+    async getCurrentUser() {
+        return await supabase.auth.getUser()
+    },
+
+    /**
+     * 특정 사용자의 프로필 정보 조회
+     */
+    async getProfile(userId: string) {
+        return await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .single()
+    },
+
+    /**
+     * 특정 여행에서 현재 사용자의 역할 조회
+     */
+    async getUserRole(tripId: string) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return { data: null, error: 'Not authenticated' }
+
+        // 1. 여행 소유자인지 확인
+        const { data: trip } = await supabase
+            .from('trips')
+            .select('user_id')
+            .eq('id', tripId)
+            .single()
+
+        if (trip?.user_id === user.id) return { data: 'owner', error: null }
+
+        // 2. 멤버 목록에서 확인 (이메일로도 확인 가능해야 함)
+        const { data: member } = await supabase
+            .from('trip_members')
+            .select('role')
+            .eq('trip_id', tripId)
+            .eq('user_id', user.id)
+            .eq('status', 'accepted')
+            .maybeSingle()
+
+        if (member) return { data: member.role, error: null }
+
+        return { data: null, error: 'No member found' }
     }
 }

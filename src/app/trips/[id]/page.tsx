@@ -7,6 +7,7 @@ import { Plus, MoreVertical, Pencil, Trash2, UserPlus, Share2 } from 'lucide-rea
 import NewPlanModal from '@/components/trips/NewPlanModal'
 import CollaboratorModal from '@/components/trips/CollaboratorModal'
 import ShareModal from '@/components/trips/ShareModal'
+import { collaboration } from '@/utils/collaboration'
 
 export default function TripPlansPage(props: {
     params: Promise<{ id: string }>
@@ -22,6 +23,7 @@ export default function TripPlansPage(props: {
     const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] = useState(false)
     const [isShareModalOpen, setIsShareModalOpen] = useState(false)
     const [timeDisplayMode, setTimeDisplayMode] = useState<'local' | 'kst' | 'both'>('local')
+    const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | null>(null)
 
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
     const [editingPlan, setEditingPlan] = useState<any>(null)
@@ -98,10 +100,17 @@ export default function TripPlansPage(props: {
         if (data) setPlans(data)
     }, [tripId, supabase])
 
+    const fetchUserRole = useCallback(async () => {
+        if (!tripId) return
+        const { data } = await collaboration.getUserRole(tripId)
+        setUserRole(data as any)
+    }, [tripId])
+
     useEffect(() => {
         fetchTrip()
         fetchPlans()
-    }, [fetchTrip, fetchPlans])
+        fetchUserRole()
+    }, [fetchTrip, fetchPlans, fetchUserRole])
 
     // 드롭다운 외부 클릭 감지를 위한 이벤트 리스너 (심플 버전으로 대체)
 
@@ -191,62 +200,69 @@ export default function TripPlansPage(props: {
                     >
                         <UserPlus size={16} /> 협업
                     </button>
-                    <button
-                        onClick={() => setIsShareModalOpen(true)}
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            bg: 'white',
-                            color: '#111',
-                            px: '16px',
-                            py: '10px',
-                            borderRadius: '8px',
-                            fontWeight: '600',
-                            fontSize: '14px',
-                            cursor: 'pointer',
-                            border: '1px solid #ddd',
-                            flex: { base: 1, sm: 'none' },
-                            _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
-                            _active: { transform: 'translateY(0)' }
-                        })}
-                    >
-                        <Share2 size={16} /> 공유
-                    </button>
-                    <button
-                        onClick={() => {
-                            setEditingPlan(null) // 신규 생성 모드
-                            setIsModalOpen(true)
-                        }}
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            bg: '#4285F4',
-                            color: 'white',
-                            px: '16px',
-                            py: '10px',
-                            borderRadius: '8px',
-                            fontWeight: '600',
-                            fontSize: '14px',
-                            cursor: 'pointer',
-                            border: 'none',
-                            flex: { base: 1, sm: 'none' },
-                            _hover: { bg: '#3367d6', transform: 'translateY(-1px)' },
-                            _active: { transform: 'translateY(0)' }
-                        })}
-                    >
-                        <Plus size={16} /> 일정 추가
-                    </button>
+                    {userRole === 'owner' && (
+                        <button
+                            onClick={() => setIsShareModalOpen(true)}
+                            className={css({
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                bg: 'white',
+                                color: '#111',
+                                px: '16px',
+                                py: '10px',
+                                borderRadius: '8px',
+                                fontWeight: '600',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                border: '1px solid #ddd',
+                                flex: { base: 1, sm: 'none' },
+                                _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
+                                _active: { transform: 'translateY(0)' }
+                            })}
+                        >
+                            <Share2 size={16} /> 공유
+                        </button>
+                    )}
+                    {/* 편집 권한이 있을 때만 일정 추가 버튼 노출 */}
+                    {(userRole === 'owner' || userRole === 'editor') && (
+                        <button
+                            onClick={() => {
+                                setEditingPlan(null) // 신규 생성 모드
+                                setIsModalOpen(true)
+                            }}
+                            className={css({
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '6px',
+                                bg: '#4285F4',
+                                color: 'white',
+                                px: '16px',
+                                py: '10px',
+                                borderRadius: '8px',
+                                fontWeight: '600',
+                                fontSize: '14px',
+                                cursor: 'pointer',
+                                border: 'none',
+                                flex: { base: 1, sm: 'none' },
+                                _hover: { bg: '#3367d6', transform: 'translateY(-1px)' },
+                                _active: { transform: 'translateY(0)' }
+                            })}
+                        >
+                            <Plus size={16} /> 일정 추가
+                        </button>
+                    )}
                 </div>
             </div>
 
             {(!plans || plans.length === 0) ? (
                 <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
                     <p className={css({ fontSize: '16px', mb: '8px' })}>등록된 세부 일정이 없습니다.</p>
-                    <p className={css({ fontSize: '14px' })}>일정 추가 버튼을 눌러 여정을 채워보세요.</p>
+                    {(userRole === 'owner' || userRole === 'editor') && (
+                        <p className={css({ fontSize: '14px' })}>일정 추가 버튼을 눌러 여정을 채워보세요.</p>
+                    )}
                 </div>
             ) : (
                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '32px' })}>
@@ -295,30 +311,32 @@ export default function TripPlansPage(props: {
                                             _hover: { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }
                                         })}
                                     >
-                                        {/* 더보기 메뉴 토글 버튼 */}
-                                        <div className={css({ position: 'absolute', top: '16px', right: '16px' })}>
-                                            <button
-                                                onClick={() => setActiveDropdown(activeDropdown === plan.id ? null : plan.id)}
-                                                className={css({ bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', borderRadius: '4px', color: '#888', _hover: { bg: '#f1f1f1', color: '#111' } })}
-                                            >
-                                                <MoreVertical size={18} />
-                                            </button>
-
-                                            {/* 드롭다운 메뉴 (열렸을 때) */}
-                                            {activeDropdown === plan.id && (
-                                                <div
-                                                    className={css({ position: 'absolute', right: 0, top: '28px', bg: 'white', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', w: '120px', zIndex: 10, display: 'flex', flexDirection: 'column', overflow: 'hidden' })}
-                                                    onMouseLeave={() => setActiveDropdown(null)}
+                                        {/* 편집 권한이 있을 때만 더보기 메뉴 노출 */}
+                                        {(userRole === 'owner' || userRole === 'editor') && (
+                                            <div className={css({ position: 'absolute', top: '16px', right: '16px' })}>
+                                                <button
+                                                    onClick={() => setActiveDropdown(activeDropdown === plan.id ? null : plan.id)}
+                                                    className={css({ bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', borderRadius: '4px', color: '#888', _hover: { bg: '#f1f1f1', color: '#111' } })}
                                                 >
-                                                    <button onClick={() => handleEditPlan(plan)} className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '12px', py: '10px', bg: 'transparent', border: 'none', borderBottom: '1px solid #f0f0f0', w: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: '#333', _hover: { bg: '#f9f9f9' } })}>
-                                                        <Pencil size={14} /> 수정
-                                                    </button>
-                                                    <button onClick={() => handleDeletePlan(plan.id)} className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '12px', py: '10px', bg: 'transparent', border: 'none', w: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: '#dc2626', _hover: { bg: '#fee2e2' } })}>
-                                                        <Trash2 size={14} /> 삭제
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
+                                                    <MoreVertical size={18} />
+                                                </button>
+
+                                                {/* 드롭다운 메뉴 (열렸을 때) */}
+                                                {activeDropdown === plan.id && (
+                                                    <div
+                                                        className={css({ position: 'absolute', right: 0, top: '28px', bg: 'white', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)', w: '120px', zIndex: 10, display: 'flex', flexDirection: 'column', overflow: 'hidden' })}
+                                                        onMouseLeave={() => setActiveDropdown(null)}
+                                                    >
+                                                        <button onClick={() => handleEditPlan(plan)} className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '12px', py: '10px', bg: 'transparent', border: 'none', borderBottom: '1px solid #f0f0f0', w: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: '#333', _hover: { bg: '#f9f9f9' } })}>
+                                                            <Pencil size={14} /> 수정
+                                                        </button>
+                                                        <button onClick={() => handleDeletePlan(plan.id)} className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '12px', py: '10px', bg: 'transparent', border: 'none', w: '100%', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: '#dc2626', _hover: { bg: '#fee2e2' } })}>
+                                                            <Trash2 size={14} /> 삭제
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
 
                                         <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexDirection: { base: 'column', md: 'row' }, gap: '12px', pr: { base: '0', md: '32px' } })}>
                                             <div className={css({ flex: 1, w: '100%' })}>
@@ -403,6 +421,7 @@ export default function TripPlansPage(props: {
                     isOpen={isCollaboratorModalOpen}
                     onClose={() => setIsCollaboratorModalOpen(false)}
                     tripTitle={trip?.destination || '여행'}
+                    ownerId={trip?.user_id}
                 />
             )}
             {tripId && (

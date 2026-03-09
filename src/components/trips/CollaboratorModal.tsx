@@ -10,14 +10,17 @@ interface CollaboratorModalProps {
     isOpen: boolean
     onClose: () => void
     tripTitle: string
+    ownerId?: string
 }
 
-export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle }: CollaboratorModalProps) {
+export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, ownerId }: CollaboratorModalProps) {
     const [email, setEmail] = useState('')
     const [role, setRole] = useState<'editor' | 'viewer'>('editor')
     const [members, setMembers] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [inviting, setInviting] = useState(false)
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+    const [ownerProfile, setOwnerProfile] = useState<any>(null)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
     const fetchMembers = useCallback(async () => {
@@ -26,6 +29,24 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle }
         if (data) setMembers(data)
         setLoading(false)
     }, [tripId])
+
+    useEffect(() => {
+        const checkUser = async () => {
+            const { data: { user } } = await collaboration.getCurrentUser()
+            if (user) setCurrentUserId(user.id)
+        }
+        checkUser()
+    }, [])
+
+    useEffect(() => {
+        if (isOpen && ownerId) {
+            const fetchOwner = async () => {
+                const { data } = await collaboration.getProfile(ownerId)
+                if (data) setOwnerProfile(data)
+            }
+            fetchOwner()
+        }
+    }, [isOpen, ownerId])
 
     useEffect(() => {
         if (isOpen) {
@@ -65,7 +86,30 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle }
         setInviting(false)
     }
 
+    const handleUpdateRole = async (memberId: string, newRole: 'editor' | 'viewer') => {
+        const { error } = await collaboration.updateMemberRole(memberId, newRole)
+        if (error) {
+            alert('권한 변경에 실패했습니다.')
+        } else {
+            fetchMembers()
+        }
+    }
+
+    const handleRemoveMember = async (memberId: string, memberEmail: string) => {
+        if (!confirm(`${memberEmail}님을 여행에서 제외하시겠습니까?`)) return
+
+        const { error } = await collaboration.removeMember(memberId)
+        if (error) {
+            alert('삭제에 실패했습니다.')
+        } else {
+            fetchMembers()
+        }
+    }
+
     if (!isOpen) return null
+
+    // 현재 사용자가 이 여행의 소유자인지 확인
+    const isOwner = currentUserId === ownerId
 
     return (
         <div className={css({
@@ -88,99 +132,153 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle }
                     <UserPlus size={24} color="#4285F4" /> 협업자 초대
                 </h2>
 
-                {/* 초대 폼 */}
-                <form onSubmit={handleInvite} className={css({ display: 'flex', flexDirection: 'column', gap: '12px', mb: '32px' })}>
-                    <div className={css({ position: 'relative' })}>
-                        <Mail size={18} className={css({ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#888' })} />
-                        <input
-                            type="email"
-                            placeholder="초대할 친구의 이메일"
-                            value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            required
-                            className={css({
-                                w: '100%', pl: '40px', pr: '12px', py: '14px', bg: '#f8f9fa',
-                                borderRadius: '12px', border: '1px solid #eee', outline: 'none',
-                                _focus: { borderColor: '#4285F4', bg: 'white' }, fontSize: '14px'
-                            })}
-                        />
-                    </div>
-                    <div className={css({ display: 'flex', gap: '8px' })}>
-                        <select
-                            value={role}
-                            onChange={e => setRole(e.target.value as any)}
-                            className={css({
-                                flex: 1, px: '12px', py: '12px', bg: '#f8f9fa', borderRadius: '12px',
-                                border: '1px solid #eee', outline: 'none', fontSize: '14px', cursor: 'pointer'
-                            })}
-                        >
-                            <option value="editor">편집자 (수정 가능)</option>
-                            <option value="viewer">조회자 (읽기 전용)</option>
-                        </select>
-                        <button
-                            type="submit"
-                            disabled={inviting}
-                            className={css({
-                                px: '24px', bg: '#111', color: 'white', borderRadius: '12px',
-                                fontWeight: 'bold', cursor: 'pointer', _hover: { bg: '#333' },
-                                _disabled: { opacity: 0.5, cursor: 'not-allowed' },
+                {/* 초대 폼 (소유자나 편집자만 가능) */}
+                {(isOwner || members.find(m => m.user_id === currentUserId && m.role === 'editor')) && (
+                    <form onSubmit={handleInvite} className={css({ display: 'flex', flexDirection: 'column', gap: '12px', mb: '32px' })}>
+                        <div className={css({ position: 'relative' })}>
+                            <Mail size={18} className={css({ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#888' })} />
+                            <input
+                                type="email"
+                                placeholder="초대할 친구의 이메일"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                required
+                                className={css({
+                                    w: '100%', pl: '40px', pr: '12px', py: '14px', bg: '#f8f9fa',
+                                    borderRadius: '12px', border: '1px solid #eee', outline: 'none',
+                                    _focus: { borderColor: '#4285F4', bg: 'white' }, fontSize: '14px'
+                                })}
+                            />
+                        </div>
+                        <div className={css({ display: 'flex', gap: '8px' })}>
+                            <select
+                                value={role}
+                                onChange={e => setRole(e.target.value as any)}
+                                className={css({
+                                    flex: 1, px: '12px', py: '12px', bg: '#f8f9fa', borderRadius: '12px',
+                                    border: '1px solid #eee', outline: 'none', fontSize: '14px', cursor: 'pointer'
+                                })}
+                            >
+                                <option value="editor">편집자 (수정 가능)</option>
+                                <option value="viewer">조회자 (읽기 전용)</option>
+                            </select>
+                            <button
+                                type="submit"
+                                disabled={inviting}
+                                className={css({
+                                    px: '24px', bg: '#111', color: 'white', borderRadius: '12px',
+                                    fontWeight: 'bold', cursor: 'pointer', _hover: { bg: '#333' },
+                                    _disabled: { opacity: 0.5, cursor: 'not-allowed' },
+                                    display: 'flex', alignItems: 'center', gap: '6px'
+                                })}
+                            >
+                                {inviting ? <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} /> : '초대'}
+                            </button>
+                        </div>
+                        {message && (
+                            <p className={css({
+                                fontSize: '13px', px: '12px', py: '8px', borderRadius: '8px',
+                                bg: message.type === 'success' ? '#e6f4ea' : '#fce8e6',
+                                color: message.type === 'success' ? '#137333' : '#c5221f',
                                 display: 'flex', alignItems: 'center', gap: '6px'
-                            })}
-                        >
-                            {inviting ? <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} /> : '초대'}
-                        </button>
-                    </div>
-                    {message && (
-                        <p className={css({
-                            fontSize: '13px', px: '12px', py: '8px', borderRadius: '8px',
-                            bg: message.type === 'success' ? '#e6f4ea' : '#fce8e6',
-                            color: message.type === 'success' ? '#137333' : '#c5221f',
-                            display: 'flex', alignItems: 'center', gap: '6px'
-                        })}>
-                            {message.type === 'success' ? <Check size={14} /> : <X size={14} />} {message.text}
-                        </p>
-                    )}
-                </form>
+                            })}>
+                                {message.type === 'success' ? <Check size={14} /> : <X size={14} />} {message.text}
+                            </p>
+                        )}
+                    </form>
+                )}
 
                 <div className={css({ borderTop: '1px solid #eee', pt: '24px' })}>
                     <h3 className={css({ fontSize: '15px', fontWeight: 'bold', mb: '16px', color: '#555' })}>함께하는 멤버</h3>
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', maxH: '200px', overflowY: 'auto', pr: '4px' })}>
+                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', maxH: '250px', overflowY: 'auto', pr: '4px' })}>
                         {loading && members.length === 0 ? (
                             <p className={css({ textAlign: 'center', py: '20px', color: '#999', fontSize: '14px' })}>멤버를 불러오는 중...</p>
-                        ) : members.length === 0 ? (
-                            <p className={css({ textAlign: 'center', py: '20px', color: '#999', fontSize: '14px' })}>초대된 멤버가 없습니다.</p>
                         ) : (
-                            members.map((m) => (
-                                <div key={m.id} className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    p: '12px', borderRadius: '12px', border: '1px solid #f0f0f0', _hover: { bg: '#f9f9f9' }
-                                })}>
-                                    <div className={css({ display: 'flex', alignItems: 'center', gap: '10px' })}>
-                                        <div className={css({
-                                            w: '32px', h: '32px', bg: m.status === 'accepted' ? '#4285F4' : '#eee',
-                                            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: 'white', fontSize: '12px', fontWeight: 'bold'
+                            (() => {
+                                const allDisplayMembers = [...members]
+                                if (ownerProfile && !members.some(m => m.user_id === ownerId)) {
+                                    allDisplayMembers.unshift({
+                                        id: 'owner-virtual',
+                                        user_id: ownerId,
+                                        invited_email: ownerProfile.email,
+                                        role: 'owner',
+                                        status: 'accepted',
+                                        profiles: ownerProfile
+                                    })
+                                }
+
+                                if (allDisplayMembers.length === 0) {
+                                    return <p className={css({ textAlign: 'center', py: '20px', color: '#999', fontSize: '14px' })}>초대된 멤버가 없습니다.</p>
+                                }
+
+                                return allDisplayMembers.map((m) => {
+                                    const isSelf = m.user_id === currentUserId
+                                    const isMemberOwner = m.role === 'owner'
+
+                                    return (
+                                        <div key={m.id} className={css({
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                            p: '12px', borderRadius: '12px', border: '1px solid #f0f0f0', _hover: { bg: '#f9f9f9' }
                                         })}>
-                                            {(m.profiles?.nickname || m.invited_email).charAt(0).toUpperCase()}
+                                            <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minW: 0 })}>
+                                                <div className={css({
+                                                    w: '32px', h: '32px', bg: m.status === 'accepted' ? '#4285F4' : '#eee',
+                                                    borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: 'white', fontSize: '12px', fontWeight: 'bold', flexShrink: 0
+                                                })}>
+                                                    {(m.profiles?.nickname || m.invited_email || '?').charAt(0).toUpperCase()}
+                                                </div>
+                                                <div className={css({ minW: 0, flex: 1 })}>
+                                                    <p className={css({ fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                                        <span className={css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
+                                                            {m.profiles?.nickname || m.invited_email?.split('@')[0] || 'Unknown'}
+                                                        </span>
+                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#4285F4', bg: '#e8f0fe', px: '4px', py: '1px', borderRadius: '4px' })}>나</span>}
+                                                        {m.status === 'pending' && <span className={css({ fontSize: '10px', color: '#f2994a', bg: '#fff4e5', px: '6px', py: '2px', borderRadius: '4px' })}>대기중</span>}
+                                                    </p>
+                                                    <p className={css({ fontSize: '12px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{m.invited_email}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 })}>
+                                                {/* 소유자이고 관리 대상이 자신이 아니면서 소유자도 아닐 때만 관리 가능 */}
+                                                {isOwner && !isMemberOwner ? (
+                                                    <>
+                                                        <select
+                                                            value={m.role}
+                                                            onChange={(e) => handleUpdateRole(m.id, e.target.value as any)}
+                                                            className={css({
+                                                                fontSize: '11px', px: '4px', py: '4px', bg: 'white', border: '1px solid #ddd',
+                                                                borderRadius: '6px', outline: 'none', cursor: 'pointer'
+                                                            })}
+                                                        >
+                                                            <option value="editor">편집자</option>
+                                                            <option value="viewer">뷰어</option>
+                                                        </select>
+                                                        <button
+                                                            onClick={() => handleRemoveMember(m.id, m.invited_email)}
+                                                            className={css({
+                                                                p: '6px', color: '#999', bg: 'transparent', border: 'none', cursor: 'pointer',
+                                                                _hover: { color: '#dc2626', bg: '#fee2e2' }, borderRadius: '6px'
+                                                            })}
+                                                            title="멤버 삭제"
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <span className={css({
+                                                        fontSize: '11px', px: '8px', py: '4px', bg: isMemberOwner ? '#111' : '#f1f1f1',
+                                                        color: isMemberOwner ? 'white' : '#666', borderRadius: '6px', fontWeight: 'bold'
+                                                    })}>
+                                                        {isMemberOwner ? '관리자' : m.role === 'editor' ? '편집자' : '뷰어'}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p className={css({ fontSize: '14px', fontWeight: '600' })}>
-                                                {m.profiles?.nickname || m.invited_email.split('@')[0]}
-                                                {m.status === 'pending' && <span className={css({ ml: '6px', fontSize: '10px', color: '#f2994a', bg: '#fff4e5', px: '6px', py: '2px', borderRadius: '4px' })}>대기중</span>}
-                                            </p>
-                                            <p className={css({ fontSize: '12px', color: '#888' })}>{m.invited_email}</p>
-                                        </div>
-                                    </div>
-                                    <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                        <span className={css({
-                                            fontSize: '11px', px: '8px', py: '4px', bg: m.role === 'owner' ? '#111' : '#f1f1f1',
-                                            color: m.role === 'owner' ? 'white' : '#666', borderRadius: '6px', fontWeight: 'bold'
-                                        })}>
-                                            {m.role === 'owner' ? '관리자' : m.role === 'editor' ? '편집자' : '뷰어'}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))
+                                    )
+                                })
+                            })()
                         )}
                     </div>
                 </div>
