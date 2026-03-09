@@ -1,0 +1,372 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { createClient } from '@/utils/supabase/client'
+import { css } from 'styled-system/css'
+import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react'
+import Link from 'next/link'
+
+export default function ProfilePage() {
+    const supabase = createClient()
+
+    const [user, setUser] = useState<any>(null)
+    const [profile, setProfile] = useState<any>(null)
+    const [nickname, setNickname] = useState('')
+    const [isEditingNickname, setIsEditingNickname] = useState(false)
+    const [isSavingNickname, setIsSavingNickname] = useState(false)
+
+    const [currentPassword, setCurrentPassword] = useState('')
+    const [newPassword, setNewPassword] = useState('')
+    const [confirmPassword, setConfirmPassword] = useState('')
+    const [showCurrent, setShowCurrent] = useState(false)
+    const [showNew, setShowNew] = useState(false)
+    const [showConfirm, setShowConfirm] = useState(false)
+    const [isChangingPassword, setIsChangingPassword] = useState(false)
+    const [passwordError, setPasswordError] = useState('')
+    const [passwordSuccess, setPasswordSuccess] = useState('')
+
+    const [stats, setStats] = useState({ totalTrips: 0, totalPlans: 0, totalTemplates: 0, totalChecked: 0, totalItems: 0 })
+
+    useEffect(() => {
+        const fetchData = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+            setUser(user)
+
+            // 프로필 가져오기
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', user.id)
+                .single()
+
+            if (profileData) {
+                setProfile(profileData)
+                setNickname(profileData.nickname || user.email?.split('@')[0] || '')
+            }
+
+            // 통계 가져오기
+            const { data: trips } = await supabase
+                .from('trips')
+                .select('id')
+                .eq('user_id', user.id)
+
+            const tripIds = trips?.map(t => t.id) || []
+
+            let totalPlans = 0
+            let totalChecked = 0
+            let totalItems = 0
+
+            if (tripIds.length > 0) {
+                const { count: planCount } = await supabase
+                    .from('plans')
+                    .select('id', { count: 'exact', head: true })
+                    .in('trip_id', tripIds)
+                totalPlans = planCount || 0
+
+                const { data: checklists } = await supabase
+                    .from('checklists')
+                    .select('id')
+                    .in('trip_id', tripIds)
+
+                const checklistIds = checklists?.map(c => c.id) || []
+                if (checklistIds.length > 0) {
+                    const { data: checkItems } = await supabase
+                        .from('checklist_items')
+                        .select('is_checked')
+                        .in('checklist_id', checklistIds)
+
+                    totalItems = checkItems?.length || 0
+                    totalChecked = checkItems?.filter(i => i.is_checked).length || 0
+                }
+            }
+
+            const { count: templateCount } = await supabase
+                .from('checklist_templates')
+                .select('id', { count: 'exact', head: true })
+                .eq('user_id', user.id)
+
+            setStats({
+                totalTrips: tripIds.length,
+                totalPlans,
+                totalTemplates: templateCount || 0,
+                totalChecked,
+                totalItems,
+            })
+        }
+
+        fetchData()
+    }, [supabase])
+
+    const saveNickname = async () => {
+        if (!nickname.trim() || !user) return
+        setIsSavingNickname(true)
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({ nickname: nickname.trim(), updated_at: new Date().toISOString() })
+            .eq('id', user.id)
+
+        if (!error) {
+            setIsEditingNickname(false)
+        }
+        setIsSavingNickname(false)
+    }
+
+    const changePassword = async (e: React.FormEvent) => {
+        e.preventDefault()
+        setPasswordError('')
+        setPasswordSuccess('')
+
+        if (newPassword.length < 6) {
+            setPasswordError('새 비밀번호는 6자 이상이어야 합니다.')
+            return
+        }
+        if (newPassword !== confirmPassword) {
+            setPasswordError('새 비밀번호와 확인 비밀번호가 일치하지 않습니다.')
+            return
+        }
+
+        setIsChangingPassword(true)
+
+        // Supabase의 updateUser로 비밀번호 변경 (이메일 인증 기반이면 현재 세션으로 바로 가능)
+        const { error } = await supabase.auth.updateUser({ password: newPassword })
+
+        if (error) {
+            setPasswordError(error.message || '비밀번호 변경에 실패했습니다.')
+        } else {
+            setPasswordSuccess('비밀번호가 성공적으로 변경되었습니다.')
+            setCurrentPassword('')
+            setNewPassword('')
+            setConfirmPassword('')
+        }
+        setIsChangingPassword(false)
+    }
+
+    if (!user) {
+        return (
+            <div className={css({ textAlign: 'center', py: '80px', color: '#888' })}>
+                불러오는 중...
+            </div>
+        )
+    }
+
+    const displayName = nickname || user.email?.split('@')[0] || '여행자'
+    const packingRate = stats.totalItems > 0 ? Math.round((stats.totalChecked / stats.totalItems) * 100) : 0
+
+    return (
+        <div className={css({ maxW: '720px', mx: 'auto', py: '40px', display: 'flex', flexDirection: 'column', gap: '24px' })}>
+            {/* 헤더 */}
+            <div className={css({ display: 'flex', alignItems: 'center', gap: '16px', mb: '8px' })}>
+                <div className={css({
+                    w: '64px', h: '64px', borderRadius: '50%',
+                    bg: 'linear-gradient(135deg, #4285F4, #34A853)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontSize: '28px', fontWeight: 'bold', flexShrink: 0
+                })}>
+                    {displayName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <h1 className={css({ fontSize: '24px', fontWeight: 'bold', color: '#111' })}>{displayName}</h1>
+                    <p className={css({ color: '#888', fontSize: '14px', mt: '2px' })}>{user.email}</p>
+                </div>
+            </div>
+
+            {/* 활동 통계 */}
+            <section className={css({ bg: 'white', borderRadius: '16px', p: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+                <h2 className={css({ fontSize: '16px', fontWeight: 'bold', mb: '20px', color: '#222' })}>활동 요약</h2>
+                <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', textAlign: 'center' })}>
+                    {[
+                        { label: '총 여행', value: stats.totalTrips, icon: '✈️' },
+                        { label: '일정 수', value: stats.totalPlans, icon: '📅' },
+                        { label: '나만의 템플릿', value: stats.totalTemplates, icon: '📦' },
+                        { label: '짐 준비율', value: `${packingRate}%`, icon: '🧳' },
+                    ].map(item => (
+                        <div key={item.label} className={css({ p: '16px', bg: '#fafafa', borderRadius: '12px' })}>
+                            <div className={css({ fontSize: '24px', mb: '8px' })}>{item.icon}</div>
+                            <div className={css({ fontSize: '22px', fontWeight: 'bold', color: '#111' })}>{item.value}</div>
+                            <div className={css({ fontSize: '12px', color: '#888', mt: '4px' })}>{item.label}</div>
+                        </div>
+                    ))}
+                </div>
+            </section>
+
+            {/* 프로필 정보 수정 */}
+            <section className={css({ bg: 'white', borderRadius: '16px', p: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+                <h2 className={css({ fontSize: '16px', fontWeight: 'bold', mb: '20px', color: '#222', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                    <User size={18} />프로필 정보
+                </h2>
+
+                {/* 이메일 (읽기 전용) */}
+                <div className={css({ mb: '16px' })}>
+                    <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>이메일</label>
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', p: '12px 16px', bg: '#f8f9fa', borderRadius: '8px', color: '#444', fontSize: '15px' })}>
+                        <Mail size={16} color="#aaa" />
+                        {user.email}
+                    </div>
+                </div>
+
+                {/* 닉네임 수정 */}
+                <div>
+                    <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>닉네임</label>
+                    {isEditingNickname ? (
+                        <div className={css({ display: 'flex', gap: '8px' })}>
+                            <input
+                                value={nickname}
+                                onChange={e => setNickname(e.target.value)}
+                                autoFocus
+                                className={css({ flex: 1, p: '12px 16px', border: '1.5px solid #4285F4', borderRadius: '8px', fontSize: '15px', outline: 'none' })}
+                            />
+                            <button
+                                onClick={saveNickname}
+                                disabled={isSavingNickname}
+                                className={css({ px: '16px', py: '10px', bg: '#4285F4', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', _disabled: { opacity: 0.6 } })}
+                            >
+                                <Save size={16} />{isSavingNickname ? '저장 중...' : '저장'}
+                            </button>
+                            <button
+                                onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || '') }}
+                                className={css({ px: '16px', py: '10px', bg: '#f1f3f4', color: '#555', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600' })}
+                            >
+                                취소
+                            </button>
+                        </div>
+                    ) : (
+                        <div
+                            onClick={() => setIsEditingNickname(true)}
+                            className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '12px 16px', border: '1px solid #eee', borderRadius: '8px', cursor: 'pointer', _hover: { bg: '#fafafa', borderColor: '#ddd' } })}
+                        >
+                            <span className={css({ fontSize: '15px', color: '#333' })}>{displayName}</span>
+                            <span className={css({ fontSize: '13px', color: '#4285F4', fontWeight: '600' })}>수정</span>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* 비밀번호 변경 */}
+            <section className={css({ bg: 'white', borderRadius: '16px', p: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+                <h2 className={css({ fontSize: '16px', fontWeight: 'bold', mb: '20px', color: '#222', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                    <Lock size={18} />비밀번호 변경
+                </h2>
+                <form onSubmit={changePassword} className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
+                    {/* 새 비밀번호 */}
+                    <div>
+                        <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>새 비밀번호</label>
+                        <div className={css({ position: 'relative' })}>
+                            <input
+                                type={showNew ? 'text' : 'password'}
+                                value={newPassword}
+                                onChange={e => { setNewPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
+                                placeholder="6자 이상 입력"
+                                className={css({ w: '100%', p: '12px 48px 12px 16px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', outline: 'none', _focus: { borderColor: '#4285F4' } })}
+                            />
+                            <button type="button" onClick={() => setShowNew(!showNew)}
+                                className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa' })}>
+                                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        {/* 최소 길이 안내 */}
+                        {newPassword.length > 0 && newPassword.length < 6 && (
+                            <p className={css({ fontSize: '12px', color: '#f59e0b', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                <XCircle size={13} /> 6자 이상 입력해주세요 ({newPassword.length}/6)
+                            </p>
+                        )}
+                        {newPassword.length >= 6 && (
+                            <p className={css({ fontSize: '12px', color: '#16a34a', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                <CheckCircle2 size={13} /> 사용 가능한 비밀번호입니다
+                            </p>
+                        )}
+                    </div>
+
+                    {/* 새 비밀번호 확인 */}
+                    <div>
+                        <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>새 비밀번호 확인</label>
+                        <div className={css({ position: 'relative' })}>
+                            <input
+                                type={showConfirm ? 'text' : 'password'}
+                                value={confirmPassword}
+                                onChange={e => { setConfirmPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
+                                placeholder="비밀번호를 다시 입력"
+                                className={css({
+                                    w: '100%', p: '12px 48px 12px 16px', fontSize: '15px', outline: 'none', borderRadius: '8px',
+                                    border: confirmPassword.length === 0
+                                        ? '1px solid #ddd'
+                                        : confirmPassword === newPassword
+                                            ? '1px solid #16a34a'
+                                            : '1px solid #dc2626',
+                                    _focus: { borderColor: confirmPassword === newPassword ? '#16a34a' : '#dc2626' }
+                                })}
+                            />
+                            <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                                className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa' })}>
+                                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                            </button>
+                        </div>
+                        {/* 실시간 일치 여부 피드백 */}
+                        {confirmPassword.length > 0 && (
+                            confirmPassword === newPassword ? (
+                                <p className={css({ fontSize: '12px', color: '#16a34a', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                    <CheckCircle2 size={13} /> 비밀번호가 일치합니다
+                                </p>
+                            ) : (
+                                <p className={css({ fontSize: '12px', color: '#dc2626', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                    <XCircle size={13} /> 비밀번호가 일치하지 않습니다
+                                </p>
+                            )
+                        )}
+                    </div>
+
+                    {passwordError && (
+                        <p className={css({ fontSize: '13px', color: '#dc2626', bg: '#fef2f2', p: '10px 14px', borderRadius: '8px' })}>{passwordError}</p>
+                    )}
+                    {passwordSuccess && (
+                        <p className={css({ fontSize: '13px', color: '#16a34a', bg: '#f0fdf4', p: '10px 14px', borderRadius: '8px' })}>{passwordSuccess}</p>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={isChangingPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6}
+                        className={css({ mt: '4px', py: '12px', bg: '#111', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _hover: { bg: '#333' } })}
+                    >
+                        {isChangingPassword ? '변경 중...' : '비밀번호 변경하기'}
+                    </button>
+                </form>
+            </section>
+
+            {/* 바로가기 링크 */}
+            <section className={css({ bg: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+                <h2 className={css({ fontSize: '16px', fontWeight: 'bold', p: '20px 24px 12px', color: '#222' })}>바로가기</h2>
+                {[
+                    { href: '/templates', icon: '📦', label: '나만의 템플릿 관리', desc: '체크리스트 템플릿을 관리합니다' },
+                    { href: '/', icon: '✈️', label: '내 여행 목록', desc: '등록한 여행들을 확인합니다' },
+                ].map((item, i, arr) => (
+                    <Link
+                        key={item.href}
+                        href={item.href}
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: '24px',
+                            py: '16px',
+                            borderTop: i === 0 ? '1px solid #f0f0f0' : 'none',
+                            borderBottom: i < arr.length - 1 ? '1px solid #f0f0f0' : 'none',
+                            textDecoration: 'none',
+                            color: '#333',
+                            _hover: { bg: '#fafafa' },
+                        })}
+                    >
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
+                            <span className={css({ fontSize: '20px' })}>{item.icon}</span>
+                            <div>
+                                <div className={css({ fontSize: '15px', fontWeight: '600' })}>{item.label}</div>
+                                <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>{item.desc}</div>
+                            </div>
+                        </div>
+                        <ChevronRight size={18} color="#ccc" />
+                    </Link>
+                ))}
+            </section>
+        </div>
+    )
+}
