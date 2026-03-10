@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
-import { LogOut, Home, User, Compass } from 'lucide-react'
+import { LogOut, Home, User, Compass, BookOpen } from 'lucide-react'
 
 export default function Navbar() {
     const router = useRouter()
@@ -61,22 +61,53 @@ export default function Navbar() {
                     justifyContent: 'space-between',
                 })}
             >
-                <Link
-                    href="/"
-                    className={css({
-                        fontSize: 'xl',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        color: '#111',
-                    })}
-                >
-                    <Compass size={24} color="#4285F4" />
-                    <span className={css({ display: { base: 'none', sm: 'inline' } })}>Next Voyage</span>
-                </Link>
+                {/* ── 왼쪽: 로고 + 가이드(PC) ── */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: { base: '0', sm: '20px' } })}>
+                    <Link
+                        href="/"
+                        className={css({
+                            fontSize: 'xl',
+                            fontWeight: 'bold',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            color: '#111',
+                        })}
+                    >
+                        <Compass size={24} color="#4285F4" />
+                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>Next Voyage</span>
+                    </Link>
 
-                <div className={css({ display: 'flex', alignItems: 'center', gap: { base: '16px', md: '24px' } })}>
+                    {/* 소개 — PC에서는 로고 바로 오른쪽 */}
+                    <Link
+                        href="/guide"
+                        className={css({
+                            display: { base: 'none', sm: 'flex' },
+                            alignItems: 'center', gap: '5px',
+                            fontSize: '14px', fontWeight: '500', color: '#555',
+                            _hover: { color: '#4285F4' }, transition: 'color 0.15s',
+                        })}
+                    >
+                        <BookOpen size={16} />
+                        소개
+                    </Link>
+                </div>
+
+                {/* ── 오른쪽: 가이드(모바일) + 로그인/로그아웃 등 ── */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: { base: '12px', md: '24px' } })}>
+                    {/* 가이드 — 모바일에서는 로그인 버튼 왼쪽 */}
+                    <Link
+                        href="/guide"
+                        className={css({
+                            display: { base: 'flex', sm: 'none' },
+                            alignItems: 'center', gap: '4px',
+                            fontSize: '13px', fontWeight: '500', color: '#555',
+                            _hover: { color: '#4285F4' },
+                        })}
+                    >
+                        <BookOpen size={16} />
+                    </Link>
+
                     {!loading && (
                         <>
                             {user ? (
