@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
-import { LogOut, Home, User, Compass, BookOpen } from 'lucide-react'
+import { LogOut, Home, User, Compass, BookOpen, LogIn, UserPlus } from 'lucide-react'
 
 export default function Navbar() {
     const router = useRouter()
@@ -163,23 +163,49 @@ export default function Navbar() {
                                     </button>
                                 </>
                             ) : (
-                                <Link
-                                    href="/login"
-                                    className={css({
-                                        bg: '#111',
-                                        color: 'white',
-                                        px: '16px',
-                                        py: '8px',
-                                        borderRadius: '8px',
-                                        fontSize: '14px',
-                                        fontWeight: '600',
-                                        transition: 'all 0.2s',
-                                        _hover: { bg: '#333', transform: 'translateY(-1px)' }
-                                    })}
-                                >
-                                    로그인
-                                </Link>
+                                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
+                                    {/* 회원가입 — 아웃라인 스타일 */}
+                                    <Link
+                                        href="/signup"
+                                        className={css({
+                                            display: 'flex', alignItems: 'center', gap: '5px',
+                                            bg: 'transparent',
+                                            color: '#333',
+                                            px: { base: '10px', sm: '14px' },
+                                            py: '8px',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            border: '1px solid #ddd',
+                                            transition: 'all 0.2s',
+                                            _hover: { bg: '#f5f5f5', borderColor: '#bbb' },
+                                        })}
+                                    >
+                                        <UserPlus size={15} />
+                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>회원가입</span>
+                                    </Link>
+                                    {/* 로그인 — 채움 스타일 */}
+                                    <Link
+                                        href="/login"
+                                        className={css({
+                                            display: 'flex', alignItems: 'center', gap: '5px',
+                                            bg: '#111',
+                                            color: 'white',
+                                            px: { base: '10px', sm: '14px' },
+                                            py: '8px',
+                                            borderRadius: '8px',
+                                            fontSize: '14px',
+                                            fontWeight: '600',
+                                            transition: 'all 0.2s',
+                                            _hover: { bg: '#333', transform: 'translateY(-1px)' },
+                                        })}
+                                    >
+                                        <LogIn size={15} />
+                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>로그인</span>
+                                    </Link>
+                                </div>
                             )}
+
                         </>
                     )}
                 </div>
