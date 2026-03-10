@@ -128,6 +128,7 @@ export default function PlanDetailModal({
 }: PlanDetailModalProps) {
     const [tab, setTab] = useState<'info' | 'refs'>('info')
     const [mapError, setMapError] = useState(false)
+    const [mapLoaded, setMapLoaded] = useState(false)
 
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -307,15 +308,53 @@ export default function PlanDetailModal({
                             {plan.location && (
                                 <div className={css({ flexShrink: 0 })}>
                                     {embedUrl && !mapError ? (
-                                        <iframe
-                                            src={embedUrl}
-                                            width="100%" height="220"
-                                            style={{ border: 0, display: 'block' }}
-                                            allowFullScreen loading="lazy"
-                                            referrerPolicy="no-referrer-when-downgrade"
-                                            onError={() => setMapError(true)}
-                                            title="지도"
-                                        />
+                                        <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
+                                            {/* 스켈레톤: 지도 로드 전 shimmer 플레이스홀더 */}
+                                            {!mapLoaded && (
+                                                <div style={{
+                                                    position: 'absolute', inset: 0, zIndex: 1,
+                                                    background: '#dce8fa',
+                                                    display: 'flex', flexDirection: 'column',
+                                                    alignItems: 'center', justifyContent: 'center', gap: 10,
+                                                }}>
+                                                    {/* 격자 패턴 — 지도 느낌 */}
+                                                    <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.3 }} aria-hidden>
+                                                        <defs>
+                                                            <pattern id="mapgrid" width="36" height="36" patternUnits="userSpaceOnUse">
+                                                                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#4285F4" strokeWidth="0.7" />
+                                                            </pattern>
+                                                        </defs>
+                                                        <rect width="100%" height="100%" fill="url(#mapgrid)" />
+                                                    </svg>
+                                                    {/* 핀 + 레이블 */}
+                                                    <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+                                                        <div style={{
+                                                            width: 44, height: 44, borderRadius: '50%',
+                                                            background: 'rgba(66,133,244,0.18)',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                            animation: 'pulse 1.4s ease-in-out infinite',
+                                                        }}>
+                                                            <MapPin size={24} color="#4285F4" />
+                                                        </div>
+                                                        <span style={{ fontSize: 12, color: '#4285F4', fontWeight: 700, letterSpacing: 0.3 }}>지도 불러오는 중...</span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            <iframe
+                                                src={embedUrl}
+                                                width="100%" height="220"
+                                                style={{
+                                                    border: 0, display: 'block',
+                                                    opacity: mapLoaded ? 1 : 0,
+                                                    transition: 'opacity 0.5s ease',
+                                                }}
+                                                allowFullScreen loading="lazy"
+                                                referrerPolicy="no-referrer-when-downgrade"
+                                                onLoad={() => setMapLoaded(true)}
+                                                onError={() => setMapError(true)}
+                                                title="지도"
+                                            />
+                                        </div>
                                     ) : (
                                         <div className={css({ w: '100%', h: '140px', bg: '#e8f0fe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' })}>
                                             <MapPin size={24} color="#4285F4" />
@@ -323,6 +362,7 @@ export default function PlanDetailModal({
                                         </div>
                                     )}
                                 </div>
+
                             )}
 
                             <div className={css({ p: { base: '20px', sm: '24px' }, display: 'flex', flexDirection: 'column', gap: '20px' })}>

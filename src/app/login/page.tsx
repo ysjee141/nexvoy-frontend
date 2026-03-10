@@ -51,6 +51,11 @@ export default function LoginPage() {
         // 모바일(330px)에서는 배경과 카드를 통합: 전체 높이를 카드로 채워 여백 손실 최소화
         // sm(640px) 이상에서는 기존 그라디언트 배경 위에 카드를 띄우는 구조 유지
         <div className={css({
+            // 1280px max-width 컨테이너를 완전히 탈출하여 뷰포트 전체 너비를 채움
+            width: '100vw',
+            marginLeft: 'calc(-50vw + 50%)',
+            mt: { base: '-80px', md: '-88px' },
+            mb: '-24px',
             minH: '100vh',
             display: 'flex',
             alignItems: { base: 'flex-start', sm: 'center' },
@@ -61,7 +66,7 @@ export default function LoginPage() {
             <div className={css({
                 bg: { base: 'white', sm: 'rgba(255, 255, 255, 0.9)' },
                 backdropFilter: { base: 'none', sm: 'blur(10px)' },
-                p: { base: '40px 20px', sm: '40px 32px', md: '48px' },
+                p: { base: '80px 20px 40px', sm: '40px 32px', md: '48px' },
                 borderRadius: { base: '0', sm: '24px' },
                 boxShadow: { base: 'none', sm: '0 20px 40px rgba(0,0,0,0.1)' },
                 maxW: { base: '100%', sm: '440px' },

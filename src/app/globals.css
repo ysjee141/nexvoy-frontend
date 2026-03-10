@@ -96,3 +96,27 @@ a:active {
         opacity: 1;
     }
 }
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.12);
+        opacity: 0.75;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 50%;
+    }
+
+    100% {
+        background-position: -200% 50%;
+    }
+}
