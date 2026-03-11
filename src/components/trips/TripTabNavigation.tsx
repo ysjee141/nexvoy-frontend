@@ -20,7 +20,7 @@ export default function TripTabNavigation({ tripId }: { tripId: string }) {
             })}
         >
             <Link
-                href={`/trips/${tripId}`}
+                href={`/trips/detail?id=${tripId}`}
                 className={css({
                     display: 'flex',
                     alignItems: 'center',
@@ -36,7 +36,7 @@ export default function TripTabNavigation({ tripId }: { tripId: string }) {
                 <Calendar size={18} /> 일정표
             </Link>
             <Link
-                href={`/trips/${tripId}/checklist`}
+                href={`/trips/checklist?id=${tripId}`}
                 className={css({
                     display: 'flex',
                     alignItems: 'center',

@@ -89,7 +89,7 @@ export default function TripSection({
                         return (
                             <Link
                                 key={trip.id}
-                                href={`/trips/${trip.id}`}
+                                href={`/trips/detail?id=${trip.id}`}
                                 className={css({
                                     display: 'block', bg: 'white',
                                     p: { base: '16px', sm: '20px' },

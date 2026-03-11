@@ -218,7 +218,8 @@ export default function PlanList({
         })
         uniqueNonKrw.forEach(async (code) => {
             try {
-                const res = await fetch(`/api/exchange?from=${code}`)
+                const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+                const res = await fetch(`${apiUrl}/api/exchange?from=${code}`)
                 if (res.ok) {
                     const json = await res.json()
                     setExchangeRates(prev => ({ ...prev, [code]: json.rate }))
@@ -240,8 +241,8 @@ export default function PlanList({
     })
 
     const sortedDays = Object.values(grouped).sort((a, b) => a.rawDate.localeCompare(b.rawDate))
-    const remainingDays = sortedDays.filter(d => d.rawDate >= todayStr)
-    const pastDays = sortedDays.filter(d => d.rawDate < todayStr)
+    const remainingDays = sortedDays.filter((d: any) => d.rawDate >= todayStr)
+    const pastDays = sortedDays.filter((d: any) => d.rawDate < todayStr)
 
     const commonProps = { activeDropdown, setActiveDropdown, userRole, timeDisplayMode, exchangeRates, formatLocalTime, formatKstTime, onEdit, onDelete }
 
@@ -264,7 +265,7 @@ export default function PlanList({
                     )}
                 </h3>
                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px' })}>
-                    {day.plans.map(plan => (
+                    {day.plans.map((plan: any) => (
                         <PlanCard key={plan.id} plan={plan} isToday={isToday} {...commonProps} />
                     ))}
                 </div>

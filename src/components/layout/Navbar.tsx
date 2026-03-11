@@ -22,7 +22,7 @@ export default function Navbar() {
         }
         fetchUser()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
             setUser(session?.user ?? null)
         })
 
@@ -48,6 +48,7 @@ export default function Navbar() {
                 backdropFilter: 'blur(8px)',
                 borderBottom: '1px solid #eaeaea',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                paddingTop: 'env(safe-area-inset-top)', // iOS Safe Area (Notch / Dynamic Island) 하단으로 밀어내기
             })}
         >
             <div

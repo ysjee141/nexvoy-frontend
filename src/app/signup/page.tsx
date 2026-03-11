@@ -22,7 +22,8 @@ export default function SignUpPage() {
             email,
             password,
             options: {
-                emailRedirectTo: `${location.origin}/auth/callback`,
+                // 앱 빌드 시에는 Vercel (NEXT_PUBLIC_APP_URL)로 리다이렉트 하여 서버 라우트(/auth/callback)를 타도록 함
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || location.origin}/auth/callback`,
             },
         })
 

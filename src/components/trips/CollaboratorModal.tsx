@@ -70,7 +70,8 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
         } else {
             // 실제 이메일 발송 시도
             try {
-                await fetch('/api/invite', {
+                const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+                await fetch(`${apiUrl}/api/invite`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, tripTitle, tripId })

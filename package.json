@@ -5,11 +5,19 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:mobile": "mv src/app/api src/app_api_tmp && mv src/app/auth src/app_auth_tmp && mv src/app/share src/app_share_tmp && BUILD_TARGET=mobile next build; mv src/app_api_tmp src/app/api; mv src/app_auth_tmp src/app/auth; mv src/app_share_tmp src/app/share",
     "start": "next start",
     "lint": "eslint",
     "prepare": "panda codegen"
   },
   "dependencies": {
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/ios": "^8.2.0",
+    "@capacitor/local-notifications": "^8.0.2",
+    "@capacitor/network": "^8.0.1",
+    "@capacitor/preferences": "^8.0.1",
+    "@capacitor/push-notifications": "^8.0.2",
     "@react-google-maps/api": "^2.19.3",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",
@@ -21,6 +29,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.2.0",
     "@pandacss/dev": "^1.8.2",
     "@types/google.maps": "^3.58.1",
     "@types/node": "^20.19.33",

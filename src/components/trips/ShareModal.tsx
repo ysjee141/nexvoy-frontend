@@ -45,7 +45,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
         fetchShareToken(shareType)
     }
 
-    const shareUrl = shareToken ? `${window.location.origin}/share/${shareToken}` : ''
+    const shareUrl = shareToken ? `${window.location.origin}/share/detail?token=${shareToken}` : ''
 
     const handleCopy = () => {
         if (!shareUrl) return

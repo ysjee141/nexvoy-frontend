@@ -103,7 +103,8 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                 setLocationName(place.name || place.formatted_address || '')
 
                 try {
-                    const res = await fetch(`/api/timezone?lat=${lat}&lng=${lng}`)
+                    const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+                    const res = await fetch(`${apiUrl}/api/timezone?lat=${lat}&lng=${lng}`)
                     const data = await res.json()
                     if (data.timeZoneId) {
                         setTimezoneString(data.timeZoneId)
@@ -162,9 +163,9 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
             await supabase.from('plan_urls').delete().eq('plan_id', planId)
         }
 
-        const validUrls = urls.filter(u => u.trim() !== '')
+        const validUrls = urls.filter((u: any) => u.trim() !== '')
         if (validUrls.length > 0) {
-            const urlInserts = validUrls.map(url => ({
+            const urlInserts = validUrls.map((url: any) => ({
                 plan_id: planId,
                 url: url
             }))

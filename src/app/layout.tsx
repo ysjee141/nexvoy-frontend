@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import Navbar from '@/components/layout/Navbar'
 import NotificationBanner from '@/components/layout/NotificationBanner'
+import OfflineBanner from '@/components/common/OfflineBanner'
 import { css } from 'styled-system/css'
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 }
 
 export default function RootLayout({
@@ -35,6 +37,7 @@ export default function RootLayout({
           전역 레이아웃
           TODO: 인증 여부에 따라 Navbar 표시 속성 변경 처리 가능
         */}
+        <OfflineBanner />
         <Navbar />
         <NotificationBanner />
         <main
@@ -43,7 +46,7 @@ export default function RootLayout({
             w: '100%',
             maxW: '1280px',
             mx: 'auto',
-            p: { base: '80px 16px 24px', md: '88px 24px 32px' },
+            p: { base: 'calc(80px + env(safe-area-inset-top)) 16px 24px', md: 'calc(88px + env(safe-area-inset-top)) 24px 32px' },
           })}
         >
           {children}
