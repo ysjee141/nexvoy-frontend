@@ -4,9 +4,11 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { LogIn, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 
 export default function LoginPage() {
+    const router = useRouter()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [rememberEmail, setRememberEmail] = useState(false)
@@ -43,7 +45,8 @@ export default function LoginPage() {
             } else {
                 localStorage.removeItem('rememberedEmail')
             }
-            window.location.href = '/'
+            router.push('/')
+            router.refresh()
         }
     }
 

@@ -1,25 +1,46 @@
-import { createClient } from '@/utils/supabase/server'
+'use client'
+import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import { Plus, ListTodo } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-export default async function TemplatesPage() {
-    const supabase = await createClient()
+export default function TemplatesPage() {
+    const supabase = createClient()
+    const router = useRouter()
 
-    // 1. 로그인된 사용자 정보 
-    const { data: { user } } = await supabase.auth.getUser()
+    const [templates, setTemplates] = useState<any[]>([])
+    const [loading, setLoading] = useState(true)
 
-    // 2. 해당 사용자의 템플릿 목록 가져오기 (공통 템플릿 포함 여부에 따라 user_id is null 조건 추가 가능)
-    // 여기서는 '내 템플릿'만 우선 가져오도록 구현
-    const { data: templates, error } = await supabase
-        .from('checklist_templates')
-        .select(`
-            id,
-            title,
-            checklist_template_items (id)
-        `)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
+    useEffect(() => {
+        async function fetchTemplates() {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                router.push('/login')
+                return
+            }
+
+            const { data } = await supabase
+                .from('checklist_templates')
+                .select(`
+                    id,
+                    title,
+                    checklist_template_items (id)
+                `)
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+
+            setTemplates(data || [])
+            setLoading(false)
+        }
+
+        fetchTemplates()
+    }, [supabase, router])
+
+    if (loading) {
+        return <div className={css({ w: '100%', py: '80px', textAlign: 'center', color: '#888' })}>템플릿 불러오는 중...</div>
+    }
 
     return (
         <div className={css({ w: '100%', py: '40px' })}>
@@ -54,7 +75,7 @@ export default async function TemplatesPage() {
             </header>
 
             <section>
-                {(!templates || templates.length === 0) ? (
+                {templates.length === 0 ? (
                     <div
                         className={css({
                             bg: 'white',
@@ -85,7 +106,7 @@ export default async function TemplatesPage() {
                             return (
                                 <Link
                                     key={template.id}
-                                    href={`/templates/${template.id}`}
+                                    href={`/templates/detail?id=${template.id}`}
                                     className={css({
                                         display: 'flex',
                                         flexDirection: 'column',

@@ -61,7 +61,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
         const templateName = selectedTemplate ? selectedTemplate.title : null
 
         // 2. 현재 체크리스트에 벌크 인서트할 포맷팅 배열 만들기
-        const insertData = templateItems.map(tItem => ({
+        const insertData = templateItems.map((tItem: any) => ({
             checklist_id: checklistId,
             item_name: tItem.item_name,
             category: tItem.category || '기타',
@@ -113,7 +113,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                     </div>
                 ) : (
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1, pr: '4px' })}>
-                        {templates.map(template => (
+                        {templates.map((template: any) => (
                             <div
                                 key={template.id}
                                 className={css({ p: '14px', border: '1px solid #eee', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' })}

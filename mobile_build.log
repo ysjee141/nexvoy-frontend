@@ -1,0 +1,20 @@
+
+> nexvoy-frontend@0.1.0 build:mobile /Users/ysjee141/mySources/travel-pack
+> BUILD_TARGET=mobile next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+🐼 [1m[34minfo[39m[22m [90m[hrtime][39m Extracted in [90m(102.55ms)[39m
+ ELIFECYCLE  Command failed with exit code 1.
+
+> nexvoy-frontend@0.1.0 build:mobile /Users/ysjee141/mySources/travel-pack
+> BUILD_TARGET=mobile next build
+
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+🐼 [1m[34minfo[39m[22m [90m[hrtime][39m Extracted in [90m(92.05ms)[39m
+ ELIFECYCLE  Command failed with exit code 1.

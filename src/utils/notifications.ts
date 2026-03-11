@@ -63,7 +63,7 @@ export function useAlarmScheduler() {
 
         if (!trips || trips.length === 0) return
 
-        const tripIds = trips.map(t => t.id)
+        const tripIds = trips.map((t: any) => t.id)
 
         // 미래 24시간 이내의 알람 설정된 일정 가져오기
         const { data: plans } = await supabase
@@ -98,7 +98,7 @@ export function useAlarmScheduler() {
                 showNotification(
                     `🗓️ 일정 알림: ${plan.title}`,
                     `${minuteLabel} 후 일정이 시작됩니다.${plan.location ? `\n📍 ${plan.location}` : ''}`,
-                    `/trips/${plan.trip_id}`
+                    `/trips/detail?id=${plan.trip_id}`
                 )
             }
         }

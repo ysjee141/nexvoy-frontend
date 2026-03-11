@@ -7,6 +7,7 @@ import {
     Pencil, Trash2, BookOpen, ExternalLink, Link2
 } from 'lucide-react'
 import { getCurrencyFromTimezone, formatCurrency, formatKRW } from '@/utils/currency'
+import { useNetworkStore } from '@/stores/useNetworkStore'
 
 // ── OG 미리보기 데이터 타입 ──
 interface OGData {
@@ -27,7 +28,8 @@ function UrlPreviewCard({ url }: { url: string }) {
         let cancelled = false
             ; (async () => {
                 try {
-                    const res = await fetch(`/api/og-preview?url=${encodeURIComponent(url)}`)
+                    const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+                    const res = await fetch(`${apiUrl}/api/og-preview?url=${encodeURIComponent(url)}`)
                     if (!cancelled && res.ok) setOg(await res.json())
                 } catch { /* 무시 */ } finally {
                     if (!cancelled) setLoading(false)
@@ -129,6 +131,7 @@ export default function PlanDetailModal({
     const [tab, setTab] = useState<'info' | 'refs'>('info')
     const [mapError, setMapError] = useState(false)
     const [mapLoaded, setMapLoaded] = useState(false)
+    const { isOnline } = useNetworkStore()
 
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -243,12 +246,12 @@ export default function PlanDetailModal({
                     <div className={css({ display: { base: 'flex', sm: 'none' }, gap: '8px', ml: 'auto' })}>
                         {(userRole === 'owner' || userRole === 'editor') && (
                             <>
-                                <button onClick={() => { onEdit(plan); onClose() }}
-                                    className={css({ bg: 'transparent', border: 'none', cursor: 'pointer', color: '#4285F4', p: '6px' })}>
+                                <button onClick={() => { onEdit(plan); onClose() }} disabled={!isOnline}
+                                    className={css({ bg: 'transparent', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', color: '#4285F4', p: '6px', opacity: isOnline ? 1 : 0.5 })}>
                                     <Pencil size={18} />
                                 </button>
-                                <button onClick={() => { onDelete(plan.id); onClose() }}
-                                    className={css({ bg: 'transparent', border: 'none', cursor: 'pointer', color: '#dc2626', p: '6px' })}>
+                                <button onClick={() => { onDelete(plan.id); onClose() }} disabled={!isOnline}
+                                    className={css({ bg: 'transparent', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', color: '#dc2626', p: '6px', opacity: isOnline ? 1 : 0.5 })}>
                                     <Trash2 size={18} />
                                 </button>
                             </>
@@ -480,12 +483,12 @@ export default function PlanDetailModal({
                         gap: '10px', p: '14px 24px',
                         borderTop: '1px solid #f0f0f0', flexShrink: 0,
                     })}>
-                        <button onClick={() => { onEdit(plan); onClose() }}
-                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#f0f6ff', color: '#4285F4', border: '1px solid #d2e3fc', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', _hover: { bg: '#e8f0fd' } })}>
+                        <button onClick={() => { onEdit(plan); onClose() }} disabled={!isOnline}
+                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#f0f6ff', color: '#4285F4', border: '1px solid #d2e3fc', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#e8f0fd' : '#f0f6ff' } })}>
                             <Pencil size={15} /> 수정
                         </button>
-                        <button onClick={() => { onDelete(plan.id); onClose() }}
-                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#fff5f5', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', _hover: { bg: '#fee2e2' } })}>
+                        <button onClick={() => { onDelete(plan.id); onClose() }} disabled={!isOnline}
+                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#fff5f5', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#fee2e2' : '#fff5f5' } })}>
                             <Trash2 size={15} /> 삭제
                         </button>
                     </div>

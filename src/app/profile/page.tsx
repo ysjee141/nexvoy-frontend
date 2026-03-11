@@ -51,7 +51,7 @@ export default function ProfilePage() {
                 .select('id')
                 .eq('user_id', user.id)
 
-            const tripIds = trips?.map(t => t.id) || []
+            const tripIds = trips?.map((t: any) => t.id) || []
 
             let totalPlans = 0
             let totalChecked = 0
@@ -69,7 +69,7 @@ export default function ProfilePage() {
                     .select('id')
                     .in('trip_id', tripIds)
 
-                const checklistIds = checklists?.map(c => c.id) || []
+                const checklistIds = checklists?.map((c: any) => c.id) || []
                 if (checklistIds.length > 0) {
                     const { data: checkItems } = await supabase
                         .from('checklist_items')
@@ -77,7 +77,7 @@ export default function ProfilePage() {
                         .in('checklist_id', checklistIds)
 
                     totalItems = checkItems?.length || 0
-                    totalChecked = checkItems?.filter(i => i.is_checked).length || 0
+                    totalChecked = checkItems?.filter((i: any) => i.is_checked).length || 0
                 }
             }
 

@@ -71,7 +71,7 @@ export default function NewTripPage() {
         if (error) {
             setErrorMsg(error.message)
         } else if (trip) {
-            router.push(`/trips/${trip.id}`)
+            router.push(`/trips/detail?id=${trip.id}`)
         }
     }
 

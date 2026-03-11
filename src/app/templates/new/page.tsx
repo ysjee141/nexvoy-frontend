@@ -35,12 +35,12 @@ export default function NewTemplatePage() {
 
     const handleRemoveItem = (idToRemove: string) => {
         if (items.length > 1) {
-            setItems(items.filter(item => item.id !== idToRemove))
+            setItems(items.filter((item: any) => item.id !== idToRemove))
         }
     }
 
     const handleItemChange = (id: string, field: 'item_name' | 'category', value: string) => {
-        setItems(items.map(item =>
+        setItems(items.map((item: any) =>
             item.id === id ? { ...item, [field]: value } : item
         ))
     }
@@ -52,7 +52,7 @@ export default function NewTemplatePage() {
             return
         }
 
-        const validItems = items.filter(item => item.item_name.trim() !== '')
+        const validItems = items.filter((item: any) => item.item_name.trim() !== '')
         if (validItems.length === 0) {
             alert('최소 1개 이상의 유효한 항목을 입력해주세요.')
             return
@@ -77,7 +77,7 @@ export default function NewTemplatePage() {
             if (templateError) throw templateError
 
             // 2. 템플릿 하위 항목 생성
-            const itemsToInsert = validItems.map(item => ({
+            const itemsToInsert = validItems.map((item: any) => ({
                 template_id: newTemplate.id,
                 item_name: item.item_name.trim(),
                 category: item.category
@@ -160,7 +160,7 @@ export default function NewTemplatePage() {
                                     onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
                                     className={css({ p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: '#f9f9f9', w: '120px', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
                                 >
-                                    {CATEGORIES.map(cat => (
+                                    {CATEGORIES.map((cat: any) => (
                                         <option key={cat} value={cat}>{cat}</option>
                                     ))}
                                 </select>
