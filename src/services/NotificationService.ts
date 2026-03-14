@@ -114,12 +114,30 @@ export const NotificationService = {
         // 백그라운드나 배너에서 사용자가 알림 탭 시 (라우팅 등)
         PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
             console.log('Push action performed: ' + JSON.stringify(notification))
-            const data = notification.notification.data
-            // 예: data.tripId 가 থাকলে 해당 trip 방으로 이동 (window.location.href='/trips/...')
-            if (data?.tripId) {
-                window.location.href = `/trips/detail?id=${data.tripId}`
-            }
+            this.handleNotificationAction(notification);
         })
+
+        // Cold Start: 앱이 꺼진 상태에서 알림을 눌러 들어온 경우를 위해 지연된 처리 확인
+        // (Capacitor는 보통 리스너 등록 시점에 마지막 액션을 다시 쏴주지만, 확실히 하기 위해 추가 가능)
+    },
+
+    handleNotificationAction(notification: any) {
+        const data = notification.notification?.data || notification.data;
+        console.log('Handling notification action with data:', JSON.stringify(data));
+        
+        if (data?.tripId) {
+            console.log('Deep linking to trip:', data.tripId);
+            const url = `/trips/detail?id=${data.tripId}`;
+            
+            // Next.js 라우팅이 완전히 준비되지 않았을 수 있으므로 약간의 지연 후 이동하거나
+            // window.location.href 사용
+            if (window.location.pathname + window.location.search === url) {
+                console.log('Already on target page, skipping navigation.');
+                return;
+            }
+            
+            window.location.href = url;
+        }
     },
 
     /**
