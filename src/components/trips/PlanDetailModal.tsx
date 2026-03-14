@@ -197,6 +197,7 @@ export default function PlanDetailModal({
                     flexDirection: 'column',
                     overflow: 'hidden',
                     animation: 'slideUp 0.25s ease',
+                    pt: { base: 'env(safe-area-inset-top)', sm: '0' },
                 })}
             >
                 {/* ── 헤더 ── */}

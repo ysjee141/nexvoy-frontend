@@ -29,11 +29,14 @@ export const NotificationService = {
             }
 
             // 2. 권한 승인 시 Native OS에 푸시 토큰 등록 요청 (APNs / FCM)
-            await PushNotifications.register()
-
-            // 3. 리스너 등록
-            await this.registerListeners()
-
+            try {
+                await PushNotifications.register()
+                
+                // 3. 리스너 등록
+                await this.registerListeners()
+            } catch (regError) {
+                console.warn('PushNotifications.register() failed. This usually means google-services.json is missing on Android, or Push Capability is missing on iOS:', regError)
+            }
         } catch (error) {
             console.warn('Failed to initialize notifications:', error)
         }

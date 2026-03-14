@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "304255338199",
+    "project_id": "next-voyage-9c854",
+    "storage_bucket": "next-voyage-9c854.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:304255338199:android:5dc97557010a2298365292",
+        "android_client_info": {
+          "package_name": "xyz.nexvoy.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBgZw97SxWnrqRdyrXudObejT6zwgL2Uwk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
