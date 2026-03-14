@@ -41,6 +41,7 @@
     "styled-system"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "supabase"
   ]
 }
