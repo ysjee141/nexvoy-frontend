@@ -4,6 +4,7 @@ import { WifiOff } from 'lucide-react'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { useEffect, useState } from 'react'
 import { NotificationService } from '@/services/NotificationService'
+import { NativeUIService } from '@/services/NativeUIService'
 
 export default function OfflineBanner() {
     const { isOnline, initializeNetworkListener } = useNetworkStore()
@@ -12,7 +13,8 @@ export default function OfflineBanner() {
     useEffect(() => {
         setMounted(true)
         initializeNetworkListener()
-        // 앱 초기화 시 네이티브 알림 권한 획득 및 리스너 부착
+        // 앱 초기화 시 네이티브 UI 및 알림 권한 획득
+        NativeUIService.initialize()
         NotificationService.initialize()
     }, [initializeNetworkListener])
 

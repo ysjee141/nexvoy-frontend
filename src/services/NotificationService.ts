@@ -50,13 +50,19 @@ export const NotificationService = {
             const supabase = createClient()
             const { data: { session } } = await supabase.auth.getSession()
             if (session?.user) {
-                // 향후 profiles 테이블이나 device_tokens 테이블에 upsert
-                await supabase.from('user_devices').upsert({
+                // 기기 토큰 upsert (중복 발급 시 updated_at만 갱신)
+                const { error } = await supabase.from('user_devices').upsert({
                     user_id: session.user.id,
                     fcm_token: token.value,
                     platform: Capacitor.getPlatform(),
                     updated_at: new Date().toISOString()
-                }, { onConflict: 'fcm_token' }) // onConflict 설정은 DB 스키마에 따라 조정 필요
+                }, { onConflict: 'fcm_token' })
+
+                if (error) {
+                    console.error('Failed to sync push token to Supabase:', error)
+                } else {
+                    console.log('Push token synced to Supabase successfully.')
+                }
             }
         })
 
