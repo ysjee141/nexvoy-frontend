@@ -17,32 +17,40 @@ export const NotificationService = {
             return
         }
 
+        console.log('--- Notification Initialization Started ---');
+
         try {
             // 1. 푸시 알림 권한 요청
             let permStatus = await PushNotifications.checkPermissions()
+            console.log('Initial permission status:', JSON.stringify(permStatus));
 
             if (permStatus.receive === 'prompt') {
+                console.log('Requesting permissions...');
                 permStatus = await PushNotifications.requestPermissions()
+                console.log('Permission request result:', JSON.stringify(permStatus));
             }
 
             if (permStatus.receive !== 'granted') {
-                throw new Error('User denied permissions!')
+                console.warn('Permission not granted. Current status:', permStatus.receive);
+                return;
             }
 
             // 2. 권한 승인 시 Native OS에 푸시 토큰 등록 요청 (APNs / FCM)
             try {
+                console.log('Calling PushNotifications.register()...');
                 await PushNotifications.register()
                 
                 // 3. 리스너 등록
+                console.log('Registering listeners...');
                 await this.registerListeners()
 
                 // 4. 인증 상태 변경 감지 후 토큰 동기화
                 this.setupAuthChangeListener()
             } catch (regError) {
-                console.warn('PushNotifications.register() failed. This usually means google-services.json is missing on Android, or Push Capability is missing on iOS:', regError)
+                console.error('PushNotifications.register() failed:', regError);
             }
         } catch (error) {
-            console.warn('Failed to initialize notifications:', error)
+            console.error('Critical failure in notification init:', error);
         }
     },
 
@@ -77,27 +85,30 @@ export const NotificationService = {
     },
 
     async registerListeners() {
+        console.log('Adding Push Notification listeners...');
         // 토큰 발급 완료
         PushNotifications.addListener('registration', async (token) => {
-            console.log('Push registration success, token: ' + token.value)
+            console.log('✅ Push registration successful. Token:', token.value);
             this._token = token.value // 토큰 보관
             
             const supabase = createClient()
             const { data: { session } } = await supabase.auth.getSession()
             if (session?.user) {
+                console.log('Session found during registration. Syncing...');
                 await this.syncToken(session.user.id, token.value)
+            } else {
+                console.log('No session found yet. Token stored, waiting for login.');
             }
         })
 
         // 토큰 발급 에러
         PushNotifications.addListener('registrationError', (error: any) => {
-            console.error('Error on registration: ' + JSON.stringify(error))
+            console.error('❌ Registration Error:', JSON.stringify(error));
         })
 
         // Foreground에서 실제 알림 수신 시
         PushNotifications.addListener('pushNotificationReceived', (notification) => {
-            console.log('Push received: ' + JSON.stringify(notification))
-            // TODO: 앱 안에서 Toast 띄우기 등 추가 효과
+            console.log('🔔 Push notification received:', JSON.stringify(notification));
         })
 
         // 백그라운드나 배너에서 사용자가 알림 탭 시 (라우팅 등)
