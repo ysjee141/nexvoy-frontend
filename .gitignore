@@ -44,3 +44,10 @@ next-env.d.ts
 styled-system
 styled-system-studio
 .npm-cache
+
+# Supabase local config
+/supabase/.temp
+/supabase/.branches
+/supabase/.local-db-data
+
+*/.idea/
