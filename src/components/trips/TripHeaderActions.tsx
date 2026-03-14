@@ -279,6 +279,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                         overflowY: 'auto', borderRadius: { base: '0', sm: '16px' },
                         boxShadow: { base: 'none', sm: '0 10px 40px rgba(0,0,0,0.15)' },
                         display: 'flex', flexDirection: 'column',
+                        pt: { base: 'env(safe-area-inset-top)', sm: '0' },
                     })}>
                         {/* 헤더 */}
                         <div className={css({ p: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10 })}>

@@ -212,6 +212,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                     boxShadow: { base: 'none', sm: '0 10px 40px rgba(0,0,0,0.1)' },
                     display: 'flex',
                     flexDirection: 'column',
+                    pt: { base: 'env(safe-area-inset-top)', sm: '0' },
                 })}
             >
                 {/* 헤더: 모바일은 iOS 스타일 ← 뒤로가기, 데스크탑은 X 닫기 */}
