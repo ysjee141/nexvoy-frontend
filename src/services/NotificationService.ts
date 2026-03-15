@@ -203,5 +203,47 @@ export const NotificationService = {
         } catch (e) {
             console.error('Failed to schedule offline reminders:', e)
         }
+    },
+
+    /**
+     * [체크리스트 리마인더] 여행 출발 1일 전 오전 10시에 남은 준비물을 알림으로 예약합니다.
+     */
+    async scheduleChecklistReminder(tripId: string, tripTitle: string, startDate: string, pendingItemsCount: number) {
+        if (!Capacitor.isNativePlatform() || pendingItemsCount <= 0) return
+
+        try {
+            const start = new Date(startDate)
+            // 출발 1일 전 오전 10시 (KST 기준이지만 Date 객체로 계산)
+            const reminderTime = new Date(start.getTime() - 24 * 60 * 60 * 1000)
+            reminderTime.setHours(10, 0, 0, 0)
+
+            const now = new Date()
+            if (reminderTime <= now) {
+                console.log('Checklist reminder time already passed or too close.')
+                return
+            }
+
+            const notificationId = this.hashCode(`checklist_${tripId}`)
+            
+            // 기존 동일 여행의 체크리스트 알림 취소 후 재등록
+            await LocalNotifications.cancel({ notifications: [{ id: notificationId }] })
+
+            await LocalNotifications.schedule({
+                notifications: [{
+                    id: notificationId,
+                    title: '짐은 다 챙기셨나요?',
+                    body: `'${tripTitle}' 여행 출발까지 1일 전입니다. 아직 챙기지 않은 준비물이 ${pendingItemsCount}개 있어요!`,
+                    schedule: { at: reminderTime },
+                    sound: "default",
+                    extra: {
+                        tripId: tripId,
+                        type: 'checklist'
+                    }
+                }]
+            })
+            console.log(`Scheduled checklist reminder for ${tripTitle} at ${reminderTime.toLocaleString()}`)
+        } catch (e) {
+            console.error('Failed to schedule checklist reminder:', e)
+        }
     }
 }

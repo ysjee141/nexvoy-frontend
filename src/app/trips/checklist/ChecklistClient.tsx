@@ -20,6 +20,7 @@ export default function ChecklistPage() {
     const [isAdding, setIsAdding] = useState(false)
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
     const [groupBy, setGroupBy] = useState<'category' | 'template'>('category')
+    const [tripInfo, setTripInfo] = useState<{ destination: string, start_date: string } | null>(null)
 
     const CATEGORIES = ['필수', '의류', '세면도구', '전자기기', '상비약', '기타']
 
@@ -49,14 +50,24 @@ export default function ChecklistPage() {
 
             if (currentChecklistId) {
                 setChecklistId(currentChecklistId)
-                // 2. 항목 조회
-                const { data: fetchItems } = await supabase
-                    .from('checklist_items')
-                    .select('*')
-                    .eq('checklist_id', currentChecklistId)
-                    .order('created_at', { ascending: true })
 
-                if (fetchItems) setItems(fetchItems)
+                // 2. 여행 정보 및 항목 병렬 조회
+                const [tripRes, itemsRes] = await Promise.all([
+                    supabase.from('trips').select('destination, start_date').eq('id', tripId).single(),
+                    supabase.from('checklist_items').select('*').eq('checklist_id', currentChecklistId).order('created_at', { ascending: true })
+                ])
+
+                if (tripRes.data) setTripInfo(tripRes.data)
+                
+                if (itemsRes.data) {
+                    setItems(itemsRes.data)
+                    if (tripRes.data) {
+                        const pendingCount = itemsRes.data.filter((i: any) => !i.is_checked).length
+                        import('@/services/NotificationService').then(({ NotificationService }) => {
+                            NotificationService.scheduleChecklistReminder(tripId!, tripRes.data.destination, tripRes.data.start_date, pendingCount)
+                        })
+                    }
+                }
             }
         }
 
@@ -76,6 +87,15 @@ export default function ChecklistPage() {
             console.error('Toggle error:', error)
             // Rollback
             setItems(prev => prev.map((item: any) => item.id === itemId ? { ...item, is_checked: currentStatus } : item))
+        } else {
+            // 리마인더 갱신
+            if (tripInfo && tripId) {
+                const updatedItems = items.map((item: any) => item.id === itemId ? { ...item, is_checked: !currentStatus } : item)
+                const pendingCount = updatedItems.filter((i: any) => !i.is_checked).length
+                import('@/services/NotificationService').then(({ NotificationService }) => {
+                    NotificationService.scheduleChecklistReminder(tripId, tripInfo.destination, tripInfo.start_date, pendingCount)
+                })
+            }
         }
     }
 
@@ -95,10 +115,19 @@ export default function ChecklistPage() {
             .single()
 
         if (!error && data) {
-            setItems(prev => [...prev, data])
+            const updatedItems = [...items, data]
+            setItems(updatedItems)
             setNewItemName('')
             // 카테고리는 유지하여 연속 추가 편의성 제공
             setIsAdding(false)
+
+            // 리마인더 갱신
+            if (tripInfo && tripId) {
+                const pendingCount = updatedItems.filter((i: any) => !i.is_checked).length
+                import('@/services/NotificationService').then(({ NotificationService }) => {
+                    NotificationService.scheduleChecklistReminder(tripId, tripInfo.destination, tripInfo.start_date, pendingCount)
+                })
+            }
         }
     }
 
