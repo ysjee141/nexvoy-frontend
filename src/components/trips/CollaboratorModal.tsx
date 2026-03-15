@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { css } from 'styled-system/css'
 import { X, UserPlus, Mail, Shield, Trash2, Check, Loader2 } from 'lucide-react'
 import { collaboration } from '@/utils/collaboration'
+import { Capacitor } from '@capacitor/core'
 
 interface CollaboratorModalProps {
     tripId: string
@@ -68,16 +69,19 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
         if (error) {
             setMessage({ type: 'error', text: '초대에 실패했습니다. 이미 초대된 사용자거나 오류가 발생했습니다.' })
         } else {
-            // 실제 이메일 발송 시도
+            // 실제 이메일 발송 시도 (웹/앱 동일하게 시도)
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+                
+                // fetch 호출 (apiUrl이 없으면 상대 경로로 동작하며, 앱 환경에서는 실패할 수 있음)
                 await fetch(`${apiUrl}/api/invite`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, tripTitle, tripId })
                 })
             } catch (emailErr) {
-                console.error('Email sending failed:', emailErr)
+                // 이메일 발송은 부가 기능이므로 실패해도 사용자에게는 성공 메시지를 보여줌 (푸시 알림은 트리거로 발송됨)
+                console.warn('Email invite API call failed. Push notification should still work via DB trigger:', emailErr)
             }
 
             setMessage({ type: 'success', text: `${email}님에게 초대장이 발송되었습니다.` })
