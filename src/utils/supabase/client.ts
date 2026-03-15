@@ -22,3 +22,10 @@ export function createClient() {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     )
 }
+
+/**
+ * 네이티브 환경에서 클라이언트가 먹통이 되었을 때 강제 리셋하기 위한 함수
+ */
+export function resetNativeClient() {
+    supabaseNativeClient = null;
+}

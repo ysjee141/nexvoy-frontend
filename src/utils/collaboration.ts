@@ -1,21 +1,24 @@
 import { createClient } from '@/utils/supabase/client'
 
-const supabase = createClient()
-
+/**
+ * 협업 및 공유 관련 유틸리티
+ * 모든 메서드 내부에서 createClient()를 호출하여 최신 클라이언트 인스턴스(특히 앱 리셋 후)를 사용하도록 합니다.
+ */
 export const collaboration = {
     /**
      * 특정 이메일로 협업자 초대
      */
     async inviteMember(tripId: string, email: string, role: 'editor' | 'viewer' = 'editor') {
+        const supabase = createClient()
+        // upsert가 404를 일으키는 경우를 대비해, insert로 시도하고 에러를 확인합니다.
+        // 또한 404가 나면 테이블 존재 여부나 RLS 정책을 의심해봐야 합니다.
         const { data, error } = await supabase
             .from('trip_members')
-            .upsert({
+            .insert({
                 trip_id: tripId,
                 invited_email: email,
                 role,
                 status: 'pending'
-            }, {
-                onConflict: 'trip_id,invited_email'
             })
             .select()
             .single()
@@ -27,6 +30,7 @@ export const collaboration = {
      * 현재 로그인한 사용자가 초대된 여행 목록 조회 (수락 대기 중 포함)
      */
     async getInvitedTrips() {
+        const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return { data: null, error: 'User not authenticated' }
 
@@ -43,6 +47,7 @@ export const collaboration = {
      * 초대 수락
      */
     async acceptInvite(memberId: string) {
+        const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return { data: null, error: 'User not authenticated' }
 
@@ -63,6 +68,7 @@ export const collaboration = {
      * 여행의 멤버 목록 조회
      */
     async getMembers(tripId: string) {
+        const supabase = createClient()
         const { data, error } = await supabase
             .from('trip_members')
             .select('*, profiles(nickname, email)')
@@ -75,6 +81,7 @@ export const collaboration = {
      * 공유 링크 생성 또는 기존 링크 조회
      */
     async getOrCreateShareLink(tripId: string, type: 'public' | 'password' = 'public', password?: string) {
+        const supabase = createClient()
         // 이미 존재하는 링크 확인
         const { data: existing } = await supabase
             .from('trip_shares')
@@ -95,7 +102,6 @@ export const collaboration = {
         }
 
         if (type === 'password' && password) {
-            // 실제 앱에서는 서버사이드에서 해싱해야 함. 여기서는 간소화.
             insertData.password_hash = password
         }
 
@@ -112,6 +118,7 @@ export const collaboration = {
      * 협업자 역할 업데이트
      */
     async updateMemberRole(memberId: string, role: 'editor' | 'viewer') {
+        const supabase = createClient()
         const { data, error } = await supabase
             .from('trip_members')
             .update({ role })
@@ -126,6 +133,7 @@ export const collaboration = {
      * 협업자 삭제
      */
     async removeMember(memberId: string) {
+        const supabase = createClient()
         const { error } = await supabase
             .from('trip_members')
             .delete()
@@ -138,6 +146,7 @@ export const collaboration = {
      * 현재 사용자 정보 조회
      */
     async getCurrentUser() {
+        const supabase = createClient()
         return await supabase.auth.getUser()
     },
 
@@ -145,6 +154,7 @@ export const collaboration = {
      * 특정 사용자의 프로필 정보 조회
      */
     async getProfile(userId: string) {
+        const supabase = createClient()
         return await supabase
             .from('profiles')
             .select('*')
@@ -156,6 +166,7 @@ export const collaboration = {
      * 특정 여행에서 현재 사용자의 역할 조회
      */
     async getUserRole(tripId: string) {
+        const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) return { data: null, error: 'Not authenticated' }
 
@@ -168,7 +179,7 @@ export const collaboration = {
 
         if (trip?.user_id === user.id) return { data: 'owner', error: null }
 
-        // 2. 멤버 목록에서 확인 (이메일로도 확인 가능해야 함)
+        // 2. 멤버 목록에서 확인
         const { data: member } = await supabase
             .from('trip_members')
             .select('role')

@@ -71,9 +71,11 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
         } else {
             // 실제 이메일 발송 시도 (웹/앱 동일하게 시도)
             try {
-                const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+                // 웹 환경에서는 상대 경로(/api/invite)를 사용하고, 
+                // 네이티브(앱) 환경에서만 절대 경로(NEXT_PUBLIC_APP_URL)를 사용하도록 하여 CORS 문제를 방지합니다.
+                const isNative = Capacitor.isNativePlatform();
+                const apiUrl = isNative ? (process.env.NEXT_PUBLIC_APP_URL || '') : '';
                 
-                // fetch 호출 (apiUrl이 없으면 상대 경로로 동작하며, 앱 환경에서는 실패할 수 있음)
                 await fetch(`${apiUrl}/api/invite`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
