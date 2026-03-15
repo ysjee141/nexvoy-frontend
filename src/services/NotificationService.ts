@@ -58,9 +58,11 @@ export const NotificationService = {
      * 인증 상태가 바뀔 때(로그인 시) 보관 중인 토큰이 있다면 DB에 동기화합니다.
      */
     setupAuthChangeListener() {
+        // 인증 상태 변경 리스너 등록 시에는 초기 클라이언트를 사용하되, 
+        // 콜백 내부에서 필요한 작업을 할 때 createClient()를 다시 호출하여 최신 상태를 유지하게 합니다.
         const supabase = createClient()
         supabase.auth.onAuthStateChange(async (event: string, session: any) => {
-            console.log(`Auth state changed: ${event}`)
+            console.log(`[Notification] Auth state changed: ${event}`)
             if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user && this._token) {
                 await this.syncToken(session.user.id, this._token)
             }

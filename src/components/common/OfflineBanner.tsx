@@ -5,6 +5,7 @@ import { useNetworkStore } from '@/stores/useNetworkStore'
 import { useEffect, useState } from 'react'
 import { NotificationService } from '@/services/NotificationService'
 import { NativeUIService } from '@/services/NativeUIService'
+import { LifecycleService } from '@/services/LifecycleService'
 
 export default function OfflineBanner() {
     const { isOnline, initializeNetworkListener } = useNetworkStore()
@@ -13,9 +14,10 @@ export default function OfflineBanner() {
     useEffect(() => {
         setMounted(true)
         initializeNetworkListener()
-        // 앱 초기화 시 네이티브 UI 및 알림 권한 획득
+        // 앱 초기화 시 네이티브 UI 및 알림 권한 획득, 생명주기 리스너 필수
         NativeUIService.initialize()
         NotificationService.initialize()
+        LifecycleService.initialize()
     }, [initializeNetworkListener])
 
     if (!mounted || isOnline) return null

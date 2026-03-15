@@ -68,6 +68,7 @@ DROP POLICY IF EXISTS "Users can view own trips." ON public.trips;
 DROP POLICY IF EXISTS "Users can view trips they own or are members of." ON public.trips;
 DROP POLICY IF EXISTS "Users can view trips via owner, member or public share" ON public.trips;
 DROP POLICY IF EXISTS "Public select trips if shared" ON public.trips;
+DROP POLICY IF EXISTS "Access trips by owner, member, or public share" ON public.trips;
 
 CREATE POLICY "Access trips by owner, member, or public share" ON public.trips
   FOR SELECT USING (
@@ -80,6 +81,8 @@ CREATE POLICY "Access trips by owner, member, or public share" ON public.trips
 DROP POLICY IF EXISTS "Anyone can select share link by token" ON public.trip_shares;
 DROP POLICY IF EXISTS "Owners can manage share links" ON public.trip_shares;
 DROP POLICY IF EXISTS "Public select trip_shares" ON public.trip_shares;
+DROP POLICY IF EXISTS "Public select shares" ON public.trip_shares;
+DROP POLICY IF EXISTS "Manage shares as owner" ON public.trip_shares;
 
 CREATE POLICY "Public select shares" ON public.trip_shares FOR SELECT USING (true);
 CREATE POLICY "Manage shares as owner" ON public.trip_shares FOR ALL USING (public.check_is_trip_owner(trip_id, auth.uid()));
@@ -87,6 +90,9 @@ CREATE POLICY "Manage shares as owner" ON public.trip_shares FOR ALL USING (publ
 -- [TRIP_MEMBERS]
 DROP POLICY IF EXISTS "Users can see members of trips they belong to" ON public.trip_members;
 DROP POLICY IF EXISTS "Owners can manage members" ON public.trip_members;
+DROP POLICY IF EXISTS "Select members if related" ON public.trip_members;
+DROP POLICY IF EXISTS "Manage members as owner" ON public.trip_members;
+DROP POLICY IF EXISTS "Invited users can accept invitations" ON public.trip_members;
 
 CREATE POLICY "Select members if related" ON public.trip_members
   FOR SELECT USING (
@@ -113,6 +119,8 @@ DROP POLICY IF EXISTS "Users can manage plans for their trips" ON public.plans;
 DROP POLICY IF EXISTS "Users with edit permission can manage plans" ON public.plans;
 DROP POLICY IF EXISTS "Viewers can select plans" ON public.plans;
 DROP POLICY IF EXISTS "Public select plans if shared" ON public.plans;
+DROP POLICY IF EXISTS "Select plans if shared or related" ON public.plans;
+DROP POLICY IF EXISTS "Manage plans if editor or owner" ON public.plans;
 
 CREATE POLICY "Select plans if shared or related" ON public.plans
   FOR SELECT USING (
