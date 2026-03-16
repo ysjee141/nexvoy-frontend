@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'xyz.nexvoy.app',
-  appName: 'Next Voyage',
+  appName: 'Onvoy',
   webDir: 'out',
   plugins: {
     CapacitorHttp: {

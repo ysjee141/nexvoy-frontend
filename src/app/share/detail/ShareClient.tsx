@@ -124,7 +124,7 @@ export default function SharePage() {
         <div className={css({ maxW: '800px', mx: 'auto', p: '24px', bg: 'white', minH: '100vh' })}>
             <div className={css({ mb: '40px', textAlign: 'center' })}>
                 <span className={css({ px: '12px', py: '6px', bg: '#e8f0fe', color: '#1a73e8', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', mb: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' })}>
-                    <BadgeCheck size={14} /> Next Voyage 인증 공유 일정
+                    <BadgeCheck size={14} /> Onvoy 인증 공유 일정
                 </span>
                 <h1 className={css({ fontSize: '32px', fontWeight: '900', mb: '12px', color: '#111' })}>
                     {trip?.destination ? `${trip.destination} 여행` : '여행 일정'}
@@ -169,7 +169,7 @@ export default function SharePage() {
 
             <div className={css({ mt: '60px', pt: '40px', borderTop: '1px solid #eee', textAlign: 'center' })}>
                 <p className={css({ color: '#888', fontSize: '14px', mb: '16px' })}>나만의 멋진 여행 계획을 세우고 싶다면?</p>
-                <a href="/" className={css({ px: '24px', py: '12px', bg: '#111', color: 'white', borderRadius: '12px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' })}>Next Voyage 시작하기</a>
+                <a href="/" className={css({ px: '24px', py: '12px', bg: '#111', color: 'white', borderRadius: '12px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' })}>Onvoy 시작하기</a>
             </div>
         </div>
     )
