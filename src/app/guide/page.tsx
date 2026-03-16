@@ -120,7 +120,7 @@ const ADVANCED = [
 // ── FAQ ──
 const FAQS = [
     {
-        q: 'Next Voyage는 무료인가요?',
+        q: 'Onvoy는 무료인가요?',
         a: '네, 완전 무료입니다. 별도 결제나 신용카드 등록 없이 바로 사용하실 수 있습니다.',
     },
     {
@@ -209,7 +209,7 @@ export default function GuidePage() {
                     maxW: '520px', mx: 'auto', lineHeight: 1.8, mb: '36px', wordBreak: 'keep-all',
                 })}>
                     일정 관리부터 환율 변환, 동행자 협업까지.<br />
-                    Next Voyage 하나로 여행의 모든 것을 해결하세요.
+                    Onvoy 하나로 여행의 모든 것을 해결하세요.
                 </p>
                 <div className={css({ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' })}>
                     <Link href="/signup" className={css({
@@ -237,7 +237,7 @@ export default function GuidePage() {
 
             {/* ── 주요 기능 ── */}
             <section className={css({ mb: '72px' })}>
-                <SectionTitle badge="핵심 기능" title="여행에 필요한 모든 것, 한 곳에" sub="여러 앱을 오갈 필요 없습니다. Next Voyage 하나로 충분합니다." />
+                <SectionTitle badge="핵심 기능" title="여행에 필요한 모든 것, 한 곳에" sub="여러 앱을 오갈 필요 없습니다. Onvoy 하나로 충분합니다." />
                 <div className={css({
                     display: 'grid',
                     gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
@@ -347,7 +347,7 @@ export default function GuidePage() {
                     <Zap size={13} /> 지금 바로 시작하세요
                 </div>
                 <h2 className={css({ fontSize: { base: '24px', md: '34px' }, fontWeight: '900', color: 'white', mb: '12px', letterSpacing: '-0.02em', lineHeight: 1.2 })}>
-                    다음 여행, Next Voyage와<br />함께 계획하세요 ✈️
+                    다음 여행, Onvoy와<br />함께 계획하세요 ✈️
                 </h2>
                 <p className={css({ fontSize: '15px', color: 'rgba(255,255,255,0.83)', mb: '32px', lineHeight: 1.7, wordBreak: 'keep-all' })}>
                     무료 계정 하나로 무제한 여행을 관리하세요.<br />

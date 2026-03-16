@@ -105,7 +105,7 @@ export default function LoginPage() {
                         반가워요! 다시 오셨네요.
                     </h1>
                     <p className={css({ fontSize: { base: '14px', sm: '15px' }, color: '#666', lineHeight: 1.5, wordBreak: 'keep-all' })}>
-                        Next Voyage와 함께 당신의 모험을 기록해 보세요.
+                        Onvoy와 함께 당신의 모험을 기록해 보세요.
                     </p>
                 </div>
 
