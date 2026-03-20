@@ -5,10 +5,13 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import { UserPlus, Mail, Lock, Sparkles, Loader2, CheckCircle2 } from 'lucide-react'
+import TermsModal from './TermsModal'
 
 export default function SignUpPage() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [termsAgreed, setTermsAgreed] = useState(false)
+    const [isTermsModalOpen, setIsTermsModalOpen] = useState(false)
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
     const [loading, setLoading] = useState(false)
 
@@ -164,9 +167,27 @@ export default function SignUpPage() {
                         </div>
                     )}
 
+                    <div className={css({ mt: '4px', mb: '8px', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                        <input
+                            type="checkbox"
+                            id="terms"
+                            checked={termsAgreed}
+                            onChange={(e) => setTermsAgreed(e.target.checked)}
+                            className={css({ w: '18px', h: '18px', cursor: 'pointer', accentColor: '#34A853', flexShrink: 0 })}
+                        />
+                        <div className={css({ fontSize: '14px', color: '#555', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' })}>
+                            <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: '#34A853', fontWeight: '600', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
+                                이용약관 및 개인정보 처리방침
+                            </button>
+                            <label htmlFor="terms" className={css({ cursor: 'pointer', userSelect: 'none' })}>
+                                에 동의합니다. (필수)
+                            </label>
+                        </div>
+                    </div>
+
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={loading || !termsAgreed}
                         className={css({
                             w: '100%',
                             py: '15px',
@@ -175,7 +196,7 @@ export default function SignUpPage() {
                             fontWeight: 'bold',
                             fontSize: '16px',
                             borderRadius: '12px',
-                            cursor: loading ? 'not-allowed' : 'pointer',
+                            cursor: 'pointer',
                             transition: 'all 0.2s',
                             display: 'flex',
                             alignItems: 'center',
@@ -183,7 +204,7 @@ export default function SignUpPage() {
                             gap: '8px',
                             _hover: { bg: '#2d8a45', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(52, 168, 83, 0.2)' },
                             _active: { transform: 'translateY(0)' },
-                            _disabled: { opacity: 0.7, transform: 'none' },
+                            _disabled: { opacity: 0.5, cursor: 'not-allowed', bg: '#a5d6a7', transform: 'none', boxShadow: 'none', pointerEvents: 'none' },
                             mt: '4px',
                         })}
                     >
@@ -215,6 +236,8 @@ export default function SignUpPage() {
                     </Link>
                 </div>
             </div>
+
+            <TermsModal isOpen={isTermsModalOpen} onClose={() => setIsTermsModalOpen(false)} />
         </div>
     )
 }
