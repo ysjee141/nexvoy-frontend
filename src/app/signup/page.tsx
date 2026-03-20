@@ -23,7 +23,8 @@ export default function SignUpPage() {
             password,
             options: {
                 // 앱 빌드 시에는 Vercel (NEXT_PUBLIC_APP_URL)로 리다이렉트 하여 서버 라우트(/auth/callback)를 타도록 함
-                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || location.origin}/auth/callback`,
+                // 모바일 환경(Capacitor)에서 location.origin이 http://localhost로 잡히는 문제를 방지하기 위해 명시적 폴백을 둡니다.
+                emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' && location.origin.includes('localhost:3000') ? location.origin : 'https://app.nexvoy.xyz')}/auth/callback?next=/auth/success`,
             },
         })
 

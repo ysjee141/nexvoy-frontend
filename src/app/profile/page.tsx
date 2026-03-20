@@ -211,26 +211,28 @@ export default function ProfilePage() {
                 <div>
                     <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>닉네임</label>
                     {isEditingNickname ? (
-                        <div className={css({ display: 'flex', gap: '8px' })}>
+                        <div className={css({ display: 'flex', gap: '8px', flexDirection: { base: 'column', sm: 'row' } })}>
                             <input
                                 value={nickname}
                                 onChange={e => setNickname(e.target.value)}
                                 autoFocus
-                                className={css({ flex: 1, p: '12px 16px', border: '1.5px solid #4285F4', borderRadius: '8px', fontSize: '15px', outline: 'none' })}
+                                className={css({ flex: 1, w: { base: '100%', sm: 'auto' }, p: '12px 16px', border: '1.5px solid #4285F4', borderRadius: '8px', fontSize: '15px', outline: 'none' })}
                             />
-                            <button
-                                onClick={saveNickname}
-                                disabled={isSavingNickname}
-                                className={css({ px: '16px', py: '10px', bg: '#4285F4', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', _disabled: { opacity: 0.6 } })}
-                            >
-                                <Save size={16} />{isSavingNickname ? '저장 중...' : '저장'}
-                            </button>
-                            <button
-                                onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || '') }}
-                                className={css({ px: '16px', py: '10px', bg: '#f1f3f4', color: '#555', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600' })}
-                            >
-                                취소
-                            </button>
+                            <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
+                                <button
+                                    onClick={saveNickname}
+                                    disabled={isSavingNickname}
+                                    className={css({ flex: 1, justifyContent: 'center', px: '16px', py: '10px', bg: '#4285F4', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', _disabled: { opacity: 0.6 } })}
+                                >
+                                    <Save size={16} />{isSavingNickname ? '저장 중...' : '저장'}
+                                </button>
+                                <button
+                                    onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || '') }}
+                                    className={css({ flex: 1, justifyContent: 'center', px: '16px', py: '10px', bg: '#f1f3f4', color: '#555', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600' })}
+                                >
+                                    취소
+                                </button>
+                            </div>
                         </div>
                     ) : (
                         <div

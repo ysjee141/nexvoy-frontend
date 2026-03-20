@@ -265,33 +265,35 @@ export default function EditTemplatePage() {
                             </div>
                         ) : (
                             items.map((item, index) => (
-                                <div key={item.id} className={css({ display: 'flex', gap: '12px', alignItems: 'center' })}>
+                                <div key={item.id} className={css({ display: 'flex', flexDirection: { base: 'column', sm: 'row' }, gap: '8px', alignItems: { base: 'stretch', sm: 'center' }, p: { base: '12px', sm: '0' }, bg: { base: '#fafafa', sm: 'transparent' }, borderRadius: '8px', border: { base: '1px solid #eee', sm: 'none' } })}>
                                     <select
                                         value={item.category}
                                         onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                        className={css({ p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: '#f9f9f9', w: '120px', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                        className={css({ p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: { base: 'white', sm: '#f9f9f9' }, w: { base: '100%', sm: '120px' }, fontSize: '14px', _focus: { borderColor: '#4285F4' }, flexShrink: 0 })}
                                     >
                                         {CATEGORIES.map((cat: any) => (
                                             <option key={cat} value={cat}>{cat}</option>
                                         ))}
                                     </select>
 
-                                    <input
-                                        type="text"
-                                        value={item.item_name}
-                                        onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
-                                        placeholder={`항목 ${index + 1}`}
-                                        className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
-                                        required
-                                    />
+                                    <div className={css({ display: 'flex', gap: '8px', flex: 1 })}>
+                                        <input
+                                            type="text"
+                                            value={item.item_name}
+                                            onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
+                                            placeholder={`항목 ${index + 1}`}
+                                            className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                            required
+                                        />
 
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveItem(item)}
-                                        className={css({ p: '10px', color: '#dc2626', bg: '#fee2e2', borderRadius: '8px', border: 'none', cursor: 'pointer', _hover: { bg: '#fecaca' } })}
-                                    >
-                                        <X size={18} />
-                                    </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveItem(item)}
+                                            className={css({ p: '12px', color: '#dc2626', bg: '#fee2e2', borderRadius: '8px', border: 'none', cursor: 'pointer', _hover: { bg: '#fecaca' }, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' })}
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
                                 </div>
                             ))
                         )}

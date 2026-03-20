@@ -7,6 +7,12 @@ export async function GET(request: Request) {
     // if "next" is in param, use it as the redirect URL
     const next = searchParams.get('next') ?? '/'
 
+    // Handle Supabase errors passed via query params (e.g. invalid or expired token)
+    const error_description = searchParams.get('error_description')
+    if (error_description) {
+        return NextResponse.redirect(`${origin}/auth/error?message=${encodeURIComponent(error_description)}`)
+    }
+
     if (code) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
@@ -25,5 +31,5 @@ export async function GET(request: Request) {
     }
 
     // return the user to an error page with instructions
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+    return NextResponse.redirect(`${origin}/auth/error?message=invalid_code`)
 }

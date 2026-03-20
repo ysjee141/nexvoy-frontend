@@ -45,7 +45,8 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
         fetchShareToken(shareType)
     }
 
-    const shareUrl = shareToken ? `${window.location.origin}/share/detail?token=${shareToken}` : ''
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' && window.location.origin.includes('localhost:3000') ? window.location.origin : 'https://app.nexvoy.xyz');
+    const shareUrl = shareToken ? `${appUrl}/share/detail?token=${shareToken}` : ''
 
     const handleCopy = () => {
         if (!shareUrl) return
