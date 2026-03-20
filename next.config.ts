@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: isMobileBuild ? true : undefined,
   },
+  experimental: {
+    turbopackUseSystemTlsCerts: true,
+  },
 };
 
 export default nextConfig;

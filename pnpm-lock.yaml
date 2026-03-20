@@ -35,6 +35,9 @@ importers:
       '@capacitor/status-bar':
         specifier: ^8.0.1
         version: 8.0.1(@capacitor/core@8.2.0)
+      '@capgo/capacitor-navigation-bar':
+        specifier: ^8.0.25
+        version: 8.0.25(@capacitor/core@8.2.0)
       '@react-google-maps/api':
         specifier: ^2.19.3
         version: 2.20.8(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -211,6 +214,11 @@ packages:
 
   '@capacitor/status-bar@8.0.1':
     resolution: {integrity: sha512-OR59dlbwvmrV5dKsC9lvwv48QaGbqcbSTBpk+9/WXWxXYSdXXdzJZU9p8oyNPAkuJhCdnSa3XmU43fZRPBJJ5w==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@capgo/capacitor-navigation-bar@8.0.25':
+    resolution: {integrity: sha512-iQDNIWsx4giBwZORs89DvFoDqV5+qvskpV5CXZ1tWQZfNwMdfL4ILUI7yiyN4GfK201tAf9oqFP0x1zKt/YFVA==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
@@ -3195,6 +3203,10 @@ snapshots:
       '@capacitor/core': 8.2.0
 
   '@capacitor/status-bar@8.0.1(@capacitor/core@8.2.0)':
+    dependencies:
+      '@capacitor/core': 8.2.0
+
+  '@capgo/capacitor-navigation-bar@8.0.25(@capacitor/core@8.2.0)':
     dependencies:
       '@capacitor/core': 8.2.0
 

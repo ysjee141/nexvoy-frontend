@@ -1,4 +1,6 @@
 import { StatusBar, Style } from '@capacitor/status-bar';
+// @ts-ignore: User will install @capgo/capacitor-navigation-bar locally
+import { NavigationBar } from '@capgo/capacitor-navigation-bar';
 import { Capacitor } from '@capacitor/core';
 
 export const NativeUIService = {
@@ -13,6 +15,8 @@ export const NativeUIService = {
             if (Capacitor.getPlatform() === 'android') {
                 // 안드로이드 상단 바 배경색 지정 (흰색 계열)
                 await StatusBar.setBackgroundColor({ color: '#fbfbfb' });
+                // 안드로이드 하단 네비게이션 바 배경색 지정
+                await (NavigationBar as any).setNavigationBarColor({ color: '#fbfbfb', darkButtons: true });
             }
             
             console.log('Native UI Initialized successfully');

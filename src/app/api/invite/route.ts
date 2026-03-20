@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
                         <p><strong>${tripTitle}</strong> 여행의 협업자로 초대되었습니다.</p>
                         <p>아래 링크를 통해 초대 내용을 확인하고 수락해 주세요.</p>
                         <div style="margin: 30px 0;">
-                            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}" 
+                            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.nexvoy.xyz'}" 
                                style="background-color: #111; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                                 초대 확인하기
                             </a>

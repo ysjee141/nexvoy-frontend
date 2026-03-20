@@ -253,11 +253,11 @@ export default function ChecklistPage() {
             {isAdding && (
                 <form onSubmit={addItem} className={css({ mb: '20px' })}>
                     <div className={css({ display: 'flex', gap: '8px', flexDirection: { base: 'column', sm: 'row' } })}>
-                        <div className={css({ display: 'flex', gap: '8px', flex: 1 })}>
+                        <div className={css({ display: 'flex', gap: '8px', flex: 1, flexDirection: { base: 'column', sm: 'row' } })}>
                             <select
                                 value={newItemCategory}
                                 onChange={e => setNewItemCategory(e.target.value)}
-                                className={css({ p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '100px', fontSize: '14px' })}
+                                className={css({ w: { base: '100%', sm: 'auto' }, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '120px', fontSize: '14px', flexShrink: 0 })}
                             >
                                 {CATEGORIES.map((cat: any) => (
                                     <option key={cat} value={cat}>{cat}</option>
@@ -269,13 +269,13 @@ export default function ChecklistPage() {
                                 value={newItemName}
                                 onChange={e => setNewItemName(e.target.value)}
                                 placeholder="예: 여권, 충전기"
-                                className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                className={css({ w: '100%', flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
                             />
                         </div>
                         <button
                             type="submit"
                             disabled={!newItemName.trim()}
-                            className={css({ p: '12px 24px', bg: '#4285F4', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
+                            className={css({ w: { base: '100%', sm: 'auto' }, p: '12px 24px', bg: '#4285F4', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
                         >
                             등록
                         </button>
