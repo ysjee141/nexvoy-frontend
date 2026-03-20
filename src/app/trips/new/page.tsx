@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, ArrowLeft, ChevronLeft } from 'lucide-react'
+import { Plus, ArrowLeft, ChevronLeft, Minus } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 
 const libraries: ("places")[] = ["places"]
@@ -251,42 +251,97 @@ export default function NewTripPage() {
                                 <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#333' })}>
                                     성인 인원
                                 </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    required
-                                    value={adults}
-                                    onChange={e => setAdults(Number(e.target.value))}
-                                    className={css({
-                                        w: '100%',
-                                        p: '14px',
-                                        border: '1px solid #ddd',
-                                        borderRadius: '12px',
-                                        outline: 'none',
-                                        bg: '#f9f9f9',
-                                        _focus: { borderColor: '#4285F4', bg: 'white' },
-                                    })}
-                                />
+                                <div className={css({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    w: '100%',
+                                    p: '8px 12px',
+                                    border: '1px solid #eaeaea',
+                                    borderRadius: '16px',
+                                    bg: 'white',
+                                    boxShadow: '0 2px 10px rgba(0,0,0,0.015)'
+                                })}>
+                                    <button 
+                                        type="button" 
+                                        disabled={adults <= 1}
+                                        onClick={() => setAdults(adults - 1)}
+                                        className={css({ 
+                                            w: '36px', h: '36px', flexShrink: 0,
+                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                            color: '#4285F4', transition: 'all 0.2s', 
+                                            _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
+                                            _hover: { bg: '#e0e8ff' },
+                                            _disabled: { bg: '#f5f5f5', color: '#ccc', cursor: 'not-allowed', pointerEvents: 'none' }
+                                        })}
+                                    >
+                                        <Minus size={18} strokeWidth={2.5} />
+                                    </button>
+                                    <span className={css({ fontSize: '16px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#111' })}>{adults}</span>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setAdults(adults + 1)}
+                                        className={css({ 
+                                            w: '36px', h: '36px', flexShrink: 0,
+                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                            color: '#4285F4', transition: 'all 0.2s', 
+                                            _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
+                                            _hover: { bg: '#e0e8ff' }
+                                        })}
+                                    >
+                                        <Plus size={18} strokeWidth={2.5} />
+                                    </button>
+                                </div>
                             </div>
                             <div>
                                 <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#333' })}>
                                     아이 인원
                                 </label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={childrenCount}
-                                    onChange={e => setChildren(Number(e.target.value))}
-                                    className={css({
-                                        w: '100%',
-                                        p: '14px',
-                                        border: '1px solid #ddd',
-                                        borderRadius: '12px',
-                                        outline: 'none',
-                                        bg: '#f9f9f9',
-                                        _focus: { borderColor: '#4285F4', bg: 'white' },
-                                    })}
-                                />
+                                <div className={css({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    w: '100%',
+                                    p: '8px 12px',
+                                    border: '1px solid #eaeaea',
+                                    borderRadius: '16px',
+                                    bg: 'white',
+                                    boxShadow: '0 2px 10px rgba(0,0,0,0.015)'
+                                })}>
+                                    <button 
+                                        type="button" 
+                                        disabled={childrenCount <= 0}
+                                        onClick={() => setChildren(childrenCount - 1)}
+                                        className={css({ 
+                                            w: '36px', h: '36px', flexShrink: 0,
+                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                            color: '#4285F4', transition: 'all 0.2s', 
+                                            _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
+                                            _hover: { bg: '#e0e8ff' },
+                                            _disabled: { bg: '#f5f5f5', color: '#ccc', cursor: 'not-allowed', pointerEvents: 'none' }
+                                        })}
+                                    >
+                                        <Minus size={18} strokeWidth={2.5} />
+                                    </button>
+                                    <span className={css({ fontSize: '16px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#111' })}>{childrenCount}</span>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setChildren(childrenCount + 1)}
+                                        className={css({ 
+                                            w: '36px', h: '36px', flexShrink: 0,
+                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                            color: '#4285F4', transition: 'all 0.2s', 
+                                            _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
+                                            _hover: { bg: '#e0e8ff' }
+                                        })}
+                                    >
+                                        <Plus size={18} strokeWidth={2.5} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
