@@ -46,7 +46,7 @@ export default function TemplatesPage() {
         <div className={css({ w: '100%', py: '40px' })}>
             <header className={css({ mb: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                 <div>
-                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#111' })}>
+                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#022C22' })}>
                         내 체크리스트 템플릿
                     </h1>
                     <p className={css({ color: '#666', mt: '8px', fontSize: '16px' })}>
@@ -121,7 +121,7 @@ export default function TemplatesPage() {
                                         _hover: {
                                             transform: 'translateY(-4px)',
                                             boxShadow: '0 12px 24px rgba(0,0,0,0.08)',
-                                            borderColor: '#4285F4',
+                                            borderColor: '#10B981',
                                         },
                                     })}
                                 >
@@ -133,8 +133,8 @@ export default function TemplatesPage() {
                                             w: '48px',
                                             h: '48px',
                                             borderRadius: '12px',
-                                            bg: '#e8f0fe',
-                                            color: '#1a73e8',
+                                            bg: '#ECFDF5',
+                                            color: '#059669',
                                             mb: '16px'
                                         })}
                                     >
@@ -153,7 +153,7 @@ export default function TemplatesPage() {
                                     <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#666', mb: '16px' })}>
                                         저장된 항목: {itemCount}개
                                     </p>
-                                    <div className={css({ mt: 'auto', pt: '16px', borderTop: '1px solid #f0f0f0', color: '#4285F4', fontSize: '14px', fontWeight: 'bold' })}>
+                                    <div className={css({ mt: 'auto', pt: '16px', borderTop: '1px solid #f0f0f0', color: '#10B981', fontSize: '14px', fontWeight: 'bold' })}>
                                         템플릿 관리하기 →
                                     </div>
                                 </Link>

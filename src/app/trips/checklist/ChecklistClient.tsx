@@ -152,7 +152,7 @@ export default function ChecklistPage() {
         <div className={css({ bg: 'white', p: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
             <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, mb: '16px', flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
                 <h2 className={css({ fontSize: '20px', fontWeight: 'bold' })}>
-                    준비물 챙기기 {totalItems > 0 && <span className={css({ color: '#4285F4', ml: '8px' })}>{progressPercent}%</span>}
+                    준비물 챙기기 {totalItems > 0 && <span className={css({ color: '#10B981', ml: '8px' })}>{progressPercent}%</span>}
                 </h2>
 
                 <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'wrap' })}>
@@ -166,15 +166,15 @@ export default function ChecklistPage() {
                             px: '12px',
                             py: '8px',
                             bg: 'white',
-                            color: '#4285F4',
-                            border: '1px solid #4285F4',
+                            color: '#10B981',
+                            border: '1px solid #10B981',
                             borderRadius: '8px',
                             fontSize: '13px',
                             fontWeight: '600',
                             textDecoration: 'none',
                             flex: { base: 1, sm: 'none' },
                             whiteSpace: 'nowrap',
-                            _hover: { bg: '#e8f0fe' },
+                            _hover: { bg: '#ECFDF5' },
                         })}
                     >
                         <Settings size={14} /> 템플릿
@@ -185,7 +185,7 @@ export default function ChecklistPage() {
                             px: '12px',
                             py: '8px',
                             bg: '#f1f3f4',
-                            color: '#333',
+                            color: '#064E3B',
                             borderRadius: '8px',
                             fontSize: '13px',
                             fontWeight: '600',
@@ -244,7 +244,7 @@ export default function ChecklistPage() {
             {totalItems > 0 && (
                 <div className={css({ w: '100%', bg: '#eee', h: '8px', borderRadius: '4px', mb: '24px', overflow: 'hidden' })}>
                     <div
-                        className={css({ h: '100%', bg: 'linear-gradient(90deg, #4285F4, #34A853)', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                        className={css({ h: '100%', bg: 'linear-gradient(90deg, #10B981, #34A853)', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
                         style={{ width: `${progressPercent}%` }}
                     />
                 </div>
@@ -269,13 +269,13 @@ export default function ChecklistPage() {
                                 value={newItemName}
                                 onChange={e => setNewItemName(e.target.value)}
                                 placeholder="예: 여권, 충전기"
-                                className={css({ w: '100%', flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                className={css({ w: '100%', flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
                             />
                         </div>
                         <button
                             type="submit"
                             disabled={!newItemName.trim()}
-                            className={css({ w: { base: '100%', sm: 'auto' }, p: '12px 24px', bg: '#4285F4', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
+                            className={css({ w: { base: '100%', sm: 'auto' }, p: '12px 24px', bg: '#10B981', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
                         >
                             등록
                         </button>
@@ -318,7 +318,7 @@ export default function ChecklistPage() {
                                                 })}
                                             >
                                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' })}>
-                                                    {item.is_checked ? <CheckSquare color="#4285F4" size={20} /> : <Square color="#ccc" size={20} />}
+                                                    {item.is_checked ? <CheckSquare color="#10B981" size={20} /> : <Square color="#ccc" size={20} />}
                                                     <span className={css({ fontSize: '15px', color: item.is_checked ? '#888' : '#333', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
                                                         {item.item_name}
                                                     </span>
@@ -366,7 +366,7 @@ export default function ChecklistPage() {
                                             })}
                                         >
                                             <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' })}>
-                                                {item.is_checked ? <CheckSquare color="#4285F4" size={20} /> : <Square color="#ccc" size={20} />}
+                                                {item.is_checked ? <CheckSquare color="#10B981" size={20} /> : <Square color="#ccc" size={20} />}
                                                 <span className={css({ fontSize: '15px', color: item.is_checked ? '#888' : '#333', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
                                                     {item.item_name}
                                                 </span>

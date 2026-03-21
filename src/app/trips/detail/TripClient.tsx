@@ -175,19 +175,19 @@ export default function TripPlansPage() {
                     <div className={css({ display: 'inline-flex', bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: { base: '100%', sm: 'auto' } })}>
                         <button
                             onClick={() => setTimeDisplayMode('local')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
+                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#064E3B', whiteSpace: 'nowrap' })}
                         >
                             현지 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('kst')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
+                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#064E3B', whiteSpace: 'nowrap' })}
                         >
                             한국 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('both')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#333', whiteSpace: 'nowrap' })}
+                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#064E3B', whiteSpace: 'nowrap' })}
                         >
                             동시 표기
                         </button>
@@ -205,7 +205,7 @@ export default function TripPlansPage() {
                                 justifyContent: 'center',
                                 gap: '6px',
                                 bg: 'white',
-                                color: '#111',
+                                color: '#022C22',
                                 px: '12px',
                                 py: '10px',
                                 borderRadius: '8px',
@@ -231,7 +231,7 @@ export default function TripPlansPage() {
                                     justifyContent: 'center',
                                     gap: '6px',
                                     bg: 'white',
-                                    color: '#111',
+                                    color: '#022C22',
                                     px: '12px',
                                     py: '10px',
                                     borderRadius: '8px',
@@ -262,7 +262,7 @@ export default function TripPlansPage() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 gap: '6px',
-                                bg: '#4285F4',
+                                bg: '#10B981',
                                 color: 'white',
                                 px: '16px',
                                 py: '10px',
@@ -273,7 +273,7 @@ export default function TripPlansPage() {
                                 border: 'none',
                                 w: '100%',
                                 whiteSpace: 'nowrap',
-                                _hover: { bg: '#3367d6', transform: 'translateY(-1px)' },
+                                _hover: { bg: '#059669', transform: 'translateY(-1px)' },
                                 _active: { transform: 'translateY(0)' }
                             })}
                         >

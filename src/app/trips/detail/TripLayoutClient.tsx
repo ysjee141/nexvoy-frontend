@@ -72,7 +72,7 @@ export default function TripLayoutClient() {
                     color: '#666',
                     fontSize: '14px',
                     mb: '12px',
-                    _hover: { color: '#111' },
+                    _hover: { color: '#022C22' },
                 })}
             >
                 <ArrowLeft size={16} /> 목록으로

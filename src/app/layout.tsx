@@ -30,7 +30,8 @@ export default function RootLayout({
           minH: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          bg: '#fbfbfb',
+          bg: '#F4FBF7',
+          color: '#022C22',
         })}
       >
         {/*

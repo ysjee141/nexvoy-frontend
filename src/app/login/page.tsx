@@ -81,7 +81,7 @@ export default function LoginPage() {
                     <div className={css({
                         w: '60px',
                         h: '60px',
-                        bg: '#4285F4',
+                        bg: '#10B981',
                         color: 'white',
                         borderRadius: '16px',
                         display: 'flex',
@@ -96,7 +96,7 @@ export default function LoginPage() {
                     <h1 className={css({
                         fontSize: { base: '24px', sm: '28px' },
                         fontWeight: '800',
-                        color: '#111',
+                        color: '#022C22',
                         mb: '8px',
                         letterSpacing: '-0.02em',
                         wordBreak: 'keep-all',
@@ -128,7 +128,7 @@ export default function LoginPage() {
                                 outline: 'none',
                                 transition: 'all 0.2s',
                                 fontSize: '15px',
-                                _focus: { bg: 'white', borderColor: '#4285F4', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
+                                _focus: { bg: 'white', borderColor: '#10B981', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
                             })}
                             placeholder="you@example.com"
                         />
@@ -152,7 +152,7 @@ export default function LoginPage() {
                                 outline: 'none',
                                 transition: 'all 0.2s',
                                 fontSize: '15px',
-                                _focus: { bg: 'white', borderColor: '#4285F4', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
+                                _focus: { bg: 'white', borderColor: '#10B981', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
                             })}
                             placeholder="••••••••"
                         />
@@ -170,7 +170,7 @@ export default function LoginPage() {
                                 fontSize: '14px',
                                 color: '#666',
                                 transition: 'all 0.2s',
-                                _hover: { color: '#111' }
+                                _hover: { color: '#022C22' }
                             })}
                         >
                             <div className={css({
@@ -178,8 +178,8 @@ export default function LoginPage() {
                                 h: '18px',
                                 borderRadius: '4px',
                                 border: '2px solid',
-                                borderColor: rememberEmail ? '#4285F4' : '#ddd',
-                                bg: rememberEmail ? '#4285F4' : 'transparent',
+                                borderColor: rememberEmail ? '#10B981' : '#ddd',
+                                bg: rememberEmail ? '#10B981' : 'transparent',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -254,7 +254,7 @@ export default function LoginPage() {
                     <Link
                         href="/signup"
                         className={css({
-                            color: '#4285F4',
+                            color: '#10B981',
                             fontWeight: '700',
                             textDecoration: 'none',
                             _hover: { textDecoration: 'underline' },
