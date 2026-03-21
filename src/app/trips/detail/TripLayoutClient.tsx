@@ -3,24 +3,41 @@
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import TripTabNavigation from '@/components/trips/TripTabNavigation'
+import { ArrowLeft, Calendar, ListChecks } from 'lucide-react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import TripHeaderActions from '@/components/trips/TripHeaderActions'
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import TripClient from './TripClient'
+import ChecklistClient from '../checklist/ChecklistClient'
 
-export default function TripLayoutClient({ children }: { children: React.ReactNode }) {
+export default function TripLayoutClient() {
     const searchParams = useSearchParams()
     const id = searchParams.get('id')
+    const initialTab = searchParams.get('tab') === 'checklist' ? 'checklist' : 'plans'
     const router = useRouter()
     const supabase = createClient()
 
     const [trip, setTrip] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+    const [activeTab, setActiveTab] = useState<'plans' | 'checklist'>(initialTab)
+
+    useEffect(() => {
+        const urlTab = searchParams.get('tab')
+        if (urlTab === 'checklist' || urlTab === 'plans') {
+            setActiveTab(urlTab)
+        }
+    }, [searchParams])
+
+    const handleTabChange = (tab: 'plans' | 'checklist') => {
+        setActiveTab(tab)
+        const params = new URLSearchParams(searchParams.toString())
+        params.set('tab', tab)
+        window.history.replaceState(null, '', `?${params.toString()}`)
+    }
 
     useEffect(() => {
         async function fetchTrip() {
+            if (!id) return;
             const { data } = await supabase
                 .from('trips')
                 .select('*')
@@ -44,7 +61,7 @@ export default function TripLayoutClient({ children }: { children: React.ReactNo
     if (!trip || !id) return null;
 
     return (
-        <div className={css({ w: '100%', py: '20px' })}>
+        <div className={css({ w: '100%', py: '16px' })}>
             {/* 뒤로 가기 링크 (모바일용) */}
             <Link
                 href="/"
@@ -61,34 +78,62 @@ export default function TripLayoutClient({ children }: { children: React.ReactNo
                 <ArrowLeft size={16} /> 목록으로
             </Link>
 
-            {/* Trip Info Card */}
+            {/* Trip Info Header (Airbnb Style) */}
             <div className={css({
-                bg: 'white',
-                borderRadius: '16px',
-                p: { base: '20px', sm: '24px' },
-                boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
-                border: '1px solid #f0f0f0',
-                mb: '24px'
+                mb: '24px',
+                pb: '20px',
+                borderBottom: '1px solid #eaeaea'
             })}>
-                <h1 className={css({
-                    fontSize: { base: '22px', sm: '26px' },
-                    fontWeight: '800',
-                    color: '#111',
-                    mb: '16px',
-                    wordBreak: 'keep-all',
-                    lineHeight: 1.3,
-                })}>
-                    {trip.destination} 여행
-                </h1>
-                
-                {/* 날짜·인원 표시 + 수정/삭제 버튼 */}
+                {/* 제목, 날짜·인원 표시 + 수정/삭제 아이콘 (통합 레이아웃) */}
                 <TripHeaderActions trip={trip} />
             </div>
 
-            <TripTabNavigation tripId={id} />
+            {/* Tab Navigation (Instant React State Switch) */}
+            <div
+                className={css({
+                    display: 'flex',
+                    gap: '16px',
+                    borderBottom: '1px solid #ddd',
+                    mb: '24px',
+                })}
+            >
+                <button
+                    onClick={() => handleTabChange('plans')}
+                    className={css({
+                        display: 'flex', alignItems: 'center', gap: '8px', px: '16px', py: '12px',
+                        bg: 'transparent', cursor: 'pointer', border: 'none',
+                        color: activeTab === 'plans' ? '#111' : '#666',
+                        fontWeight: activeTab === 'plans' ? '600' : '500',
+                        borderBottom: activeTab === 'plans' ? '2px solid #111' : '2px solid transparent',
+                        _hover: { bg: '#f9fafb' },
+                    })}
+                >
+                    <Calendar size={18} /> 일정표
+                </button>
+                <button
+                    onClick={() => handleTabChange('checklist')}
+                    className={css({
+                        display: 'flex', alignItems: 'center', gap: '8px', px: '16px', py: '12px',
+                        bg: 'transparent', cursor: 'pointer', border: 'none',
+                        color: activeTab === 'checklist' ? '#111' : '#666',
+                        fontWeight: activeTab === 'checklist' ? '600' : '500',
+                        borderBottom: activeTab === 'checklist' ? '2px solid #111' : '2px solid transparent',
+                        _hover: { bg: '#f9fafb' },
+                    })}
+                >
+                    <ListChecks size={18} /> 준비물 체크리스트
+                </button>
+            </div>
 
-            {/* 하위 페이지 렌더링 영역 (일정표 OR 체크리스트) */}
-            <div>{children}</div>
+            {/* 하위 컨텐츠 전환 영역 (언마운트 하지 않고 display none으로 유지하여 상태 보존 및 즉각 전환) */}
+            <div>
+                <div style={{ display: activeTab === 'plans' ? 'block' : 'none' }}>
+                    <TripClient />
+                </div>
+                <div style={{ display: activeTab === 'checklist' ? 'block' : 'none' }}>
+                    <ChecklistClient />
+                </div>
+            </div>
         </div>
     )
 }

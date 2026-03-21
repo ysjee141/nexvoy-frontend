@@ -188,91 +188,94 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
 
     return (
         <>
-            {/* 날짜/인원 정보 + 수정/삭제 버튼 */}
-            <div className={css({ 
-                display: 'flex', 
-                flexDirection: { base: 'column', sm: 'row' }, 
-                alignItems: { base: 'flex-start', sm: 'flex-end' }, 
-                justifyContent: 'space-between', 
-                gap: '20px',
-                pt: '16px',
-                borderTop: '1px solid #f0f0f0'
-            })}>
-                <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px' })}>
-                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                        <Calendar size={16} color="#4285F4" />
-                        <span className={css({ fontWeight: '500' })}>{start} ~ {end}</span>
-                    </p>
-                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                        <Users size={16} color="#34A853" />
-                        <span className={css({ fontWeight: '500' })}>성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}</span>
-                    </p>
-                    {/* 총 예상 비용 */}
-                    {!costSummary.loading && costSummary.byCurrency.length > 0 && (
-                        <div className={css({ display: 'flex', alignItems: 'flex-start', gap: '8px', mt: '2px' })}>
-                            <Wallet size={16} color="#FBBC05" className={css({ mt: '3px', flexShrink: 0 })} />
-                            <div>
-                                {/* KRW 총합 (주 표시) */}
-                                {costSummary.totalKrw !== null ? (
-                                    <p className={css({ color: '#333', fontSize: '14px', fontWeight: '700' })}>
-                                        약 {formatKRW(costSummary.totalKrw)}
-                                    </p>
-                                ) : (
-                                    <p className={css({ color: '#333', fontSize: '14px', fontWeight: '700' })}>합산 중...</p>
-                                )}
-                                {/* 통화별 소계 (서브 텍스트) */}
-                                <p className={css({ fontSize: '12px', color: '#888', mt: '2px', fontWeight: '500' })}>
-                                    {costSummary.byCurrency.map((c, i) => (
-                                        <span key={c.code}>
-                                            {i > 0 && ' · '}
-                                            {formatCurrency(c.total, { code: c.code, symbol: c.symbol, locale: 'ko-KR', name: '' })}
-                                        </span>
-                                    ))}
-                                </p>
-                            </div>
+            <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px' })}>
+                {/* 첫 번째 줄: 여행 타이틀 + (오너인 경우) 수정/삭제 버튼 */}
+                <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' })}>
+                    <h1 className={css({
+                        fontSize: { base: '24px', sm: '30px' },
+                        fontWeight: '800',
+                        color: '#111',
+                        wordBreak: 'keep-all',
+                        lineHeight: 1.3,
+                        letterSpacing: '-0.5px',
+                        flex: 1,
+                        mt: '-2px'
+                    })}>
+                        {trip.destination} 여행
+                    </h1>
+
+                    {/* 오너만 수정/삭제 아이콘 표시 */}
+                    {isOwner && (
+                        <div className={css({ display: 'flex', gap: '6px', flexShrink: 0 })}>
+                            <button
+                                onClick={() => {
+                                    setDestination(trip.destination)
+                                    setStartDate(trip.start_date)
+                                    setEndDate(trip.end_date)
+                                    setAdults(trip.adults_count)
+                                    setChildren(trip.children_count)
+                                    setErrorMsg('')
+                                    setShowEditModal(true)
+                                }}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    p: '8px', bg: '#e8f0fe', color: '#1a73e8', border: 'none', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#d2e3fc', transform: 'scale(1.05)' }
+                                })}
+                                title="여행 수정"
+                            >
+                                <Pencil size={18} />
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    p: '8px', bg: '#fce8e6', color: '#d93025', border: 'none', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#fad2cf', transform: 'scale(1.05)' }
+                                })}
+                                title="여행 삭제"
+                            >
+                                <Trash2 size={18} />
+                            </button>
                         </div>
                     )}
                 </div>
 
-                {/* 오너만 수정/삭제 표시 */}
-                {isOwner && (
-                    <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
-                        <button
-                            onClick={() => {
-                                setDestination(trip.destination)
-                                setStartDate(trip.start_date)
-                                setEndDate(trip.end_date)
-                                setAdults(trip.adults_count)
-                                setChildren(trip.children_count)
-                                setErrorMsg('')
-                                setShowEditModal(true)
-                            }}
-                            className={css({
-                                flex: { base: 1, sm: 'none' },
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                px: '14px', py: '10px', bg: '#f8f9fa', color: '#555',
-                                border: '1px solid #ddd', borderRadius: '8px',
-                                fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                                transition: 'all 0.2s', _hover: { bg: '#eee', color: '#111' }
-                            })}
-                        >
-                            <Pencil size={14} /> 수정
-                        </button>
-                        <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className={css({
-                                flex: { base: 1, sm: 'none' },
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                px: '14px', py: '10px', bg: '#fff5f5', color: '#dc2626',
-                                border: '1px solid #fecaca', borderRadius: '8px',
-                                fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                                transition: 'all 0.2s', _hover: { bg: '#fee2e2' }
-                            })}
-                        >
-                            <Trash2 size={14} /> 삭제
-                        </button>
+                {/* 두 번째 줄: 날짜/인원/비용 요약 (아이콘 부활 및 인라인 1줄 배치) */}
+                <div className={css({ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    color: '#555', 
+                    fontSize: { base: '14px', sm: '15px' },
+                    fontWeight: '500'
+                })}>
+                    {/* 날짜 */}
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
+                        <Calendar size={15} color="#4285F4" />
+                        <span>{start} ~ {end}</span>
                     </div>
-                )}
+
+                    <span className={css({ color: '#ccc', px: '2px' })}>•</span>
+                    
+                    {/* 인원 */}
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
+                        <Users size={15} color="#34A853" />
+                        <span>성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}</span>
+                    </div>
+                    
+                    {/* 총 예상 비용 */}
+                    {!costSummary.loading && costSummary.byCurrency.length > 0 && (
+                        <>
+                            <span className={css({ color: '#ccc', px: '2px' })}>•</span>
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
+                                <Wallet size={15} color="#FBBC05" />
+                                <span className={css({ fontWeight: '700', color: '#111' })}>
+                                    {costSummary.totalKrw !== null ? `약 ${formatKRW(costSummary.totalKrw)}` : '비용 합산 중'}
+                                </span>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* ── 수정 모달 ── */}
