@@ -188,91 +188,94 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
 
     return (
         <>
-            {/* 날짜/인원 정보 + 수정/삭제 버튼 */}
-            <div className={css({ 
-                display: 'flex', 
-                flexDirection: { base: 'column', sm: 'row' }, 
-                alignItems: { base: 'flex-start', sm: 'flex-end' }, 
-                justifyContent: 'space-between', 
-                gap: '20px',
-                pt: '16px',
-                borderTop: '1px solid #f0f0f0'
-            })}>
-                <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px' })}>
-                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                        <Calendar size={16} color="#4285F4" />
-                        <span className={css({ fontWeight: '500' })}>{start} ~ {end}</span>
-                    </p>
-                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                        <Users size={16} color="#34A853" />
-                        <span className={css({ fontWeight: '500' })}>성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}</span>
-                    </p>
-                    {/* 총 예상 비용 */}
-                    {!costSummary.loading && costSummary.byCurrency.length > 0 && (
-                        <div className={css({ display: 'flex', alignItems: 'flex-start', gap: '8px', mt: '2px' })}>
-                            <Wallet size={16} color="#FBBC05" className={css({ mt: '3px', flexShrink: 0 })} />
-                            <div>
-                                {/* KRW 총합 (주 표시) */}
-                                {costSummary.totalKrw !== null ? (
-                                    <p className={css({ color: '#333', fontSize: '14px', fontWeight: '700' })}>
-                                        약 {formatKRW(costSummary.totalKrw)}
-                                    </p>
-                                ) : (
-                                    <p className={css({ color: '#333', fontSize: '14px', fontWeight: '700' })}>합산 중...</p>
-                                )}
-                                {/* 통화별 소계 (서브 텍스트) */}
-                                <p className={css({ fontSize: '12px', color: '#888', mt: '2px', fontWeight: '500' })}>
-                                    {costSummary.byCurrency.map((c, i) => (
-                                        <span key={c.code}>
-                                            {i > 0 && ' · '}
-                                            {formatCurrency(c.total, { code: c.code, symbol: c.symbol, locale: 'ko-KR', name: '' })}
-                                        </span>
-                                    ))}
-                                </p>
-                            </div>
+            <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px' })}>
+                {/* 첫 번째 줄: 여행 타이틀 + (오너인 경우) 수정/삭제 버튼 */}
+                <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' })}>
+                    <h1 className={css({
+                        fontSize: { base: '24px', sm: '30px' },
+                        fontWeight: '800',
+                        color: '#022C22',
+                        wordBreak: 'keep-all',
+                        lineHeight: 1.3,
+                        letterSpacing: '-0.5px',
+                        flex: 1,
+                        mt: '-2px'
+                    })}>
+                        {trip.destination} 여행
+                    </h1>
+
+                    {/* 오너만 수정/삭제 아이콘 표시 */}
+                    {isOwner && (
+                        <div className={css({ display: 'flex', gap: '6px', flexShrink: 0 })}>
+                            <button
+                                onClick={() => {
+                                    setDestination(trip.destination)
+                                    setStartDate(trip.start_date)
+                                    setEndDate(trip.end_date)
+                                    setAdults(trip.adults_count)
+                                    setChildren(trip.children_count)
+                                    setErrorMsg('')
+                                    setShowEditModal(true)
+                                }}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    p: '8px', bg: '#ECFDF5', color: '#059669', border: 'none', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#A7F3D0', transform: 'scale(1.05)' }
+                                })}
+                                title="여행 수정"
+                            >
+                                <Pencil size={18} />
+                            </button>
+                            <button
+                                onClick={() => setShowDeleteConfirm(true)}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    p: '8px', bg: '#fce8e6', color: '#d93025', border: 'none', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#fad2cf', transform: 'scale(1.05)' }
+                                })}
+                                title="여행 삭제"
+                            >
+                                <Trash2 size={18} />
+                            </button>
                         </div>
                     )}
                 </div>
 
-                {/* 오너만 수정/삭제 표시 */}
-                {isOwner && (
-                    <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
-                        <button
-                            onClick={() => {
-                                setDestination(trip.destination)
-                                setStartDate(trip.start_date)
-                                setEndDate(trip.end_date)
-                                setAdults(trip.adults_count)
-                                setChildren(trip.children_count)
-                                setErrorMsg('')
-                                setShowEditModal(true)
-                            }}
-                            className={css({
-                                flex: { base: 1, sm: 'none' },
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                px: '14px', py: '10px', bg: '#f8f9fa', color: '#555',
-                                border: '1px solid #ddd', borderRadius: '8px',
-                                fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                                transition: 'all 0.2s', _hover: { bg: '#eee', color: '#111' }
-                            })}
-                        >
-                            <Pencil size={14} /> 수정
-                        </button>
-                        <button
-                            onClick={() => setShowDeleteConfirm(true)}
-                            className={css({
-                                flex: { base: 1, sm: 'none' },
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                px: '14px', py: '10px', bg: '#fff5f5', color: '#dc2626',
-                                border: '1px solid #fecaca', borderRadius: '8px',
-                                fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                                transition: 'all 0.2s', _hover: { bg: '#fee2e2' }
-                            })}
-                        >
-                            <Trash2 size={14} /> 삭제
-                        </button>
+                {/* 두 번째 줄: 날짜/인원/비용 요약 (아이콘 부활 및 인라인 1줄 배치) */}
+                <div className={css({ 
+                    display: 'flex', 
+                    flexWrap: 'wrap', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    color: '#555', 
+                    fontSize: { base: '14px', sm: '15px' },
+                    fontWeight: '500'
+                })}>
+                    {/* 날짜 */}
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
+                        <Calendar size={15} color="#10B981" />
+                        <span>{start} ~ {end}</span>
                     </div>
-                )}
+
+                    <span className={css({ color: '#ccc', px: '2px' })}>•</span>
+                    
+                    {/* 인원 */}
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
+                        <Users size={15} color="#34A853" />
+                        <span>성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}</span>
+                    </div>
+                    
+                    {/* 총 예상 비용 */}
+                    {!costSummary.loading && costSummary.byCurrency.length > 0 && (
+                        <>
+                            <span className={css({ color: '#ccc', px: '2px' })}>•</span>
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
+                                <Wallet size={15} color="#FBBC05" />
+                                <span className={css({ fontWeight: '700', color: '#022C22' })}>
+                                    {costSummary.totalKrw !== null ? `약 ${formatKRW(costSummary.totalKrw)}` : '비용 합산 중'}
+                                </span>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* ── 수정 모달 ── */}
@@ -295,7 +298,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                         <div className={css({ p: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10 })}>
                             <button
                                 onClick={() => setShowEditModal(false)}
-                                className={css({ display: { base: 'flex', sm: 'none' }, alignItems: 'center', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#4285F4', p: '0', zIndex: 1 })}
+                                className={css({ display: { base: 'flex', sm: 'none' }, alignItems: 'center', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#10B981', p: '0', zIndex: 1 })}
                             >
                                 <ChevronLeft size={26} />
                             </button>
@@ -304,7 +307,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                             </h2>
                             <button
                                 onClick={() => setShowEditModal(false)}
-                                className={css({ display: { base: 'none', sm: 'flex' }, bg: 'transparent', border: 'none', cursor: 'pointer', color: '#666', _hover: { color: '#111' } })}
+                                className={css({ display: { base: 'none', sm: 'flex' }, bg: 'transparent', border: 'none', cursor: 'pointer', color: '#666', _hover: { color: '#022C22' } })}
                             >
                                 <X size={24} />
                             </button>
@@ -313,7 +316,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                         {/* 폼 */}
                         <form onSubmit={handleEdit} className={css({ p: { base: '16px', sm: '24px' }, display: 'flex', flexDirection: 'column', gap: '20px', overflowX: 'hidden' })}>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>
+                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#064E3B' })}>
                                     여행지 (국가/도시)
                                 </label>
                                 {isLoaded ? (
@@ -324,7 +327,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                                             value={destination}
                                             onChange={e => setDestination(e.target.value)}
                                             placeholder="예: 일본 도쿄, 프랑스 파리"
-                                            className={css({ w: '100%', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#4285F4' } })}
+                                            className={css({ w: '100%', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#10B981' } })}
                                         />
                                     </Autocomplete>
                                 ) : (
@@ -333,14 +336,14 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                                         required
                                         value={destination}
                                         onChange={e => setDestination(e.target.value)}
-                                        className={css({ w: '100%', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#4285F4' } })}
+                                        className={css({ w: '100%', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#10B981' } })}
                                     />
                                 )}
                             </div>
 
                             <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
                                 <div>
-                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>가는 날 (시작일)</label>
+                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#064E3B' })}>가는 날 (시작일)</label>
                                     <div style={{ overflow: 'hidden', width: '100%' }}>
                                         <input
                                             type="date"
@@ -348,12 +351,12 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                                             value={startDate}
                                             onChange={e => setStartDate(e.target.value)}
                                             style={{ minWidth: 0 }}
-                                            className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#4285F4' } })}
+                                            className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' } })}
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>오는 날 (종료일)</label>
+                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#064E3B' })}>오는 날 (종료일)</label>
                                     <div style={{ overflow: 'hidden', width: '100%' }}>
                                         <input
                                             type="date"
@@ -361,7 +364,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                                             value={endDate}
                                             onChange={e => setEndDate(e.target.value)}
                                             style={{ minWidth: 0 }}
-                                            className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#4285F4' } })}
+                                            className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' } })}
                                         />
                                     </div>
                                 </div>
@@ -369,21 +372,21 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
 
                             <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
                                 <div>
-                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>성인 인원</label>
+                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#064E3B' })}>성인 인원</label>
                                     <input
                                         type="number" min="1" required
                                         value={adults}
                                         onChange={e => setAdults(Number(e.target.value))}
-                                        className={css({ w: '100%', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#4285F4' } })}
+                                        className={css({ w: '100%', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' } })}
                                     />
                                 </div>
                                 <div>
-                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#333' })}>아이 인원</label>
+                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#064E3B' })}>아이 인원</label>
                                     <input
                                         type="number" min="0"
                                         value={children}
                                         onChange={e => setChildren(Number(e.target.value))}
-                                        className={css({ w: '100%', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#4285F4' } })}
+                                        className={css({ w: '100%', p: '13px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' } })}
                                     />
                                 </div>
                             </div>
@@ -425,7 +428,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                     })}>
                         <div className={css({ textAlign: 'center', mb: '20px' })}>
                             <div className={css({ fontSize: '40px', mb: '12px' })}>🗑️</div>
-                            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', color: '#111', mb: '8px' })}>
+                            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', color: '#022C22', mb: '8px' })}>
                                 여행을 삭제할까요?
                             </h3>
                             <p className={css({ fontSize: '14px', color: '#666', lineHeight: 1.6, wordBreak: 'keep-all' })}>

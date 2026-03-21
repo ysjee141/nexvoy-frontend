@@ -13,7 +13,7 @@ import {
 const FEATURES = [
     {
         icon: <Map size={28} />,
-        bg: '#e8f0fe', color: '#4285F4',
+        bg: '#ECFDF5', color: '#10B981',
         title: '스마트한 여행 관리',
         desc: '목적지·날짜·인원을 등록하면 끝. 진행 중인 여행은 자동으로 상단에 강조 표시되어 한눈에 파악됩니다.',
         badge: '여행 관리',
@@ -46,7 +46,7 @@ const STEPS = [
     {
         num: '01',
         icon: <Plus size={22} />,
-        color: '#4285F4',
+        color: '#10B981',
         title: '여행을 만드세요',
         desc: '"새 여행 추가"를 눌러 여행지와 날짜를 입력하기만 하면 됩니다. 30초면 충분합니다.',
         highlight: '평균 30초 만에 여행 생성',
@@ -93,7 +93,7 @@ const ADVANCED = [
     },
     {
         icon: <Clock size={20} />,
-        color: '#4285F4',
+        color: '#10B981',
         title: '현지·한국 시간 동시 확인',
         desc: '시차 때문에 머리 아플 필요 없습니다. 현지 시간과 한국 시간을 나란히 보여드립니다.',
     },
@@ -157,7 +157,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
                     textAlign: 'left', gap: '12px',
                 })}
             >
-                <span className={css({ fontWeight: '600', fontSize: '15px', color: '#111', lineHeight: 1.4 })}>{q}</span>
+                <span className={css({ fontWeight: '600', fontSize: '15px', color: '#022C22', lineHeight: 1.4 })}>{q}</span>
                 {open ? <ChevronUp size={18} color="#aaa" style={{ flexShrink: 0 }} /> : <ChevronDown size={18} color="#aaa" style={{ flexShrink: 0 }} />}
             </button>
             {open && (
@@ -190,7 +190,7 @@ export default function GuidePage() {
 
                 <div className={css({
                     display: 'inline-flex', alignItems: 'center', gap: '6px',
-                    bg: '#e8f0fe', color: '#4285F4', fontSize: '12px', fontWeight: '700',
+                    bg: '#ECFDF5', color: '#10B981', fontSize: '12px', fontWeight: '700',
                     px: '12px', py: '5px', borderRadius: '20px', mb: '20px',
                     letterSpacing: '0.5px',
                 })}>
@@ -199,10 +199,10 @@ export default function GuidePage() {
 
                 <h1 className={css({
                     fontSize: { base: '30px', md: '48px' }, fontWeight: '900',
-                    color: '#111', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
+                    color: '#022C22', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
                 })}>
                     여행 계획, 이제<br />
-                    <span className={css({ color: '#4285F4' })}>더 쉽고 즐겁게</span> 세우세요
+                    <span className={css({ color: '#10B981' })}>더 쉽고 즐겁게</span> 세우세요
                 </h1>
                 <p className={css({
                     fontSize: { base: '15px', md: '18px' }, color: '#555',
@@ -214,17 +214,17 @@ export default function GuidePage() {
                 <div className={css({ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' })}>
                     <Link href="/signup" className={css({
                         display: 'inline-flex', alignItems: 'center', gap: '8px',
-                        bg: '#4285F4', color: 'white', fontWeight: '700', fontSize: '15px',
+                        bg: '#10B981', color: 'white', fontWeight: '700', fontSize: '15px',
                         px: '28px', py: '14px', borderRadius: '14px', textDecoration: 'none',
                         boxShadow: '0 6px 20px rgba(66,133,244,0.35)',
                         transition: 'all 0.2s',
-                        _hover: { bg: '#3367d6', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(66,133,244,0.4)' },
+                        _hover: { bg: '#059669', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(66,133,244,0.4)' },
                     })}>
                         지금 무료로 시작하기 <ArrowRight size={17} />
                     </Link>
                     <Link href="/" className={css({
                         display: 'inline-flex', alignItems: 'center', gap: '6px',
-                        bg: 'white', color: '#333', fontWeight: '600', fontSize: '15px',
+                        bg: 'white', color: '#064E3B', fontWeight: '600', fontSize: '15px',
                         px: '24px', py: '14px', borderRadius: '14px', textDecoration: 'none',
                         border: '1px solid #e0e0e0',
                         transition: 'all 0.2s',
@@ -256,7 +256,7 @@ export default function GuidePage() {
                                 </div>
                                 <span style={{ fontSize: 11, fontWeight: 700, color: f.color, background: f.bg, padding: '3px 8px', borderRadius: 20 }}>{f.badge}</span>
                             </div>
-                            <h3 className={css({ fontWeight: '800', fontSize: '16px', color: '#111', lineHeight: 1.3 })}>{f.title}</h3>
+                            <h3 className={css({ fontWeight: '800', fontSize: '16px', color: '#022C22', lineHeight: 1.3 })}>{f.title}</h3>
                             <p className={css({ fontSize: '13px', color: '#666', lineHeight: 1.7 })}>{f.desc}</p>
                         </div>
                     ))}
@@ -284,7 +284,7 @@ export default function GuidePage() {
                             <div className={css({ flex: 1, pt: '4px' })}>
                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '5px', flexWrap: 'wrap' })}>
                                     <span className={css({ fontSize: '11px', fontWeight: '800', color: '#ccc', letterSpacing: '1px' })}>{s.num}</span>
-                                    <h3 className={css({ fontWeight: '800', fontSize: '16px', color: '#111' })}>{s.title}</h3>
+                                    <h3 className={css({ fontWeight: '800', fontSize: '16px', color: '#022C22' })}>{s.title}</h3>
                                     <span style={{ fontSize: 11, fontWeight: 700, color: s.color, background: s.color + '12', padding: '2px 8px', borderRadius: 20 }}>
                                         ✓ {s.highlight}
                                     </span>
@@ -315,7 +315,7 @@ export default function GuidePage() {
                                 {a.icon}
                             </div>
                             <div>
-                                <h4 className={css({ fontWeight: '700', fontSize: '14px', color: '#111', mb: '5px' })}>{a.title}</h4>
+                                <h4 className={css({ fontWeight: '700', fontSize: '14px', color: '#022C22', mb: '5px' })}>{a.title}</h4>
                                 <p className={css({ fontSize: '13px', color: '#666', lineHeight: 1.65 })}>{a.desc}</p>
                             </div>
                         </div>
@@ -373,14 +373,14 @@ function SectionTitle({ badge, title, sub }: { badge: string; title: string; sub
         <div className={css({ textAlign: 'center', mb: '40px' })}>
             <span className={css({
                 display: 'inline-block', fontSize: '11px', fontWeight: '800',
-                color: '#4285F4', letterSpacing: '1.5px', textTransform: 'uppercase',
-                bg: '#e8f0fe', px: '10px', py: '4px', borderRadius: '20px', mb: '12px',
+                color: '#10B981', letterSpacing: '1.5px', textTransform: 'uppercase',
+                bg: '#ECFDF5', px: '10px', py: '4px', borderRadius: '20px', mb: '12px',
             })}>
                 {badge}
             </span>
             <h2 className={css({
                 fontSize: { base: '22px', md: '32px' }, fontWeight: '900',
-                color: '#111', letterSpacing: '-0.02em', mb: '10px',
+                color: '#022C22', letterSpacing: '-0.02em', mb: '10px',
             })}>
                 {title}
             </h2>

@@ -160,14 +160,14 @@ export default function ProfilePage() {
             <div className={css({ display: 'flex', alignItems: 'center', gap: '16px', mb: '4px' })}>
                 <div className={css({
                     w: { base: '56px', sm: '64px' }, h: { base: '56px', sm: '64px' }, borderRadius: '50%',
-                    bg: 'linear-gradient(135deg, #4285F4, #34A853)',
+                    bg: 'linear-gradient(135deg, #10B981, #34A853)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: 'white', fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', flexShrink: 0
                 })}>
                     {displayName.charAt(0).toUpperCase()}
                 </div>
                 <div>
-                    <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#111' })}>{displayName}</h1>
+                    <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#022C22' })}>{displayName}</h1>
                     <p className={css({ color: '#888', fontSize: '14px', mt: '2px' })}>{user.email}</p>
                 </div>
             </div>
@@ -185,7 +185,7 @@ export default function ProfilePage() {
                     ].map(item => (
                         <div key={item.label} className={css({ p: { base: '12px 8px', sm: '16px' }, bg: '#fafafa', borderRadius: '12px' })}>
                             <div className={css({ fontSize: '22px', mb: '6px' })}>{item.icon}</div>
-                            <div className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: 'bold', color: '#111' })}>{item.value}</div>
+                            <div className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: 'bold', color: '#022C22' })}>{item.value}</div>
                             <div className={css({ fontSize: '12px', color: '#888', mt: '4px', whiteSpace: 'nowrap' })}>{item.label}</div>
                         </div>
                     ))}
@@ -216,13 +216,13 @@ export default function ProfilePage() {
                                 value={nickname}
                                 onChange={e => setNickname(e.target.value)}
                                 autoFocus
-                                className={css({ flex: 1, w: { base: '100%', sm: 'auto' }, p: '12px 16px', border: '1.5px solid #4285F4', borderRadius: '8px', fontSize: '15px', outline: 'none' })}
+                                className={css({ flex: 1, w: { base: '100%', sm: 'auto' }, p: '12px 16px', border: '1.5px solid #10B981', borderRadius: '8px', fontSize: '15px', outline: 'none' })}
                             />
                             <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
                                 <button
                                     onClick={saveNickname}
                                     disabled={isSavingNickname}
-                                    className={css({ flex: 1, justifyContent: 'center', px: '16px', py: '10px', bg: '#4285F4', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', _disabled: { opacity: 0.6 } })}
+                                    className={css({ flex: 1, justifyContent: 'center', px: '16px', py: '10px', bg: '#10B981', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', _disabled: { opacity: 0.6 } })}
                                 >
                                     <Save size={16} />{isSavingNickname ? '저장 중...' : '저장'}
                                 </button>
@@ -239,8 +239,8 @@ export default function ProfilePage() {
                             onClick={() => setIsEditingNickname(true)}
                             className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '12px 16px', border: '1px solid #eee', borderRadius: '8px', cursor: 'pointer', _hover: { bg: '#fafafa', borderColor: '#ddd' } })}
                         >
-                            <span className={css({ fontSize: '15px', color: '#333' })}>{displayName}</span>
-                            <span className={css({ fontSize: '13px', color: '#4285F4', fontWeight: '600' })}>수정</span>
+                            <span className={css({ fontSize: '15px', color: '#064E3B' })}>{displayName}</span>
+                            <span className={css({ fontSize: '13px', color: '#10B981', fontWeight: '600' })}>수정</span>
                         </div>
                     )}
                 </div>
@@ -261,7 +261,7 @@ export default function ProfilePage() {
                                 value={newPassword}
                                 onChange={e => { setNewPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
                                 placeholder="6자 이상 입력"
-                                className={css({ w: '100%', p: '12px 48px 12px 16px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', outline: 'none', _focus: { borderColor: '#4285F4' } })}
+                                className={css({ w: '100%', p: '12px 48px 12px 16px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', outline: 'none', _focus: { borderColor: '#10B981' } })}
                             />
                             <button type="button" onClick={() => setShowNew(!showNew)}
                                 className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa' })}>
@@ -355,7 +355,7 @@ export default function ProfilePage() {
                             borderTop: i === 0 ? '1px solid #f0f0f0' : 'none',
                             borderBottom: i < arr.length - 1 ? '1px solid #f0f0f0' : 'none',
                             textDecoration: 'none',
-                            color: '#333',
+                            color: '#064E3B',
                             _hover: { bg: '#fafafa' },
                         })}
                     >

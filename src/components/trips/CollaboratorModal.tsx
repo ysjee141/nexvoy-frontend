@@ -131,13 +131,13 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
             })} onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className={css({
                     position: 'absolute', top: '24px', right: '24px', bg: 'transparent',
-                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#333' }
+                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#064E3B' }
                 })}>
                     <X size={24} />
                 </button>
 
                 <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', mb: { base: '16px', sm: '24px' }, display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <UserPlus size={20} color="#4285F4" /> 협업자 초대
+                    <UserPlus size={20} color="#10B981" /> 협업자 초대
                 </h2>
 
                 {/* 초대 폼 (소유자나 편집자만 가능) */}
@@ -154,7 +154,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                 className={css({
                                     w: '100%', pl: '40px', pr: '12px', py: '14px', bg: '#f8f9fa',
                                     borderRadius: '12px', border: '1px solid #eee', outline: 'none',
-                                    _focus: { borderColor: '#4285F4', bg: 'white' }, fontSize: '14px'
+                                    _focus: { borderColor: '#10B981', bg: 'white' }, fontSize: '14px'
                                 })}
                             />
                         </div>
@@ -230,7 +230,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                         })}>
                                             <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minW: 0 })}>
                                                 <div className={css({
-                                                    w: '32px', h: '32px', bg: m.status === 'accepted' ? '#4285F4' : '#eee',
+                                                    w: '32px', h: '32px', bg: m.status === 'accepted' ? '#10B981' : '#eee',
                                                     borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     color: 'white', fontSize: '12px', fontWeight: 'bold', flexShrink: 0
                                                 })}>
@@ -241,7 +241,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                         <span className={css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
                                                             {m.profiles?.nickname || m.invited_email?.split('@')[0] || 'Unknown'}
                                                         </span>
-                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#4285F4', bg: '#e8f0fe', px: '4px', py: '1px', borderRadius: '4px' })}>나</span>}
+                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#10B981', bg: '#ECFDF5', px: '4px', py: '1px', borderRadius: '4px' })}>나</span>}
                                                         {m.status === 'pending' && <span className={css({ fontSize: '10px', color: '#f2994a', bg: '#fff4e5', px: '6px', py: '2px', borderRadius: '4px' })}>대기중</span>}
                                                     </p>
                                                     <p className={css({ fontSize: '12px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{m.invited_email}</p>

@@ -77,7 +77,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
             })} onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className={css({
                     position: 'absolute', top: '24px', right: '24px', bg: 'transparent',
-                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#333' }
+                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#064E3B' }
                 })}>
                     <X size={24} />
                 </button>
@@ -161,7 +161,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                         <h3 className={css({ fontSize: '13px', fontWeight: 'bold', color: '#888', mb: '8px' })}>공유 링크 URL</h3>
                         <div className={css({
                             p: '12px', bg: 'white', borderRadius: '12px', border: '1px solid #ddd',
-                            fontSize: '13px', color: '#111', mb: '16px', lineHeight: 1.5,
+                            fontSize: '13px', color: '#022C22', mb: '16px', lineHeight: 1.5,
                             wordBreak: 'break-all'
                         })}>
                             {shareUrl}

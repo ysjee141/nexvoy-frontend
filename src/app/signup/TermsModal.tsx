@@ -57,10 +57,10 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                     pt: { base: 'calc(16px + env(safe-area-inset-top))', sm: '24px' },
                     px: { base: '20px', sm: '24px' }
                 })}>
-                    <button onClick={onClose} className={css({ display: { base: 'flex', sm: 'none' }, alignItems: 'center', bg: 'none', border: 'none', p: 0, color: '#333' })}>
+                    <button onClick={onClose} className={css({ display: { base: 'flex', sm: 'none' }, alignItems: 'center', bg: 'none', border: 'none', p: 0, color: '#064E3B' })}>
                         <ChevronLeft size={24} />
                     </button>
-                    <h2 className={css({ fontSize: '18px', fontWeight: 'bold', color: '#111', flex: 1, textAlign: { base: 'center', sm: 'left' } })}>
+                    <h2 className={css({ fontSize: '18px', fontWeight: 'bold', color: '#022C22', flex: 1, textAlign: { base: 'center', sm: 'left' } })}>
                         이용약관 및 개인정보 처리방침
                     </h2>
                     <button onClick={onClose} className={css({ display: { base: 'none', sm: 'flex' }, p: '4px', bg: '#f5f5f5', borderRadius: '50%', color: '#666', cursor: 'pointer', _hover: { bg: '#eee' }, border: 'none' })}>
@@ -80,7 +80,7 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                         color: '#444',
                         lineHeight: 1.6,
                         wordBreak: 'keep-all',
-                        '& h3': { fontSize: '16px', fontWeight: '700', mt: '24px', mb: '8px', color: '#111' },
+                        '& h3': { fontSize: '16px', fontWeight: '700', mt: '24px', mb: '8px', color: '#022C22' },
                         '& p': { mb: '12px' },
                         '& ul': { pl: '20px', mb: '12px', listStyleType: 'disc' },
                         '& li': { mb: '6px' }

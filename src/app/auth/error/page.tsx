@@ -57,7 +57,7 @@ function ErrorContent() {
                 <h1 className={css({
                     fontSize: '24px',
                     fontWeight: '800',
-                    color: '#111',
+                    color: '#022C22',
                     mb: '12px'
                 })}>
                     인증 실패

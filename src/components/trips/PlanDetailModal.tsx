@@ -83,7 +83,7 @@ function UrlPreviewCard({ url }: { url: string }) {
                     <div className={css({ h: '16px', w: '70%', bg: '#f0f0f0', borderRadius: '4px', animation: 'pulse 1.5s infinite' })} />
                 ) : (
                     <p className={css({
-                        fontSize: '14px', fontWeight: '700', color: '#111', m: '0', lineHeight: 1.4,
+                        fontSize: '14px', fontWeight: '700', color: '#022C22', m: '0', lineHeight: 1.4,
                         overflow: 'hidden', display: '-webkit-box', lineClamp: 2
                     })}
                         style={{ WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -214,14 +214,14 @@ export default function PlanDetailModal({
                             display: { base: 'flex', sm: 'none' },
                             alignItems: 'center', gap: '4px',
                             bg: 'transparent', border: 'none', cursor: 'pointer',
-                            color: '#4285F4', fontWeight: '600', fontSize: '15px', p: '0',
+                            color: '#10B981', fontWeight: '600', fontSize: '15px', p: '0',
                         })}
                     >
                         <ChevronLeft size={22} /> 뒤로
                     </button>
 
                     <h2 className={css({
-                        fontSize: '17px', fontWeight: '800', color: '#111',
+                        fontSize: '17px', fontWeight: '800', color: '#022C22',
                         position: { base: 'absolute', sm: 'static' },
                         left: { base: '50%', sm: 'auto' },
                         transform: { base: 'translateX(-50%)', sm: 'none' },
@@ -237,7 +237,7 @@ export default function PlanDetailModal({
                             alignItems: 'center', justifyContent: 'center',
                             bg: '#f5f5f5', border: 'none', borderRadius: '50%',
                             w: '32px', h: '32px', cursor: 'pointer', color: '#555',
-                            _hover: { bg: '#eee', color: '#111' },
+                            _hover: { bg: '#eee', color: '#022C22' },
                         })}
                     >
                         <X size={18} />
@@ -248,7 +248,7 @@ export default function PlanDetailModal({
                         {(userRole === 'owner' || userRole === 'editor') && (
                             <>
                                 <button onClick={() => { onEdit(plan); onClose() }} disabled={!isOnline}
-                                    className={css({ bg: 'transparent', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', color: '#4285F4', p: '6px', opacity: isOnline ? 1 : 0.5 })}>
+                                    className={css({ bg: 'transparent', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', color: '#10B981', p: '6px', opacity: isOnline ? 1 : 0.5 })}>
                                     <Pencil size={18} />
                                 </button>
                                 <button onClick={() => { onDelete(plan.id); onClose() }} disabled={!isOnline}
@@ -279,8 +279,8 @@ export default function PlanDetailModal({
                                     gap: '5px', py: '11px',
                                     bg: 'transparent', border: 'none', cursor: 'pointer',
                                     fontSize: '13px', fontWeight: isActive ? '700' : '500',
-                                    color: isActive ? '#4285F4' : '#888',
-                                    borderBottom: isActive ? '2px solid #4285F4' : '2px solid transparent',
+                                    color: isActive ? '#10B981' : '#888',
+                                    borderBottom: isActive ? '2px solid #10B981' : '2px solid transparent',
                                     mb: '-1px',
                                     transition: 'color 0.15s',
                                 })}
@@ -289,7 +289,7 @@ export default function PlanDetailModal({
                                 {labels[t]}
                                 {t === 'refs' && hasRefs && (
                                     <span className={css({
-                                        bg: isActive ? '#4285F4' : '#e0e0e0',
+                                        bg: isActive ? '#10B981' : '#e0e0e0',
                                         color: isActive ? 'white' : '#666',
                                         fontSize: '10px', fontWeight: '700',
                                         px: '5px', py: '1px', borderRadius: '8px',
@@ -325,7 +325,7 @@ export default function PlanDetailModal({
                                                     <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.3 }} aria-hidden>
                                                         <defs>
                                                             <pattern id="mapgrid" width="36" height="36" patternUnits="userSpaceOnUse">
-                                                                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#4285F4" strokeWidth="0.7" />
+                                                                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#10B981" strokeWidth="0.7" />
                                                             </pattern>
                                                         </defs>
                                                         <rect width="100%" height="100%" fill="url(#mapgrid)" />
@@ -338,9 +338,9 @@ export default function PlanDetailModal({
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                             animation: 'pulse 1.4s ease-in-out infinite',
                                                         }}>
-                                                            <MapPin size={24} color="#4285F4" />
+                                                            <MapPin size={24} color="#10B981" />
                                                         </div>
-                                                        <span style={{ fontSize: 12, color: '#4285F4', fontWeight: 700, letterSpacing: 0.3 }}>지도 불러오는 중...</span>
+                                                        <span style={{ fontSize: 12, color: '#10B981', fontWeight: 700, letterSpacing: 0.3 }}>지도 불러오는 중...</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -360,8 +360,8 @@ export default function PlanDetailModal({
                                             />
                                         </div>
                                     ) : (
-                                        <div className={css({ w: '100%', h: '140px', bg: '#e8f0fe', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' })}>
-                                            <MapPin size={24} color="#4285F4" />
+                                        <div className={css({ w: '100%', h: '140px', bg: '#ECFDF5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' })}>
+                                            <MapPin size={24} color="#10B981" />
                                             <span className={css({ fontSize: '13px', color: '#666' })}>{plan.location}</span>
                                         </div>
                                     )}
@@ -371,7 +371,7 @@ export default function PlanDetailModal({
 
                             <div className={css({ p: { base: '20px', sm: '24px' }, display: 'flex', flexDirection: 'column', gap: '20px' })}>
                                 {/* 일정명 */}
-                                <h3 className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: '800', color: '#111', lineHeight: 1.3, wordBreak: 'break-word', m: '0' })}>
+                                <h3 className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: '800', color: '#022C22', lineHeight: 1.3, wordBreak: 'break-word', m: '0' })}>
                                     {plan.title}
                                 </h3>
 
@@ -385,7 +385,7 @@ export default function PlanDetailModal({
                                             value={
                                                 mapUrl ? (
                                                     <a href={mapUrl} target="_blank" rel="noopener noreferrer"
-                                                        className={css({ fontSize: '15px', color: '#1a73e8', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px', textDecoration: 'none', wordBreak: 'break-word', _hover: { textDecoration: 'underline' } })}>
+                                                        className={css({ fontSize: '15px', color: '#059669', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px', textDecoration: 'none', wordBreak: 'break-word', _hover: { textDecoration: 'underline' } })}>
                                                         {plan.location}<ExternalLink size={13} style={{ flexShrink: 0 }} />
                                                     </a>
                                                 ) : plan.location
@@ -394,17 +394,17 @@ export default function PlanDetailModal({
                                     )}
 
                                     {/* 시간 */}
-                                    <InfoRow icon={<Clock size={18} color="#4285F4" />} label="시간"
+                                    <InfoRow icon={<Clock size={18} color="#10B981" />} label="시간"
                                         value={
                                             <div className={css({ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
                                                 <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '5px' })}>
                                                     <span className={css({ fontSize: '12px', color: '#555', fontWeight: '600' })}>현지</span>
-                                                    <span className={css({ fontSize: '14px', fontWeight: '600', color: '#111', bg: '#f1f3f4', px: '10px', py: '5px', borderRadius: '8px' })}>{localTime}</span>
+                                                    <span className={css({ fontSize: '14px', fontWeight: '600', color: '#022C22', bg: '#f1f3f4', px: '10px', py: '5px', borderRadius: '8px' })}>{localTime}</span>
                                                 </span>
                                                 <span className={css({ color: '#ccc', fontSize: '12px' })}>|</span>
                                                 <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '5px' })}>
                                                     <span className={css({ fontSize: '12px', color: '#555', fontWeight: '600' })}>한국</span>
-                                                    <span className={css({ fontSize: '14px', fontWeight: '600', color: '#1a73e8', bg: '#e8f0fe', px: '10px', py: '5px', borderRadius: '8px' })}>{kstTime}</span>
+                                                    <span className={css({ fontSize: '14px', fontWeight: '600', color: '#059669', bg: '#ECFDF5', px: '10px', py: '5px', borderRadius: '8px' })}>{kstTime}</span>
                                                 </span>
                                             </div>
                                         }
@@ -485,7 +485,7 @@ export default function PlanDetailModal({
                         borderTop: '1px solid #f0f0f0', flexShrink: 0,
                     })}>
                         <button onClick={() => { onEdit(plan); onClose() }} disabled={!isOnline}
-                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#f0f6ff', color: '#4285F4', border: '1px solid #d2e3fc', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#e8f0fd' : '#f0f6ff' } })}>
+                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#ECFDF5', color: '#10B981', border: '1px solid #A7F3D0', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#ECFDF5' : '#ECFDF5' } })}>
                             <Pencil size={15} /> 수정
                         </button>
                         <button onClick={() => { onDelete(plan.id); onClose() }} disabled={!isOnline}

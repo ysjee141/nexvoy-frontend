@@ -198,12 +198,12 @@ export default function EditTemplatePage() {
                             textDecoration: 'none',
                             fontSize: '15px',
                             mb: '16px',
-                            _hover: { color: '#111' },
+                            _hover: { color: '#022C22' },
                         })}
                     >
                         <ArrowLeft size={18} /> 목록으로 돌아가기
                     </Link>
-                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#111' })}>
+                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#022C22' })}>
                         템플릿 수정
                     </h1>
                 </div>
@@ -235,7 +235,7 @@ export default function EditTemplatePage() {
 
             <form onSubmit={handleSubmit} className={css({ bg: 'white', p: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
                 <div className={css({ mb: '32px' })}>
-                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#333' })}>
+                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
                         템플릿 이름
                     </label>
                     <input
@@ -243,7 +243,7 @@ export default function EditTemplatePage() {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="예: 여름 휴양지 기본 세트"
-                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#4285F4' } })}
+                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#10B981' } })}
                         required
                     />
                 </div>
@@ -252,7 +252,7 @@ export default function EditTemplatePage() {
 
                 <div className={css({ mb: '32px' })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '16px' })}>
-                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#333' })}>
+                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#064E3B' })}>
                             항목 구성 수정
                         </label>
                         <span className={css({ fontSize: '13px', color: '#888' })}>총 {items.length}개</span>
@@ -269,7 +269,7 @@ export default function EditTemplatePage() {
                                     <select
                                         value={item.category}
                                         onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                        className={css({ p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: { base: 'white', sm: '#f9f9f9' }, w: { base: '100%', sm: '120px' }, fontSize: '14px', _focus: { borderColor: '#4285F4' }, flexShrink: 0 })}
+                                        className={css({ p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: { base: 'white', sm: '#f9f9f9' }, w: { base: '100%', sm: '120px' }, fontSize: '14px', _focus: { borderColor: '#10B981' }, flexShrink: 0 })}
                                     >
                                         {CATEGORIES.map((cat: any) => (
                                             <option key={cat} value={cat}>{cat}</option>
@@ -282,7 +282,7 @@ export default function EditTemplatePage() {
                                             value={item.item_name}
                                             onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
                                             placeholder={`항목 ${index + 1}`}
-                                            className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#4285F4' } })}
+                                            className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
                                             required
                                         />
 

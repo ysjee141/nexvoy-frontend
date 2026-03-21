@@ -59,11 +59,11 @@ export default function SignUpPage() {
                     <div className={css({ w: '80px', h: '80px', bg: '#e6f4ea', color: '#34A853', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: '24px' })}>
                         <Mail size={40} />
                     </div>
-                    <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#111', mb: '12px' })}>이메일함을 확인해주세요</h2>
+                    <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#022C22', mb: '12px' })}>이메일함을 확인해주세요</h2>
                     <p className={css({ fontSize: '15px', color: '#666', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
                         <strong>{email}</strong> 주소로 가입 인증 메일을 발송했습니다.<br />메일 내의 인증 링크를 클릭하시면 가입이 완료됩니다.
                     </p>
-                    <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#4285F4', fontWeight: '600', fontSize: '15px', _hover: { textDecoration: 'underline' } })}>
+                    <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#10B981', fontWeight: '600', fontSize: '15px', _hover: { textDecoration: 'underline' } })}>
                         로그인 페이지로 돌아가기 <ArrowRight size={16} />
                     </Link>
                 </div>
@@ -118,7 +118,7 @@ export default function SignUpPage() {
                     <h1 className={css({
                         fontSize: { base: '24px', sm: '28px' },
                         fontWeight: '800',
-                        color: '#111',
+                        color: '#022C22',
                         mb: '8px',
                         letterSpacing: '-0.02em',
                         wordBreak: 'keep-all',
@@ -187,7 +187,7 @@ export default function SignUpPage() {
                                 })}
                                 placeholder="6자리 이상 입력해 주세요"
                             />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#111' } })}>
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#022C22' } })}>
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
@@ -219,7 +219,7 @@ export default function SignUpPage() {
                                 })}
                                 placeholder="비밀번호를 다시 한 번 입력해 주세요"
                             />
-                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#111' } })}>
+                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#022C22' } })}>
                                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>

@@ -105,12 +105,12 @@ export default function NewTripPage() {
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px',
-                        color: { base: '#4285F4', sm: '#666' },
+                        color: { base: '#10B981', sm: '#666' },
                         cursor: 'pointer',
                         bg: 'transparent',
                         border: 'none',
                         p: '0',
-                        _hover: { color: '#111' },
+                        _hover: { color: '#022C22' },
                     })}
                 >
                     <ChevronLeft size={28} className={css({ display: { base: 'block', sm: 'none' } })} />
@@ -121,7 +121,7 @@ export default function NewTripPage() {
                 <h1 className={css({ 
                     fontSize: { base: '17px', sm: '18px' }, 
                     fontWeight: 'bold', 
-                    color: '#111',
+                    color: '#022C22',
                     position: { base: 'absolute', sm: 'static' },
                     left: { base: '50%', sm: 'auto' },
                     transform: { base: 'translateX(-50%)', sm: 'none' },
@@ -150,7 +150,7 @@ export default function NewTripPage() {
                 })}>
                     <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '24px', overflowX: 'hidden' })}>
                         <div>
-                            <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#333' })}>
+                            <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
                                 여행지 (국가/도시) *
                             </label>
                             {isLoaded ? (
@@ -169,7 +169,7 @@ export default function NewTripPage() {
                                             outline: 'none',
                                             transition: 'all 0.2s',
                                             bg: '#f9f9f9',
-                                            _focus: { borderColor: '#4285F4', bg: 'white', boxShadow: '0 0 0 2px rgba(66, 133, 244, 0.1)' },
+                                            _focus: { borderColor: '#10B981', bg: 'white', boxShadow: '0 0 0 2px rgba(66, 133, 244, 0.1)' },
                                         })}
                                     />
                                 </Autocomplete>
@@ -195,7 +195,7 @@ export default function NewTripPage() {
 
                         <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#333' })}>
+                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
                                     가는 날 (시작일) *
                                 </label>
                                 <div style={{ overflow: 'hidden', width: '100%' }}>
@@ -214,13 +214,13 @@ export default function NewTripPage() {
                                             borderRadius: '12px',
                                             outline: 'none',
                                             bg: '#f9f9f9',
-                                            _focus: { borderColor: '#4285F4', bg: 'white' },
+                                            _focus: { borderColor: '#10B981', bg: 'white' },
                                         })}
                                     />
                                 </div>
                             </div>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#333' })}>
+                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
                                     오는 날 (종료일) *
                                 </label>
                                 <div style={{ overflow: 'hidden', width: '100%' }}>
@@ -239,7 +239,7 @@ export default function NewTripPage() {
                                             borderRadius: '12px',
                                             outline: 'none',
                                             bg: '#f9f9f9',
-                                            _focus: { borderColor: '#4285F4', bg: 'white' },
+                                            _focus: { borderColor: '#10B981', bg: 'white' },
                                         })}
                                     />
                                 </div>
@@ -248,7 +248,7 @@ export default function NewTripPage() {
 
                         <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#333' })}>
+                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
                                     성인 인원
                                 </label>
                                 <div className={css({
@@ -270,7 +270,7 @@ export default function NewTripPage() {
                                             w: '36px', h: '36px', flexShrink: 0,
                                             bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                            color: '#4285F4', transition: 'all 0.2s', 
+                                            color: '#10B981', transition: 'all 0.2s', 
                                             _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
                                             _hover: { bg: '#e0e8ff' },
                                             _disabled: { bg: '#f5f5f5', color: '#ccc', cursor: 'not-allowed', pointerEvents: 'none' }
@@ -278,7 +278,7 @@ export default function NewTripPage() {
                                     >
                                         <Minus size={18} strokeWidth={2.5} />
                                     </button>
-                                    <span className={css({ fontSize: '16px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#111' })}>{adults}</span>
+                                    <span className={css({ fontSize: '16px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#022C22' })}>{adults}</span>
                                     <button 
                                         type="button" 
                                         onClick={() => setAdults(adults + 1)}
@@ -286,7 +286,7 @@ export default function NewTripPage() {
                                             w: '36px', h: '36px', flexShrink: 0,
                                             bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                            color: '#4285F4', transition: 'all 0.2s', 
+                                            color: '#10B981', transition: 'all 0.2s', 
                                             _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
                                             _hover: { bg: '#e0e8ff' }
                                         })}
@@ -296,7 +296,7 @@ export default function NewTripPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#333' })}>
+                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
                                     아이 인원
                                 </label>
                                 <div className={css({
@@ -318,7 +318,7 @@ export default function NewTripPage() {
                                             w: '36px', h: '36px', flexShrink: 0,
                                             bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                            color: '#4285F4', transition: 'all 0.2s', 
+                                            color: '#10B981', transition: 'all 0.2s', 
                                             _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
                                             _hover: { bg: '#e0e8ff' },
                                             _disabled: { bg: '#f5f5f5', color: '#ccc', cursor: 'not-allowed', pointerEvents: 'none' }
@@ -326,7 +326,7 @@ export default function NewTripPage() {
                                     >
                                         <Minus size={18} strokeWidth={2.5} />
                                     </button>
-                                    <span className={css({ fontSize: '16px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#111' })}>{childrenCount}</span>
+                                    <span className={css({ fontSize: '16px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#022C22' })}>{childrenCount}</span>
                                     <button 
                                         type="button" 
                                         onClick={() => setChildren(childrenCount + 1)}
@@ -334,7 +334,7 @@ export default function NewTripPage() {
                                             w: '36px', h: '36px', flexShrink: 0,
                                             bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                            color: '#4285F4', transition: 'all 0.2s', 
+                                            color: '#10B981', transition: 'all 0.2s', 
                                             _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
                                             _hover: { bg: '#e0e8ff' }
                                         })}

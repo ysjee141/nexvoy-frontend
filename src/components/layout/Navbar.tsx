@@ -72,10 +72,10 @@ export default function Navbar() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            color: '#111',
+                            color: '#022C22',
                         })}
                     >
-                        <Compass size={24} color="#4285F4" />
+                        <Compass size={24} color="#10B981" />
                         <span className={css({ display: { base: 'none', sm: 'inline' } })}>Onvoy</span>
                     </Link>
 
@@ -86,7 +86,7 @@ export default function Navbar() {
                             display: { base: 'none', sm: 'flex' },
                             alignItems: 'center', gap: '5px',
                             fontSize: '14px', fontWeight: '500', color: '#555',
-                            _hover: { color: '#4285F4' }, transition: 'color 0.15s',
+                            _hover: { color: '#10B981' }, transition: 'color 0.15s',
                         })}
                     >
                         <BookOpen size={16} />
@@ -103,7 +103,7 @@ export default function Navbar() {
                             display: { base: 'flex', sm: 'none' },
                             alignItems: 'center', gap: '4px',
                             fontSize: '13px', fontWeight: '500', color: '#555',
-                            _hover: { color: '#4285F4' },
+                            _hover: { color: '#10B981' },
                         })}
                     >
                         <BookOpen size={16} />
@@ -122,7 +122,7 @@ export default function Navbar() {
                                             fontSize: '14px',
                                             fontWeight: '500',
                                             color: '#555',
-                                            _hover: { color: '#111' },
+                                            _hover: { color: '#022C22' },
                                         })}
                                     >
                                         <Home size={18} />
@@ -137,7 +137,7 @@ export default function Navbar() {
                                             fontSize: '14px',
                                             fontWeight: '500',
                                             color: '#555',
-                                            _hover: { color: '#111' },
+                                            _hover: { color: '#022C22' },
                                         })}
                                     >
                                         <User size={18} />
@@ -171,7 +171,7 @@ export default function Navbar() {
                                         className={css({
                                             display: 'flex', alignItems: 'center', gap: '5px',
                                             bg: 'transparent',
-                                            color: '#333',
+                                            color: '#064E3B',
                                             px: { base: '10px', sm: '14px' },
                                             py: '8px',
                                             borderRadius: '8px',

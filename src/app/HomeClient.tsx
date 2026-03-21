@@ -99,9 +99,9 @@ export default function HomeClient() {
       <div className={css({ w: '100%', py: { base: '40px', md: '80px' } })}>
         {/* Hero Section */}
         <section className={css({ textAlign: 'center', mb: '80px' })}>
-          <h1 className={css({ fontSize: { base: '32px', md: '56px' }, fontWeight: '900', color: '#111', mb: '20px', lineHeight: 1.1, letterSpacing: '-0.02em' })}>
+          <h1 className={css({ fontSize: { base: '32px', md: '56px' }, fontWeight: '900', color: '#022C22', mb: '20px', lineHeight: 1.1, letterSpacing: '-0.02em' })}>
             Onvoy와 함께하는<br />
-            <span className={css({ color: '#4285F4' })}>완벽한 여행 계획</span>
+            <span className={css({ color: '#10B981' })}>완벽한 여행 계획</span>
           </h1>
           <p className={css({ fontSize: { base: '16px', md: '20px' }, color: '#666', maxW: '600px', mx: 'auto', mb: '40px', lineHeight: 1.6 })}>
             복잡한 여행 계획부터 꼼꼼한 체크리스트까지.<br />
@@ -119,7 +119,7 @@ export default function HomeClient() {
             <Link
               href="/login"
               className={css({
-                bg: 'white', color: '#111', px: '32px', py: '16px', borderRadius: '12px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.2s', _hover: { bg: 'white', transform: 'translateY(-2px)' }
+                bg: 'white', color: '#022C22', px: '32px', py: '16px', borderRadius: '12px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.2s', _hover: { bg: 'white', transform: 'translateY(-2px)' }
               })}
             >
               로그인하기
@@ -129,9 +129,9 @@ export default function HomeClient() {
 
         {/* Features Grid */}
         <section className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: '24px' })}>
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#4285F4', transform: 'translateY(-5px)' } })}>
-            <div className={css({ w: '48px', h: '48px', bg: '#e8f0fe', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
-              <CalendarDays size={24} color="#4285F4" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#10B981', transform: 'translateY(-5px)' } })}>
+            <div className={css({ w: '48px', h: '48px', bg: '#ECFDF5', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
+              <CalendarDays size={24} color="#10B981" />
             </div>
             <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>스마트 일정표</h3>
             <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>주간 캘린더를 통해 여행 일정을 한눈에 파악하고 드래그하듯 간편하게 관리하세요.</p>
@@ -171,7 +171,7 @@ export default function HomeClient() {
       <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
         <header className={css({ mb: { base: '28px', sm: '40px' }, display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
           <div>
-            <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#111' })}>
+            <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#022C22' })}>
               안녕하세요, {nickname}님! 👋
             </h1>
             <p className={css({ color: '#666', mt: '4px', fontSize: { base: '14px', sm: '16px' } })}>
@@ -216,9 +216,9 @@ export default function HomeClient() {
               title="여행 중이에요! 🎉"
               subtitle="현재 진행 중인 여행"
               emoji="✈️"
-              accentColor="#4285F4"
-              badgeBg="#e8f0fe"
-              badgeColor="#1a73e8"
+              accentColor="#10B981"
+              badgeBg="#ECFDF5"
+              badgeColor="#059669"
               badgeLabel="여행 중"
               trips={ongoing}
               currentUserId={user.id}
