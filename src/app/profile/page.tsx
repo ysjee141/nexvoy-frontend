@@ -370,6 +370,13 @@ export default function ProfilePage() {
                     </Link>
                 ))}
             </section>
+
+            {/* 탈퇴 링크 */}
+            <div className={css({ textAlign: 'center', mt: '8px', mb: '20px' })}>
+                <Link href="/profile/withdrawal" className={css({ fontSize: '13px', color: '#aaa', textDecoration: 'none', transition: 'color 0.2s', _hover: { color: '#888', textDecoration: 'underline' } })}>
+                    회원 탈퇴
+                </Link>
+            </div>
         </div>
     )
 }

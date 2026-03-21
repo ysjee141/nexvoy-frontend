@@ -45,34 +45,43 @@ export default function TripLayoutClient({ children }: { children: React.ReactNo
 
     return (
         <div className={css({ w: '100%', py: '20px' })}>
-            {/* 뒤로 가기 및 타이틀 영역 */}
-            <div className={css({ mb: '24px' })}>
-                <Link
-                    href="/"
-                    className={css({
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        color: '#666',
-                        fontSize: '14px',
-                        mb: '12px',
-                        _hover: { color: '#111' },
-                    })}
-                >
-                    <ArrowLeft size={16} /> 목록으로
-                </Link>
+            {/* 뒤로 가기 링크 (모바일용) */}
+            <Link
+                href="/"
+                className={css({
+                    display: { base: 'inline-flex', sm: 'none' },
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: '#666',
+                    fontSize: '14px',
+                    mb: '12px',
+                    _hover: { color: '#111' },
+                })}
+            >
+                <ArrowLeft size={16} /> 목록으로
+            </Link>
+
+            {/* Trip Info Card */}
+            <div className={css({
+                bg: 'white',
+                borderRadius: '16px',
+                p: { base: '20px', sm: '24px' },
+                boxShadow: '0 4px 16px rgba(0,0,0,0.03)',
+                border: '1px solid #f0f0f0',
+                mb: '24px'
+            })}>
                 <h1 className={css({
-                    fontSize: { base: '22px', sm: '28px' },
-                    fontWeight: 'bold',
+                    fontSize: { base: '22px', sm: '26px' },
+                    fontWeight: '800',
                     color: '#111',
-                    mb: '10px',
+                    mb: '16px',
                     wordBreak: 'keep-all',
                     lineHeight: 1.3,
                 })}>
                     {trip.destination} 여행
                 </h1>
-
-                {/* 날짜·인원 표시 + 수정/삭제 버튼 (클라이언트 컴포넌트) */}
+                
+                {/* 날짜·인원 표시 + 수정/삭제 버튼 */}
                 <TripHeaderActions trip={trip} />
             </div>
 

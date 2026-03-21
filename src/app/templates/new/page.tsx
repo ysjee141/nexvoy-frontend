@@ -105,7 +105,7 @@ export default function NewTemplatePage() {
                 <Link
                     href="/templates"
                     className={css({
-                        display: 'inline-flex',
+                        display: { base: 'inline-flex', sm: 'none' },
                         alignItems: 'center',
                         gap: '6px',
                         color: '#666',

@@ -189,20 +189,28 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
     return (
         <>
             {/* 날짜/인원 정보 + 수정/삭제 버튼 */}
-            <div className={css({ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: '12px' })}>
-                <div className={css({ display: 'flex', flexDirection: 'column', gap: '6px' })}>
-                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' })}>
-                        <Calendar size={15} color="#4285F4" />
-                        {start} ~ {end}
+            <div className={css({ 
+                display: 'flex', 
+                flexDirection: { base: 'column', sm: 'row' }, 
+                alignItems: { base: 'flex-start', sm: 'flex-end' }, 
+                justifyContent: 'space-between', 
+                gap: '20px',
+                pt: '16px',
+                borderTop: '1px solid #f0f0f0'
+            })}>
+                <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px' })}>
+                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                        <Calendar size={16} color="#4285F4" />
+                        <span className={css({ fontWeight: '500' })}>{start} ~ {end}</span>
                     </p>
-                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' })}>
-                        <Users size={15} color="#34A853" />
-                        성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}
+                    <p className={css({ color: '#555', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                        <Users size={16} color="#34A853" />
+                        <span className={css({ fontWeight: '500' })}>성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}</span>
                     </p>
                     {/* 총 예상 비용 */}
                     {!costSummary.loading && costSummary.byCurrency.length > 0 && (
-                        <div className={css({ display: 'flex', alignItems: 'flex-start', gap: '6px', mt: '2px' })}>
-                            <Wallet size={15} color="#FBBC05" style={{ marginTop: '3px', flexShrink: 0 }} />
+                        <div className={css({ display: 'flex', alignItems: 'flex-start', gap: '8px', mt: '2px' })}>
+                            <Wallet size={16} color="#FBBC05" className={css({ mt: '3px', flexShrink: 0 })} />
                             <div>
                                 {/* KRW 총합 (주 표시) */}
                                 {costSummary.totalKrw !== null ? (
@@ -213,7 +221,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                                     <p className={css({ color: '#333', fontSize: '14px', fontWeight: '700' })}>합산 중...</p>
                                 )}
                                 {/* 통화별 소계 (서브 텍스트) */}
-                                <p className={css({ fontSize: '12px', color: '#999', mt: '1px' })}>
+                                <p className={css({ fontSize: '12px', color: '#888', mt: '2px', fontWeight: '500' })}>
                                     {costSummary.byCurrency.map((c, i) => (
                                         <span key={c.code}>
                                             {i > 0 && ' · '}
@@ -228,7 +236,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
 
                 {/* 오너만 수정/삭제 표시 */}
                 {isOwner && (
-                    <div className={css({ display: 'flex', gap: '8px', flexShrink: 0 })}>
+                    <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
                         <button
                             onClick={() => {
                                 setDestination(trip.destination)
@@ -240,11 +248,12 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                                 setShowEditModal(true)
                             }}
                             className={css({
-                                display: 'flex', alignItems: 'center', gap: '4px',
-                                px: '10px', py: '7px', bg: 'white', color: '#555',
+                                flex: { base: 1, sm: 'none' },
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                px: '14px', py: '10px', bg: '#f8f9fa', color: '#555',
                                 border: '1px solid #ddd', borderRadius: '8px',
                                 fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                                _hover: { bg: '#f5f5f5', color: '#111' }
+                                transition: 'all 0.2s', _hover: { bg: '#eee', color: '#111' }
                             })}
                         >
                             <Pencil size={14} /> 수정
@@ -252,11 +261,12 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                         <button
                             onClick={() => setShowDeleteConfirm(true)}
                             className={css({
-                                display: 'flex', alignItems: 'center', gap: '4px',
-                                px: '10px', py: '7px', bg: 'white', color: '#d32f2f',
+                                flex: { base: 1, sm: 'none' },
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                px: '14px', py: '10px', bg: '#fff5f5', color: '#dc2626',
                                 border: '1px solid #fecaca', borderRadius: '8px',
                                 fontSize: '13px', fontWeight: '600', cursor: 'pointer',
-                                _hover: { bg: '#fff5f5' }
+                                transition: 'all 0.2s', _hover: { bg: '#fee2e2' }
                             })}
                         >
                             <Trash2 size={14} /> 삭제
