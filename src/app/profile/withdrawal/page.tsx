@@ -145,7 +145,7 @@ export default function WithdrawalPage() {
                             value={confirmText}
                             onChange={(e) => setConfirmText(e.target.value)}
                             placeholder="탈퇴"
-                            className={css({ w: '100%', p: '14px 16px', border: '1px solid #ddd', borderRadius: '12px', fontSize: '16px', outline: 'none', mb: '24px', transition: 'border-color 0.2s', _focus: { bordercolor: '#022C22' } })}
+                            className={css({ w: '100%', p: '14px 16px', border: '1px solid #ddd', borderRadius: '12px', fontSize: '16px', outline: 'none', mb: '24px', transition: 'border-color 0.2s', _focus: { borderColor: '#022C22' } })}
                         />
 
                         {errorMsg && (
