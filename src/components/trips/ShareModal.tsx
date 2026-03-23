@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
 import { X, Share2, Copy, Mail, Lock, Globe, Check, Loader2 } from 'lucide-react'
 import { collaboration } from '@/utils/collaboration'
+import { useModalBackButton } from '@/hooks/useModalBackButton'
 
 interface ShareModalProps {
     tripId: string
@@ -19,6 +20,8 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
     const [loading, setLoading] = useState(false)
     const [copied, setCopied] = useState(false)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+    useModalBackButton(isOpen, onClose, 'shareModal')
 
     const fetchShareToken = async (type: 'public' | 'password') => {
         setLoading(true)

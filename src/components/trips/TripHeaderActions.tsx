@@ -7,6 +7,7 @@ import { css } from 'styled-system/css'
 import { Calendar, Users, Pencil, Trash2, X, ChevronLeft, Save, Loader2, Wallet, Minus, Plus } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { getCurrencyFromTimezone, formatCurrency, formatKRW } from '@/utils/currency'
+import { useModalBackButton } from '@/hooks/useModalBackButton'
 
 const libraries: ("places")[] = ["places"]
 
@@ -30,6 +31,8 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
+
+    useModalBackButton(showEditModal, () => setShowEditModal(false), 'tripEditModal')
 
     // 수정 폼 상태
     const [destination, setDestination] = useState(trip.destination)

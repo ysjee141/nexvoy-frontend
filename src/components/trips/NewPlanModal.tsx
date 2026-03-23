@@ -6,6 +6,7 @@ import { X, MapPin, Clock, Link as LinkIcon, AlignLeft, ChevronLeft, ChevronDown
 import { createClient } from '@/utils/supabase/client'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { getCurrencyFromTimezone } from '@/utils/currency'
+import { useModalBackButton } from '@/hooks/useModalBackButton'
 
 const libraries: ("places")[] = ["places"]
 
@@ -26,6 +27,8 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
 
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
     const [loading, setLoading] = useState(false)
+
+    useModalBackButton(isOpen, onClose, editData ? `editPlanModal_${editData.id}` : 'newPlanModal')
 
     // 폼 상태
     const [title, setTitle] = useState('')

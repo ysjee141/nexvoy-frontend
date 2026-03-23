@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check } from 'lucide-react'
+import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo } from 'lucide-react'
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 
@@ -243,19 +243,6 @@ export default function ChecklistPage() {
 
                     {/* 모바일/PC 액션 버튼 */}
                     <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'nowrap' })}>
-                        <Link
-                            href="/templates"
-                            className={css({
-                                display: { base: 'none', sm: 'flex' }, // 모바일에서는 제거
-                                alignItems: 'center', justifyContent: 'center', gap: '4px',
-                                px: '12px', py: '8px', bg: 'white', color: '#10B981', border: '1px solid #10B981',
-                                borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none',
-                                whiteSpace: 'nowrap', _hover: { bg: '#ECFDF5' }, flexShrink: 0
-                            })}
-                        >
-                            <Settings size={14} /> 템플릿
-                        </Link>
-                        
                         {/* 항목 추가 버튼 (모바일: flex-1 맨왼쪽) */}
                         <button
                             onClick={() => setIsAdding(!isAdding)}
@@ -274,15 +261,19 @@ export default function ChecklistPage() {
                         <button
                             onClick={() => setIsTemplateModalOpen(true)}
                             className={css({
-                                px: '20px', py: { base: '10px', sm: '8px' },
-                                bg: '#f1f3f4', color: '#064E3B', borderRadius: '8px',
-                                fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: 'none',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                px: '16px', py: { base: '10px', sm: '8px' },
+                                bg: 'white', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '8px',
+                                fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                 flex: { base: 'none', sm: 'none' }, flexShrink: 0,
-                                whiteSpace: 'nowrap', _hover: { bg: '#e8eaed' },
+                                whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.08)',
+                                _hover: { bg: '#ECFDF5', borderColor: '#10B981', transform: 'translateY(-1px)', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.15)' },
+                                _active: { transform: 'scale(0.98)' }
                             })}
                         >
-                            <span className={css({ display: { base: 'none', sm: 'inline' } })}>불러오기</span>
-                            <span className={css({ display: { base: 'inline', sm: 'none' } })}>템플릿</span>
+                            <ListTodo size={15} />
+                            <span>템플릿</span>
                         </button>
                     </div>
                 </div>
