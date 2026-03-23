@@ -4,9 +4,63 @@ import { useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, CheckSquare, Square, Trash2, Settings } from 'lucide-react'
+import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check } from 'lucide-react'
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
+
+const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const options = [
+        { value: 'category', label: '카테고리별 보기' },
+        { value: 'template', label: '템플릿별 보기' }
+    ];
+    const currentLabel = options.find(o => o.value === groupBy)?.label || '카테고리별 보기';
+
+    return (
+        <div className={css({ position: 'relative', display: { base: 'block', sm: 'none' } })}>
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className={css({
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    bg: 'white', border: '1px solid #10B981', borderRadius: '16px',
+                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#10B981', cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+                })}
+            >
+                {currentLabel}
+                <ChevronDown size={14} />
+            </button>
+            {isOpen && (
+                <>
+                    <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
+                    <div className={css({
+                        position: 'absolute', top: '100%', right: 0, mt: '4px',
+                        bg: 'white', border: '1px solid #eee', borderRadius: '12px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '130px',
+                        overflow: 'hidden'
+                    })}>
+                        {options.map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => { setGroupBy(opt.value); setIsOpen(false); }}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
+                                    bg: groupBy === opt.value ? '#ECFDF5' : 'transparent',
+                                    color: groupBy === opt.value ? '#10B981' : '#555',
+                                    fontWeight: groupBy === opt.value ? '700' : '500',
+                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
+                                })}
+                            >
+                                {opt.label}
+                                {groupBy === opt.value && <Check size={14} />}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    )
+}
 
 export default function ChecklistPage() {
     const searchParams = useSearchParams()
@@ -149,97 +203,90 @@ export default function ChecklistPage() {
     }, {})
 
     return (
-        <div className={css({ bg: 'white', p: '24px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
-            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, mb: '16px', flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
-                <h2 className={css({ fontSize: '20px', fontWeight: 'bold' })}>
-                    준비물 챙기기 {totalItems > 0 && <span className={css({ color: '#10B981', ml: '8px' })}>{progressPercent}%</span>}
-                </h2>
+        <div className={css({ bg: 'white', p: { base: '16px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
+            
+            {/* 1. 타이틀 & 보기 모드, 버튼 영역 (반응형 다중 구조) */}
+            <div className={css({ display: 'flex', flexDirection: 'column', gap: '16px', mb: '20px' })}>
+                
+                {/* 상단 라인: 타이틀 + 모바일 필터(드롭다운) */}
+                <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold' })}>
+                        준비물 챙기기 {totalItems > 0 && <span className={css({ color: '#10B981', ml: '8px' })}>{progressPercent}%</span>}
+                    </h2>
+                    
+                    {/* 모바일 전용 뷰 드롭다운 */}
+                    {totalItems > 0 && (
+                        <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />
+                    )}
+                </div>
 
-                <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'wrap' })}>
-                    <Link
-                        href="/templates"
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            px: '12px',
-                            py: '8px',
-                            bg: 'white',
-                            color: '#10B981',
-                            border: '1px solid #10B981',
-                            borderRadius: '8px',
-                            fontSize: '13px',
-                            fontWeight: '600',
-                            textDecoration: 'none',
-                            flex: { base: 1, sm: 'none' },
-                            whiteSpace: 'nowrap',
-                            _hover: { bg: '#ECFDF5' },
-                        })}
-                    >
-                        <Settings size={14} /> 템플릿
-                    </Link>
-                    <button
-                        onClick={() => setIsTemplateModalOpen(true)}
-                        className={css({
-                            px: '12px',
-                            py: '8px',
-                            bg: '#f1f3f4',
-                            color: '#064E3B',
-                            borderRadius: '8px',
-                            fontSize: '13px',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            border: 'none',
-                            flex: { base: 1, sm: 'none' },
-                            whiteSpace: 'nowrap',
-                            _hover: { bg: '#e8eaed' },
-                        })}
-                    >
-                        불러오기
-                    </button>
-                    <button
-                        onClick={() => setIsAdding(!isAdding)}
-                        className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '6px',
-                            bg: '#111',
-                            color: 'white',
-                            px: '16px',
-                            py: '8px',
-                            borderRadius: '8px',
-                            fontWeight: '600',
-                            fontSize: '13px',
-                            cursor: 'pointer',
-                            border: 'none',
-                            w: { base: '100%', sm: 'auto' },
-                            _hover: { bg: '#333' },
-                        })}
-                    >
-                        <Plus size={16} /> 항목 추가
-                    </button>
+                {/* PC/모바일 분기 액션 버튼 및 필터 라인 */}
+                <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
+                    
+                    {/* PC 좌측: 보기 옵션 토글 */}
+                    <div className={css({ display: { base: 'none', sm: totalItems > 0 ? 'inline-flex' : 'none' }, bg: '#f1f3f4', p: '4px', borderRadius: '8px' })}>
+                        <button
+                            onClick={() => setGroupBy('category')}
+                            className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? 'bold' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                        >
+                            카테고리별 보기
+                        </button>
+                        <button
+                            onClick={() => setGroupBy('template')}
+                            className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? 'bold' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                        >
+                            템플릿별 보기
+                        </button>
+                    </div>
+                    {/* PC에서 totalItems === 0 일 때 우측 버튼들을 오른쪽으로 밀기 위한 빈 공간용 div */}
+                    {totalItems === 0 && <div className={css({ display: { base: 'none', sm: 'block' } })}></div>}
+
+                    {/* 모바일/PC 액션 버튼 */}
+                    <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'nowrap' })}>
+                        <Link
+                            href="/templates"
+                            className={css({
+                                display: { base: 'none', sm: 'flex' }, // 모바일에서는 제거
+                                alignItems: 'center', justifyContent: 'center', gap: '4px',
+                                px: '12px', py: '8px', bg: 'white', color: '#10B981', border: '1px solid #10B981',
+                                borderRadius: '8px', fontSize: '13px', fontWeight: '600', textDecoration: 'none',
+                                whiteSpace: 'nowrap', _hover: { bg: '#ECFDF5' }, flexShrink: 0
+                            })}
+                        >
+                            <Settings size={14} /> 템플릿
+                        </Link>
+                        
+                        {/* 항목 추가 버튼 (모바일: flex-1 맨왼쪽) */}
+                        <button
+                            onClick={() => setIsAdding(!isAdding)}
+                            className={css({
+                                order: { base: -1, sm: 1 },
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                bg: '#111', color: 'white', px: '16px', py: { base: '10px', sm: '8px' },
+                                borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', border: 'none',
+                                w: { base: '100%', sm: 'auto' }, flex: { base: 1, sm: 'none' },
+                                _hover: { bg: '#333' }, whiteSpace: 'nowrap'
+                            })}
+                        >
+                            <Plus size={16} /> 항목 추가
+                        </button>
+
+                        <button
+                            onClick={() => setIsTemplateModalOpen(true)}
+                            className={css({
+                                px: '20px', py: { base: '10px', sm: '8px' },
+                                bg: '#f1f3f4', color: '#064E3B', borderRadius: '8px',
+                                fontSize: '13px', fontWeight: '600', cursor: 'pointer', border: 'none',
+                                flex: { base: 'none', sm: 'none' }, flexShrink: 0,
+                                whiteSpace: 'nowrap', _hover: { bg: '#e8eaed' },
+                            })}
+                        >
+                            <span className={css({ display: { base: 'none', sm: 'inline' } })}>불러오기</span>
+                            <span className={css({ display: { base: 'inline', sm: 'none' } })}>템플릿</span>
+                        </button>
+                    </div>
                 </div>
             </div>
-
-            {/* 보기 옵션 토글 */}
-            {totalItems > 0 && (
-                <div className={css({ display: 'inline-flex', mb: '20px', bg: '#f1f3f4', p: '4px', borderRadius: '8px' })}>
-                    <button
-                        onClick={() => setGroupBy('category')}
-                        className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? 'bold' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
-                    >
-                        카테고리별 보기
-                    </button>
-                    <button
-                        onClick={() => setGroupBy('template')}
-                        className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? 'bold' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
-                    >
-                        템플릿별 보기
-                    </button>
-                </div>
-            )}
 
             {totalItems > 0 && (
                 <div className={css({ w: '100%', bg: '#eee', h: '8px', borderRadius: '4px', mb: '24px', overflow: 'hidden' })}>
@@ -253,32 +300,43 @@ export default function ChecklistPage() {
             {isAdding && (
                 <form onSubmit={addItem} className={css({ mb: '20px' })}>
                     <div className={css({ display: 'flex', gap: '8px', flexDirection: { base: 'column', sm: 'row' } })}>
-                        <div className={css({ display: 'flex', gap: '8px', flex: 1, flexDirection: { base: 'column', sm: 'row' } })}>
-                            <select
-                                value={newItemCategory}
-                                onChange={e => setNewItemCategory(e.target.value)}
-                                className={css({ w: { base: '100%', sm: 'auto' }, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '120px', fontSize: '14px', flexShrink: 0 })}
-                            >
-                                {CATEGORIES.map((cat: any) => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                            </select>
+                        {/* 1. 카테고리 (Mobile: 위에 독립적으로 배치됨, PC: 한 줄에 배치됨) */}
+                        <select
+                            value={newItemCategory}
+                            onChange={e => setNewItemCategory(e.target.value)}
+                            className={css({ w: { base: '100%', sm: 'auto' }, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '120px', fontSize: '14px', flexShrink: 0 })}
+                        >
+                            {CATEGORIES.map((cat: any) => (
+                                <option key={cat} value={cat}>{cat}</option>
+                            ))}
+                        </select>
+
+                        {/* 2. 입력창 및 액션 버튼들 (Mobile/PC 모두 1줄 구성) */}
+                        <div className={css({ display: 'flex', gap: '8px', flex: 1, flexDirection: 'row', w: '100%' })}>
                             <input
                                 type="text"
                                 autoFocus
                                 value={newItemName}
                                 onChange={e => setNewItemName(e.target.value)}
                                 placeholder="예: 여권, 충전기"
-                                className={css({ w: '100%', flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
+                                className={css({ w: '100%', flex: 1, minW: 0, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
                             />
+                            <button
+                                type="submit"
+                                disabled={!newItemName.trim()}
+                                className={css({ w: 'auto', p: { base: '12px 14px', sm: '12px 20px' }, bg: '#10B981', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', flexShrink: 0, textAlign: 'center', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
+                            >
+                                등록
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => { setIsAdding(false); setNewItemName(''); }}
+                                className={css({ w: 'auto', p: { base: '12px 14px', sm: '12px 20px' }, bg: '#f1f3f4', color: '#555', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', flexShrink: 0, textAlign: 'center', _hover: { bg: '#e8eaed' }, _active: { transform: 'scale(0.98)' } })}
+                            >
+                                취소
+                            </button>
                         </div>
-                        <button
-                            type="submit"
-                            disabled={!newItemName.trim()}
-                            className={css({ w: { base: '100%', sm: 'auto' }, p: '12px 24px', bg: '#10B981', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
-                        >
-                            등록
-                        </button>
                     </div>
                 </form>
             )}
@@ -376,7 +434,7 @@ export default function ChecklistPage() {
                                             </div>
                                             <button
                                                 onClick={(e) => deleteItem(e, item.id)}
-                                                className={`delete-btn ${css({ bg: 'transparent', border: 'none', color: '#ccc', cursor: 'pointer', opacity: 0, transition: 'opacity 0.2s', _hover: { color: '#dc2626' } })}`}
+                                                className={`delete-btn ${css({ bg: 'transparent', border: 'none', color: { base: '#ff4d4f', sm: '#ccc' }, cursor: 'pointer', opacity: { base: 1, sm: 0 }, transition: 'all 0.2s', p: '8px', borderRadius: '4px', _hover: { color: '#dc2626', bg: '#ffeeee' } })}`}
                                             >
                                                 <Trash2 size={16} />
                                             </button>
