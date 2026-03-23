@@ -44,12 +44,12 @@ export default function TemplatesPage() {
 
     return (
         <div className={css({ w: '100%', py: '40px' })}>
-            <header className={css({ mb: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+            <header className={css({ mb: { base: '24px', sm: '40px' }, display: 'flex', flexDirection: { base: 'column', sm: 'row' }, gap: '16px', justifyContent: 'space-between', alignItems: { base: 'stretch', sm: 'center' } })}>
                 <div>
-                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#022C22' })}>
+                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#022C22' })}>
                         내 체크리스트 템플릿
                     </h1>
-                    <p className={css({ color: '#666', mt: '8px', fontSize: '16px' })}>
+                    <p className={css({ color: '#666', mt: { base: '4px', sm: '8px' }, fontSize: { base: '14px', sm: '16px' }, wordBreak: 'keep-all' })}>
                         자주 쓰는 준비물 목록을 템플릿으로 저장하고 관리하세요.
                     </p>
                 </div>
@@ -58,19 +58,24 @@ export default function TemplatesPage() {
                     className={css({
                         display: 'flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: '8px',
                         bg: '#111',
                         color: 'white',
-                        px: '20px',
+                        px: { base: '16px', sm: '20px' },
                         py: '12px',
                         borderRadius: '12px',
                         fontWeight: '600',
+                        fontSize: { base: '15px', sm: '16px' },
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                        w: { base: '100%', sm: 'auto' },
                         transition: 'all 0.2s',
                         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                         _hover: { bg: '#333', transform: 'translateY(-2px)', boxShadow: '0 6px 16px rgba(0,0,0,0.15)' },
                     })}
                 >
-                    <Plus size={20} /> 새 템플릿 만들기
+                    <Plus size={18} /> 새 템플릿 만들기
                 </Link>
             </header>
 
