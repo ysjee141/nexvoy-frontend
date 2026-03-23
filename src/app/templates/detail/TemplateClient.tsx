@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, X, ArrowLeft, Save, Trash2 } from 'lucide-react'
+import { Plus, X, ArrowLeft, Save, Trash2, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 
 interface TemplateItemInput {
@@ -265,33 +265,49 @@ export default function EditTemplatePage() {
                             </div>
                         ) : (
                             items.map((item, index) => (
-                                <div key={item.id} className={css({ display: 'flex', flexDirection: { base: 'column', sm: 'row' }, gap: '8px', alignItems: { base: 'stretch', sm: 'center' }, p: { base: '12px', sm: '0' }, bg: { base: '#fafafa', sm: 'transparent' }, borderRadius: '8px', border: { base: '1px solid #eee', sm: 'none' } })}>
-                                    <select
-                                        value={item.category}
-                                        onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                        className={css({ p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: { base: 'white', sm: '#f9f9f9' }, w: { base: '100%', sm: '120px' }, fontSize: '14px', _focus: { borderColor: '#10B981' }, flexShrink: 0 })}
-                                    >
-                                        {CATEGORIES.map((cat: any) => (
-                                            <option key={cat} value={cat}>{cat}</option>
-                                        ))}
-                                    </select>
+                                <div key={item.id} className={css({ 
+                                    display: 'flex', 
+                                    flexDirection: { base: 'column', sm: 'row' }, 
+                                    alignItems: { base: 'stretch', sm: 'center' }, 
+                                    bg: 'white', 
+                                    borderRadius: '12px', 
+                                    border: '1px solid #eaeaea', 
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                                    overflow: 'hidden',
+                                    transition: 'all 0.2s',
+                                    _focusWithin: { borderColor: '#10B981', boxShadow: '0 4px 12px rgba(16,185,129,0.1)' }
+                                })}>
+                                    <div className={css({ position: 'relative', borderRight: { base: 'none', sm: '1px solid #eaeaea' }, borderBottom: { base: '1px solid #eaeaea', sm: 'none' }, w: { base: '100%', sm: '140px' }, flexShrink: 0 })}>
+                                        <select
+                                            value={item.category}
+                                            onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
+                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#064E3B', cursor: 'pointer', appearance: 'none' })}
+                                        >
+                                            {CATEGORIES.map((cat: any) => (
+                                                <option key={cat} value={cat}>{cat}</option>
+                                            ))}
+                                        </select>
+                                        <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
+                                            <ChevronDown size={16} />
+                                        </div>
+                                    </div>
 
-                                    <div className={css({ display: 'flex', gap: '8px', flex: 1 })}>
+                                    <div className={css({ display: 'flex', flex: 1, alignItems: 'center' })}>
                                         <input
                                             type="text"
                                             value={item.item_name}
                                             onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
                                             placeholder={`항목 ${index + 1}`}
-                                            className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
+                                            className={css({ flex: 1, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', bg: 'transparent', color: '#222' })}
                                             required
                                         />
 
                                         <button
                                             type="button"
                                             onClick={() => handleRemoveItem(item)}
-                                            className={css({ p: '12px', color: '#dc2626', bg: '#fee2e2', borderRadius: '8px', border: 'none', cursor: 'pointer', _hover: { bg: '#fecaca' }, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' })}
+                                            className={css({ p: '14px', color: '#ff4d4f', bg: 'transparent', border: 'none', cursor: 'pointer', _hover: { color: '#dc2626', bg: '#fff1f0' }, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' })}
                                         >
-                                            <X size={18} />
+                                            <Trash2 size={18} />
                                         </button>
                                     </div>
                                 </div>
