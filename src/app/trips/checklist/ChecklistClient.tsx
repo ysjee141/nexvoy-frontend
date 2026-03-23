@@ -301,15 +301,20 @@ export default function ChecklistPage() {
                 <form onSubmit={addItem} className={css({ mb: '20px' })}>
                     <div className={css({ display: 'flex', gap: '8px', flexDirection: { base: 'column', sm: 'row' } })}>
                         {/* 1. 카테고리 (Mobile: 위에 독립적으로 배치됨, PC: 한 줄에 배치됨) */}
-                        <select
-                            value={newItemCategory}
-                            onChange={e => setNewItemCategory(e.target.value)}
-                            className={css({ w: { base: '100%', sm: 'auto' }, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '120px', fontSize: '14px', flexShrink: 0 })}
-                        >
-                            {CATEGORIES.map((cat: any) => (
-                                <option key={cat} value={cat}>{cat}</option>
-                            ))}
-                        </select>
+                        <div className={css({ position: 'relative', w: { base: '100%', sm: 'auto' }, flexShrink: 0 })}>
+                            <select
+                                value={newItemCategory}
+                                onChange={e => setNewItemCategory(e.target.value)}
+                                className={css({ w: '100%', p: '12px 30px 12px 12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '120px', fontSize: '14px', fontWeight: '500', color: '#064E3B', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981' } })}
+                            >
+                                {CATEGORIES.map((cat: any) => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
+                            <div className={css({ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
+                                <ChevronDown size={14} />
+                            </div>
+                        </div>
 
                         {/* 2. 입력창 및 액션 버튼들 (Mobile/PC 모두 1줄 구성) */}
                         <div className={css({ display: 'flex', gap: '8px', flex: 1, flexDirection: 'row', w: '100%' })}>
