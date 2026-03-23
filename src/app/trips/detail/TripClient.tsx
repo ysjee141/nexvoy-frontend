@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, UserPlus, Share2 } from 'lucide-react'
+import { Plus, UserPlus, Share2, ChevronDown, Check } from 'lucide-react'
 import NewPlanModal from '@/components/trips/NewPlanModal'
 import CollaboratorModal from '@/components/trips/CollaboratorModal'
 import ShareModal from '@/components/trips/ShareModal'
@@ -13,6 +13,61 @@ import PlanList from '@/components/trips/PlanList'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { Preferences } from '@capacitor/preferences'
 import { NotificationService } from '@/services/NotificationService'
+const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const options = [
+        { value: 'local', label: '현지 시간' },
+        { value: 'kst', label: '한국 시간' },
+        { value: 'both', label: '동시 표기' }
+    ];
+    const currentLabel = options.find(o => o.value === timeDisplayMode)?.label || '현지 시간';
+
+    return (
+        <div className={css({ position: 'relative', display: { base: 'block', sm: 'none' } })}>
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className={css({
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    bg: 'white', border: '1px solid #10B981', borderRadius: '16px',
+                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#10B981', cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+                })}
+            >
+                {currentLabel}
+                <ChevronDown size={14} />
+            </button>
+            {isOpen && (
+                <>
+                    <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
+                    <div className={css({
+                        position: 'absolute', top: '100%', right: 0, mt: '4px',
+                        bg: 'white', border: '1px solid #eee', borderRadius: '12px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '110px',
+                        overflow: 'hidden'
+                    })}>
+                        {options.map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => { setTimeDisplayMode(opt.value); setIsOpen(false); }}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
+                                    bg: timeDisplayMode === opt.value ? '#ECFDF5' : 'transparent',
+                                    color: timeDisplayMode === opt.value ? '#10B981' : '#555',
+                                    fontWeight: timeDisplayMode === opt.value ? '700' : '500',
+                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
+                                })}
+                            >
+                                {opt.label}
+                                {timeDisplayMode === opt.value && <Check size={14} />}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    )
+}
+
 export default function TripPlansPage() {
     const searchParams = useSearchParams()
     const tripId = searchParams.get('id')
@@ -146,7 +201,7 @@ export default function TripPlansPage() {
 
     const handleEditPlan = async (plan: any) => {
         // 편집을 위해, 해당 Plan에 연결된 url들도 같이 가져옵니다
-        const { data: urlsData } = await supabase.from('plan_urls').select('url').eq('plan_id', plan.id)
+        const { data: urlsData } = await supabase.from('plan_urls').select('url').eq('plan.id', plan.id)
 
         setEditingPlan({
             ...plan,
@@ -167,117 +222,95 @@ export default function TripPlansPage() {
 
     return (
         <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
-            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'stretch', sm: 'flex-start' }, mb: { base: '16px', sm: '24px' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
-                <div>
-                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', mb: '12px' })}>일정표 (주간 캘린더)</h2>
+            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, mb: { base: '16px', sm: '24px' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
+                {/* 1. 타이틀 & 시간 필터 */}
+                <div className={css({ display: 'flex', w: { base: '100%', sm: 'auto' }, justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, flexDirection: { base: 'row', sm: 'column' } })}>
+                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', mb: { base: 0, sm: '12px' } })}>일정표 (주간 캘린더)</h2>
 
-                    {/* 시간 표시 옵션 토글 */}
-                    <div className={css({ display: 'inline-flex', bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: { base: '100%', sm: 'auto' } })}>
+                    {/* PC 전용 시간 표시 옵션 토글 */}
+                    <div className={css({ display: { base: 'none', sm: 'inline-flex' }, bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: 'auto' })}>
                         <button
                             onClick={() => setTimeDisplayMode('local')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#064E3B', whiteSpace: 'nowrap' })}
+                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#022C22', whiteSpace: 'nowrap' })}
                         >
                             현지 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('kst')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#064E3B', whiteSpace: 'nowrap' })}
+                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#022C22', whiteSpace: 'nowrap' })}
                         >
                             한국 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('both')}
-                            className={css({ flex: { base: 1, sm: 'none' }, px: { base: '8px', sm: '12px' }, py: '6px', fontSize: { base: '11px', sm: '12px' }, fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#064E3B', whiteSpace: 'nowrap' })}
+                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#022C22', whiteSpace: 'nowrap' })}
                         >
                             동시 표기
                         </button>
                     </div>
+
+                    {/* 모바일 전용 시간 표시 드롭다운 */}
+                    <CustomTimeDropdown timeDisplayMode={timeDisplayMode} setTimeDisplayMode={setTimeDisplayMode} />
                 </div>
 
-                {/* 버튼 영역: 모바일에서는 협업/공유 2열 grid + 일정추가 전체 너비 */}
-                <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
-                    <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr 1fr', sm: 'auto auto' }, gap: '8px' })}>
+                {/* 2. 버튼 영역: 모바일 1줄(flex/order), PC 다단구조 */}
+                <div className={css({ 
+                    display: 'flex', flexDirection: { base: 'row', sm: 'column' }, alignItems: { base: 'center', sm: 'flex-start' },
+                    gap: '8px', w: { base: '100%', sm: 'auto' } 
+                })}>
+                    <div className={css({ 
+                        display: 'flex', gap: '8px', flexShrink: 0, w: { base: 'auto', sm: '100%' },
+                        order: { base: 1, sm: -1 } 
+                    })}>
                         <button
                             onClick={() => setIsCollaboratorModalOpen(true)}
                             className={css({
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                bg: 'white',
-                                color: '#022C22',
-                                px: '12px',
-                                py: '10px',
-                                borderRadius: '8px',
-                                fontWeight: '600',
-                                fontSize: '13px',
-                                border: '1px solid #ddd',
-                                whiteSpace: 'nowrap',
-                                _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
-                                _active: { transform: 'translateY(0)' },
-                                opacity: !isOnline ? 0.5 : 1,
-                                cursor: !isOnline ? 'not-allowed' : 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                bg: 'white', color: '#022C22',
+                                px: { base: '0', sm: '12px' }, w: { base: '44px', sm: 'auto' }, h: '44px',
+                                borderRadius: '8px', fontWeight: '600', fontSize: '13px',
+                                border: '1px solid #ddd', whiteSpace: 'nowrap',
+                                _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' },
+                                opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
+                                flex: { base: 'none', sm: 1 }
                             })}
                             disabled={!isOnline}
                         >
-                            <UserPlus size={15} /> 협업
+                            <UserPlus size={16} /> <span className={css({ display: { base: 'none', sm: 'inline' } })}>협업</span>
                         </button>
                         {userRole === 'owner' && (
                             <button
                                 onClick={() => setIsShareModalOpen(true)}
                                 className={css({
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    gap: '6px',
-                                    bg: 'white',
-                                    color: '#022C22',
-                                    px: '12px',
-                                    py: '10px',
-                                    borderRadius: '8px',
-                                    fontWeight: '600',
-                                    fontSize: '13px',
-                                    border: '1px solid #ddd',
-                                    whiteSpace: 'nowrap',
-                                    _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' },
-                                    _active: { transform: 'translateY(0)' },
-                                    opacity: !isOnline ? 0.5 : 1,
-                                    cursor: !isOnline ? 'not-allowed' : 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    bg: 'white', color: '#022C22',
+                                    px: { base: '0', sm: '12px' }, w: { base: '44px', sm: 'auto' }, h: '44px',
+                                    borderRadius: '8px', fontWeight: '600', fontSize: '13px',
+                                    border: '1px solid #ddd', whiteSpace: 'nowrap',
+                                    _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' },
+                                    opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
+                                    flex: { base: 'none', sm: 1 }
                                 })}
                                 disabled={!isOnline}
                             >
-                                <Share2 size={15} /> 공유
+                                <Share2 size={16} /> <span className={css({ display: { base: 'none', sm: 'inline' } })}>공유</span>
                             </button>
                         )}
                     </div>
                     {/* 편집 권한이 있을 때만 일정 추가 버튼 노출 */}
                     {(userRole === 'owner' || userRole === 'editor') && (
                         <button
-                            onClick={() => {
-                                setEditingPlan(null)
-                                setIsModalOpen(true)
-                            }}
+                            onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                             className={css({
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '6px',
-                                bg: '#10B981',
-                                color: 'white',
-                                px: '16px',
-                                py: '10px',
-                                borderRadius: '8px',
-                                fontWeight: '600',
-                                fontSize: '13px',
-                                cursor: 'pointer',
-                                border: 'none',
-                                w: '100%',
-                                whiteSpace: 'nowrap',
-                                _hover: { bg: '#059669', transform: 'translateY(-1px)' },
-                                _active: { transform: 'translateY(0)' }
+                                order: { base: -1, sm: 1 },
+                                flex: { base: 1, sm: 'none' }, w: { base: 'auto', sm: '100%' }, h: '44px',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                bg: '#10B981', color: 'white', px: '16px', borderRadius: '8px',
+                                fontWeight: '600', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
+                                _hover: { bg: '#059669', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' }
                             })}
                         >
-                            <Plus size={15} /> 일정 추가
+                            <Plus size={18} /> 일정 추가
                         </button>
                     )}
                 </div>

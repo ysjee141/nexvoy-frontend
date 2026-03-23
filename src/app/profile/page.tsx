@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle } from 'lucide-react'
+import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X } from 'lucide-react'
 import Link from 'next/link'
 
 export default function ProfilePage() {
@@ -166,9 +166,50 @@ export default function ProfilePage() {
                 })}>
                     {displayName.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                    <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#022C22' })}>{displayName}</h1>
-                    <p className={css({ color: '#888', fontSize: '14px', mt: '2px' })}>{user.email}</p>
+                <div className={css({ flex: 1, minW: 0 })}>
+                    {isEditingNickname ? (
+                        <div className={css({ display: 'flex', gap: '8px', flexDirection: 'row', alignItems: 'center', w: '100%' })}>
+                            <input
+                                value={nickname}
+                                onChange={e => setNickname(e.target.value)}
+                                autoFocus
+                                className={css({ flex: 1, minW: 0, p: '6px 10px', border: '1.5px solid #10B981', borderRadius: '6px', fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', outline: 'none' })}
+                            />
+                            <div className={css({ display: 'flex', gap: '4px', flexShrink: 0 })}>
+                                <button
+                                    onClick={saveNickname}
+                                    disabled={isSavingNickname}
+                                    className={css({ p: '6px', bg: '#10B981', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', _disabled: { opacity: 0.6 } })}
+                                    title="저장"
+                                >
+                                    {isSavingNickname ? <span className={css({ fontSize: '12px', fontWeight: 'bold', px: '2px' })}>...</span> : <Check size={18} />}
+                                </button>
+                                <button
+                                    onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || '') }}
+                                    className={css({ p: '6px', bg: '#f1f3f4', color: '#555', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', _hover: { bg: '#e8eaed' } })}
+                                    title="취소"
+                                >
+                                    <X size={18} />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <>
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
+                                <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#022C22', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' })}>
+                                    {displayName}
+                                </h1>
+                                <button
+                                    onClick={() => setIsEditingNickname(true)}
+                                    className={css({ bg: 'transparent', border: 'none', color: '#888', cursor: 'pointer', p: '4px', borderRadius: '4px', _hover: { bg: '#eee', color: '#555' }, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' })}
+                                    aria-label="닉네임 수정"
+                                >
+                                    <Edit2 size={16} />
+                                </button>
+                            </div>
+                            <p className={css({ color: '#888', fontSize: '14px', mt: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' })}>{user.email}</p>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -192,59 +233,7 @@ export default function ProfilePage() {
                 </div>
             </section>
 
-            {/* 프로필 정보 수정 */}
-            <section className={css({ bg: 'white', borderRadius: '16px', p: { base: '16px', sm: '24px' }, boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '16px', fontWeight: 'bold', mb: '20px', color: '#222', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <User size={18} />프로필 정보
-                </h2>
 
-                {/* 이메일 (읽기 전용) */}
-                <div className={css({ mb: '16px' })}>
-                    <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>이메일</label>
-                    <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', p: '12px 16px', bg: '#f8f9fa', borderRadius: '8px', color: '#444', fontSize: '15px' })}>
-                        <Mail size={16} color="#aaa" />
-                        {user.email}
-                    </div>
-                </div>
-
-                {/* 닉네임 수정 */}
-                <div>
-                    <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>닉네임</label>
-                    {isEditingNickname ? (
-                        <div className={css({ display: 'flex', gap: '8px', flexDirection: { base: 'column', sm: 'row' } })}>
-                            <input
-                                value={nickname}
-                                onChange={e => setNickname(e.target.value)}
-                                autoFocus
-                                className={css({ flex: 1, w: { base: '100%', sm: 'auto' }, p: '12px 16px', border: '1.5px solid #10B981', borderRadius: '8px', fontSize: '15px', outline: 'none' })}
-                            />
-                            <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>
-                                <button
-                                    onClick={saveNickname}
-                                    disabled={isSavingNickname}
-                                    className={css({ flex: 1, justifyContent: 'center', px: '16px', py: '10px', bg: '#10B981', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', _disabled: { opacity: 0.6 } })}
-                                >
-                                    <Save size={16} />{isSavingNickname ? '저장 중...' : '저장'}
-                                </button>
-                                <button
-                                    onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || '') }}
-                                    className={css({ flex: 1, justifyContent: 'center', px: '16px', py: '10px', bg: '#f1f3f4', color: '#555', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: '600' })}
-                                >
-                                    취소
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div
-                            onClick={() => setIsEditingNickname(true)}
-                            className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', p: '12px 16px', border: '1px solid #eee', borderRadius: '8px', cursor: 'pointer', _hover: { bg: '#fafafa', borderColor: '#ddd' } })}
-                        >
-                            <span className={css({ fontSize: '15px', color: '#064E3B' })}>{displayName}</span>
-                            <span className={css({ fontSize: '13px', color: '#10B981', fontWeight: '600' })}>수정</span>
-                        </div>
-                    )}
-                </div>
-            </section>
 
             {/* 비밀번호 변경 */}
             <section className={css({ bg: 'white', borderRadius: '16px', p: { base: '16px', sm: '24px' }, boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
