@@ -1,28 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 export function useModalBackButton(isOpen: boolean, onClose: () => void, baseModalId: string) {
     const onCloseRef = useRef(onClose);
-    const [modalId, setModalId] = useState('');
 
     useEffect(() => {
         onCloseRef.current = onClose;
     }, [onClose]);
 
-    // 모달이 열릴 때마다 고유한 modalId 생성하여 페이지 새로고침 등에 따른 이전 상태 충돌 방지
     useEffect(() => {
-        if (isOpen) setModalId(`${baseModalId}_${Date.now()}`);
-    }, [isOpen, baseModalId]);
+        if (isOpen) {
+            // 모달이 열릴 때마다 고유한 modalId 생성
+            const modalId = `${baseModalId}_${Date.now()}`;
 
-    useEffect(() => {
-        if (isOpen && modalId) {
-            // 히스토리에 현재 상태를 기록 (URL 변경 없이 state만 추가)
-            window.history.pushState({ modal: modalId }, '', window.location.href);
+            // 기존 history state를 덮어쓰지 않도록 복사하여 추가 (Next.js 호환성)
+            const currentState = window.history.state || {};
+            window.history.pushState({ ...currentState, modal: modalId }, '', window.location.href);
 
-            const handlePopState = (e: PopStateEvent) => {
-                // 뒤로가기로 인해 발생한 이벤트일 때,
-                // 만약 돌아온 state가 현재 모달의 state와 같다면 
-                // 이는 이 모달 위에 떠 있던 '다른 모달'이 닫히면서 나에게 돌아온 것이므로 닫히면 안 됨.
-                // 현재 state가 내 modalId와 다를 때만 닫기 트리거.
+            const handlePopState = () => {
+                // 현재 state의 modal 값이 내가 띄운 modalId와 다르면(뒤로가기로 빠졌다면) onClose 실행
                 if (window.history.state?.modal !== modalId) {
                     onCloseRef.current();
                 }
@@ -33,13 +28,11 @@ export function useModalBackButton(isOpen: boolean, onClose: () => void, baseMod
             return () => {
                 window.removeEventListener('popstate', handlePopState);
                 
-                // 사용자가 명시적 닫기 버튼(X 닫기, 저장 등)을 눌러 모달이 언마운트되는 경우
-                // history 스택에 쌓인 상태를 깔끔하게 소비하기 위해 한 번 back() 해줌.
-                // 단축키 뒤로가기로 닫힌 경우 이미 history가 바뀌었으므로 조건에 부합하지 않음.
+                // 모달이 직접 닫히는 경우 (뒤로가기가 아닌 버튼 클릭 등) 쌓은 history 정리
                 if (window.history.state && window.history.state.modal === modalId) {
                     window.history.back();
                 }
             };
         }
-    }, [isOpen, modalId]);
+    }, [isOpen, baseModalId]);
 }

@@ -4,6 +4,7 @@ import Navbar from '@/components/layout/Navbar'
 import NotificationBanner from '@/components/layout/NotificationBanner'
 import OfflineBanner from '@/components/common/OfflineBanner'
 import { css } from 'styled-system/css'
+import { GoogleAnalytics } from '@next/third-parties/google'
 
 export const metadata: Metadata = {
   title: 'Onvoy (온여정) - 당신의 친절한 여행 동반자',
@@ -52,6 +53,9 @@ export default function RootLayout({
         >
           {children}
         </main>
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        )}
       </body>
     </html>
   )
