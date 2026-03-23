@@ -201,7 +201,7 @@ export default function TripPlansPage() {
 
     const handleEditPlan = async (plan: any) => {
         // 편집을 위해, 해당 Plan에 연결된 url들도 같이 가져옵니다
-        const { data: urlsData } = await supabase.from('plan_urls').select('url').eq('plan.id', plan.id)
+        const { data: urlsData } = await supabase.from('plan_urls').select('url').eq('plan_id', plan.id)
 
         setEditingPlan({
             ...plan,
