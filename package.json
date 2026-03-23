@@ -11,6 +11,7 @@
     "prepare": "panda codegen"
   },
   "dependencies": {
+    "@capacitor-community/firebase-analytics": "^8.0.0",
     "@capacitor/android": "^8.2.0",
     "@capacitor/app": "^8.0.1",
     "@capacitor/core": "^8.2.0",
@@ -23,6 +24,7 @@
     "@capgo/capacitor-navigation-bar": "^8.0.25",
     "@next/third-parties": "latest",
     "@react-google-maps/api": "^2.19.3",
+    "@sentry/capacitor": "^3.2.0",
     "@sentry/nextjs": "^10",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.97.0",

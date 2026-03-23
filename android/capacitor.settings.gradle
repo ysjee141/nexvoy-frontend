@@ -2,6 +2,9 @@
 include ':capacitor-android'
 project(':capacitor-android').projectDir = new File('../node_modules/.pnpm/@capacitor+android@8.2.0_@capacitor+core@8.2.0/node_modules/@capacitor/android/capacitor')
 
+include ':capacitor-community-firebase-analytics'
+project(':capacitor-community-firebase-analytics').projectDir = new File('../node_modules/.pnpm/@capacitor-community+firebase-analytics@8.0.0_@capacitor+core@8.2.0/node_modules/@capacitor-community/firebase-analytics/android')
+
 include ':capacitor-app'
 project(':capacitor-app').projectDir = new File('../node_modules/.pnpm/@capacitor+app@8.0.1_@capacitor+core@8.2.0/node_modules/@capacitor/app/android')
 
@@ -22,3 +25,6 @@ project(':capacitor-status-bar').projectDir = new File('../node_modules/.pnpm/@c
 
 include ':capgo-capacitor-navigation-bar'
 project(':capgo-capacitor-navigation-bar').projectDir = new File('../node_modules/.pnpm/@capgo+capacitor-navigation-bar@8.0.25_@capacitor+core@8.2.0/node_modules/@capgo/capacitor-navigation-bar/android')
+
+include ':sentry-capacitor'
+project(':sentry-capacitor').projectDir = new File('../node_modules/.pnpm/@sentry+capacitor@3.2.0_@capacitor+core@8.2.0/node_modules/@sentry/capacitor/android')
