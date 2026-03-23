@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
-import { LogOut, Home, User, Compass, BookOpen, LogIn, UserPlus } from 'lucide-react'
+import { LogOut, Home, User, Compass, BookOpen, LogIn, UserPlus, ListTodo } from 'lucide-react'
 
 export default function Navbar() {
     const router = useRouter()
@@ -127,6 +127,21 @@ export default function Navbar() {
                                     >
                                         <Home size={18} />
                                         <span className={css({ display: { base: 'none', sm: 'inline' } })}>홈</span>
+                                    </Link>
+                                    <Link
+                                        href="/templates"
+                                        className={css({
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '6px',
+                                            fontSize: '14px',
+                                            fontWeight: '500',
+                                            color: '#555',
+                                            _hover: { color: '#022C22' },
+                                        })}
+                                    >
+                                        <ListTodo size={18} />
+                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>템플릿</span>
                                     </Link>
                                     <Link
                                         href="/profile"
