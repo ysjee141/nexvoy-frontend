@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
-import { X, MapPin, Clock, Link as LinkIcon, AlignLeft, ChevronLeft } from 'lucide-react'
+import { X, MapPin, Clock, Link as LinkIcon, AlignLeft, ChevronLeft, ChevronDown } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { getCurrencyFromTimezone } from '@/utils/currency'
@@ -401,18 +401,23 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
                             🔔 알림 설정
                         </label>
-                        <select
-                            value={alarmMinutesBefore ?? ''}
-                            onChange={e => setAlarmMinutesBefore(e.target.value === '' ? null : Number(e.target.value))}
-                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', _focus: { borderColor: '#10B981' } })}
-                        >
-                            <option value="">알림 없음</option>
-                            <option value="10">출발 10분 전</option>
-                            <option value="30">출발 30분 전</option>
-                            <option value="60">출발 1시간 전</option>
-                            <option value="180">출발 3시간 전</option>
-                            <option value="1440">하루 전</option>
-                        </select>
+                        <div className={css({ position: 'relative', w: '100%' })}>
+                            <select
+                                value={alarmMinutesBefore ?? ''}
+                                onChange={e => setAlarmMinutesBefore(e.target.value === '' ? null : Number(e.target.value))}
+                                className={css({ w: '100%', p: '14px 40px 14px 16px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', color: '#064E3B', fontSize: '14px', fontWeight: '500', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981' } })}
+                            >
+                                <option value="">알림 없음</option>
+                                <option value="10">출발 10분 전</option>
+                                <option value="30">출발 30분 전</option>
+                                <option value="60">출발 1시간 전</option>
+                                <option value="180">출발 3시간 전</option>
+                                <option value="1440">하루 전</option>
+                            </select>
+                            <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
+                                <ChevronDown size={18} />
+                            </div>
+                        </div>
                         {alarmMinutesBefore !== null && (
                             <p className={css({ fontSize: '12px', color: '#666', mt: '6px' })}>
                                 💡 브라우저 알림 권한이 허용되어 있어야 알림이 동작합니다.

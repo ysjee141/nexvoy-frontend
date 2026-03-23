@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, X, ArrowLeft, Save } from 'lucide-react'
+import { Plus, X, ArrowLeft, Save, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 
 interface TemplateItemInput {
@@ -155,15 +155,20 @@ export default function NewTemplatePage() {
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         {items.map((item, index) => (
                             <div key={item.id} className={css({ display: 'flex', gap: '12px', alignItems: 'center' })}>
-                                <select
-                                    value={item.category}
-                                    onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                    className={css({ p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: '#f9f9f9', w: '120px', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
-                                >
-                                    {CATEGORIES.map((cat: any) => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
+                                <div className={css({ position: 'relative', w: '120px', flexShrink: 0 })}>
+                                    <select
+                                        value={item.category}
+                                        onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
+                                        className={css({ w: '100%', p: '12px 30px 12px 12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: '#f9f9f9', fontSize: '14px', fontWeight: '500', color: '#064E3B', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981', bg: 'white' } })}
+                                    >
+                                        {CATEGORIES.map((cat: any) => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                    <div className={css({ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
+                                        <ChevronDown size={14} />
+                                    </div>
+                                </div>
 
                                 <input
                                     type="text"

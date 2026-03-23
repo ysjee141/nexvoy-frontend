@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { css } from 'styled-system/css'
-import { X, UserPlus, Mail, Shield, Trash2, Check, Loader2 } from 'lucide-react'
+import { X, UserPlus, Mail, Shield, Trash2, Check, Loader2, ChevronDown } from 'lucide-react'
 import { collaboration } from '@/utils/collaboration'
 import { Capacitor } from '@capacitor/core'
 
@@ -159,17 +159,22 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                             />
                         </div>
                         <div className={css({ display: 'flex', gap: '8px' })}>
-                            <select
-                                value={role}
-                                onChange={e => setRole(e.target.value as any)}
-                                className={css({
-                                    flex: 1, px: '12px', py: '12px', bg: '#f8f9fa', borderRadius: '12px',
-                                    border: '1px solid #eee', outline: 'none', fontSize: '14px', cursor: 'pointer'
-                                })}
-                            >
-                                <option value="editor">편집자 (수정 가능)</option>
-                                <option value="viewer">조회자 (읽기 전용)</option>
-                            </select>
+                            <div className={css({ position: 'relative', flex: 1 })}>
+                                <select
+                                    value={role}
+                                    onChange={e => setRole(e.target.value as any)}
+                                    className={css({
+                                        w: '100%', px: '16px', py: '14px', pr: '36px', bg: '#f8f9fa', borderRadius: '12px',
+                                        border: '1px solid #eee', outline: 'none', fontSize: '14px', fontWeight: '500', color: '#064E3B', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981', bg: 'white' }
+                                    })}
+                                >
+                                    <option value="editor">편집자 (수정 가능)</option>
+                                    <option value="viewer">조회자 (읽기 전용)</option>
+                                </select>
+                                <div className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
+                                    <ChevronDown size={16} />
+                                </div>
+                            </div>
                             <button
                                 type="submit"
                                 disabled={inviting}
@@ -252,17 +257,22 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                 {/* 소유자이고 관리 대상이 자신이 아니면서 소유자도 아닐 때만 관리 가능 */}
                                                 {isOwner && !isMemberOwner ? (
                                                     <>
-                                                        <select
-                                                            value={m.role}
-                                                            onChange={(e) => handleUpdateRole(m.id, e.target.value as any)}
-                                                            className={css({
-                                                                fontSize: '11px', px: '4px', py: '4px', bg: 'white', border: '1px solid #ddd',
-                                                                borderRadius: '6px', outline: 'none', cursor: 'pointer'
-                                                            })}
-                                                        >
-                                                            <option value="editor">편집자</option>
-                                                            <option value="viewer">뷰어</option>
-                                                        </select>
+                                                        <div className={css({ position: 'relative' })}>
+                                                            <select
+                                                                value={m.role}
+                                                                onChange={(e) => handleUpdateRole(m.id, e.target.value as any)}
+                                                                className={css({
+                                                                    fontSize: '11px', fontWeight: '500', px: '8px', py: '6px', pr: '22px', bg: 'white', border: '1px solid #ddd', color: '#064E3B',
+                                                                    borderRadius: '6px', outline: 'none', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981' }
+                                                                })}
+                                                            >
+                                                                <option value="editor">편집자</option>
+                                                                <option value="viewer">뷰어</option>
+                                                            </select>
+                                                            <div className={css({ position: 'absolute', right: '6px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
+                                                                <ChevronDown size={12} />
+                                                            </div>
+                                                        </div>
                                                         <button
                                                             onClick={() => handleRemoveMember(m.id, m.invited_email)}
                                                             className={css({
