@@ -35,6 +35,9 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
     const [localDate, setLocalDate] = useState('')
     const [localTime, setLocalTime] = useState('')
     const [locationName, setLocationName] = useState('')
+    const [locationLat, setLocationLat] = useState<number | null>(null)
+    const [locationLng, setLocationLng] = useState<number | null>(null)
+    const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null)
     const [timezoneString, setTimezoneString] = useState('Asia/Seoul')
     const [cost, setCost] = useState<number | ''>('')
     const [memo, setMemo] = useState('')
@@ -46,6 +49,9 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
         if (isOpen && editData) {
             setTitle(editData.title || '')
             setLocationName(editData.location || '')
+            setLocationLat(editData.location_lat ?? null)
+            setLocationLng(editData.location_lng ?? null)
+            setGooglePlaceId(editData.google_place_id ?? null)
             setTimezoneString(editData.timezone_string || 'Asia/Seoul')
             setCost(editData.cost || '')
             setMemo(editData.memo || '')
@@ -73,6 +79,9 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
             setLocalDate('')
             setLocalTime('')
             setLocationName('')
+            setLocationLat(null)
+            setLocationLng(null)
+            setGooglePlaceId(null)
             setTimezoneString('Asia/Seoul')
             setCost('')
             setMemo('')
@@ -104,10 +113,12 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                 const lat = place.geometry.location.lat()
                 const lng = place.geometry.location.lng()
                 setLocationName(place.name || place.formatted_address || '')
+                setLocationLat(lat)
+                setLocationLng(lng)
+                setGooglePlaceId(place.place_id || null)
 
                 try {
-                    const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-                    const res = await fetch(`${apiUrl}/api/timezone?lat=${lat}&lng=${lng}`)
+                    const res = await fetch(`/api/timezone?lat=${lat}&lng=${lng}`)
                     const data = await res.json()
                     if (data.timeZoneId) {
                         setTimezoneString(data.timeZoneId)
@@ -133,6 +144,9 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
             trip_id: tripId,
             title,
             location: locationName,
+            location_lat: locationLat,
+            location_lng: locationLng,
+            google_place_id: googlePlaceId,
             cost: cost === '' ? 0 : cost,
             memo,
             start_datetime_local: startDatetime,
@@ -287,7 +301,12 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                 <input
                                     type="text"
                                     value={locationName}
-                                    onChange={e => setLocationName(e.target.value)}
+                                    onChange={e => {
+                                        setLocationName(e.target.value)
+                                        setLocationLat(null)
+                                        setLocationLng(null)
+                                        setGooglePlaceId(null)
+                                    }}
                                     placeholder="어디에 가시나요? 장소 자동완성"
                                     className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' }, bg: '#f9f9f9' })}
                                 />

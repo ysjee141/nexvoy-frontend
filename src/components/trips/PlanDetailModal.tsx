@@ -157,9 +157,22 @@ export default function PlanDetailModal({
 
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     const encodedLocation = plan.location ? encodeURIComponent(plan.location) : ''
-    const embedUrl = apiKey && plan.location
-        ? `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedLocation}&language=ko`
-        : null
+    
+    let embedUrl = null
+    let mapUrl = null
+    
+    if (apiKey && plan.location) {
+        if (plan.google_place_id) {
+            embedUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=place_id:${plan.google_place_id}&language=ko`
+            mapUrl = `https://www.google.com/maps/search/?api=1&query=${plan.location_lat},${plan.location_lng}&query_place_id=${plan.google_place_id}`
+        } else if (plan.location_lat && plan.location_lng) {
+            embedUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${plan.location_lat},${plan.location_lng}&language=ko`
+            mapUrl = `https://www.google.com/maps/search/?api=1&query=${plan.location_lat},${plan.location_lng}`
+        } else {
+            embedUrl = `https://www.google.com/maps/embed/v1/place?key=${apiKey}&q=${encodedLocation}&language=ko`
+            mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`
+        }
+    }
 
     // plan_urls 파싱 (다양한 형태 처리)
     const planUrls: string[] = (() => {
@@ -171,9 +184,7 @@ export default function PlanDetailModal({
 
     const hasRefs = planUrls.length > 0
 
-    const mapUrl = plan.location
-        ? `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`
-        : null
+
 
     return (
         <div
