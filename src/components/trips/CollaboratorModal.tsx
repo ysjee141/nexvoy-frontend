@@ -5,6 +5,7 @@ import { css } from 'styled-system/css'
 import { X, UserPlus, Mail, Shield, Trash2, Check, Loader2, ChevronDown } from 'lucide-react'
 import { collaboration } from '@/utils/collaboration'
 import { Capacitor } from '@capacitor/core'
+import { useModalBackButton } from '@/hooks/useModalBackButton'
 
 interface CollaboratorModalProps {
     tripId: string
@@ -23,6 +24,8 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
     const [ownerProfile, setOwnerProfile] = useState<any>(null)
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+    useModalBackButton(isOpen, onClose, 'collaboratorModal')
 
     const fetchMembers = useCallback(async () => {
         setLoading(true)

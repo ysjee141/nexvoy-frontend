@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { getCurrencyFromTimezone, formatCurrency, formatKRW } from '@/utils/currency'
 import { useNetworkStore } from '@/stores/useNetworkStore'
+import { useModalBackButton } from '@/hooks/useModalBackButton'
 
 // ── OG 미리보기 데이터 타입 ──
 interface OGData {
@@ -132,6 +133,8 @@ export default function PlanDetailModal({
     const [mapError, setMapError] = useState(false)
     const [mapLoaded, setMapLoaded] = useState(false)
     const { isOnline } = useNetworkStore()
+
+    useModalBackButton(true, onClose, `planDetail_${plan.id}`)
 
     useEffect(() => {
         const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
