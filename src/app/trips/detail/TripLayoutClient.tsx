@@ -128,10 +128,10 @@ export default function TripLayoutClient() {
             {/* 하위 컨텐츠 전환 영역 (언마운트 하지 않고 display none으로 유지하여 상태 보존 및 즉각 전환) */}
             <div>
                 <div style={{ display: activeTab === 'plans' ? 'block' : 'none' }}>
-                    <TripClient />
+                    <TripClient isActive={activeTab === 'plans'} />
                 </div>
                 <div style={{ display: activeTab === 'checklist' ? 'block' : 'none' }}>
-                    <ChecklistClient />
+                    <ChecklistClient isActive={activeTab === 'checklist'} />
                 </div>
             </div>
         </div>

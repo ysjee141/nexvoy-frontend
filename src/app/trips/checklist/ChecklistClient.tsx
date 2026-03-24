@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
@@ -62,7 +62,7 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
     )
 }
 
-export default function ChecklistPage() {
+export default function ChecklistPage({ isActive = true }: { isActive?: boolean }) {
     const searchParams = useSearchParams()
     const tripId = searchParams.get('id')
     const supabase = createClient()
@@ -78,55 +78,59 @@ export default function ChecklistPage() {
 
     const CATEGORIES = ['필수', '의류', '세면도구', '전자기기', '상비약', '기타']
 
-    useEffect(() => {
-        const fetchChecklist = async () => {
-            // 1. 해당 trip의 checklist 조회
-            let { data: checklists } = await supabase
+    const fetchChecklist = useCallback(async () => {
+        if (!tripId) return
+
+        // 1. 해당 trip의 checklist 조회
+        let { data: checklists } = await supabase
+            .from('checklists')
+            .select('id, title')
+            .eq('trip_id', tripId)
+            .limit(1)
+
+        let currentChecklistId = checklists?.[0]?.id
+
+        // 없다면 생성
+        if (!currentChecklistId) {
+            const { data: newChecklist } = await supabase
                 .from('checklists')
-                .select('id, title')
-                .eq('trip_id', tripId)
-                .limit(1)
+                .insert({ trip_id: tripId, title: '기본 준비물' })
+                .select()
+                .single()
 
-            let currentChecklistId = checklists?.[0]?.id
-
-            // 없다면 생성
-            if (!currentChecklistId) {
-                const { data: newChecklist } = await supabase
-                    .from('checklists')
-                    .insert({ trip_id: tripId, title: '기본 준비물' })
-                    .select()
-                    .single()
-
-                if (newChecklist) {
-                    currentChecklistId = newChecklist.id
-                }
-            }
-
-            if (currentChecklistId) {
-                setChecklistId(currentChecklistId)
-
-                // 2. 여행 정보 및 항목 병렬 조회
-                const [tripRes, itemsRes] = await Promise.all([
-                    supabase.from('trips').select('destination, start_date').eq('id', tripId).single(),
-                    supabase.from('checklist_items').select('*').eq('checklist_id', currentChecklistId).order('created_at', { ascending: true })
-                ])
-
-                if (tripRes.data) setTripInfo(tripRes.data)
-                
-                if (itemsRes.data) {
-                    setItems(itemsRes.data)
-                    if (tripRes.data) {
-                        const pendingCount = itemsRes.data.filter((i: any) => !i.is_checked).length
-                        import('@/services/NotificationService').then(({ NotificationService }) => {
-                            NotificationService.scheduleChecklistReminder(tripId!, tripRes.data.destination, tripRes.data.start_date, pendingCount)
-                        })
-                    }
-                }
+            if (newChecklist) {
+                currentChecklistId = newChecklist.id
             }
         }
 
-        fetchChecklist()
+        if (currentChecklistId) {
+            setChecklistId(currentChecklistId)
+
+            // 2. 여행 정보 및 항목 병렬 조회
+            const [tripRes, itemsRes] = await Promise.all([
+                supabase.from('trips').select('destination, start_date').eq('id', tripId).single(),
+                supabase.from('checklist_items').select('*').eq('checklist_id', currentChecklistId).order('created_at', { ascending: true })
+            ])
+
+            if (tripRes.data) setTripInfo(tripRes.data)
+            
+            if (itemsRes.data) {
+                setItems(itemsRes.data)
+                if (tripRes.data) {
+                    const pendingCount = itemsRes.data.filter((i: any) => !i.is_checked).length
+                    import('@/services/NotificationService').then(({ NotificationService }) => {
+                        NotificationService.scheduleChecklistReminder(tripId!, tripRes.data.destination, tripRes.data.start_date, pendingCount)
+                    })
+                }
+            }
+        }
     }, [tripId, supabase])
+
+    useEffect(() => {
+        if (isActive) {
+            fetchChecklist()
+        }
+    }, [isActive, fetchChecklist])
 
     const toggleItem = async (itemId: string, currentStatus: boolean) => {
         // Optimistic UI update
