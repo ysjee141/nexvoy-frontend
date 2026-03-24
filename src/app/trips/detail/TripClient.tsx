@@ -68,7 +68,7 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     )
 }
 
-export default function TripPlansPage() {
+export default function TripPlansPage({ isActive = true }: { isActive?: boolean }) {
     const searchParams = useSearchParams()
     const tripId = searchParams.get('id')
 
@@ -180,10 +180,12 @@ export default function TripPlansPage() {
     }, [tripId])
 
     useEffect(() => {
-        fetchTrip()
-        fetchPlans()
-        fetchUserRole()
-    }, [fetchTrip, fetchPlans, fetchUserRole])
+        if (isActive) {
+            fetchTrip()
+            fetchPlans()
+            fetchUserRole()
+        }
+    }, [isActive, fetchTrip, fetchPlans, fetchUserRole])
 
     // 드롭다운 외부 클릭 감지를 위한 이벤트 리스너 (심플 버전으로 대체)
 
