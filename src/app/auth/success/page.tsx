@@ -3,8 +3,13 @@
 import { css } from 'styled-system/css'
 import { CheckCircle2 } from 'lucide-react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
-export default function AuthSuccessPage() {
+function SuccessContent() {
+    const searchParams = useSearchParams()
+    const isVerifiedOnly = searchParams.get('verified') === 'true'
+
     return (
         <div className={css({
             minH: '100vh',
@@ -55,10 +60,12 @@ export default function AuthSuccessPage() {
                     lineHeight: 1.5,
                     wordBreak: 'keep-all'
                 })}>
-                    환영합니다. 계정 인증이 성공적으로 완료되었습니다. 이제 Onvoy의 모든 기능을 이용하실 수 있습니다.
+                    {isVerifiedOnly 
+                        ? '이메일 인증이 완료되었습니다. 보안을 위해 다시 한 번 로그인해 주세요.'
+                        : '환영합니다. 계정 인증이 성공적으로 완료되었습니다. 이제 Onvoy의 모든 기능을 이용하실 수 있습니다.'}
                 </p>
                 <Link
-                    href="/"
+                    href={isVerifiedOnly ? '/login' : '/'}
                     className={css({
                         display: 'flex',
                         alignItems: 'center',
@@ -76,9 +83,17 @@ export default function AuthSuccessPage() {
                         _active: { transform: 'scale(0.98)' }
                     })}
                 >
-                    홈으로 이동
+                    {isVerifiedOnly ? '로그인하러 가기' : '홈으로 이동'}
                 </Link>
             </div>
         </div>
+    )
+}
+
+export default function AuthSuccessPage() {
+    return (
+        <Suspense fallback={<div className={css({ minH: '100vh', bg: '#fbfbfb' })} />}>
+            <SuccessContent />
+        </Suspense>
     )
 }
