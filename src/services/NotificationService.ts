@@ -109,8 +109,35 @@ export const NotificationService = {
         })
 
         // Foreground에서 실제 알림 수신 시
-        PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        PushNotifications.addListener('pushNotificationReceived', async (notification) => {
             console.log('🔔 Push notification received:', JSON.stringify(notification));
+            
+            const data = notification.data;
+            if (data?.planId) {
+                // 중복 방지 로직: 이미 로컬 알람이 울렸거나 예정되어 있는지 확인
+                const pending = await LocalNotifications.getPending();
+                const notificationId = this.hashCode(`alarm_${data.planId}`);
+                const isAlreadyScheduled = pending.notifications.some(n => n.id === notificationId);
+
+                if (isAlreadyScheduled) {
+                    console.log(`[Notification] Duplicate alarm detected for plan ${data.planId}. Skipping push alert.`);
+                    return;
+                }
+
+                // 만약 Silent Push(데이터 전송용)인 경우, 여기서 직접 로컬 알림을 띄워줄 수도 있습니다.
+                if (!notification.title && !notification.body) {
+                    await LocalNotifications.schedule({
+                        notifications: [{
+                            id: notificationId,
+                            title: '일정 알림 ⏰',
+                            body: data.body || '새로운 일정이 곧 시작됩니다.',
+                            schedule: { at: new Date() },
+                            sound: "default",
+                            extra: data
+                        }]
+                    });
+                }
+            }
         })
 
         // 백그라운드나 배너에서 사용자가 알림 탭 시 (라우팅 등)
@@ -157,6 +184,7 @@ export const NotificationService = {
 
     /**
      * [오프라인 리마인더] 일정 배열을 받아서, 다가오는 일정들에 대해 로컬 알림을 OS에 직접 예약합니다.
+     * 네트워크가 없는 상황(비행기 모드 등)에서의 Fallback 역할을 합니다.
      */
     async scheduleOfflineReminders(plans: any[]) {
         if (!Capacitor.isNativePlatform()) return
@@ -173,37 +201,54 @@ export const NotificationService = {
 
             for (let i = 0; i < plans.length; i++) {
                 const plan = plans[i]
-                // local time string (예: 2024-05-15 14:30:00)을 Date 객체로 파싱
-                const planDate = new Date(plan.start_datetime_local.replace(' ', 'T'))
+                if (!plan.start_datetime_local) continue
 
-                // 시작 시각 15분 전
-                const reminderTime = new Date(planDate.getTime() - 15 * 60 * 1000)
+                // 1. 일정 시작 시각 파싱 (ISO 형식이 아닐 수 있으므로 처리)
+                // local_datetime_local: "2024-05-15 14:30:00" -> "2024-05-15T14:30:00"
+                const dateStr = plan.start_datetime_local.includes('T') 
+                    ? plan.start_datetime_local 
+                    : plan.start_datetime_local.replace(' ', 'T')
+                
+                // Note: 현재 브라우저/기기의 타임존 설정을 따릅니다. 
+                // 여행지 도달 시 기기 타임존이 자동으로 바뀌는 경우가 많으므로 단순 파싱 정책을 유지하되,
+                // 정교한 처리가 필요하면 date-fns-tz 등을 활용할 수 있습니다.
+                const planDate = new Date(dateStr)
 
-                // 이미 지난 일정이면 무시, 오직 미래의 일정만 예약 (단, 너무 먼 미래 50개 제한 등 최적화 가능)
+                // 2. 알람 시간 계산 (설정된 분 전, 없으면 기본 15분 전)
+                const alarmMinutes = plan.alarm_minutes_before ?? 15
+                const reminderTime = new Date(planDate.getTime() - alarmMinutes * 60 * 1000)
+
+                // 3. 이미 지난 일정이면 무시
                 if (reminderTime > now) {
+                    const notificationId = this.hashCode(`alarm_${plan.id}`)
                     notificationsToSchedule.push({
-                        id: this.hashCode(plan.id),
-                        title: '다가오는 넥스보이 일정',
-                        body: `15분 뒤 '${plan.title}' 일정이 시작됩니다!`,
+                        id: notificationId,
+                        title: '일정 알림 ⏰',
+                        body: `${alarmMinutes}분 뒤 "${plan.title}" 일정이 시작됩니다.`,
                         schedule: { at: reminderTime },
                         sound: "default",
-                        smallIcon: "ic_stat_icon_config_sample", // Android 용. 추후 실제 에셋 이름으로 변경 필요
+                        // Android specific
+                        importance: 'high',
+                        visibility: 'public',
                         extra: {
-                            tripId: plan.trip_id
+                            planId: plan.id,
+                            tripId: plan.trip_id,
+                            type: 'alarm'
                         }
                     })
                 }
             }
 
             if (notificationsToSchedule.length > 0) {
+                // OS 별 예약 한도(보통 64~100개)를 고려하여 상위 N개만 예약
                 await LocalNotifications.schedule({
-                    notifications: notificationsToSchedule.slice(0, 60) // OS 별 예약 한도 방어 (예: 60개)
+                    notifications: notificationsToSchedule.slice(0, 64)
                 })
-                console.log(`Scheduled ${notificationsToSchedule.length} local offline reminders.`)
+                console.log(`[Notification] Scheduled ${notificationsToSchedule.length} local reminders (Offline Fallback).`)
             }
 
         } catch (e) {
-            console.error('Failed to schedule offline reminders:', e)
+            console.error('[Notification] Failed to schedule offline reminders:', e)
         }
     },
 
