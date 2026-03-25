@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X } from 'lucide-react'
+import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
+import TermsModal from '../signup/TermsModal'
 
 export default function ProfilePage() {
     const supabase = createClient()
@@ -26,6 +27,7 @@ export default function ProfilePage() {
     const [passwordSuccess, setPasswordSuccess] = useState('')
 
     const [stats, setStats] = useState({ totalTrips: 0, totalPlans: 0, totalTemplates: 0, totalChecked: 0, totalItems: 0 })
+    const [showTerms, setShowTerms] = useState(false)
 
     useEffect(() => {
         const fetchData = async () => {
@@ -360,12 +362,43 @@ export default function ProfilePage() {
                 ))}
             </section>
 
+            {/* 기타 메뉴 */}
+            <section className={css({ bg: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+                <button
+                    onClick={() => setShowTerms(true)}
+                    className={css({
+                        w: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        px: '24px',
+                        py: '16px',
+                        bg: 'transparent',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#064E3B',
+                        _hover: { bg: '#fafafa' },
+                    })}
+                >
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
+                        <ShieldCheck size={20} color="#10B981" />
+                        <div className={css({ textAlign: 'left' })}>
+                            <div className={css({ fontSize: '15px', fontWeight: '600' })}>이용약관 및 개인정보 처리방침</div>
+                            <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>온보이의 정책을 확인합니다</div>
+                        </div>
+                    </div>
+                    <ChevronRight size={18} color="#ccc" />
+                </button>
+            </section>
+
             {/* 탈퇴 링크 */}
             <div className={css({ textAlign: 'center', mt: '8px', mb: '20px' })}>
                 <Link href="/profile/withdrawal" className={css({ fontSize: '13px', color: '#aaa', textDecoration: 'none', transition: 'color 0.2s', _hover: { color: '#888', textDecoration: 'underline' } })}>
                     회원 탈퇴
                 </Link>
             </div>
+
+            <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
         </div>
     )
 }
