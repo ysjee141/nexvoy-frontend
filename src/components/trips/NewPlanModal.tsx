@@ -1,5 +1,6 @@
 'use client'
 
+import { analytics } from '@/services/AnalyticsService'
 import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
 import { X, MapPin, Clock, Link as LinkIcon, AlignLeft, ChevronLeft, ChevronDown } from 'lucide-react'
@@ -196,6 +197,9 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
             }
         }
 
+        // 애널리틱스 기록
+        analytics.logPlanAdd('일정', locationName, alarmMinutesBefore !== null)
+        
         setLoading(false)
         onSuccess?.()
         onClose()

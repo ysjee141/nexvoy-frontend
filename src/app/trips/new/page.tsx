@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { Plus, ArrowLeft, ChevronLeft, Minus } from 'lucide-react'
@@ -71,6 +72,7 @@ export default function NewTripPage() {
         if (error) {
             setErrorMsg(error.message)
         } else if (trip) {
+            analytics.logTripCreate(destination)
             router.push(`/trips/detail?id=${trip.id}`)
         }
     }

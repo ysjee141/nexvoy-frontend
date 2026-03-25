@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
+import { analytics } from '@/services/AnalyticsService'
 import { css } from 'styled-system/css'
 import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo } from 'lucide-react'
 import Link from 'next/link'
@@ -135,6 +136,11 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const toggleItem = async (itemId: string, currentStatus: boolean) => {
         // Optimistic UI update
         setItems(prev => prev.map((item: any) => item.id === itemId ? { ...item, is_checked: !currentStatus } : item))
+
+        const item = items.find(i => i.id === itemId)
+        if (item) {
+            analytics.logChecklistCheck(item.item_name, !currentStatus)
+        }
 
         const { error } = await supabase
             .from('checklist_items')

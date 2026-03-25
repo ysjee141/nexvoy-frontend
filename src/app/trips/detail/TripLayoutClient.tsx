@@ -7,6 +7,7 @@ import { ArrowLeft, Calendar, ListChecks } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import TripHeaderActions from '@/components/trips/TripHeaderActions'
 import { useEffect, useState } from 'react'
+import { analytics } from '@/services/AnalyticsService'
 import TripClient from './TripClient'
 import ChecklistClient from '../checklist/ChecklistClient'
 
@@ -29,6 +30,9 @@ export default function TripLayoutClient() {
     }, [searchParams])
 
     const handleTabChange = (tab: 'plans' | 'checklist') => {
+        if (tab !== activeTab) {
+            analytics.logTabSwitch(activeTab, tab)
+        }
         setActiveTab(tab)
         const params = new URLSearchParams(searchParams.toString())
         params.set('tab', tab)

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { Network, ConnectionStatus } from '@capacitor/network'
+import { analytics } from '@/services/AnalyticsService'
 
 interface NetworkState {
     isOnline: boolean
@@ -18,6 +19,9 @@ export const useNetworkStore = create<NetworkState>((set) => ({
 
             // Listen for changes
             Network.addListener('networkStatusChange', (status: ConnectionStatus) => {
+                if (!status.connected) {
+                    analytics.logOfflineEntry();
+                }
                 set({ isOnline: status.connected, connectionType: status.connectionType })
             })
         } catch (e) {
