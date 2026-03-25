@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { css } from 'styled-system/css'
 import { X, Copy } from 'lucide-react'
+import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/utils/supabase/client'
 
 interface TemplateModalProps {
@@ -97,6 +98,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
             console.error('Template apply error', insertError)
             alert('템플릿 적용 중 오류가 발생했습니다.')
         } else if (insertedItems) {
+            analytics.logEvent('template_use', { template_id: templateId })
             onSuccess(insertedItems)
             onClose()
         }

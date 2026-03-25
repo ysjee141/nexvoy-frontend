@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
 import { X, Share2, Copy, Mail, Lock, Globe, Check, Loader2 } from 'lucide-react'
+import { analytics } from '@/services/AnalyticsService'
 import { collaboration } from '@/utils/collaboration'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 
@@ -55,6 +56,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
         if (!shareUrl) return
         navigator.clipboard.writeText(shareUrl)
         setCopied(true)
+        analytics.logTripShare('copy')
         setTimeout(() => setCopied(false), 2000)
     }
 
@@ -62,6 +64,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
         if (!shareUrl) return
         const subject = encodeURIComponent(`[Onvoy] ${tripTitle} 여행 일정 공유`);
         const body = encodeURIComponent(`안녕하세요,\n\n${tripTitle} 여행 일정을 함께 확인해보세요!\n\n링크: ${shareUrl}\n\n감사합니다.`);
+        analytics.logTripShare('system')
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
     }
 

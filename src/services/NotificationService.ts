@@ -2,6 +2,7 @@ import { PushNotifications } from '@capacitor/push-notifications'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { createClient } from '@/utils/supabase/client'
 import { Capacitor } from '@capacitor/core'
+import { analytics } from './AnalyticsService'
 
 /**
  * 모바일 알림 (Push & Local) 중앙 제어 서비스
@@ -154,6 +155,10 @@ export const NotificationService = {
         const data = notification.notification?.data || notification.data;
         console.log('Handling notification action with data:', JSON.stringify(data));
         
+        // 애널리틱스 기록 (푸시 또는 로컬 알림 클릭)
+        const type = notification.notification ? 'push' : 'local';
+        analytics.logNotificationClick(type, data?.planId || 'unknown');
+
         if (data?.tripId) {
             console.log('Deep linking to trip:', data.tripId);
             const url = `/trips/detail?id=${data.tripId}`;
