@@ -41,6 +41,18 @@ export const LifecycleService = {
                     this.handleResume('AppUrlOpen');
                 });
 
+                // 안드로이드 하드웨어 뒤로가기 버튼 처리
+                App.addListener('backButton', ({ canGoBack }: { canGoBack: boolean }) => {
+                    console.log(`[Lifecycle] Back button pressed. canGoBack: ${canGoBack}`);
+                    if (canGoBack) {
+                        window.history.back();
+                    } else {
+                        // 더 이상 뒤로 갈 곳이 없거나 홈이면 앱 최소화
+                        console.log('[Lifecycle] No more history, minimizing app');
+                        App.minimizeApp();
+                    }
+                });
+
                 console.log('[Lifecycle] Native listeners registered successfully.');
             } catch (e) {
                 console.warn('[Lifecycle] Capacitor App plugin failed to load:', e);
