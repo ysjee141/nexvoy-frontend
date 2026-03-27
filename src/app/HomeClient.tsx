@@ -100,7 +100,7 @@ export default function HomeClient() {
         {/* Hero Section */}
         <section className={css({ textAlign: 'center', mb: '80px' })}>
           <h1 className={css({ fontSize: { base: '32px', md: '56px' }, fontWeight: '900', color: '#022C22', mb: '20px', lineHeight: 1.1, letterSpacing: '-0.02em' })}>
-            Onvoy와 함께하는<br />
+            OnVoy와 함께하는<br />
             <span className={css({ color: '#10B981' })}>완벽한 여행 계획</span>
           </h1>
           <p className={css({ fontSize: { base: '16px', md: '20px' }, color: '#666', maxW: '600px', mx: 'auto', mb: '40px', lineHeight: 1.6 })}>
@@ -150,7 +150,7 @@ export default function HomeClient() {
               <MapPin size={24} color="#FBBC05" />
             </div>
             <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>타임존 자동 계산</h3>
-            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. Onvoy가 실시간으로 맞춰 드립니다.</p>
+            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. OnVoy가 실시간으로 맞춰 드립니다.</p>
           </div>
 
           <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#EA4335', transform: 'translateY(-5px)' } })}>

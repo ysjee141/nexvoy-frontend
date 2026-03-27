@@ -8,7 +8,7 @@ import { GoogleAnalytics } from '@next/third-parties/google'
 import NativeAnalytics from '@/components/common/NativeAnalytics'
 
 export const metadata: Metadata = {
-  title: 'Onvoy (온여정) - 당신의 친절한 여행 동반자',
+  title: 'OnVoy (온여정) - 당신의 친절한 여행 동반자',
   description: '일정표 작성부터 체크리스트까지 한 곳에서 관리하는 여행 앱',
 }
 

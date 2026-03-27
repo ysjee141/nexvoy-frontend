@@ -127,7 +127,7 @@ export default function SignUpPage() {
                         새로운 여행의 시작 🌿
                     </h1>
                     <p className={css({ fontSize: { base: '14px', sm: '15px' }, color: '#666', lineHeight: 1.5, wordBreak: 'keep-all' })}>
-                        Onvoy와 함께 당신만의 특별한 일정을 만들어보세요.
+                        OnVoy와 함께 당신만의 특별한 일정을 만들어보세요.
                     </p>
                 </div>
 

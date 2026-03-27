@@ -76,7 +76,7 @@ export default function Navbar() {
                         })}
                     >
                         <Compass size={24} color="#10B981" />
-                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>Onvoy</span>
+                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>OnVoy</span>
                     </Link>
 
                     {/* 소개 — PC에서는 로고 바로 오른쪽 */}

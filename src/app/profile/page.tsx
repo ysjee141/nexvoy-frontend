@@ -378,17 +378,42 @@ export default function ProfilePage() {
                         cursor: 'pointer',
                         color: '#064E3B',
                         _hover: { bg: '#fafafa' },
+                        borderBottom: '1px solid #f0f0f0'
                     })}
                 >
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
                         <ShieldCheck size={20} color="#10B981" />
                         <div className={css({ textAlign: 'left' })}>
                             <div className={css({ fontSize: '15px', fontWeight: '600' })}>이용약관 및 개인정보 처리방침</div>
-                            <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>온보이의 정책을 확인합니다</div>
+                            <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>온여정의 정책을 확인합니다</div>
                         </div>
                     </div>
                     <ChevronRight size={18} color="#ccc" />
                 </button>
+
+                <Link
+                    href="/profile/licenses"
+                    className={css({
+                        w: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        px: '24px',
+                        py: '16px',
+                        textDecoration: 'none',
+                        color: '#064E3B',
+                        _hover: { bg: '#fafafa' },
+                    })}
+                >
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
+                        <Edit2 size={20} color="#10B981" />
+                        <div className={css({ textAlign: 'left' })}>
+                            <div className={css({ fontSize: '15px', fontWeight: '600' })}>오픈 소스 라이선스</div>
+                            <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>사용된 오픈 소스 라이브러리 목록을 확인합니다</div>
+                        </div>
+                    </div>
+                    <ChevronRight size={18} color="#ccc" />
+                </Link>
             </section>
 
             {/* 탈퇴 링크 */}

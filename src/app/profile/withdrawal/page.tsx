@@ -104,7 +104,7 @@ export default function WithdrawalPage() {
                     <div className={css({ bg: 'white', borderRadius: '24px', p: { base: '32px 24px', sm: '48px' }, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.04)' })}>
                         <div className={css({ fontSize: '48px', mb: '16px' })}>🥺</div>
                         <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#022C22', mb: '12px' })}>
-                            정말 Onvoy를 떠나시겠어요?
+                            정말 OnVoy를 떠나시겠어요?
                         </h2>
                         
                         {(stats.totalTrips > 0 || stats.totalItems > 0) ? (
@@ -113,7 +113,7 @@ export default function WithdrawalPage() {
                             </p>
                         ) : (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
-                                탈퇴 시 계정 정보 및 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다. Onvoy와 멋진 여행을 스케치해 보는 건 어떨까요?
+                                탈퇴 시 계정 정보 및 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다. OnVoy와 멋진 여행을 스케치해 보는 건 어떨까요?
                             </p>
                         )}
                         

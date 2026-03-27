@@ -62,7 +62,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
 
     const handleEmailShare = () => {
         if (!shareUrl) return
-        const subject = encodeURIComponent(`[Onvoy] ${tripTitle} 여행 일정 공유`);
+        const subject = encodeURIComponent(`[OnVoy] ${tripTitle} 여행 일정 공유`);
         const body = encodeURIComponent(`안녕하세요,\n\n${tripTitle} 여행 일정을 함께 확인해보세요!\n\n링크: ${shareUrl}\n\n감사합니다.`);
         analytics.logTripShare('system')
         window.location.href = `mailto:?subject=${subject}&body=${body}`;

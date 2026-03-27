@@ -1,6 +1,6 @@
 # ADR-003 구현 작업 계획서 (Play Store Compliance Plan)
 
-온보이(Onvoy) 앱의 구글 플레이 스토어 출시를 위해 ADR-003에 정의된 규정 준수 사항들을 구현합니다.
+온여정(OnVoy) 앱의 구글 플레이 스토어 출시를 위해 ADR-003에 정의된 규정 준수 사항들을 구현합니다.
 
 ## 1단계: 개인정보 처리방침 가시성 (UI/UX)
 - **대상 파일**: `src/app/profile/page.tsx`, `src/app/signup/TermsModal.tsx`
