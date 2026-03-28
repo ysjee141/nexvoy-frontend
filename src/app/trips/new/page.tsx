@@ -90,12 +90,8 @@ export default function NewTripPage() {
 
     return (
         <div className={css({ 
-            position: { base: 'fixed', sm: 'relative' },
-            inset: { base: 0, sm: 'auto' },
-            zIndex: { base: 100, sm: 'auto' },
             minH: '100vh', 
             bg: 'white',
-            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column'
         })}>
