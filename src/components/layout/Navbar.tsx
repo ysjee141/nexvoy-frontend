@@ -27,11 +27,12 @@ const PAGE_TITLES: Record<string, string> = {
 export default function Navbar() {
     const router = useRouter()
     const pathname = usePathname()
+    const normalizedPath = (pathname.endsWith('/') && pathname !== '/') ? pathname.slice(0, -1) : pathname
     const supabase = createClient()
     const { mobileTitle } = useUIStore()
 
-    const isRootPage = ['/', '/templates', '/profile'].includes(pathname)
-    const pageTitle = mobileTitle || PAGE_TITLES[pathname] || 'OnVoy'
+    const isRootPage = ['/', '/templates', '/profile'].includes(normalizedPath)
+    const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || 'OnVoy'
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
