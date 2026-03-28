@@ -3,8 +3,9 @@
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X, ShieldCheck } from 'lucide-react'
+import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X, ShieldCheck, LogOut } from 'lucide-react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import TermsModal from '../signup/TermsModal'
 
 export default function ProfilePage() {
@@ -143,6 +144,15 @@ export default function ProfilePage() {
             setConfirmPassword('')
         }
         setIsChangingPassword(false)
+    }
+    
+    const router = useRouter()
+    const handleLogout = async () => {
+        const { error } = await supabase.auth.signOut()
+        if (!error) {
+            router.push('/')
+            router.refresh()
+        }
     }
 
     if (!user) {
@@ -416,14 +426,26 @@ export default function ProfilePage() {
                 </Link>
             </section>
 
-            {/* 탈퇴 링크 */}
-            <div className={css({ textAlign: 'center', mt: '8px', mb: '20px' })}>
+            {/* 로그아웃 & 탈퇴 */}
+            <div className={css({ mt: '20px', mb: '40px', display: 'flex', justifyContent: 'center', gap: '20px', alignItems: 'center' })}>
+                <button
+                    onClick={handleLogout}
+                    className={css({
+                        bg: 'transparent', border: 'none', cursor: 'pointer', p: 0,
+                        fontSize: '13px', color: '#aaa', textDecoration: 'none', 
+                        transition: 'all 0.2s', 
+                        _hover: { color: '#888', textDecoration: 'underline' }
+                    })}
+                >
+                    로그아웃
+                </button>
+                
                 <Link href="/profile/withdrawal" className={css({ fontSize: '13px', color: '#aaa', textDecoration: 'none', transition: 'color 0.2s', _hover: { color: '#888', textDecoration: 'underline' } })}>
                     회원 탈퇴
                 </Link>
             </div>
-
-            <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+ 
+             <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
         </div>
     )
 }

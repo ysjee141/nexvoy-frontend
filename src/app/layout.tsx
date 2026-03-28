@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import Navbar from '@/components/layout/Navbar'
+import BottomNavbar from '@/components/layout/BottomNavbar'
 import NotificationBanner from '@/components/layout/NotificationBanner'
 import OfflineBanner from '@/components/common/OfflineBanner'
 import { css } from 'styled-system/css'
@@ -49,11 +50,15 @@ export default function RootLayout({
             w: '100%',
             maxW: '1280px',
             mx: 'auto',
-            p: { base: 'calc(80px + env(safe-area-inset-top)) 16px 24px', md: 'calc(88px + env(safe-area-inset-top)) 24px 32px' },
+            p: { 
+                base: 'calc(24px + env(safe-area-inset-top)) 16px calc(80px + env(safe-area-inset-bottom))', 
+                md: 'calc(88px + env(safe-area-inset-top)) 24px 32px' 
+            },
           })}
         >
           {children}
         </main>
+        <BottomNavbar />
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}

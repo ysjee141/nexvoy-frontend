@@ -45,6 +45,7 @@ export default function Navbar() {
                 right: 0,
                 zIndex: 50,
                 w: '100%',
+                display: { base: 'none', sm: 'block' }, // 모바일에서는 상단 바 숨김
                 bg: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(8px)',
                 borderBottom: '1px solid #eaeaea',
@@ -97,11 +98,11 @@ export default function Navbar() {
 
                 {/* ── 오른쪽: 가이드(모바일) + 로그인/로그아웃 등 ── */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: { base: '12px', md: '24px' } })}>
-                    {/* 가이드 — 모바일에서는 로그인 버튼 왼쪽 */}
+                    {/* 가이드 — 모바일에서는 이제 하단 바에 있으므로 상단에서는 숨김 */}
                     <Link
                         href="/guide"
                         className={css({
-                            display: { base: 'flex', sm: 'none' },
+                            display: { base: 'none', sm: 'none' }, // base에서 아예 숨김
                             alignItems: 'center', gap: '4px',
                             fontSize: '13px', fontWeight: '500', color: '#555',
                             _hover: { color: '#3B82F6' },
@@ -114,10 +115,11 @@ export default function Navbar() {
                         <>
                             {user ? (
                                 <>
+                                    {/* 홈/템플릿/마이페이지 - 모바일에서는 하단 바로 이동하므로 여기선 숨김 */}
                                     <Link
                                         href="/"
                                         className={css({
-                                            display: 'flex',
+                                            display: { base: 'none', sm: 'flex' },
                                             alignItems: 'center',
                                             gap: '6px',
                                             fontSize: '14px',
@@ -127,12 +129,12 @@ export default function Navbar() {
                                         })}
                                     >
                                         <Home size={18} />
-                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>홈</span>
+                                        <span className={css({ display: { base: 'none', md: 'inline' } })}>홈</span>
                                     </Link>
                                     <Link
                                         href="/templates"
                                         className={css({
-                                            display: 'flex',
+                                            display: { base: 'none', sm: 'flex' },
                                             alignItems: 'center',
                                             gap: '6px',
                                             fontSize: '14px',
@@ -142,12 +144,12 @@ export default function Navbar() {
                                         })}
                                     >
                                         <ListTodo size={18} />
-                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>템플릿</span>
+                                        <span className={css({ display: { base: 'none', md: 'inline' } })}>템플릿</span>
                                     </Link>
                                     <Link
                                         href="/profile"
                                         className={css({
-                                            display: 'flex',
+                                            display: { base: 'none', sm: 'flex' },
                                             alignItems: 'center',
                                             gap: '6px',
                                             fontSize: '14px',
@@ -157,7 +159,7 @@ export default function Navbar() {
                                         })}
                                     >
                                         <User size={18} />
-                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>마이페이지</span>
+                                        <span className={css({ display: { base: 'none', md: 'inline' } })}>마이페이지</span>
                                     </Link>
                                     <button
                                         onClick={handleSignOut}
