@@ -12,10 +12,12 @@ import { useUIStore } from '@/stores/useUIStore'
 const PAGE_TITLES: Record<string, string> = {
     '/': '온여정(OnVoy)',
     '/templates': '체크리스트 템플릿',
+    '/templates/': '체크리스트 템플릿',
     '/profile': '내 정보',
     '/trips/new': '새 여행 만들기',
     '/templates/new': '새 템플릿 만들기',
     '/trips/detail': '여행 상세',
+    '/templates/detail': '템플릿 수정',
     '/trips/checklist': '준비물 체크리스트',
     '/guide': '소개',
     '/login': '로그인',
@@ -26,13 +28,13 @@ const PAGE_TITLES: Record<string, string> = {
 
 export default function Navbar() {
     const router = useRouter()
-    const pathname = usePathname()
-    const normalizedPath = (pathname.endsWith('/') && pathname !== '/') ? pathname.slice(0, -1) : pathname
+    const pathname = usePathname() || '/'
+    const normalizedPath = pathname.replace(/\/$/, '') || '/'
     const supabase = createClient()
     const { mobileTitle } = useUIStore()
 
-    const isRootPage = ['/', '/templates', '/profile'].includes(normalizedPath)
-    const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || 'OnVoy'
+    const isRootPage = normalizedPath === '/'
+    const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || PAGE_TITLES[pathname] || 'OnVoy'
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
