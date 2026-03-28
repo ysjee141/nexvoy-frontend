@@ -194,9 +194,15 @@ export default function EditTemplatePage() {
     }
 
     return (
-        <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: '40px' })}>
-            <div className={css({ mb: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' })}>
-                <div>
+        <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: { base: '20px', sm: '40px' } })}>
+            <div className={css({ 
+                mb: { base: '16px', sm: '32px' }, 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: { base: 'center', sm: 'flex-start' },
+                flexDirection: { base: 'row-reverse', sm: 'row' } // Aligns button to right if title is hidden
+            })}>
+                <div className={css({ display: { base: 'none', sm: 'block' } })}>
                     <Link
                         href="/templates"
                         className={css({
@@ -223,22 +229,20 @@ export default function EditTemplatePage() {
                     className={css({
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        color: '#dc2626',
-                        bg: '#fee2e2',
-                        px: '16px',
-                        py: '10px',
-                        borderRadius: '8px',
+                        justifyContent: 'center',
+                        p: '10px',
+                        bg: '#fce8e6',
+                        color: '#d93025',
                         border: 'none',
+                        borderRadius: '50%',
                         cursor: 'pointer',
-                        fontWeight: '600',
-                        fontSize: '14px',
                         transition: 'all 0.2s',
-                        _hover: { bg: '#fecaca' },
+                        _hover: { bg: '#fad2cf', transform: 'scale(1.05)' },
                         _disabled: { opacity: 0.5, cursor: 'not-allowed' }
                     })}
+                    title="템플릿 삭제"
                 >
-                    <Trash2 size={16} /> 삭제하기
+                    <Trash2 size={20} />
                 </button>
             </div>
 
