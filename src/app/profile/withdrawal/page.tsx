@@ -95,7 +95,7 @@ export default function WithdrawalPage() {
                     <button onClick={() => router.back()} className={css({ p: '8px', ml: '-8px', mr: '8px', cursor: 'pointer', bg: 'none', border: 'none' })}>
                         <ChevronLeft size={24} color="#333" />
                     </button>
-                    <h1 className={css({ fontSize: '18px', fontWeight: 'bold', color: '#022C22' })}>회원 탈퇴</h1>
+                    <h1 className={css({ fontSize: '18px', fontWeight: 'bold', color: '#172554' })}>회원 탈퇴</h1>
                 </div>
             </header>
 
@@ -103,13 +103,13 @@ export default function WithdrawalPage() {
                 {step === 1 ? (
                     <div className={css({ bg: 'white', borderRadius: '24px', p: { base: '32px 24px', sm: '48px' }, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.04)' })}>
                         <div className={css({ fontSize: '48px', mb: '16px' })}>🥺</div>
-                        <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#022C22', mb: '12px' })}>
+                        <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#172554', mb: '12px' })}>
                             정말 OnVoy를 떠나시겠어요?
                         </h2>
                         
                         {(stats.totalTrips > 0 || stats.totalItems > 0) ? (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
-                                지금 떠나시면 그동안 함께 했던 <strong className={css({ color: '#10B981' })}>{stats.totalTrips}개의 소중한 여행 일정</strong>과 <strong className={css({ color: '#34A853' })}>{stats.totalItems}개의 짐 챙기기 기록</strong>이 모두 삭제되며, 영구적으로 복구할 수 없습니다. 계속 함께해 주시면 안 될까요?
+                                지금 떠나시면 그동안 함께 했던 <strong className={css({ color: '#3B82F6' })}>{stats.totalTrips}개의 소중한 여행 일정</strong>과 <strong className={css({ color: '#2563EB' })}>{stats.totalItems}개의 짐 챙기기 기록</strong>이 모두 삭제되며, 영구적으로 복구할 수 없습니다. 계속 함께해 주시면 안 될까요?
                             </p>
                         ) : (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
@@ -118,7 +118,7 @@ export default function WithdrawalPage() {
                         )}
                         
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                            <button onClick={() => router.back()} className={css({ w: '100%', py: '16px', bg: '#34A853', color: 'white', fontWeight: 'bold', fontSize: '16px', borderRadius: '14px', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _hover: { bg: '#2d8a45' }, boxShadow: '0 8px 20px rgba(52, 168, 83, 0.2)' })}>
+                            <button onClick={() => router.back()} className={css({ w: '100%', py: '16px', bg: '#2563EB', color: 'white', fontWeight: 'bold', fontSize: '16px', borderRadius: '14px', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _hover: { bg: '#2d8a45' }, boxShadow: '0 8px 20px rgba(52, 168, 83, 0.2)' })}>
                                 계속 함께하기 (돌아가기)
                             </button>
                             <button onClick={() => setStep(2)} className={css({ w: '100%', py: '16px', bg: 'transparent', color: '#999', fontWeight: '600', fontSize: '14px', borderRadius: '14px', cursor: 'pointer', border: 'none', textDecoration: 'underline', _hover: { color: '#666' } })}>
@@ -135,7 +135,7 @@ export default function WithdrawalPage() {
                             </p>
                         </div>
                         
-                        <h2 className={css({ fontSize: '20px', fontWeight: 'bold', color: '#022C22', mb: '8px' })}>마지막 확인</h2>
+                        <h2 className={css({ fontSize: '20px', fontWeight: 'bold', color: '#172554', mb: '8px' })}>마지막 확인</h2>
                         <p className={css({ fontSize: '14px', color: '#666', mb: '24px', wordBreak: 'keep-all', lineHeight: 1.5 })}>
                             정말 탈퇴를 원하신다면, 아래 입력란에 <strong>탈퇴</strong> 라고 입력해 주세요.
                         </p>
@@ -145,7 +145,7 @@ export default function WithdrawalPage() {
                             value={confirmText}
                             onChange={(e) => setConfirmText(e.target.value)}
                             placeholder="탈퇴"
-                            className={css({ w: '100%', p: '14px 16px', border: '1px solid #ddd', borderRadius: '12px', fontSize: '16px', outline: 'none', mb: '24px', transition: 'border-color 0.2s', _focus: { borderColor: '#022C22' } })}
+                            className={css({ w: '100%', p: '14px 16px', border: '1px solid #ddd', borderRadius: '12px', fontSize: '16px', outline: 'none', mb: '24px', transition: 'border-color 0.2s', _focus: { borderColor: '#172554' } })}
                         />
 
                         {errorMsg && (

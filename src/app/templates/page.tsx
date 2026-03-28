@@ -46,7 +46,7 @@ export default function TemplatesPage() {
         <div className={css({ w: '100%', py: '40px' })}>
             <header className={css({ mb: { base: '24px', sm: '40px' }, display: 'flex', flexDirection: { base: 'column', sm: 'row' }, gap: '16px', justifyContent: 'space-between', alignItems: { base: 'stretch', sm: 'center' } })}>
                 <div>
-                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#022C22' })}>
+                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#172554' })}>
                         내 체크리스트 템플릿
                     </h1>
                     <p className={css({ color: '#666', mt: { base: '4px', sm: '8px' }, fontSize: { base: '14px', sm: '16px' }, wordBreak: 'keep-all' })}>
@@ -126,7 +126,7 @@ export default function TemplatesPage() {
                                         _hover: {
                                             transform: 'translateY(-4px)',
                                             boxShadow: '0 12px 24px rgba(0,0,0,0.08)',
-                                            borderColor: '#10B981',
+                                            borderColor: '#3B82F6',
                                         },
                                     })}
                                 >
@@ -138,8 +138,8 @@ export default function TemplatesPage() {
                                             w: '48px',
                                             h: '48px',
                                             borderRadius: '12px',
-                                            bg: '#ECFDF5',
-                                            color: '#059669',
+                                            bg: '#EFF6FF',
+                                            color: '#3B82F6',
                                             mb: '16px'
                                         })}
                                     >
@@ -158,7 +158,7 @@ export default function TemplatesPage() {
                                     <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#666', mb: '16px' })}>
                                         저장된 항목: {itemCount}개
                                     </p>
-                                    <div className={css({ mt: 'auto', pt: '16px', borderTop: '1px solid #f0f0f0', color: '#10B981', fontSize: '14px', fontWeight: 'bold' })}>
+                                    <div className={css({ mt: 'auto', pt: '16px', borderTop: '1px solid #f0f0f0', color: '#3B82F6', fontSize: '14px', fontWeight: 'bold' })}>
                                         템플릿 관리하기 →
                                     </div>
                                 </Link>

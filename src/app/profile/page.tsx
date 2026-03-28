@@ -162,7 +162,7 @@ export default function ProfilePage() {
             <div className={css({ display: 'flex', alignItems: 'center', gap: '16px', mb: '4px' })}>
                 <div className={css({
                     w: { base: '56px', sm: '64px' }, h: { base: '56px', sm: '64px' }, borderRadius: '50%',
-                    bg: 'linear-gradient(135deg, #10B981, #34A853)',
+                    bg: 'linear-gradient(135deg, #3B82F6, #2563EB)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     color: 'white', fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', flexShrink: 0
                 })}>
@@ -175,13 +175,13 @@ export default function ProfilePage() {
                                 value={nickname}
                                 onChange={e => setNickname(e.target.value)}
                                 autoFocus
-                                className={css({ flex: 1, minW: 0, p: '6px 10px', border: '1.5px solid #10B981', borderRadius: '6px', fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', outline: 'none' })}
+                                className={css({ flex: 1, minW: 0, p: '6px 10px', border: '1.5px solid #3B82F6', borderRadius: '6px', fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', outline: 'none' })}
                             />
                             <div className={css({ display: 'flex', gap: '4px', flexShrink: 0 })}>
                                 <button
                                     onClick={saveNickname}
                                     disabled={isSavingNickname}
-                                    className={css({ p: '6px', bg: '#10B981', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', _disabled: { opacity: 0.6 } })}
+                                    className={css({ p: '6px', bg: '#3B82F6', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', _disabled: { opacity: 0.6 } })}
                                     title="저장"
                                 >
                                     {isSavingNickname ? <span className={css({ fontSize: '12px', fontWeight: 'bold', px: '2px' })}>...</span> : <Check size={18} />}
@@ -198,7 +198,7 @@ export default function ProfilePage() {
                     ) : (
                         <>
                             <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#022C22', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' })}>
+                                <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#172554', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' })}>
                                     {displayName}
                                 </h1>
                                 <button
@@ -228,7 +228,7 @@ export default function ProfilePage() {
                     ].map(item => (
                         <div key={item.label} className={css({ p: { base: '12px 8px', sm: '16px' }, bg: '#fafafa', borderRadius: '12px' })}>
                             <div className={css({ fontSize: '22px', mb: '6px' })}>{item.icon}</div>
-                            <div className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: 'bold', color: '#022C22' })}>{item.value}</div>
+                            <div className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: 'bold', color: '#172554' })}>{item.value}</div>
                             <div className={css({ fontSize: '12px', color: '#888', mt: '4px', whiteSpace: 'nowrap' })}>{item.label}</div>
                         </div>
                     ))}
@@ -252,7 +252,7 @@ export default function ProfilePage() {
                                 value={newPassword}
                                 onChange={e => { setNewPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
                                 placeholder="6자 이상 입력"
-                                className={css({ w: '100%', p: '12px 48px 12px 16px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', outline: 'none', _focus: { borderColor: '#10B981' } })}
+                                className={css({ w: '100%', p: '12px 48px 12px 16px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
                             />
                             <button type="button" onClick={() => setShowNew(!showNew)}
                                 className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa' })}>
@@ -314,7 +314,7 @@ export default function ProfilePage() {
                         <p className={css({ fontSize: '13px', color: '#dc2626', bg: '#fef2f2', p: '10px 14px', borderRadius: '8px' })}>{passwordError}</p>
                     )}
                     {passwordSuccess && (
-                        <p className={css({ fontSize: '13px', color: '#16a34a', bg: '#f0fdf4', p: '10px 14px', borderRadius: '8px' })}>{passwordSuccess}</p>
+                        <p className={css({ fontSize: '13px', color: '#16a34a', bg: '#EFF6FF', p: '10px 14px', borderRadius: '8px' })}>{passwordSuccess}</p>
                     )}
 
                     <button
@@ -346,7 +346,7 @@ export default function ProfilePage() {
                             borderTop: i === 0 ? '1px solid #f0f0f0' : 'none',
                             borderBottom: i < arr.length - 1 ? '1px solid #f0f0f0' : 'none',
                             textDecoration: 'none',
-                            color: '#064E3B',
+                            color: '#1E3A8A',
                             _hover: { bg: '#fafafa' },
                         })}
                     >
@@ -376,13 +376,13 @@ export default function ProfilePage() {
                         bg: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#064E3B',
+                        color: '#1E3A8A',
                         _hover: { bg: '#fafafa' },
                         borderBottom: '1px solid #f0f0f0'
                     })}
                 >
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                        <ShieldCheck size={20} color="#10B981" />
+                        <ShieldCheck size={20} color="#3B82F6" />
                         <div className={css({ textAlign: 'left' })}>
                             <div className={css({ fontSize: '15px', fontWeight: '600' })}>이용약관 및 개인정보 처리방침</div>
                             <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>온여정의 정책을 확인합니다</div>
@@ -401,12 +401,12 @@ export default function ProfilePage() {
                         px: '24px',
                         py: '16px',
                         textDecoration: 'none',
-                        color: '#064E3B',
+                        color: '#1E3A8A',
                         _hover: { bg: '#fafafa' },
                     })}
                 >
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                        <Edit2 size={20} color="#10B981" />
+                        <Edit2 size={20} color="#3B82F6" />
                         <div className={css({ textAlign: 'left' })}>
                             <div className={css({ fontSize: '15px', fontWeight: '600' })}>오픈 소스 라이선스</div>
                             <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>사용된 오픈 소스 라이브러리 목록을 확인합니다</div>

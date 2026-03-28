@@ -198,12 +198,12 @@ export default function EditTemplatePage() {
                             textDecoration: 'none',
                             fontSize: '15px',
                             mb: '16px',
-                            _hover: { color: '#022C22' },
+                            _hover: { color: '#172554' },
                         })}
                     >
                         <ArrowLeft size={18} /> 목록으로 돌아가기
                     </Link>
-                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#022C22' })}>
+                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#172554' })}>
                         템플릿 수정
                     </h1>
                 </div>
@@ -235,7 +235,7 @@ export default function EditTemplatePage() {
 
             <form onSubmit={handleSubmit} className={css({ bg: 'white', p: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
                 <div className={css({ mb: '32px' })}>
-                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
+                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#1E3A8A' })}>
                         템플릿 이름
                     </label>
                     <input
@@ -243,7 +243,7 @@ export default function EditTemplatePage() {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="예: 여름 휴양지 기본 세트"
-                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#10B981' } })}
+                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#3B82F6' } })}
                         required
                     />
                 </div>
@@ -252,7 +252,7 @@ export default function EditTemplatePage() {
 
                 <div className={css({ mb: '32px' })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '16px' })}>
-                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#064E3B' })}>
+                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#1E3A8A' })}>
                             항목 구성 수정
                         </label>
                         <span className={css({ fontSize: '13px', color: '#888' })}>총 {items.length}개</span>
@@ -275,13 +275,13 @@ export default function EditTemplatePage() {
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                                     overflow: 'hidden',
                                     transition: 'all 0.2s',
-                                    _focusWithin: { borderColor: '#10B981', boxShadow: '0 4px 12px rgba(16,185,129,0.1)' }
+                                    _focusWithin: { borderColor: '#3B82F6', boxShadow: '0 4px 12px rgba(16,185,129,0.1)' }
                                 })}>
                                     <div className={css({ position: 'relative', borderRight: { base: 'none', sm: '1px solid #eaeaea' }, borderBottom: { base: '1px solid #eaeaea', sm: 'none' }, w: { base: '100%', sm: '140px' }, flexShrink: 0 })}>
                                         <select
                                             value={item.category}
                                             onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#064E3B', cursor: 'pointer', appearance: 'none' })}
+                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#1E3A8A', cursor: 'pointer', appearance: 'none' })}
                                         >
                                             {CATEGORIES.map((cat: any) => (
                                                 <option key={cat} value={cat}>{cat}</option>

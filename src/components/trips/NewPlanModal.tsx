@@ -247,7 +247,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             bg: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#10B981',
+                            color: '#3B82F6',
                             p: '0',
                             zIndex: 1,
                         })}
@@ -276,7 +276,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             border: 'none',
                             cursor: 'pointer',
                             color: '#666',
-                            _hover: { color: '#022C22' }
+                            _hover: { color: '#172554' }
                         })}
                     >
                         <X size={24} />
@@ -292,7 +292,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             value={title}
                             onChange={e => setTitle(e.target.value)}
                             placeholder="예: 에펠탑 방문"
-                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' } })}
+                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
                         />
                     </div>
 
@@ -312,7 +312,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                         setGooglePlaceId(null)
                                     }}
                                     placeholder="어디에 가시나요? 장소 자동완성"
-                                    className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' }, bg: '#f9f9f9' })}
+                                    className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' }, bg: '#f9f9f9' })}
                                 />
                             </Autocomplete>
                         ) : (
@@ -339,7 +339,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                     value={localDate}
                                     onChange={e => setLocalDate(e.target.value)}
                                     style={{ minWidth: 0 }}
-                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
+                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
                                 />
                             </div>
                         </div>
@@ -354,7 +354,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                     value={localTime}
                                     onChange={e => setLocalTime(e.target.value)}
                                     style={{ minWidth: 0 }}
-                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
+                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
                                 />
                             </div>
                         </div>
@@ -363,7 +363,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                     <div className={css({ bg: '#f8f9fa', p: '12px', borderRadius: '8px', border: '1px solid #eee' })}>
                         <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '4px' })}>
                             <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#444' })}>✈️ 현재 설정된 타임존</span>
-                            <span className={css({ fontSize: '12px', bg: '#ECFDF5', color: '#059669', px: '8px', py: '2px', borderRadius: '4px', fontWeight: 'bold' })}>
+                            <span className={css({ fontSize: '12px', bg: '#EFF6FF', color: '#3B82F6', px: '8px', py: '2px', borderRadius: '4px', fontWeight: 'bold' })}>
                                 {timezoneString}
                             </span>
                         </div>
@@ -378,7 +378,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             const currency = getCurrencyFromTimezone(timezoneString)
                             return (
                                 <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
-                                    <span className={css({ fontSize: '15px', fontWeight: '700', color: '#10B981', minW: '20px' })}>
+                                    <span className={css({ fontSize: '15px', fontWeight: '700', color: '#3B82F6', minW: '20px' })}>
                                         {currency.symbol}
                                     </span>
                                     예상 금액
@@ -391,7 +391,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             value={cost}
                             onChange={e => setCost(Number(e.target.value) || '')}
                             placeholder="숫자만 입력"
-                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' } })}
+                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
                         />
                     </div>
 
@@ -407,7 +407,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                         value={url}
                                         onChange={e => handleUrlChange(i, e.target.value)}
                                         placeholder="https://..."
-                                        className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#10B981' } })}
+                                        className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
                                     />
                                     {urls.length > 1 && (
                                         <button type="button" onClick={() => removeUrlField(i)} className={css({ px: '12px', color: '#dc2626', bg: '#fee2e2', borderRadius: '8px', border: 'none', cursor: 'pointer' })}>
@@ -431,7 +431,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             <select
                                 value={alarmMinutesBefore ?? ''}
                                 onChange={e => setAlarmMinutesBefore(e.target.value === '' ? null : Number(e.target.value))}
-                                className={css({ w: '100%', p: '14px 40px 14px 16px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', color: '#064E3B', fontSize: '14px', fontWeight: '500', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981' } })}
+                                className={css({ w: '100%', p: '14px 40px 14px 16px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', color: '#1E3A8A', fontSize: '14px', fontWeight: '500', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6' } })}
                             >
                                 <option value="">알림 없음</option>
                                 <option value="10">출발 10분 전</option>
@@ -460,7 +460,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             onChange={e => setMemo(e.target.value)}
                             placeholder="일정에 필요한 메모를 남겨주세요"
                             rows={3}
-                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', resize: 'vertical', _focus: { borderColor: '#10B981' } })}
+                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', resize: 'vertical', _focus: { borderColor: '#3B82F6' } })}
                         />
                     </div>
 

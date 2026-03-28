@@ -102,7 +102,7 @@ export default function SharePage() {
         return (
             <div className={css({ display: 'flex', h: '100vh', alignItems: 'center', justifyContent: 'center', bg: '#f8f9fa' })}>
                 <div className={css({ bg: 'white', p: '40px', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', w: '100%', maxW: '400px', textAlign: 'center' })}>
-                    <Lock size={48} className={css({ mx: 'auto', mb: '20px', color: '#10B981' })} />
+                    <Lock size={48} className={css({ mx: 'auto', mb: '20px', color: '#3B82F6' })} />
                     <h1 className={css({ fontSize: '20px', fontWeight: '800', mb: '8px' })}>비밀번호 보호됨</h1>
                     <p className={css({ fontSize: '14px', color: '#666', mb: '24px' })}>이 일정을 보려면 비밀번호를 입력해주세요.</p>
                     <form onSubmit={handlePasswordSubmit}>
@@ -123,10 +123,10 @@ export default function SharePage() {
     return (
         <div className={css({ maxW: '800px', mx: 'auto', p: '24px', bg: 'white', minH: '100vh' })}>
             <div className={css({ mb: '40px', textAlign: 'center' })}>
-                <span className={css({ px: '12px', py: '6px', bg: '#ECFDF5', color: '#059669', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', mb: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' })}>
+                <span className={css({ px: '12px', py: '6px', bg: '#EFF6FF', color: '#3B82F6', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', mb: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' })}>
                     <BadgeCheck size={14} /> OnVoy 인증 공유 일정
                 </span>
-                <h1 className={css({ fontSize: '32px', fontWeight: '900', mb: '12px', color: '#022C22' })}>
+                <h1 className={css({ fontSize: '32px', fontWeight: '900', mb: '12px', color: '#172554' })}>
                     {trip?.destination ? `${trip.destination} 여행` : '여행 일정'}
                 </h1>
                 <div className={css({ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '16px', color: '#666', fontSize: '14px' })}>
@@ -148,7 +148,7 @@ export default function SharePage() {
                     <div className={css({ textAlign: 'center', py: '60px', color: '#999' })}>등록된 일정이 없습니다.</div>
                 ) : (
                     plans.map((plan) => (
-                        <div key={plan.id} className={css({ p: '20px', border: '1px solid #eee', borderRadius: '16px', _hover: { borderColor: '#10B981' } })}>
+                        <div key={plan.id} className={css({ p: '20px', border: '1px solid #eee', borderRadius: '16px', _hover: { borderColor: '#3B82F6' } })}>
                             <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: '12px' })}>
                                 <div>
                                     <h3 className={css({ fontSize: '18px', fontWeight: '700', mb: '4px' })}>{plan.title}</h3>
@@ -156,7 +156,7 @@ export default function SharePage() {
                                         <Calendar size={12} /> {formatDate(plan.start_datetime_local)}
                                     </div>
                                 </div>
-                                <span className={css({ fontSize: '14px', fontWeight: 'bold', color: '#10B981', bg: '#ECFDF5', px: '10px', py: '4px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 })}>
+                                <span className={css({ fontSize: '14px', fontWeight: 'bold', color: '#3B82F6', bg: '#EFF6FF', px: '10px', py: '4px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 })}>
                                     <Clock size={14} /> {formatLocalTime(plan.start_datetime_local)}
                                 </span>
                             </div>

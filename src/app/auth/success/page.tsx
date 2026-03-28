@@ -37,8 +37,8 @@ function SuccessContent() {
                     justifyContent: 'center',
                     w: '64px',
                     h: '64px',
-                    bg: '#e6f4ea',
-                    color: '#34A853',
+                    bg: '#EFF6FF',
+                    color: '#2563EB',
                     borderRadius: '50%',
                     mx: 'auto',
                     mb: '24px'
@@ -48,7 +48,7 @@ function SuccessContent() {
                 <h1 className={css({
                     fontSize: '24px',
                     fontWeight: '800',
-                    color: '#022C22',
+                    color: '#172554',
                     mb: '12px'
                 })}>
                     이메일 인증 성공!

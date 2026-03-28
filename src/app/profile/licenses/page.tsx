@@ -24,7 +24,7 @@ export default function LicensesPage() {
                 <Link href="/profile" className={css({ p: '8px', borderRadius: '50%', _hover: { bg: '#eee' }, color: '#555', transition: 'all 0.2s' })}>
                     <ArrowLeft size={24} />
                 </Link>
-                <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#022C22' })}>오픈 소스 라이선스</h1>
+                <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#172554' })}>오픈 소스 라이선스</h1>
             </div>
 
             <p className={css({ color: '#666', fontSize: '14px', mb: '24px', px: '8px' })}>
@@ -65,7 +65,7 @@ export default function LicensesPage() {
                                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '12px' })}>
                                     <span className={css({ fontSize: '12px', fontWeight: 'bold', color: '#555' })}>LICENSE TEXT</span>
                                     {data.repository && (
-                                        <a href={data.repository} target="_blank" rel="noopener noreferrer" className={css({ fontSize: '12px', color: '#10B981', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', _hover: { textDecoration: 'underline' } })}>
+                                        <a href={data.repository} target="_blank" rel="noopener noreferrer" className={css({ fontSize: '12px', color: '#3B82F6', display: 'flex', alignItems: 'center', gap: '4px', textDecoration: 'none', _hover: { textDecoration: 'underline' } })}>
                                             Repository <ExternalLink size={12} />
                                         </a>
                                     )}

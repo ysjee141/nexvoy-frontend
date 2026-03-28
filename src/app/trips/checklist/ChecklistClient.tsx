@@ -23,8 +23,8 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid #10B981', borderRadius: '16px',
-                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#10B981', cursor: 'pointer',
+                    bg: 'white', border: '1px solid #3B82F6', borderRadius: '16px',
+                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#3B82F6', cursor: 'pointer',
                     boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
                 })}
             >
@@ -46,8 +46,8 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
                                 onClick={() => { setGroupBy(opt.value); setIsOpen(false); }}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
-                                    bg: groupBy === opt.value ? '#ECFDF5' : 'transparent',
-                                    color: groupBy === opt.value ? '#10B981' : '#555',
+                                    bg: groupBy === opt.value ? '#EFF6FF' : 'transparent',
+                                    color: groupBy === opt.value ? '#3B82F6' : '#555',
                                     fontWeight: groupBy === opt.value ? '700' : '500',
                                     border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
                                 })}
@@ -221,7 +221,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 {/* 상단 라인: 타이틀 + 모바일 필터(드롭다운) */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                     <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold' })}>
-                        준비물 챙기기 {totalItems > 0 && <span className={css({ color: '#10B981', ml: '8px' })}>{progressPercent}%</span>}
+                        준비물 챙기기 {totalItems > 0 && <span className={css({ color: '#3B82F6', ml: '8px' })}>{progressPercent}%</span>}
                     </h2>
                     
                     {/* 모바일 전용 뷰 드롭다운 */}
@@ -273,12 +273,12 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             className={css({
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                                 px: '16px', py: { base: '10px', sm: '8px' },
-                                bg: 'white', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '8px',
+                                bg: 'white', color: '#3B82F6', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '8px',
                                 fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                 flex: { base: 'none', sm: 'none' }, flexShrink: 0,
                                 whiteSpace: 'nowrap', transition: 'all 0.2s',
                                 boxShadow: '0 2px 6px rgba(16, 185, 129, 0.08)',
-                                _hover: { bg: '#ECFDF5', borderColor: '#10B981', transform: 'translateY(-1px)', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.15)' },
+                                _hover: { bg: '#EFF6FF', borderColor: '#3B82F6', transform: 'translateY(-1px)', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.15)' },
                                 _active: { transform: 'scale(0.98)' }
                             })}
                         >
@@ -292,7 +292,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             {totalItems > 0 && (
                 <div className={css({ w: '100%', bg: '#eee', h: '8px', borderRadius: '4px', mb: '24px', overflow: 'hidden' })}>
                     <div
-                        className={css({ h: '100%', bg: 'linear-gradient(90deg, #10B981, #34A853)', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                        className={css({ h: '100%', bg: 'linear-gradient(90deg, #3B82F6, #2563EB)', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
                         style={{ width: `${progressPercent}%` }}
                     />
                 </div>
@@ -306,7 +306,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             <select
                                 value={newItemCategory}
                                 onChange={e => setNewItemCategory(e.target.value)}
-                                className={css({ w: '100%', p: '12px 30px 12px 12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '120px', fontSize: '14px', fontWeight: '500', color: '#064E3B', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981' } })}
+                                className={css({ w: '100%', p: '12px 30px 12px 12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '120px', fontSize: '14px', fontWeight: '500', color: '#1E3A8A', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6' } })}
                             >
                                 {CATEGORIES.map((cat: any) => (
                                     <option key={cat} value={cat}>{cat}</option>
@@ -325,12 +325,12 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 value={newItemName}
                                 onChange={e => setNewItemName(e.target.value)}
                                 placeholder="예: 여권, 충전기"
-                                className={css({ w: '100%', flex: 1, minW: 0, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
+                                className={css({ w: '100%', flex: 1, minW: 0, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
                             />
                             <button
                                 type="submit"
                                 disabled={!newItemName.trim()}
-                                className={css({ w: 'auto', p: { base: '12px 14px', sm: '12px 20px' }, bg: '#10B981', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', flexShrink: 0, textAlign: 'center', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
+                                className={css({ w: 'auto', p: { base: '12px 14px', sm: '12px 20px' }, bg: '#3B82F6', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', flexShrink: 0, textAlign: 'center', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
                             >
                                 등록
                             </button>
@@ -382,7 +382,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                                 })}
                                             >
                                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' })}>
-                                                    {item.is_checked ? <CheckSquare color="#10B981" size={20} /> : <Square color="#ccc" size={20} />}
+                                                    {item.is_checked ? <CheckSquare color="#3B82F6" size={20} /> : <Square color="#ccc" size={20} />}
                                                     <span className={css({ fontSize: '15px', color: item.is_checked ? '#888' : '#333', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
                                                         {item.item_name}
                                                     </span>
@@ -430,7 +430,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                             })}
                                         >
                                             <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' })}>
-                                                {item.is_checked ? <CheckSquare color="#10B981" size={20} /> : <Square color="#ccc" size={20} />}
+                                                {item.is_checked ? <CheckSquare color="#3B82F6" size={20} /> : <Square color="#ccc" size={20} />}
                                                 <span className={css({ fontSize: '15px', color: item.is_checked ? '#888' : '#333', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
                                                     {item.item_name}
                                                 </span>

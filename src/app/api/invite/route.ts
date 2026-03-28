@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
                 subject: `[OnVoy] ${tripTitle} 여행에 초대되었습니다!`,
                 html: `
                     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
-                        <h2 style="color: #10B981;">OnVoy 초대장 ✈️</h2>
+                        <h2 style="color: #3B82F6;">OnVoy 초대장 ✈️</h2>
                         <p>안녕하세요!</p>
                         <p><strong>${tripTitle}</strong> 여행의 협업자로 초대되었습니다.</p>
                         <p>아래 링크를 통해 초대 내용을 확인하고 수락해 주세요.</p>

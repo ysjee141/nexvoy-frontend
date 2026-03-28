@@ -1,7 +1,8 @@
 'use client'
-
+ 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
@@ -72,10 +73,10 @@ export default function Navbar() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '8px',
-                            color: '#022C22',
+                            color: '#172554',
                         })}
                     >
-                        <Compass size={24} color="#10B981" />
+                        <Image src="/logo.png" alt="OnVoy Logo" width={28} height={28} priority />
                         <span className={css({ display: { base: 'none', sm: 'inline' } })}>OnVoy</span>
                     </Link>
 
@@ -86,7 +87,7 @@ export default function Navbar() {
                             display: { base: 'none', sm: 'flex' },
                             alignItems: 'center', gap: '5px',
                             fontSize: '14px', fontWeight: '500', color: '#555',
-                            _hover: { color: '#10B981' }, transition: 'color 0.15s',
+                            _hover: { color: '#3B82F6' }, transition: 'color 0.15s',
                         })}
                     >
                         <BookOpen size={16} />
@@ -103,7 +104,7 @@ export default function Navbar() {
                             display: { base: 'flex', sm: 'none' },
                             alignItems: 'center', gap: '4px',
                             fontSize: '13px', fontWeight: '500', color: '#555',
-                            _hover: { color: '#10B981' },
+                            _hover: { color: '#3B82F6' },
                         })}
                     >
                         <BookOpen size={16} />
@@ -122,7 +123,7 @@ export default function Navbar() {
                                             fontSize: '14px',
                                             fontWeight: '500',
                                             color: '#555',
-                                            _hover: { color: '#022C22' },
+                                            _hover: { color: '#172554' },
                                         })}
                                     >
                                         <Home size={18} />
@@ -137,7 +138,7 @@ export default function Navbar() {
                                             fontSize: '14px',
                                             fontWeight: '500',
                                             color: '#555',
-                                            _hover: { color: '#022C22' },
+                                            _hover: { color: '#172554' },
                                         })}
                                     >
                                         <ListTodo size={18} />
@@ -152,7 +153,7 @@ export default function Navbar() {
                                             fontSize: '14px',
                                             fontWeight: '500',
                                             color: '#555',
-                                            _hover: { color: '#022C22' },
+                                            _hover: { color: '#172554' },
                                         })}
                                     >
                                         <User size={18} />
@@ -186,7 +187,7 @@ export default function Navbar() {
                                         className={css({
                                             display: 'flex', alignItems: 'center', gap: '5px',
                                             bg: 'transparent',
-                                            color: '#064E3B',
+                                            color: '#1E3A8A',
                                             px: { base: '10px', sm: '14px' },
                                             py: '8px',
                                             borderRadius: '8px',

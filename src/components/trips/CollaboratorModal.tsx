@@ -134,13 +134,13 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
             })} onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className={css({
                     position: 'absolute', top: '24px', right: '24px', bg: 'transparent',
-                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#064E3B' }
+                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#1E3A8A' }
                 })}>
                     <X size={24} />
                 </button>
 
                 <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', mb: { base: '16px', sm: '24px' }, display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <UserPlus size={20} color="#10B981" /> 협업자 초대
+                    <UserPlus size={20} color="#3B82F6" /> 협업자 초대
                 </h2>
 
                 {/* 초대 폼 (소유자나 편집자만 가능) */}
@@ -157,7 +157,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                 className={css({
                                     w: '100%', pl: '40px', pr: '12px', py: '14px', bg: '#f8f9fa',
                                     borderRadius: '12px', border: '1px solid #eee', outline: 'none',
-                                    _focus: { borderColor: '#10B981', bg: 'white' }, fontSize: '14px'
+                                    _focus: { borderColor: '#3B82F6', bg: 'white' }, fontSize: '14px'
                                 })}
                             />
                         </div>
@@ -168,7 +168,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                     onChange={e => setRole(e.target.value as any)}
                                     className={css({
                                         w: '100%', px: '16px', py: '14px', pr: '36px', bg: '#f8f9fa', borderRadius: '12px',
-                                        border: '1px solid #eee', outline: 'none', fontSize: '14px', fontWeight: '500', color: '#064E3B', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981', bg: 'white' }
+                                        border: '1px solid #eee', outline: 'none', fontSize: '14px', fontWeight: '500', color: '#1E3A8A', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6', bg: 'white' }
                                     })}
                                 >
                                     <option value="editor">편집자 (수정 가능)</option>
@@ -194,8 +194,8 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                         {message && (
                             <p className={css({
                                 fontSize: '13px', px: '12px', py: '8px', borderRadius: '8px',
-                                bg: message.type === 'success' ? '#e6f4ea' : '#fce8e6',
-                                color: message.type === 'success' ? '#137333' : '#c5221f',
+                                bg: message.type === 'success' ? '#EFF6FF' : '#fce8e6',
+                                color: message.type === 'success' ? '#2563EB' : '#c5221f',
                                 display: 'flex', alignItems: 'center', gap: '6px'
                             })}>
                                 {message.type === 'success' ? <Check size={14} /> : <X size={14} />} {message.text}
@@ -238,7 +238,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                         })}>
                                             <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minW: 0 })}>
                                                 <div className={css({
-                                                    w: '32px', h: '32px', bg: m.status === 'accepted' ? '#10B981' : '#eee',
+                                                    w: '32px', h: '32px', bg: m.status === 'accepted' ? '#3B82F6' : '#eee',
                                                     borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                     color: 'white', fontSize: '12px', fontWeight: 'bold', flexShrink: 0
                                                 })}>
@@ -249,7 +249,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                         <span className={css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
                                                             {m.profiles?.nickname || m.invited_email?.split('@')[0] || 'Unknown'}
                                                         </span>
-                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#10B981', bg: '#ECFDF5', px: '4px', py: '1px', borderRadius: '4px' })}>나</span>}
+                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#3B82F6', bg: '#EFF6FF', px: '4px', py: '1px', borderRadius: '4px' })}>나</span>}
                                                         {m.status === 'pending' && <span className={css({ fontSize: '10px', color: '#f2994a', bg: '#fff4e5', px: '6px', py: '2px', borderRadius: '4px' })}>대기중</span>}
                                                     </p>
                                                     <p className={css({ fontSize: '12px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{m.invited_email}</p>
@@ -265,8 +265,8 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                                 value={m.role}
                                                                 onChange={(e) => handleUpdateRole(m.id, e.target.value as any)}
                                                                 className={css({
-                                                                    fontSize: '11px', fontWeight: '500', px: '8px', py: '6px', pr: '22px', bg: 'white', border: '1px solid #ddd', color: '#064E3B',
-                                                                    borderRadius: '6px', outline: 'none', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981' }
+                                                                    fontSize: '11px', fontWeight: '500', px: '8px', py: '6px', pr: '22px', bg: 'white', border: '1px solid #ddd', color: '#1E3A8A',
+                                                                    borderRadius: '6px', outline: 'none', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6' }
                                                                 })}
                                                             >
                                                                 <option value="editor">편집자</option>
