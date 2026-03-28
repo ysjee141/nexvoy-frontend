@@ -62,7 +62,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
 
     const handleEmailShare = () => {
         if (!shareUrl) return
-        const subject = encodeURIComponent(`[Onvoy] ${tripTitle} 여행 일정 공유`);
+        const subject = encodeURIComponent(`[OnVoy] ${tripTitle} 여행 일정 공유`);
         const body = encodeURIComponent(`안녕하세요,\n\n${tripTitle} 여행 일정을 함께 확인해보세요!\n\n링크: ${shareUrl}\n\n감사합니다.`);
         analytics.logTripShare('system')
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
@@ -83,13 +83,13 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
             })} onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className={css({
                     position: 'absolute', top: '24px', right: '24px', bg: 'transparent',
-                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#064E3B' }
+                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#1E3A8A' }
                 })}>
                     <X size={24} />
                 </button>
 
                 <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', mb: { base: '16px', sm: '24px' }, display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <Share2 size={20} color="#34A853" /> 일정 공유하기
+                    <Share2 size={20} color="#2563EB" /> 일정 공유하기
                 </h2>
 
                 <div className={css({ mb: '24px' })}>
@@ -140,7 +140,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                                     className={css({
                                         flex: 1, px: '12px', py: '12px', bg: '#f8f9fa', borderRadius: '12px',
                                         border: '1px solid #eee', outline: 'none', fontSize: '14px',
-                                        _focus: { borderColor: '#34A853', bg: 'white' }
+                                        _focus: { borderColor: '#2563EB', bg: 'white' }
                                     })}
                                 />
                                 <button
@@ -159,7 +159,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
 
                 {loading ? (
                     <div className={css({ py: '40px', textAlign: 'center' })}>
-                        <Loader2 size={32} className={css({ animation: 'spin 1s linear infinite', mx: 'auto', mb: '12px', color: '#34A853' })} />
+                        <Loader2 size={32} className={css({ animation: 'spin 1s linear infinite', mx: 'auto', mb: '12px', color: '#2563EB' })} />
                         <p className={css({ color: '#888', fontSize: '14px' })}>공유 링크를 생성하는 중...</p>
                     </div>
                 ) : shareUrl ? (
@@ -167,7 +167,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                         <h3 className={css({ fontSize: '13px', fontWeight: 'bold', color: '#888', mb: '8px' })}>공유 링크 URL</h3>
                         <div className={css({
                             p: '12px', bg: 'white', borderRadius: '12px', border: '1px solid #ddd',
-                            fontSize: '13px', color: '#022C22', mb: '16px', lineHeight: 1.5,
+                            fontSize: '13px', color: '#172554', mb: '16px', lineHeight: 1.5,
                             wordBreak: 'break-all'
                         })}>
                             {shareUrl}
@@ -195,15 +195,15 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                                 <Mail size={16} /> 메일 공유
                             </button>
                         </div>
-                        {copied && <p className={css({ mt: '12px', textAlign: 'center', fontSize: '13px', color: '#34A853', fontWeight: 'bold' })}>링크가 복사되었습니다!</p>}
+                        {copied && <p className={css({ mt: '12px', textAlign: 'center', fontSize: '13px', color: '#2563EB', fontWeight: 'bold' })}>링크가 복사되었습니다!</p>}
                     </div>
                 ) : null}
 
                 {message && !loading && (
                     <p className={css({
                         mt: '16px', fontSize: '13px', px: '12px', py: '8px', borderRadius: '8px',
-                        bg: message.type === 'success' ? '#e6f4ea' : '#fce8e6',
-                        color: message.type === 'success' ? '#137333' : '#c5221f'
+                        bg: message.type === 'success' ? '#EFF6FF' : '#fce8e6',
+                        color: message.type === 'success' ? '#2563EB' : '#c5221f'
                     })}>
                         {message.text}
                     </p>

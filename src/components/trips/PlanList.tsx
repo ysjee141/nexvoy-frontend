@@ -55,7 +55,7 @@ function PlanCard({
                 className={css({
                     p: { base: '12px 14px', sm: '14px 18px' },
                     bg: 'white',
-                    border: isOngoing ? '2px solid #10B981' : isToday ? '1px solid #A7F3D0' : '1px solid #e8eaed',
+                    border: isOngoing ? '2px solid #3B82F6' : isToday ? '1px solid #BFDBFE' : '1px solid #e8eaed',
                     borderRadius: '12px',
                     display: 'flex',
                     flexDirection: 'column',
@@ -77,7 +77,7 @@ function PlanCard({
                 })}
                 style={isToday ? {
                     background: isOngoing
-                        ? 'linear-gradient(135deg,#ECFDF5 0%,#f0fdf4 100%)'
+                        ? 'linear-gradient(135deg,#EFF6FF 0%,#EFF6FF 100%)'
                         : '#fafcff',
                 } : {}}
             >
@@ -85,7 +85,7 @@ function PlanCard({
                 {isOngoing && (
                     <span style={{
                         position: 'absolute', top: -11, left: 12,
-                        background: '#10B981', color: 'white', fontSize: 11, fontWeight: 800,
+                        background: '#3B82F6', color: 'white', fontSize: 11, fontWeight: 800,
                         padding: '3px 10px', borderRadius: 20,
                         display: 'flex', alignItems: 'center', gap: 5,
                         boxShadow: '0 2px 8px rgba(66,133,244,0.5)',
@@ -130,7 +130,7 @@ function PlanCard({
                         px: '7px', py: '3px', borderRadius: '6px', whiteSpace: 'nowrap',
                         fontWeight: '600',
                     })}>
-                        <Clock size={11} color={isOngoing ? '#10B981' : '#666'} />
+                        <Clock size={11} color={isOngoing ? '#3B82F6' : '#666'} />
                         {primaryTime}
                         {timeDisplayMode === 'both' && (
                             <small style={{ fontSize: 10, opacity: 0.65, fontWeight: 'normal' }}>({timeLabel})</small>
@@ -141,11 +141,11 @@ function PlanCard({
                     {timeDisplayMode === 'both' && (
                         <span className={css({
                             display: 'inline-flex', alignItems: 'center', gap: '3px',
-                            fontSize: '12px', color: '#059669',
-                            bg: '#ECFDF5', px: '7px', py: '3px', borderRadius: '6px',
+                            fontSize: '12px', color: '#3B82F6',
+                            bg: '#EFF6FF', px: '7px', py: '3px', borderRadius: '6px',
                             whiteSpace: 'nowrap', fontWeight: '600',
                         })}>
-                            <Clock size={11} color="#059669" />
+                            <Clock size={11} color="#3B82F6" />
                             {formatKstTime(plan.start_datetime_local, plan.timezone_string || 'Asia/Seoul')}
                             <small style={{ fontSize: 10, opacity: 0.8, fontWeight: 'normal' }}>(한국)</small>
                         </span>
@@ -155,7 +155,7 @@ function PlanCard({
                     {localAmount && (
                         <span className={css({
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
-                            fontSize: '12px', fontWeight: '700', color: '#34A853',
+                            fontSize: '12px', fontWeight: '700', color: '#2563EB',
                             ml: 'auto',
                         })}>
                             <Wallet size={11} />
@@ -253,13 +253,13 @@ export default function PlanList({
                 <h3 className={css({
                     fontSize: { base: '14px', sm: '16px' }, fontWeight: '700',
                     color: isToday ? '#1a56db' : '#444',
-                    pb: '8px', borderBottom: isToday ? '2px solid #10B981' : '1px solid #eee',
+                    pb: '8px', borderBottom: isToday ? '2px solid #3B82F6' : '1px solid #eee',
                     display: 'flex', alignItems: 'center', gap: '8px'
                 })}>
-                    <span className={css({ w: '7px', h: '7px', borderRadius: '50%', bg: isToday ? '#10B981' : '#ccc', flexShrink: 0 })} />
+                    <span className={css({ w: '7px', h: '7px', borderRadius: '50%', bg: isToday ? '#3B82F6' : '#ccc', flexShrink: 0 })} />
                     {day.label}
                     {isToday && (
-                        <span className={css({ fontSize: '11px', fontWeight: '700', bg: '#ECFDF5', color: '#1a56db', px: '7px', py: '2px', borderRadius: '6px' })}>
+                        <span className={css({ fontSize: '11px', fontWeight: '700', bg: '#EFF6FF', color: '#1a56db', px: '7px', py: '2px', borderRadius: '6px' })}>
                             오늘
                         </span>
                     )}
@@ -281,7 +281,7 @@ export default function PlanList({
             {/* ① 남은 일정 (오늘 포함) — 기본 펼침 */}
             {remainingDays.length > 0 && (
                 <section>
-                    <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '16px', pb: '10px', borderBottom: '2px solid #ECFDF5' })}>
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '16px', pb: '10px', borderBottom: '2px solid #EFF6FF' })}>
                         <span className={css({ fontSize: '18px' })}>🗺️</span>
                         <h2 className={css({ fontSize: { base: '15px', sm: '17px' }, fontWeight: '800', color: '#1a56db' })}>남은 일정</h2>
                         <span className={css({ fontSize: '12px', color: '#888', bg: '#f1f3f4', px: '8px', py: '2px', borderRadius: '10px' })}>

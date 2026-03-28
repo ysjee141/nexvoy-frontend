@@ -28,8 +28,8 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid #10B981', borderRadius: '16px',
-                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#10B981', cursor: 'pointer',
+                    bg: 'white', border: '1px solid #3B82F6', borderRadius: '16px',
+                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#3B82F6', cursor: 'pointer',
                     boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
                 })}
             >
@@ -51,8 +51,8 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
                                 onClick={() => { setTimeDisplayMode(opt.value); setIsOpen(false); }}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
-                                    bg: timeDisplayMode === opt.value ? '#ECFDF5' : 'transparent',
-                                    color: timeDisplayMode === opt.value ? '#10B981' : '#555',
+                                    bg: timeDisplayMode === opt.value ? '#EFF6FF' : 'transparent',
+                                    color: timeDisplayMode === opt.value ? '#3B82F6' : '#555',
                                     fontWeight: timeDisplayMode === opt.value ? '700' : '500',
                                     border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
                                 })}
@@ -233,19 +233,19 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     <div className={css({ display: { base: 'none', sm: 'inline-flex' }, bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: 'auto' })}>
                         <button
                             onClick={() => setTimeDisplayMode('local')}
-                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#022C22', whiteSpace: 'nowrap' })}
+                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#172554', whiteSpace: 'nowrap' })}
                         >
                             현지 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('kst')}
-                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#022C22', whiteSpace: 'nowrap' })}
+                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#172554', whiteSpace: 'nowrap' })}
                         >
                             한국 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('both')}
-                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#022C22', whiteSpace: 'nowrap' })}
+                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#172554', whiteSpace: 'nowrap' })}
                         >
                             동시 표기
                         </button>
@@ -268,7 +268,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                             onClick={() => setIsCollaboratorModalOpen(true)}
                             className={css({
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: 'white', color: '#022C22',
+                                bg: 'white', color: '#172554',
                                 px: { base: '0', sm: '12px' }, w: { base: '44px', sm: 'auto' }, h: '44px',
                                 borderRadius: '8px', fontWeight: '600', fontSize: '13px',
                                 border: '1px solid #ddd', whiteSpace: 'nowrap',
@@ -285,7 +285,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 onClick={() => setIsShareModalOpen(true)}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    bg: 'white', color: '#022C22',
+                                    bg: 'white', color: '#172554',
                                     px: { base: '0', sm: '12px' }, w: { base: '44px', sm: 'auto' }, h: '44px',
                                     borderRadius: '8px', fontWeight: '600', fontSize: '13px',
                                     border: '1px solid #ddd', whiteSpace: 'nowrap',
@@ -307,9 +307,9 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 order: { base: -1, sm: 1 },
                                 flex: { base: 1, sm: 'none' }, w: { base: 'auto', sm: '100%' }, h: '44px',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: '#10B981', color: 'white', px: '16px', borderRadius: '8px',
+                                bg: '#3B82F6', color: 'white', px: '16px', borderRadius: '8px',
                                 fontWeight: '600', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
-                                _hover: { bg: '#059669', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' }
+                                _hover: { bg: '#3B82F6', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' }
                             })}
                         >
                             <Plus size={18} /> 일정 추가

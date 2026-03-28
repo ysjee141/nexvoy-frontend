@@ -139,11 +139,11 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                                 key={template.id}
                                 className={css({ p: '14px', border: '1px solid #eee', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' })}
                             >
-                                <span className={css({ fontWeight: '600', fontSize: '14px', color: '#064E3B', flex: 1 })}>{template.title}</span>
+                                <span className={css({ fontWeight: '600', fontSize: '14px', color: '#1E3A8A', flex: 1 })}>{template.title}</span>
                                 <button
                                     onClick={() => handleApplyTemplate(template.id)}
                                     disabled={loadingTemplateId === template.id}
-                                    className={css({ display: 'flex', alignItems: 'center', gap: '6px', px: '12px', py: '8px', bg: '#10B981', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', _hover: { bg: '#059669' }, _active: { transform: 'scale(0.95)' }, _disabled: { opacity: 0.5, cursor: 'not-allowed' } })}
+                                    className={css({ display: 'flex', alignItems: 'center', gap: '6px', px: '12px', py: '8px', bg: '#3B82F6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', _hover: { bg: '#3B82F6' }, _active: { transform: 'scale(0.95)' }, _disabled: { opacity: 0.5, cursor: 'not-allowed' } })}
                                 >
                                     {loadingTemplateId === template.id ? '...' : (
                                         <>

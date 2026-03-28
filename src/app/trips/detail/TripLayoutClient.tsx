@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { analytics } from '@/services/AnalyticsService'
 import TripClient from './TripClient'
 import ChecklistClient from '../checklist/ChecklistClient'
+import { useUIStore } from '@/stores/useUIStore'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -21,6 +22,7 @@ export default function TripLayoutClient() {
     const [trip, setTrip] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'plans' | 'checklist'>(initialTab)
+    const { setMobileTitle } = useUIStore()
 
     useEffect(() => {
         const urlTab = searchParams.get('tab')
@@ -40,7 +42,19 @@ export default function TripLayoutClient() {
     }
 
     useEffect(() => {
+        if (trip?.destination) {
+            setMobileTitle(trip.destination)
+        }
+        return () => setMobileTitle(null)
+    }, [trip, setMobileTitle])
+
+    useEffect(() => {
         async function fetchTrip() {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                router.push('/login')
+                return
+            }
             if (!id) return;
             const { data } = await supabase
                 .from('trips')
@@ -66,21 +80,6 @@ export default function TripLayoutClient() {
 
     return (
         <div className={css({ w: '100%', py: '16px' })}>
-            {/* 뒤로 가기 링크 (모바일용) */}
-            <Link
-                href="/"
-                className={css({
-                    display: { base: 'inline-flex', sm: 'none' },
-                    alignItems: 'center',
-                    gap: '4px',
-                    color: '#666',
-                    fontSize: '14px',
-                    mb: '12px',
-                    _hover: { color: '#022C22' },
-                })}
-            >
-                <ArrowLeft size={16} /> 목록으로
-            </Link>
 
             {/* Trip Info Header (Airbnb Style) */}
             <div className={css({

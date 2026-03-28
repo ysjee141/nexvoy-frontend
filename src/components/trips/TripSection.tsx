@@ -110,15 +110,15 @@ export default function TripSection({
                                     position: 'absolute', top: 0, left: 0,
                                     w: '4px', h: '100%',
                                     bg: isOwner
-                                        ? 'linear-gradient(to bottom, #10B981, #34A853)'
+                                        ? 'linear-gradient(to bottom, #3B82F6, #2563EB)'
                                         : 'linear-gradient(to bottom, #FBBC05, #EA4335)',
                                 })} />
 
                                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '10px' })}>
                                     <span className={css({
                                         fontSize: '11px', fontWeight: '800', px: '8px', py: '4px',
-                                        borderRadius: '6px', bg: isOwner ? '#ECFDF5' : '#fef7e0',
-                                        color: isOwner ? '#059669' : '#ea8600',
+                                        borderRadius: '6px', bg: isOwner ? '#EFF6FF' : '#fef7e0',
+                                        color: isOwner ? '#3B82F6' : '#ea8600',
                                         display: 'inline-flex', alignItems: 'center', gap: '4px',
                                     })}>
                                         {isOwner ? '내 여정' : '참여 중'}
@@ -155,13 +155,13 @@ export default function TripSection({
                                 <div className={css({ borderTop: '1px solid #f0f0f0', pt: '12px' })}>
                                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '6px' })}>
                                         <span className={css({ fontSize: '12px', fontWeight: '600', color: '#666' })}>준비물</span>
-                                        <span className={css({ fontSize: '12px', fontWeight: 'bold', color: progressPercent === 100 ? '#34A853' : '#10B981' })}>
+                                        <span className={css({ fontSize: '12px', fontWeight: 'bold', color: progressPercent === 100 ? '#2563EB' : '#3B82F6' })}>
                                             {progressPercent}%
                                         </span>
                                     </div>
                                     <div className={css({ w: '100%', h: '5px', bg: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' })}>
                                         <div
-                                            className={css({ h: '100%', bg: progressPercent === 100 ? '#34A853' : accentColor, transition: 'width 0.5s ease' })}
+                                            className={css({ h: '100%', bg: progressPercent === 100 ? '#2563EB' : accentColor, transition: 'width 0.5s ease' })}
                                             style={{ width: `${progressPercent}%` }}
                                         />
                                     </div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
@@ -25,6 +25,16 @@ export default function NewTemplatePage() {
     const [items, setItems] = useState<TemplateItemInput[]>([
         { id: '1', item_name: '', category: '의류' }
     ])
+
+    useEffect(() => {
+        async function checkAuth() {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                router.push('/login')
+            }
+        }
+        checkAuth()
+    }, [router, supabase])
 
     const handleAddItem = () => {
         setItems([
@@ -102,22 +112,7 @@ export default function NewTemplatePage() {
     return (
         <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: '40px' })}>
             <div className={css({ mb: '32px' })}>
-                <Link
-                    href="/templates"
-                    className={css({
-                        display: { base: 'inline-flex', sm: 'none' },
-                        alignItems: 'center',
-                        gap: '6px',
-                        color: '#666',
-                        textDecoration: 'none',
-                        fontSize: '15px',
-                        mb: '16px',
-                        _hover: { color: '#022C22' },
-                    })}
-                >
-                    <ArrowLeft size={18} /> 목록으로 돌아가기
-                </Link>
-                <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#022C22' })}>
+                <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#172554' })}>
                     새 템플릿 만들기
                 </h1>
                 <p className={css({ color: '#666', mt: '8px', fontSize: '15px' })}>
@@ -128,7 +123,7 @@ export default function NewTemplatePage() {
             <form onSubmit={handleSubmit} className={css({ bg: 'white', p: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
                 {/* 템플릿 기본 정보 지정 */}
                 <div className={css({ mb: '32px' })}>
-                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
+                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#1E3A8A' })}>
                         템플릿 이름
                     </label>
                     <input
@@ -136,7 +131,7 @@ export default function NewTemplatePage() {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="예: 여름 휴양지 기본 세트"
-                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#10B981' } })}
+                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#3B82F6' } })}
                         required
                     />
                 </div>
@@ -146,7 +141,7 @@ export default function NewTemplatePage() {
                 {/* 템플릿 항목 지정 */}
                 <div className={css({ mb: '32px' })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '16px' })}>
-                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#064E3B' })}>
+                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#1E3A8A' })}>
                             기본 항목 구성
                         </label>
                         <span className={css({ fontSize: '13px', color: '#888' })}>총 {items.length}개</span>
@@ -159,7 +154,7 @@ export default function NewTemplatePage() {
                                     <select
                                         value={item.category}
                                         onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                        className={css({ w: '100%', p: '12px 30px 12px 12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: '#f9f9f9', fontSize: '14px', fontWeight: '500', color: '#064E3B', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#10B981', bg: 'white' } })}
+                                        className={css({ w: '100%', p: '12px 30px 12px 12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: '#f9f9f9', fontSize: '14px', fontWeight: '500', color: '#1E3A8A', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6', bg: 'white' } })}
                                     >
                                         {CATEGORIES.map((cat: any) => (
                                             <option key={cat} value={cat}>{cat}</option>
@@ -175,7 +170,7 @@ export default function NewTemplatePage() {
                                     value={item.item_name}
                                     onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
                                     placeholder={`항목 ${index + 1}`}
-                                    className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#10B981' } })}
+                                    className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
                                     required
                                 />
 

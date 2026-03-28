@@ -74,7 +74,7 @@ export default function NotificationBanner() {
             })}>
                 <div className={css({ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '10px' })}>
-                        <Bell size={20} color="#10B981" />
+                        <Bell size={20} color="#3B82F6" />
                         <div>
                             <p className={css({ fontWeight: 'bold', fontSize: '14px', mb: '2px' })}>일정 알림을 받으시겠어요?</p>
                             <p className={css({ fontSize: '12px', color: '#aaa', lineHeight: '1.4' })}>
@@ -89,7 +89,7 @@ export default function NotificationBanner() {
                 <div className={css({ display: 'flex', gap: '8px' })}>
                     <button
                         onClick={handleAllow}
-                        className={css({ flex: 1, py: '9px', bg: '#10B981', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', _hover: { bg: '#059669' } })}
+                        className={css({ flex: 1, py: '9px', bg: '#3B82F6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px', _hover: { bg: '#3B82F6' } })}
                     >
                         알림 허용
                     </button>

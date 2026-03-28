@@ -81,7 +81,7 @@ export default function LoginPage() {
                     <div className={css({
                         w: '60px',
                         h: '60px',
-                        bg: '#10B981',
+                        bg: '#3B82F6',
                         color: 'white',
                         borderRadius: '16px',
                         display: 'flex',
@@ -96,7 +96,7 @@ export default function LoginPage() {
                     <h1 className={css({
                         fontSize: { base: '24px', sm: '28px' },
                         fontWeight: '800',
-                        color: '#022C22',
+                        color: '#172554',
                         mb: '8px',
                         letterSpacing: '-0.02em',
                         wordBreak: 'keep-all',
@@ -105,7 +105,7 @@ export default function LoginPage() {
                         반가워요! 다시 오셨네요.
                     </h1>
                     <p className={css({ fontSize: { base: '14px', sm: '15px' }, color: '#666', lineHeight: 1.5, wordBreak: 'keep-all' })}>
-                        Onvoy와 함께 당신의 모험을 기록해 보세요.
+                        OnVoy와 함께 당신의 모험을 기록해 보세요.
                     </p>
                 </div>
 
@@ -128,7 +128,7 @@ export default function LoginPage() {
                                 outline: 'none',
                                 transition: 'all 0.2s',
                                 fontSize: '15px',
-                                _focus: { bg: 'white', borderColor: '#10B981', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
+                                _focus: { bg: 'white', borderColor: '#3B82F6', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
                             })}
                             placeholder="you@example.com"
                         />
@@ -152,7 +152,7 @@ export default function LoginPage() {
                                 outline: 'none',
                                 transition: 'all 0.2s',
                                 fontSize: '15px',
-                                _focus: { bg: 'white', borderColor: '#10B981', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
+                                _focus: { bg: 'white', borderColor: '#3B82F6', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
                             })}
                             placeholder="••••••••"
                         />
@@ -170,7 +170,7 @@ export default function LoginPage() {
                                 fontSize: '14px',
                                 color: '#666',
                                 transition: 'all 0.2s',
-                                _hover: { color: '#022C22' }
+                                _hover: { color: '#172554' }
                             })}
                         >
                             <div className={css({
@@ -178,8 +178,8 @@ export default function LoginPage() {
                                 h: '18px',
                                 borderRadius: '4px',
                                 border: '2px solid',
-                                borderColor: rememberEmail ? '#10B981' : '#ddd',
-                                bg: rememberEmail ? '#10B981' : 'transparent',
+                                borderColor: rememberEmail ? '#3B82F6' : '#ddd',
+                                bg: rememberEmail ? '#3B82F6' : 'transparent',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -202,7 +202,7 @@ export default function LoginPage() {
                     {message && (
                         <div className={css({
                             p: '14px',
-                            bg: message.type === 'error' ? '#fdecea' : '#e6f4ea',
+                            bg: message.type === 'error' ? '#fdecea' : '#EFF6FF',
                             color: message.type === 'error' ? '#d93025' : '#1e8e3e',
                             fontSize: '14px',
                             fontWeight: '500',
@@ -254,7 +254,7 @@ export default function LoginPage() {
                     <Link
                         href="/signup"
                         className={css({
-                            color: '#10B981',
+                            color: '#3B82F6',
                             fontWeight: '700',
                             textDecoration: 'none',
                             _hover: { textDecoration: 'underline' },

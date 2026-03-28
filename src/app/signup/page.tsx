@@ -56,14 +56,14 @@ export default function SignUpPage() {
         return (
             <div className={css({ width: '100vw', marginLeft: 'calc(-50vw + 50%)', mt: { base: '-80px', md: '-88px' }, mb: '-24px', minH: '100vh', display: 'flex', alignItems: { base: 'flex-start', sm: 'center' }, justifyContent: 'center', bg: '#f9f9fc', p: { base: '0', sm: '20px' } })}>
                 <div className={css({ bg: 'white', p: { base: '80px 20px 40px', sm: '48px' }, borderRadius: { base: '0', sm: '24px' }, boxShadow: { base: 'none', sm: '0 20px 40px rgba(0,0,0,0.08)' }, maxW: '440px', w: '100%', minH: { base: '100vh', sm: 'auto' }, textAlign: 'center' })}>
-                    <div className={css({ w: '80px', h: '80px', bg: '#e6f4ea', color: '#34A853', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: '24px' })}>
+                    <div className={css({ w: '80px', h: '80px', bg: '#EFF6FF', color: '#2563EB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: '24px' })}>
                         <Mail size={40} />
                     </div>
-                    <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#022C22', mb: '12px' })}>이메일함을 확인해주세요</h2>
+                    <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#172554', mb: '12px' })}>이메일함을 확인해주세요</h2>
                     <p className={css({ fontSize: '15px', color: '#666', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
                         <strong>{email}</strong> 주소로 가입 인증 메일을 발송했습니다.<br />메일 내의 인증 링크를 클릭하시면 가입이 완료됩니다.
                     </p>
-                    <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#10B981', fontWeight: '600', fontSize: '15px', _hover: { textDecoration: 'underline' } })}>
+                    <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#3B82F6', fontWeight: '600', fontSize: '15px', _hover: { textDecoration: 'underline' } })}>
                         로그인 페이지로 돌아가기 <ArrowRight size={16} />
                     </Link>
                 </div>
@@ -103,7 +103,7 @@ export default function SignUpPage() {
                     <div className={css({
                         w: '60px',
                         h: '60px',
-                        bg: '#34A853',
+                        bg: '#2563EB',
                         color: 'white',
                         borderRadius: '16px',
                         display: 'flex',
@@ -118,7 +118,7 @@ export default function SignUpPage() {
                     <h1 className={css({
                         fontSize: { base: '24px', sm: '28px' },
                         fontWeight: '800',
-                        color: '#022C22',
+                        color: '#172554',
                         mb: '8px',
                         letterSpacing: '-0.02em',
                         wordBreak: 'keep-all',
@@ -127,7 +127,7 @@ export default function SignUpPage() {
                         새로운 여행의 시작 🌿
                     </h1>
                     <p className={css({ fontSize: { base: '14px', sm: '15px' }, color: '#666', lineHeight: 1.5, wordBreak: 'keep-all' })}>
-                        Onvoy와 함께 당신만의 특별한 일정을 만들어보세요.
+                        OnVoy와 함께 당신만의 특별한 일정을 만들어보세요.
                     </p>
                 </div>
 
@@ -148,16 +148,16 @@ export default function SignUpPage() {
                                     pr: '40px',
                                     bg: '#f9f9f9',
                                     border: '1px solid',
-                                    borderColor: email.length > 0 ? (isEmailValid ? '#34A853' : '#eee') : '#eee',
+                                    borderColor: email.length > 0 ? (isEmailValid ? '#2563EB' : '#eee') : '#eee',
                                     borderRadius: '12px',
                                     outline: 'none',
                                     transition: 'all 0.2s',
                                     fontSize: '15px',
-                                    _focus: { bg: 'white', borderColor: '#34A853', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
+                                    _focus: { bg: 'white', borderColor: '#2563EB', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
                                 })}
                                 placeholder="you@example.com"
                             />
-                            {isEmailValid && <Check size={18} color="#34A853" className={css({ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' })} />}
+                            {isEmailValid && <Check size={18} color="#2563EB" className={css({ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' })} />}
                         </div>
                     </div>
 
@@ -178,16 +178,16 @@ export default function SignUpPage() {
                                     pr: '44px',
                                     bg: '#f9f9f9',
                                     border: '1px solid',
-                                    borderColor: password.length > 0 ? (isPasswordValid ? '#34A853' : '#d93025') : '#eee',
+                                    borderColor: password.length > 0 ? (isPasswordValid ? '#2563EB' : '#d93025') : '#eee',
                                     borderRadius: '12px',
                                     outline: 'none',
                                     transition: 'all 0.2s',
                                     fontSize: '15px',
-                                    _focus: { bg: 'white', borderColor: '#34A853', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
+                                    _focus: { bg: 'white', borderColor: '#2563EB', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
                                 })}
                                 placeholder="6자리 이상 입력해 주세요"
                             />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#022C22' } })}>
+                            <button type="button" onClick={() => setShowPassword(!showPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#172554' } })}>
                                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
@@ -210,16 +210,16 @@ export default function SignUpPage() {
                                     pr: '44px',
                                     bg: '#f9f9f9',
                                     border: '1px solid',
-                                    borderColor: confirmPassword.length > 0 ? (isConfirmPasswordValid ? '#34A853' : '#d93025') : '#eee',
+                                    borderColor: confirmPassword.length > 0 ? (isConfirmPasswordValid ? '#2563EB' : '#d93025') : '#eee',
                                     borderRadius: '12px',
                                     outline: 'none',
                                     transition: 'all 0.2s',
                                     fontSize: '15px',
-                                    _focus: { bg: 'white', borderColor: '#34A853', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
+                                    _focus: { bg: 'white', borderColor: '#2563EB', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
                                 })}
                                 placeholder="비밀번호를 다시 한 번 입력해 주세요"
                             />
-                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#022C22' } })}>
+                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#172554' } })}>
                                 {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                             </button>
                         </div>
@@ -228,7 +228,7 @@ export default function SignUpPage() {
                     {message && (
                         <div className={css({
                             p: '14px',
-                            bg: message.type === 'error' ? '#fdecea' : '#e6f4ea',
+                            bg: message.type === 'error' ? '#fdecea' : '#EFF6FF',
                             color: message.type === 'error' ? '#d93025' : '#1e8e3e',
                             fontSize: '14px',
                             fontWeight: '500',
@@ -249,10 +249,10 @@ export default function SignUpPage() {
                             id="terms"
                             checked={termsAgreed}
                             onChange={(e) => setTermsAgreed(e.target.checked)}
-                            className={css({ w: '18px', h: '18px', cursor: 'pointer', accentColor: '#34A853', flexShrink: 0 })}
+                            className={css({ w: '18px', h: '18px', cursor: 'pointer', accentColor: '#2563EB', flexShrink: 0 })}
                         />
                         <div className={css({ fontSize: '14px', color: '#555', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' })}>
-                            <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: '#34A853', fontWeight: '600', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
+                            <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: '#2563EB', fontWeight: '600', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
                                 이용약관 및 개인정보 처리방침
                             </button>
                             <label htmlFor="terms" className={css({ cursor: 'pointer', userSelect: 'none' })}>
@@ -267,7 +267,7 @@ export default function SignUpPage() {
                         className={css({
                             w: '100%',
                             py: '15px',
-                            bg: '#34A853',
+                            bg: '#2563EB',
                             color: 'white',
                             fontWeight: 'bold',
                             fontSize: '16px',
@@ -302,7 +302,7 @@ export default function SignUpPage() {
                     <Link
                         href="/login"
                         className={css({
-                            color: '#34A853',
+                            color: '#2563EB',
                             fontWeight: '700',
                             textDecoration: 'none',
                             _hover: { textDecoration: 'underline' },

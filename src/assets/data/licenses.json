@@ -1,0 +1,44 @@
+{
+  "next": {
+    "licenses": "MIT",
+    "repository": "https://github.com/vercel/next.js",
+    "publisher": "Vercel",
+    "licenseText": "MIT License\n\nCopyright (c) 2024 Vercel, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy..."
+  },
+  "react": {
+    "licenses": "MIT",
+    "repository": "https://github.com/facebook/react",
+    "publisher": "Meta",
+    "licenseText": "MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy..."
+  },
+  "capacitor": {
+    "licenses": "MIT",
+    "repository": "https://github.com/ionic-team/capacitor",
+    "publisher": "Ionic",
+    "licenseText": "MIT License\n\nCopyright (c) 2017-present Ionic, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy..."
+  },
+  "supabase": {
+    "licenses": "MIT",
+    "repository": "https://github.com/supabase/supabase",
+    "publisher": "Supabase",
+    "licenseText": "MIT License\n\nCopyright (c) 2020 Supabase\n\nPermission is hereby granted, free of charge, to any person obtaining a copy..."
+  },
+  "lucide-react": {
+    "licenses": "ISC",
+    "repository": "https://github.com/lucide-icons/lucide",
+    "publisher": "Lucide Contributors",
+    "licenseText": "ISC License\n\nCopyright (c) 2022 Lucide Contributors\n\nPermission to use, copy, modify, and/or distribute this software for any purpose..."
+  },
+  "date-fns": {
+    "licenses": "MIT",
+    "repository": "https://github.com/date-fns/date-fns",
+    "publisher": "Sasha Koss",
+    "licenseText": "MIT License\n\nCopyright (c) 2021 Sasha Koss\n\nPermission is hereby granted, free of charge, to any person obtaining a copy..."
+  },
+  "zustand": {
+    "licenses": "MIT",
+    "repository": "https://github.com/pmndrs/zustand",
+    "publisher": "Poimandres",
+    "licenseText": "MIT License\n\nCopyright (c) 2019 Poimandres\n\nPermission is hereby granted, free of charge, to any person obtaining a copy..."
+  }
+}

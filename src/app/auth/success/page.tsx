@@ -37,8 +37,8 @@ function SuccessContent() {
                     justifyContent: 'center',
                     w: '64px',
                     h: '64px',
-                    bg: '#e6f4ea',
-                    color: '#34A853',
+                    bg: '#EFF6FF',
+                    color: '#2563EB',
                     borderRadius: '50%',
                     mx: 'auto',
                     mb: '24px'
@@ -48,7 +48,7 @@ function SuccessContent() {
                 <h1 className={css({
                     fontSize: '24px',
                     fontWeight: '800',
-                    color: '#022C22',
+                    color: '#172554',
                     mb: '12px'
                 })}>
                     이메일 인증 성공!
@@ -62,7 +62,7 @@ function SuccessContent() {
                 })}>
                     {isVerifiedOnly 
                         ? '이메일 인증이 완료되었습니다. 보안을 위해 다시 한 번 로그인해 주세요.'
-                        : '환영합니다. 계정 인증이 성공적으로 완료되었습니다. 이제 Onvoy의 모든 기능을 이용하실 수 있습니다.'}
+                        : '환영합니다. 계정 인증이 성공적으로 완료되었습니다. 이제 OnVoy의 모든 기능을 이용하실 수 있습니다.'}
                 </p>
                 <Link
                     href={isVerifiedOnly ? '/login' : '/'}

@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { Plus, X, ArrowLeft, Save, Trash2, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
+import { useUIStore } from '@/stores/useUIStore'
 
 interface TemplateItemInput {
     id: string; // db id 혹은 로컬 임시 id
@@ -29,6 +30,14 @@ export default function EditTemplatePage() {
     const [title, setTitle] = useState('')
     const [items, setItems] = useState<TemplateItemInput[]>([])
     const [deletedItemIds, setDeletedItemIds] = useState<string[]>([]) // 기존 항목 중 삭제된 DB ID 추적
+    const { setMobileTitle } = useUIStore()
+
+    useEffect(() => {
+        if (title) {
+            setMobileTitle(`${title} 템플릿 수정`)
+        }
+        return () => setMobileTitle(null)
+    }, [title, setMobileTitle])
 
     useEffect(() => {
         const fetchTemplate = async () => {
@@ -185,26 +194,35 @@ export default function EditTemplatePage() {
     }
 
     return (
-        <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: '40px' })}>
-            <div className={css({ mb: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' })}>
-                <div>
+        <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: { base: '20px', sm: '40px' } })}>
+            <div className={css({ 
+                mb: '32px', 
+                display: 'flex', 
+                justifyContent: 'space-between', 
+                alignItems: 'center',
+                gap: '12px'
+            })}>
+                <div className={css({ 
+                    textAlign: 'left',
+                    flex: '1'
+                })}>
                     <Link
                         href="/templates"
                         className={css({
-                            display: { base: 'inline-flex', sm: 'none' },
+                            display: { base: 'none', sm: 'inline-flex' },
                             alignItems: 'center',
                             gap: '6px',
                             color: '#666',
                             textDecoration: 'none',
                             fontSize: '15px',
                             mb: '16px',
-                            _hover: { color: '#022C22' },
+                            _hover: { color: '#172554' },
                         })}
                     >
                         <ArrowLeft size={18} /> 목록으로 돌아가기
                     </Link>
-                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#022C22' })}>
-                        템플릿 수정
+                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#172554', lineHeight: '1.2' })}>
+                        {title} 수정
                     </h1>
                 </div>
 
@@ -214,28 +232,26 @@ export default function EditTemplatePage() {
                     className={css({
                         display: 'flex',
                         alignItems: 'center',
-                        gap: '6px',
-                        color: '#dc2626',
-                        bg: '#fee2e2',
-                        px: '16px',
-                        py: '10px',
-                        borderRadius: '8px',
+                        justifyContent: 'center',
+                        p: '10px',
+                        bg: '#fce8e6',
+                        color: '#d93025',
                         border: 'none',
+                        borderRadius: '50%',
                         cursor: 'pointer',
-                        fontWeight: '600',
-                        fontSize: '14px',
                         transition: 'all 0.2s',
-                        _hover: { bg: '#fecaca' },
+                        _hover: { bg: '#fad2cf', transform: 'scale(1.05)' },
                         _disabled: { opacity: 0.5, cursor: 'not-allowed' }
                     })}
+                    title="템플릿 삭제"
                 >
-                    <Trash2 size={16} /> 삭제하기
+                    <Trash2 size={20} />
                 </button>
             </div>
 
             <form onSubmit={handleSubmit} className={css({ bg: 'white', p: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
                 <div className={css({ mb: '32px' })}>
-                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#064E3B' })}>
+                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#1E3A8A' })}>
                         템플릿 이름
                     </label>
                     <input
@@ -243,7 +259,7 @@ export default function EditTemplatePage() {
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="예: 여름 휴양지 기본 세트"
-                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#10B981' } })}
+                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#3B82F6' } })}
                         required
                     />
                 </div>
@@ -252,7 +268,7 @@ export default function EditTemplatePage() {
 
                 <div className={css({ mb: '32px' })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '16px' })}>
-                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#064E3B' })}>
+                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#1E3A8A' })}>
                             항목 구성 수정
                         </label>
                         <span className={css({ fontSize: '13px', color: '#888' })}>총 {items.length}개</span>
@@ -265,23 +281,23 @@ export default function EditTemplatePage() {
                             </div>
                         ) : (
                             items.map((item, index) => (
-                                <div key={item.id} className={css({ 
-                                    display: 'flex', 
-                                    flexDirection: { base: 'column', sm: 'row' }, 
-                                    alignItems: { base: 'stretch', sm: 'center' }, 
-                                    bg: 'white', 
-                                    borderRadius: '12px', 
-                                    border: '1px solid #eaeaea', 
+                                <div key={item.id} className={css({
+                                    display: 'flex',
+                                    flexDirection: { base: 'column', sm: 'row' },
+                                    alignItems: { base: 'stretch', sm: 'center' },
+                                    bg: 'white',
+                                    borderRadius: '12px',
+                                    border: '1px solid #eaeaea',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                                     overflow: 'hidden',
                                     transition: 'all 0.2s',
-                                    _focusWithin: { borderColor: '#10B981', boxShadow: '0 4px 12px rgba(16,185,129,0.1)' }
+                                    _focusWithin: { borderColor: '#3B82F6', boxShadow: '0 4px 12px rgba(16,185,129,0.1)' }
                                 })}>
                                     <div className={css({ position: 'relative', borderRight: { base: 'none', sm: '1px solid #eaeaea' }, borderBottom: { base: '1px solid #eaeaea', sm: 'none' }, w: { base: '100%', sm: '140px' }, flexShrink: 0 })}>
                                         <select
                                             value={item.category}
                                             onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#064E3B', cursor: 'pointer', appearance: 'none' })}
+                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#1E3A8A', cursor: 'pointer', appearance: 'none' })}
                                         >
                                             {CATEGORIES.map((cat: any) => (
                                                 <option key={cat} value={cat}>{cat}</option>

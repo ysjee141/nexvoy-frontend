@@ -38,8 +38,8 @@ export default function InvitationBanner() {
 
     return (
         <div className={css({
-            bg: '#ECFDF5',
-            borderBottom: '1px solid #A7F3D0',
+            bg: '#EFF6FF',
+            borderBottom: '1px solid #BFDBFE',
             px: '20px',
             py: '12px'
         })}>
@@ -52,7 +52,7 @@ export default function InvitationBanner() {
                 flexDirection: { base: 'column', sm: 'row' },
                 gap: '12px'
             })}>
-                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', color: '#059669', fontSize: '14px', fontWeight: '500' })}>
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', color: '#3B82F6', fontSize: '14px', fontWeight: '500' })}>
                     <Mail size={18} />
                     <span>새로운 여행 초대 {invitations.length}건이 있습니다!</span>
                 </div>
@@ -70,7 +70,7 @@ export default function InvitationBanner() {
                             boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                             w: { base: '100%', sm: 'auto' }
                         })}>
-                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#022C22' })}>
+                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#172554' })}>
                                 {inv.trips?.destination || '여행'}
                             </span>
                             <div className={css({ display: 'flex', gap: '4px' })}>
@@ -78,7 +78,7 @@ export default function InvitationBanner() {
                                     onClick={() => handleAccept(inv.id)}
                                     disabled={processingId === inv.id}
                                     className={css({
-                                        bg: '#059669',
+                                        bg: '#3B82F6',
                                         color: 'white',
                                         border: 'none',
                                         borderRadius: '4px',
