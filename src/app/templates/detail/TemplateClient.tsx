@@ -198,13 +198,13 @@ export default function EditTemplatePage() {
             <div className={css({ 
                 mb: '32px', 
                 display: 'flex', 
-                justifyContent: { base: 'flex-end', sm: 'space-between' }, 
+                justifyContent: 'space-between', 
                 alignItems: 'center',
                 gap: '12px'
             })}>
                 <div className={css({ 
-                    textAlign: { base: 'right', sm: 'left' },
-                    flex: { base: '0 1 auto', sm: '1' }
+                    textAlign: 'left',
+                    flex: '1'
                 })}>
                     <Link
                         href="/templates"
