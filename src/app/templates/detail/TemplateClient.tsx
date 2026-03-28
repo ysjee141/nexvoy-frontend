@@ -196,17 +196,20 @@ export default function EditTemplatePage() {
     return (
         <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: { base: '20px', sm: '40px' } })}>
             <div className={css({ 
-                mb: { base: '16px', sm: '32px' }, 
+                mb: { base: '20px', sm: '32px' }, 
                 display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: { base: 'center', sm: 'flex-start' },
-                flexDirection: { base: 'row-reverse', sm: 'row' } // Aligns button to right if title is hidden
+                justifyContent: { base: 'flex-end', sm: 'space-between' }, 
+                alignItems: 'center',
+                gap: '12px'
             })}>
-                <div className={css({ display: { base: 'none', sm: 'block' } })}>
+                <div className={css({ 
+                    textAlign: { base: 'right', sm: 'left' },
+                    flex: { base: '0 1 auto', sm: '1' }
+                })}>
                     <Link
                         href="/templates"
                         className={css({
-                            display: { base: 'inline-flex', sm: 'none' },
+                            display: { base: 'none', sm: 'inline-flex' },
                             alignItems: 'center',
                             gap: '6px',
                             color: '#666',
@@ -218,8 +221,13 @@ export default function EditTemplatePage() {
                     >
                         <ArrowLeft size={18} /> 목록으로 돌아가기
                     </Link>
-                    <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#172554' })}>
-                        템플릿 수정
+                    <h1 className={css({ 
+                        fontSize: { base: '22px', sm: '28px' }, 
+                        fontWeight: 'bold', 
+                        color: '#172554',
+                        lineHeight: '1.2'
+                    })}>
+                        {title}
                     </h1>
                 </div>
 
