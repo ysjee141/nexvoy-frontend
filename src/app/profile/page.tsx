@@ -403,7 +403,6 @@ export default function ProfilePage() {
                     </div>
                     <ChevronRight size={18} color="#ccc" />
                 </button>
-
                 <Link
                     href="/profile/licenses"
                     className={css({
@@ -447,8 +446,7 @@ export default function ProfilePage() {
                     회원 탈퇴
                 </Link>
             </div>
- 
-             <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
+            <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
         </div>
     )
 }
