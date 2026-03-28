@@ -41,6 +41,11 @@ export default function TripLayoutClient() {
 
     useEffect(() => {
         async function fetchTrip() {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                router.push('/login')
+                return
+            }
             if (!id) return;
             const { data } = await supabase
                 .from('trips')

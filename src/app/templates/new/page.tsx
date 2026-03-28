@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
@@ -25,6 +25,16 @@ export default function NewTemplatePage() {
     const [items, setItems] = useState<TemplateItemInput[]>([
         { id: '1', item_name: '', category: '의류' }
     ])
+
+    useEffect(() => {
+        async function checkAuth() {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                router.push('/login')
+            }
+        }
+        checkAuth()
+    }, [router, supabase])
 
     const handleAddItem = () => {
         setItems([

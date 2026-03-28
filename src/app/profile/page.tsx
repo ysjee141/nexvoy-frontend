@@ -33,7 +33,10 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
-            if (!user) return
+            if (!user) {
+                router.push('/login')
+                return
+            }
             setUser(user)
 
             // 프로필 가져오기

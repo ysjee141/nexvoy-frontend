@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/utils/supabase/client'
@@ -27,6 +27,17 @@ export default function NewTripPage() {
     const [errorMsg, setErrorMsg] = useState('')
 
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
+    
+    useEffect(() => {
+        async function checkAuth() {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) {
+                router.push('/login')
+            }
+        }
+        checkAuth()
+    }, [router])
 
     const onPlaceChanged = () => {
         if (autocomplete !== null) {
