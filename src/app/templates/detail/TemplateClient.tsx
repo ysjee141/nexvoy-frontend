@@ -196,7 +196,7 @@ export default function EditTemplatePage() {
     return (
         <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: { base: '20px', sm: '40px' } })}>
             <div className={css({ 
-                mb: { base: '20px', sm: '32px' }, 
+                mb: '32px', 
                 display: 'flex', 
                 justifyContent: { base: 'flex-end', sm: 'space-between' }, 
                 alignItems: 'center',
@@ -221,13 +221,8 @@ export default function EditTemplatePage() {
                     >
                         <ArrowLeft size={18} /> 목록으로 돌아가기
                     </Link>
-                    <h1 className={css({ 
-                        fontSize: { base: '22px', sm: '28px' }, 
-                        fontWeight: 'bold', 
-                        color: '#172554',
-                        lineHeight: '1.2'
-                    })}>
-                        {title}
+                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#172554', lineHeight: '1.2' })}>
+                        {title} 수정
                     </h1>
                 </div>
 
@@ -286,13 +281,13 @@ export default function EditTemplatePage() {
                             </div>
                         ) : (
                             items.map((item, index) => (
-                                <div key={item.id} className={css({ 
-                                    display: 'flex', 
-                                    flexDirection: { base: 'column', sm: 'row' }, 
-                                    alignItems: { base: 'stretch', sm: 'center' }, 
-                                    bg: 'white', 
-                                    borderRadius: '12px', 
-                                    border: '1px solid #eaeaea', 
+                                <div key={item.id} className={css({
+                                    display: 'flex',
+                                    flexDirection: { base: 'column', sm: 'row' },
+                                    alignItems: { base: 'stretch', sm: 'center' },
+                                    bg: 'white',
+                                    borderRadius: '12px',
+                                    border: '1px solid #eaeaea',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                                     overflow: 'hidden',
                                     transition: 'all 0.2s',

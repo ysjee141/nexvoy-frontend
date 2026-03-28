@@ -27,7 +27,7 @@ export default function NewTripPage() {
     const [errorMsg, setErrorMsg] = useState('')
 
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
-    
+
     useEffect(() => {
         async function checkAuth() {
             const supabase = createClient()
@@ -89,26 +89,30 @@ export default function NewTripPage() {
     }
 
     return (
-        <div className={css({ 
-            minH: '100vh', 
+        <div className={css({
+            position: { base: 'fixed', sm: 'relative' },
+            inset: { base: 0, sm: 'auto' },
+            zIndex: { base: 100, sm: 'auto' },
+            minH: '100vh',
             bg: 'white',
+            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column'
         })}>
 
-            <main className={css({ 
+            <main className={css({
                 flex: 1,
-                maxW: '600px', 
-                mx: 'auto', 
+                maxW: '600px',
+                mx: 'auto',
                 w: '100%',
-                px: { base: '20px', sm: '0' }, 
-                py: { base: '24px', sm: '40px' } 
+                px: { base: '20px', sm: '0' },
+                py: { base: '24px', sm: '40px' }
             })}>
-                <div className={css({ 
-                    bg: 'white', 
-                    p: { base: '0', sm: '32px' }, 
-                    borderRadius: { base: '0', sm: '16px' }, 
-                    boxShadow: { base: 'none', sm: '0 4px 20px rgba(0,0,0,0.05)' } 
+                <div className={css({
+                    bg: 'white',
+                    p: { base: '0', sm: '32px' },
+                    borderRadius: { base: '0', sm: '16px' },
+                    boxShadow: { base: 'none', sm: '0 4px 20px rgba(0,0,0,0.05)' }
                 })}>
                     <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '24px', overflowX: 'hidden' })}>
                         <div>
@@ -224,15 +228,15 @@ export default function NewTripPage() {
                                     bg: 'white',
                                     boxShadow: '0 2px 10px rgba(0,0,0,0.015)'
                                 })}>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         disabled={adults <= 1}
                                         onClick={() => setAdults(adults - 1)}
-                                        className={css({ 
+                                        className={css({
                                             w: '36px', h: '36px', flexShrink: 0,
-                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                            color: '#3B82F6', transition: 'all 0.2s', 
+                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#3B82F6', transition: 'all 0.2s',
                                             _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
                                             _hover: { bg: '#e0e8ff' },
                                             _disabled: { bg: '#f5f5f5', color: '#ccc', cursor: 'not-allowed', pointerEvents: 'none' }
@@ -241,14 +245,14 @@ export default function NewTripPage() {
                                         <Minus size={18} strokeWidth={2.5} />
                                     </button>
                                     <span className={css({ fontSize: '16px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#172554' })}>{adults}</span>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onClick={() => setAdults(adults + 1)}
-                                        className={css({ 
+                                        className={css({
                                             w: '36px', h: '36px', flexShrink: 0,
-                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                            color: '#3B82F6', transition: 'all 0.2s', 
+                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#3B82F6', transition: 'all 0.2s',
                                             _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
                                             _hover: { bg: '#e0e8ff' }
                                         })}
@@ -272,15 +276,15 @@ export default function NewTripPage() {
                                     bg: 'white',
                                     boxShadow: '0 2px 10px rgba(0,0,0,0.015)'
                                 })}>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         disabled={childrenCount <= 0}
                                         onClick={() => setChildren(childrenCount - 1)}
-                                        className={css({ 
+                                        className={css({
                                             w: '36px', h: '36px', flexShrink: 0,
-                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                            color: '#3B82F6', transition: 'all 0.2s', 
+                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#3B82F6', transition: 'all 0.2s',
                                             _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
                                             _hover: { bg: '#e0e8ff' },
                                             _disabled: { bg: '#f5f5f5', color: '#ccc', cursor: 'not-allowed', pointerEvents: 'none' }
@@ -289,14 +293,14 @@ export default function NewTripPage() {
                                         <Minus size={18} strokeWidth={2.5} />
                                     </button>
                                     <span className={css({ fontSize: '16px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#172554' })}>{childrenCount}</span>
-                                    <button 
-                                        type="button" 
+                                    <button
+                                        type="button"
                                         onClick={() => setChildren(childrenCount + 1)}
-                                        className={css({ 
+                                        className={css({
                                             w: '36px', h: '36px', flexShrink: 0,
-                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%', 
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                            color: '#3B82F6', transition: 'all 0.2s', 
+                                            bg: '#f0f4ff', border: 'none', borderRadius: '50%',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#3B82F6', transition: 'all 0.2s',
                                             _active: { bg: '#e0e8ff', transform: 'scale(0.92)' },
                                             _hover: { bg: '#e0e8ff' }
                                         })}

@@ -1,5 +1,5 @@
 'use client'
- 
+
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -11,7 +11,7 @@ import { useUIStore } from '@/stores/useUIStore'
 
 const PAGE_TITLES: Record<string, string> = {
     '/': '온여정(OnVoy)',
-    '/templates': '체크리스트 템플릿',
+    '/templates': '체크리스트',
     '/profile': '내 정보',
     '/trips/new': '새 여행 만들기',
     '/templates/new': '새 템플릿 만들기',
