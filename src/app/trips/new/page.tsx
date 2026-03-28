@@ -99,53 +99,6 @@ export default function NewTripPage() {
             display: 'flex',
             flexDirection: 'column'
         })}>
-            {/* Header: Fixed/Sticky app bar */}
-            <header className={css({ 
-                position: 'sticky', 
-                top: 0, 
-                zIndex: 10,
-                bg: 'white', 
-                p: '16px 20px', 
-                borderBottom: '1px solid #eee',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                pt: { base: 'calc(8px + env(safe-area-inset-top))', sm: '16px' }
-            })}>
-                <button
-                    onClick={() => router.back()}
-                    className={css({
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        color: { base: '#3B82F6', sm: '#666' },
-                        cursor: 'pointer',
-                        bg: 'transparent',
-                        border: 'none',
-                        p: '0',
-                        _hover: { color: '#172554' },
-                    })}
-                >
-                    <ChevronLeft size={28} className={css({ display: { base: 'block', sm: 'none' } })} />
-                    <ArrowLeft size={20} className={css({ display: { base: 'none', sm: 'block' } })} />
-                    <span className={css({ display: { base: 'none', sm: 'inline' }, fontSize: '14px', fontWeight: '600' })}>돌아가기</span>
-                </button>
-
-                <h1 className={css({ 
-                    fontSize: { base: '17px', sm: '18px' }, 
-                    fontWeight: 'bold', 
-                    color: '#172554',
-                    position: { base: 'absolute', sm: 'static' },
-                    left: { base: '50%', sm: 'auto' },
-                    transform: { base: 'translateX(-50%)', sm: 'none' },
-                    textAlign: 'center'
-                })}>
-                    새로운 여행 등록
-                </h1>
-
-                {/* Empty spacer for flex-between balance */}
-                <div className={css({ w: '40px', display: { base: 'none', sm: 'block' } })} />
-            </header>
 
             <main className={css({ 
                 flex: 1,

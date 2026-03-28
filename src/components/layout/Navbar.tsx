@@ -3,15 +3,33 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
-import { LogOut, Home, User, Compass, BookOpen, LogIn, UserPlus, ListTodo } from 'lucide-react'
+import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft } from 'lucide-react'
+
+const PAGE_TITLES: Record<string, string> = {
+    '/': 'OnVoy',
+    '/templates': '내 템플릿',
+    '/profile': '내 정보',
+    '/trips/new': '새 여행 등록',
+    '/templates/new': '새 템플릿 등록',
+    '/trips/detail': '여행 상세',
+    '/trips/checklist': '준비물 체크리스트',
+    '/guide': '소개',
+    '/login': '로그인',
+    '/signup': '회원가입',
+    '/profile/withdrawal': '회원 탈퇴',
+    '/profile/licenses': '오픈소스 라이선스'
+}
 
 export default function Navbar() {
     const router = useRouter()
+    const pathname = usePathname()
     const supabase = createClient()
 
+    const isRootPage = ['/', '/templates', '/profile'].includes(pathname)
+    const pageTitle = PAGE_TITLES[pathname] || 'OnVoy'
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
@@ -45,189 +63,115 @@ export default function Navbar() {
                 right: 0,
                 zIndex: 50,
                 w: '100%',
-                display: { base: 'none', sm: 'block' }, // 모바일에서는 상단 바 숨김
+                display: 'block', // 항상 표시 (내부에서 모드 전환)
                 bg: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(8px)',
+                backdropFilter: 'blur(10px)',
                 borderBottom: '1px solid #eaeaea',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-                paddingTop: 'env(safe-area-inset-top)', // iOS Safe Area (Notch / Dynamic Island) 하단으로 밀어내기
+                paddingTop: 'env(safe-area-inset-top)',
             })}
         >
+            {/* ── 데스크톱 버전 (sm 이상) ── */}
             <div
                 className={css({
+                    display: { base: 'none', sm: 'flex' },
                     maxW: 'screen-xl',
                     mx: 'auto',
                     px: '20px',
                     h: '64px',
-                    display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                 })}
             >
-                {/* ── 왼쪽: 로고 + 가이드(PC) ── */}
-                <div className={css({ display: 'flex', alignItems: 'center', gap: { base: '0', sm: '20px' } })}>
-                    <Link
-                        href="/"
-                        className={css({
-                            fontSize: 'xl',
-                            fontWeight: 'bold',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            color: '#172554',
-                        })}
-                    >
+                {/* 왼쪽: 로고 + 가이드 */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '20px' })}>
+                    <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: '#172554' })}>
                         <Image src="/logo.png" alt="OnVoy Logo" width={28} height={28} priority />
-                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>OnVoy</span>
+                        <span>OnVoy</span>
                     </Link>
-
-                    {/* 소개 — PC에서는 로고 바로 오른쪽 */}
-                    <Link
-                        href="/guide"
-                        className={css({
-                            display: { base: 'none', sm: 'flex' },
-                            alignItems: 'center', gap: '5px',
-                            fontSize: '14px', fontWeight: '500', color: '#555',
-                            _hover: { color: '#3B82F6' }, transition: 'color 0.15s',
-                        })}
-                    >
-                        <BookOpen size={16} />
-                        소개
+                    <Link href="/guide" className={css({ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', fontWeight: '500', color: '#555', _hover: { color: '#3B82F6' }, transition: 'color 0.15s' })}>
+                        <BookOpen size={16} /> 소개
                     </Link>
                 </div>
 
-                {/* ── 오른쪽: 가이드(모바일) + 로그인/로그아웃 등 ── */}
-                <div className={css({ display: 'flex', alignItems: 'center', gap: { base: '12px', md: '24px' } })}>
-                    {/* 가이드 — 모바일에서는 이제 하단 바에 있으므로 상단에서는 숨김 */}
-                    <Link
-                        href="/guide"
-                        className={css({
-                            display: { base: 'none', sm: 'none' }, // base에서 아예 숨김
-                            alignItems: 'center', gap: '4px',
-                            fontSize: '13px', fontWeight: '500', color: '#555',
-                            _hover: { color: '#3B82F6' },
-                        })}
-                    >
-                        <BookOpen size={16} />
-                    </Link>
-
+                {/* 오른쪽: 메뉴 */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '24px' })}>
                     {!loading && (
                         <>
                             {user ? (
                                 <>
-                                    {/* 홈/템플릿/마이페이지 - 모바일에서는 하단 바로 이동하므로 여기선 숨김 */}
-                                    <Link
-                                        href="/"
-                                        className={css({
-                                            display: { base: 'none', sm: 'flex' },
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                            color: '#555',
-                                            _hover: { color: '#172554' },
-                                        })}
-                                    >
+                                    <Link href="/" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#555', _hover: { color: '#172554' } })}>
                                         <Home size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>홈</span>
                                     </Link>
-                                    <Link
-                                        href="/templates"
-                                        className={css({
-                                            display: { base: 'none', sm: 'flex' },
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                            color: '#555',
-                                            _hover: { color: '#172554' },
-                                        })}
-                                    >
+                                    <Link href="/templates" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#555', _hover: { color: '#172554' } })}>
                                         <ListTodo size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>템플릿</span>
                                     </Link>
-                                    <Link
-                                        href="/profile"
-                                        className={css({
-                                            display: { base: 'none', sm: 'flex' },
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                            color: '#555',
-                                            _hover: { color: '#172554' },
-                                        })}
-                                    >
+                                    <Link href="/profile" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#555', _hover: { color: '#172554' } })}>
                                         <User size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>마이페이지</span>
                                     </Link>
-                                    <button
-                                        onClick={handleSignOut}
-                                        className={css({
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: '6px',
-                                            fontSize: '14px',
-                                            fontWeight: '500',
-                                            color: '#d32f2f',
-                                            ml: { base: '4px', sm: '12px' },
-                                            cursor: 'pointer',
-                                            bg: 'transparent',
-                                            border: 'none',
-                                            _hover: { textDecoration: 'underline' },
-                                        })}
-                                    >
+                                    <button onClick={handleSignOut} className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#d32f2f', ml: '12px', cursor: 'pointer', bg: 'transparent', border: 'none', _hover: { textDecoration: 'underline' } })}>
                                         <LogOut size={18} />
-                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>로그아웃</span>
+                                        <span>로그아웃</span>
                                     </button>
                                 </>
                             ) : (
                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                    {/* 회원가입 — 아웃라인 스타일 */}
-                                    <Link
-                                        href="/signup"
-                                        className={css({
-                                            display: 'flex', alignItems: 'center', gap: '5px',
-                                            bg: 'transparent',
-                                            color: '#1E3A8A',
-                                            px: { base: '10px', sm: '14px' },
-                                            py: '8px',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            fontWeight: '600',
-                                            border: '1px solid #ddd',
-                                            transition: 'all 0.2s',
-                                            _hover: { bg: '#f5f5f5', borderColor: '#bbb' },
-                                        })}
-                                    >
-                                        <UserPlus size={15} />
-                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>회원가입</span>
+                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '5px', bg: 'transparent', color: '#1E3A8A', px: '14px', py: '8px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', border: '1px solid #ddd', _hover: { bg: '#f5f5f5' } })}>
+                                        <UserPlus size={15} /> 회원가입
                                     </Link>
-                                    {/* 로그인 — 채움 스타일 */}
-                                    <Link
-                                        href="/login"
-                                        className={css({
-                                            display: 'flex', alignItems: 'center', gap: '5px',
-                                            bg: '#111',
-                                            color: 'white',
-                                            px: { base: '10px', sm: '14px' },
-                                            py: '8px',
-                                            borderRadius: '8px',
-                                            fontSize: '14px',
-                                            fontWeight: '600',
-                                            transition: 'all 0.2s',
-                                            _hover: { bg: '#333', transform: 'translateY(-1px)' },
-                                        })}
-                                    >
-                                        <LogIn size={15} />
-                                        <span className={css({ display: { base: 'none', sm: 'inline' } })}>로그인</span>
+                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '5px', bg: '#111', color: 'white', px: '14px', py: '8px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', _hover: { bg: '#333' } })}>
+                                        <LogIn size={15} /> 로그인
                                     </Link>
                                 </div>
                             )}
-
                         </>
                     )}
                 </div>
+            </div>
+
+            {/* ── 모바일 헤더 버전 (base) ── */}
+            <div
+                className={css({
+                    display: { base: 'flex', sm: 'none' },
+                    h: '56px',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    px: '16px',
+                    position: 'relative',
+                })}
+            >
+                {/* 왼쪽: 뒤로가기 (Root 페이지가 아닐 때만 노출) */}
+                {!isRootPage && (
+                    <button
+                        onClick={() => router.back()}
+                        className={css({
+                            position: 'absolute',
+                            left: '8px',
+                            p: '8px',
+                            bg: 'transparent',
+                            border: 'none',
+                            color: '#172554',
+                            cursor: 'pointer',
+                        })}
+                    >
+                        <ChevronLeft size={24} />
+                    </button>
+                )}
+
+                {/* 중앙: 페이지 타이틀 또는 로고 */}
+                {pathname === '/' ? (
+                    <Link href="/" className={css({ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' })}>
+                        <Image src="/logo.png" alt="OnVoy Logo" width={24} height={24} priority />
+                        <span className={css({ fontSize: '18px', fontWeight: '800', color: '#172554' })}>OnVoy</span>
+                    </Link>
+                ) : (
+                    <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
+                        {pageTitle}
+                    </h1>
+                )}
             </div>
         </nav>
     )

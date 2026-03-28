@@ -71,21 +71,6 @@ export default function TripLayoutClient() {
 
     return (
         <div className={css({ w: '100%', py: '16px' })}>
-            {/* 뒤로 가기 링크 (모바일용) */}
-            <Link
-                href="/"
-                className={css({
-                    display: { base: 'inline-flex', sm: 'none' },
-                    alignItems: 'center',
-                    gap: '4px',
-                    color: '#666',
-                    fontSize: '14px',
-                    mb: '12px',
-                    _hover: { color: '#172554' },
-                })}
-            >
-                <ArrowLeft size={16} /> 목록으로
-            </Link>
 
             {/* Trip Info Header (Airbnb Style) */}
             <div className={css({

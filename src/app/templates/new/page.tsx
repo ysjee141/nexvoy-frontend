@@ -112,21 +112,6 @@ export default function NewTemplatePage() {
     return (
         <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: '40px' })}>
             <div className={css({ mb: '32px' })}>
-                <Link
-                    href="/templates"
-                    className={css({
-                        display: { base: 'inline-flex', sm: 'none' },
-                        alignItems: 'center',
-                        gap: '6px',
-                        color: '#666',
-                        textDecoration: 'none',
-                        fontSize: '15px',
-                        mb: '16px',
-                        _hover: { color: '#172554' },
-                    })}
-                >
-                    <ArrowLeft size={18} /> 목록으로 돌아가기
-                </Link>
                 <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#172554' })}>
                     새 템플릿 만들기
                 </h1>
