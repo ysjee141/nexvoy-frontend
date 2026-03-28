@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react'
 import { analytics } from '@/services/AnalyticsService'
 import TripClient from './TripClient'
 import ChecklistClient from '../checklist/ChecklistClient'
+import { useUIStore } from '@/stores/useUIStore'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -21,6 +22,7 @@ export default function TripLayoutClient() {
     const [trip, setTrip] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'plans' | 'checklist'>(initialTab)
+    const { setMobileTitle } = useUIStore()
 
     useEffect(() => {
         const urlTab = searchParams.get('tab')
@@ -38,6 +40,13 @@ export default function TripLayoutClient() {
         params.set('tab', tab)
         window.history.replaceState(null, '', `?${params.toString()}`)
     }
+
+    useEffect(() => {
+        if (trip?.destination) {
+            setMobileTitle(trip.destination)
+        }
+        return () => setMobileTitle(null)
+    }, [trip, setMobileTitle])
 
     useEffect(() => {
         async function fetchTrip() {

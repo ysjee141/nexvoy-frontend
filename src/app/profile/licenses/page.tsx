@@ -19,8 +19,8 @@ export default function LicensesPage() {
 
     return (
         <div className={css({ maxW: '720px', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '8px', sm: '0' } })}>
-            {/* 헤더 */}
-            <div className={css({ display: 'flex', alignItems: 'center', gap: '16px', mb: '24px' })}>
+            {/* 헤더 - 모바일에서는 상단 바와 중복되므로 숨김 */}
+            <div className={css({ display: { base: 'none', sm: 'flex' }, alignItems: 'center', gap: '16px', mb: '24px' })}>
                 <Link href="/profile" className={css({ p: '8px', borderRadius: '50%', _hover: { bg: '#eee' }, color: '#555', transition: 'all 0.2s' })}>
                     <ArrowLeft size={24} />
                 </Link>

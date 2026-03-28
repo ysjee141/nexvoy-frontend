@@ -6,6 +6,7 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { Plus, X, ArrowLeft, Save, Trash2, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
+import { useUIStore } from '@/stores/useUIStore'
 
 interface TemplateItemInput {
     id: string; // db id 혹은 로컬 임시 id
@@ -29,6 +30,14 @@ export default function EditTemplatePage() {
     const [title, setTitle] = useState('')
     const [items, setItems] = useState<TemplateItemInput[]>([])
     const [deletedItemIds, setDeletedItemIds] = useState<string[]>([]) // 기존 항목 중 삭제된 DB ID 추적
+    const { setMobileTitle } = useUIStore()
+
+    useEffect(() => {
+        if (title) {
+            setMobileTitle(`${title} 템플릿 수정`)
+        }
+        return () => setMobileTitle(null)
+    }, [title, setMobileTitle])
 
     useEffect(() => {
         const fetchTemplate = async () => {

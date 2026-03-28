@@ -7,29 +7,31 @@ import { useRouter, usePathname } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
 import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft } from 'lucide-react'
+import { useUIStore } from '@/stores/useUIStore'
 
 const PAGE_TITLES: Record<string, string> = {
-    '/': 'OnVoy',
-    '/templates': '내 템플릿',
+    '/': '온여정(OnVoy)',
+    '/templates': '체크리스트',
     '/profile': '내 정보',
-    '/trips/new': '새 여행 등록',
-    '/templates/new': '새 템플릿 등록',
+    '/trips/new': '새 여행 만들기',
+    '/templates/new': '새 템플릿 만들기',
     '/trips/detail': '여행 상세',
     '/trips/checklist': '준비물 체크리스트',
     '/guide': '소개',
     '/login': '로그인',
     '/signup': '회원가입',
     '/profile/withdrawal': '회원 탈퇴',
-    '/profile/licenses': '오픈소스 라이선스'
+    '/profile/licenses': '오픈 소스 라이선스'
 }
 
 export default function Navbar() {
     const router = useRouter()
     const pathname = usePathname()
     const supabase = createClient()
+    const { mobileTitle } = useUIStore()
 
     const isRootPage = ['/', '/templates', '/profile'].includes(pathname)
-    const pageTitle = PAGE_TITLES[pathname] || 'OnVoy'
+    const pageTitle = mobileTitle || PAGE_TITLES[pathname] || 'OnVoy'
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
@@ -161,17 +163,10 @@ export default function Navbar() {
                     </button>
                 )}
 
-                {/* 중앙: 페이지 타이틀 또는 로고 */}
-                {pathname === '/' ? (
-                    <Link href="/" className={css({ display: 'flex', alignItems: 'center', gap: '6px', textDecoration: 'none' })}>
-                        <Image src="/logo.png" alt="OnVoy Logo" width={24} height={24} priority />
-                        <span className={css({ fontSize: '18px', fontWeight: '800', color: '#172554' })}>OnVoy</span>
-                    </Link>
-                ) : (
-                    <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
-                        {pageTitle}
-                    </h1>
-                )}
+                {/* 중앙: 페이지 타이틀 */}
+                <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
+                    {pageTitle}
+                </h1>
             </div>
         </nav>
     )
