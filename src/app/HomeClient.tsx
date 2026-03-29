@@ -111,7 +111,10 @@ export default function HomeClient() {
             <Link
               href="/signup"
               className={css({
-                bg: '#111', color: 'white', px: '32px', py: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.2s', _hover: { transform: 'translateY(-2px)', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }
+                background: 'linear-gradient(135deg, #172554 0%, #1e3a8a 100%)', 
+                color: 'white', px: '32px', py: '18px', borderRadius: '16px', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+                boxShadow: '0 10px 25px rgba(23, 37, 84, 0.2)',
+                _hover: { transform: 'translateY(-3px)', boxShadow: '0 15px 30px rgba(23, 37, 84, 0.3)', filter: 'brightness(1.1)' }
               })}
             >
               지금 시작하기
@@ -129,36 +132,36 @@ export default function HomeClient() {
 
         {/* Features Grid */}
         <section className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: '24px' })}>
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#3B82F6', transform: 'translateY(-5px)' } })}>
-            <div className={css({ w: '48px', h: '48px', bg: '#EFF6FF', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
-              <CalendarDays size={24} color="#3B82F6" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: 'premium', transition: 'all 0.4s', _hover: { borderColor: 'brand.primary', transform: 'translateY(-8px)', boxShadow: '0 20px 40px rgba(0,0,0,0.08)' } })}>
+            <div className={css({ w: '56px', h: '56px', bg: 'rgba(59, 130, 246, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
+              <CalendarDays size={28} color="#3B82F6" />
             </div>
-            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>스마트 일정표</h3>
-            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>주간 캘린더를 통해 여행 일정을 한눈에 파악하고 드래그하듯 간편하게 관리하세요.</p>
+            <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '12px', color: 'brand.secondary' })}>스마트 일정표</h3>
+            <p className={css({ color: '#64748B', fontSize: '15px', lineHeight: 1.6 })}>주간 캘린더를 통해 여행 일정을 한눈에 파악하고 드래그하듯 간편하게 관리하세요.</p>
           </div>
 
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#2563EB', transform: 'translateY(-5px)' } })}>
-            <div className={css({ w: '48px', h: '48px', bg: '#EFF6FF', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
-              <Luggage size={24} color="#2563EB" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: 'premium', transition: 'all 0.4s', _hover: { borderColor: 'brand.accent', transform: 'translateY(-8px)', boxShadow: '0 20px 40px rgba(0,0,0,0.08)' } })}>
+            <div className={css({ w: '56px', h: '56px', bg: 'rgba(99, 102, 241, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
+              <Luggage size={28} color="#6366F1" />
             </div>
-            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>꼼꼼한 체크리스트</h3>
-            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>준비물 템플릿을 활용하고 진행률을 확인하며 빠짐없이 여행을 준비하세요.</p>
+            <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '12px', color: 'brand.secondary' })}>꼼꼼한 체크리스트</h3>
+            <p className={css({ color: '#64748B', fontSize: '15px', lineHeight: 1.6 })}>준비물 템플릿을 활용하고 진행률을 확인하며 빠짐없이 여행을 준비하세요.</p>
           </div>
 
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#FBBC05', transform: 'translateY(-5px)' } })}>
-            <div className={css({ w: '48px', h: '48px', bg: '#fef7e0', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
-              <MapPin size={24} color="#FBBC05" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: 'premium', transition: 'all 0.4s', _hover: { borderColor: '#FBBC05', transform: 'translateY(-8px)', boxShadow: '0 20px 40px rgba(0,0,0,0.08)' } })}>
+            <div className={css({ w: '56px', h: '56px', bg: 'rgba(251, 188, 5, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
+              <MapPin size={28} color="#FBBC05" />
             </div>
-            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>타임존 자동 계산</h3>
-            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. OnVoy가 실시간으로 맞춰 드립니다.</p>
+            <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '12px', color: 'brand.secondary' })}>타임존 자동 계산</h3>
+            <p className={css({ color: '#64748B', fontSize: '15px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. OnVoy가 실시간으로 맞춰 드립니다.</p>
           </div>
 
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '24px', border: '1px solid #f0f0f0', transition: 'all 0.3s', _hover: { borderColor: '#EA4335', transform: 'translateY(-5px)' } })}>
-            <div className={css({ w: '48px', h: '48px', bg: '#fce8e6', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '20px' })}>
-              <Plus size={24} color="#EA4335" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: 'premium', transition: 'all 0.4s', _hover: { borderColor: '#EA4335', transform: 'translateY(-8px)', boxShadow: '0 20px 40px rgba(0,0,0,0.08)' } })}>
+            <div className={css({ w: '56px', h: '56px', bg: 'rgba(234, 67, 53, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
+              <Plus size={28} color="#EA4335" />
             </div>
-            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', mb: '12px' })}>실시간 스마트 알림</h3>
-            <p className={css({ color: '#666', fontSize: '14px', lineHeight: 1.6 })}>설정한 일정에 맞춰 브라우저 알림을 보내드려 소중한 계획을 놓치지 않게 합니다.</p>
+            <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '12px', color: 'brand.secondary' })}>실시간 스마트 알림</h3>
+            <p className={css({ color: '#64748B', fontSize: '15px', lineHeight: 1.6 })}>설정한 일정에 맞춰 브라우저 알림을 보내드려 소중한 계획을 놓치지 않게 합니다.</p>
           </div>
         </section>
       </div>

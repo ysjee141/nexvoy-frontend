@@ -103,12 +103,27 @@ export default function TripLayoutClient() {
                 <button
                     onClick={() => handleTabChange('plans')}
                     className={css({
-                        display: 'flex', alignItems: 'center', gap: '8px', px: '16px', py: '12px',
-                        bg: 'transparent', cursor: 'pointer', border: 'none',
-                        color: activeTab === 'plans' ? '#111' : '#666',
-                        fontWeight: activeTab === 'plans' ? '600' : '500',
-                        borderBottom: activeTab === 'plans' ? '2px solid #111' : '2px solid transparent',
-                        _hover: { bg: '#f9fafb' },
+                        display: 'flex', alignItems: 'center', gap: '8px', px: '24px', py: '14px',
+                        bg: activeTab === 'plans' ? 'rgba(59, 130, 246, 0.08)' : 'transparent', 
+                        cursor: 'pointer', border: 'none',
+                        color: activeTab === 'plans' ? 'brand.primary' : '#64748B',
+                        fontWeight: activeTab === 'plans' ? '700' : '500',
+                        fontSize: '15px',
+                        borderRadius: '12px 12px 0 0',
+                        position: 'relative',
+                        transition: 'all 0.3s ease',
+                        _after: {
+                            content: '""',
+                            position: 'absolute',
+                            bottom: 0,
+                            left: '20%',
+                            right: '20%',
+                            h: '3px',
+                            bg: activeTab === 'plans' ? 'brand.primary' : 'transparent',
+                            borderRadius: '3px 3px 0 0',
+                            transition: 'all 0.3s ease',
+                        },
+                        _hover: { bg: 'rgba(59, 130, 246, 0.04)' },
                     })}
                 >
                     <Calendar size={18} /> 일정표
@@ -116,12 +131,27 @@ export default function TripLayoutClient() {
                 <button
                     onClick={() => handleTabChange('checklist')}
                     className={css({
-                        display: 'flex', alignItems: 'center', gap: '8px', px: '16px', py: '12px',
-                        bg: 'transparent', cursor: 'pointer', border: 'none',
-                        color: activeTab === 'checklist' ? '#111' : '#666',
-                        fontWeight: activeTab === 'checklist' ? '600' : '500',
-                        borderBottom: activeTab === 'checklist' ? '2px solid #111' : '2px solid transparent',
-                        _hover: { bg: '#f9fafb' },
+                        display: 'flex', alignItems: 'center', gap: '8px', px: '24px', py: '14px',
+                        bg: activeTab === 'checklist' ? 'rgba(59, 130, 246, 0.08)' : 'transparent',
+                        cursor: 'pointer', border: 'none',
+                        color: activeTab === 'checklist' ? 'brand.primary' : '#64748B',
+                        fontWeight: activeTab === 'checklist' ? '700' : '500',
+                        fontSize: '15px',
+                        borderRadius: '12px 12px 0 0',
+                        position: 'relative',
+                        transition: 'all 0.3s ease',
+                        _after: {
+                            content: '""',
+                            position: 'absolute',
+                            bottom: 0,
+                            left: '20%',
+                            right: '20%',
+                            h: '3px',
+                            bg: activeTab === 'checklist' ? 'brand.primary' : 'transparent',
+                            borderRadius: '3px 3px 0 0',
+                            transition: 'all 0.3s ease',
+                        },
+                        _hover: { bg: 'rgba(59, 130, 246, 0.04)' },
                     })}
                 >
                     <ListChecks size={18} /> 준비물 체크리스트

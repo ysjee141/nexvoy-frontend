@@ -91,17 +91,19 @@ export default function TripSection({
                                 key={trip.id}
                                 href={`/trips/detail?id=${trip.id}`}
                                 className={css({
-                                    display: 'block', bg: 'white',
+                                    display: 'block', 
+                                    bg: 'white',
                                     p: { base: '16px', sm: '20px' },
-                                    borderRadius: '16px',
-                                    boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
-                                    border: '1px solid #f0f0f0',
-                                    transition: 'all 0.2s',
-                                    position: 'relative', overflow: 'hidden',
+                                    borderRadius: '20px',
+                                    boxShadow: 'premium',
+                                    border: '1px solid rgba(255, 255, 255, 0.4)',
+                                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                    position: 'relative', 
+                                    overflow: 'hidden',
                                     _hover: {
-                                        transform: 'translateY(-4px)',
-                                        boxShadow: '0 12px 28px rgba(0,0,0,0.09)',
-                                        borderColor: accentColor,
+                                        transform: 'translateY(-6px)',
+                                        boxShadow: '0 20px 40px rgba(0,0,0,0.06)',
+                                        borderColor: 'brand.primary',
                                     },
                                 })}
                             >
@@ -159,9 +161,9 @@ export default function TripSection({
                                             {progressPercent}%
                                         </span>
                                     </div>
-                                    <div className={css({ w: '100%', h: '5px', bg: '#f0f0f0', borderRadius: '3px', overflow: 'hidden' })}>
+                                    <div className={css({ w: '100%', h: '6px', bg: '#f0f4f8', borderRadius: '10px', overflow: 'hidden' })}>
                                         <div
-                                            className={css({ h: '100%', bg: progressPercent === 100 ? '#2563EB' : accentColor, transition: 'width 0.5s ease' })}
+                                            className={css({ h: '100%', bg: progressPercent === 100 ? 'linear-gradient(90deg, #10B981, #059669)' : `linear-gradient(90deg, ${accentColor}, #6366F1)`, transition: 'width 0.8s cubic-bezier(0.65, 0, 0.35, 1)' })}
                                             style={{ width: `${progressPercent}%` }}
                                         />
                                     </div>

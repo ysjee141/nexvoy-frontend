@@ -68,12 +68,13 @@ export default function Navbar() {
                 right: 0,
                 zIndex: 50,
                 w: '100%',
-                display: 'block', // 항상 표시 (내부에서 모드 전환)
-                bg: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(10px)',
-                borderBottom: '1px solid #eaeaea',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                display: 'block',
+                bg: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
                 paddingTop: 'env(safe-area-inset-top)',
+                transition: 'all 0.3s ease',
             })}
         >
             {/* ── 데스크톱 버전 (sm 이상) ── */}
@@ -124,10 +125,10 @@ export default function Navbar() {
                                 </>
                             ) : (
                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '5px', bg: 'transparent', color: '#1E3A8A', px: '14px', py: '8px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', border: '1px solid #ddd', _hover: { bg: '#f5f5f5' } })}>
+                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '5px', bg: 'transparent', color: 'brand.primary', px: '14px', py: '8px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', border: '1px solid', borderColor: 'rgba(59, 130, 246, 0.2)', _hover: { bg: 'rgba(59, 130, 246, 0.05)' } })}>
                                         <UserPlus size={15} /> 회원가입
                                     </Link>
-                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '5px', bg: '#111', color: 'white', px: '14px', py: '8px', borderRadius: '8px', fontSize: '14px', fontWeight: '600', _hover: { bg: '#333' } })}>
+                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '5px', bg: 'brand.secondary', color: 'white', px: '14px', py: '8px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s', _hover: { transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(23, 37, 84, 0.2)' } })}>
                                         <LogIn size={15} /> 로그인
                                     </Link>
                                 </div>
