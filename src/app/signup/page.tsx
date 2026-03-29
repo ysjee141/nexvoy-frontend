@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
+import Image from 'next/image'
 import { UserPlus, Mail, Lock, Sparkles, Loader2, CheckCircle2, Eye, EyeOff, Check, ArrowRight } from 'lucide-react'
 import TermsModal from './TermsModal'
 
@@ -18,6 +19,7 @@ export default function SignUpPage() {
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
     const [loading, setLoading] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
+    const [touched, setTouched] = useState({ email: false, password: false, confirmPassword: false })
 
     // Inline validations
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -54,16 +56,16 @@ export default function SignUpPage() {
 
     if (isSuccess) {
         return (
-            <div className={css({ width: '100vw', marginLeft: 'calc(-50vw + 50%)', mt: { base: '-80px', md: '-88px' }, mb: '-24px', minH: '100vh', display: 'flex', alignItems: { base: 'flex-start', sm: 'center' }, justifyContent: 'center', bg: '#f9f9fc', p: { base: '0', sm: '20px' } })}>
-                <div className={css({ bg: 'white', p: { base: '80px 20px 40px', sm: '48px' }, borderRadius: { base: '0', sm: '24px' }, boxShadow: { base: 'none', sm: '0 20px 40px rgba(0,0,0,0.08)' }, maxW: '440px', w: '100%', minH: { base: '100vh', sm: 'auto' }, textAlign: 'center' })}>
-                    <div className={css({ w: '80px', h: '80px', bg: '#EFF6FF', color: '#2563EB', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: '24px' })}>
+            <div className={css({ width: '100vw', marginLeft: 'calc(-50vw + 50%)', mt: { base: '-80px', md: '-88px' }, mb: '-24px', minH: '100vh', display: 'flex', alignItems: { base: 'flex-start', sm: 'center' }, justifyContent: 'center', bg: '#F7F7F7', p: { base: '0', sm: '20px' } })}>
+                <div className={css({ bg: 'white', p: { base: '80px 24px 40px', sm: '48px' }, borderRadius: { base: '0', sm: '24px' }, boxShadow: { base: 'none', sm: '0 8px 28px rgba(0,0,0,0.12)' }, maxW: '480px', w: '100%', minH: { base: '100vh', sm: 'auto' }, textAlign: 'center', border: { base: 'none', sm: '1px solid #DDDDDD' } })}>
+                    <div className={css({ w: '80px', h: '80px', bg: '#F7F7F7', color: '#222', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: '24px' })}>
                         <Mail size={40} />
                     </div>
-                    <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#172554', mb: '12px' })}>이메일함을 확인해주세요</h2>
+                    <h2 className={css({ fontSize: '26px', fontWeight: '800', color: '#222', mb: '12px', letterSpacing: '-0.02em' })}>이메일함을 확인해주세요</h2>
                     <p className={css({ fontSize: '15px', color: '#666', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
                         <strong>{email}</strong> 주소로 가입 인증 메일을 발송했습니다.<br />메일 내의 인증 링크를 클릭하시면 가입이 완료됩니다.
                     </p>
-                    <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#3B82F6', fontWeight: '600', fontSize: '15px', _hover: { textDecoration: 'underline' } })}>
+                    <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#222', fontWeight: '800', fontSize: '15px', textDecoration: 'underline' })}>
                         로그인 페이지로 돌아가기 <ArrowRight size={16} />
                     </Link>
                 </div>
@@ -76,7 +78,6 @@ export default function SignUpPage() {
         // sm 미만(모바일): 배경/카드 통합, 전체 화면 사용
         // sm 이상(데스크탑): 기존 그라디언트 배경 + 카드 구조 유지
         <div className={css({
-            // 1280px max-width 컨테이너를 완전히 탈출하여 뷰포트 전체 너비를 채움
             width: '100vw',
             marginLeft: 'calc(-50vw + 50%)',
             mt: { base: '-80px', md: '-88px' },
@@ -85,143 +86,167 @@ export default function SignUpPage() {
             display: 'flex',
             alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center',
-            bg: { base: 'white', sm: 'linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%)' },
+            bg: { base: 'white', sm: '#F7F7F7' },
             p: { base: '0', sm: '20px' },
         })}>
             <div className={css({
-                bg: { base: 'white', sm: 'rgba(255, 255, 255, 0.9)' },
-                backdropFilter: { base: 'none', sm: 'blur(10px)' },
-                p: { base: '80px 20px 40px', sm: '40px 32px', md: '48px' },
+                bg: 'white',
+                p: { base: '80px 24px 40px', sm: '48px' },
                 borderRadius: { base: '0', sm: '24px' },
-                boxShadow: { base: 'none', sm: '0 20px 40px rgba(0,0,0,0.1)' },
-                maxW: { base: '100%', sm: '440px' },
+                boxShadow: { base: 'none', sm: '0 8px 28px rgba(0,0,0,0.12)' },
+                maxW: { base: '100%', sm: '480px' },
                 w: '100%',
                 minH: { base: '100vh', sm: 'auto' },
-                border: { base: 'none', sm: '1px solid rgba(255, 255, 255, 0.3)' },
+                border: { base: 'none', sm: '1px solid #DDDDDD' },
             })}>
-                <div className={css({ textAlign: 'center', mb: '28px' })}>
-                    <div className={css({
-                        w: '60px',
-                        h: '60px',
-                        bg: '#2563EB',
-                        color: 'white',
-                        borderRadius: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: '16px',
-                        boxShadow: '0 8px 16px rgba(52, 168, 83, 0.2)'
-                    })}>
-                        <UserPlus size={28} />
+                <div className={css({ textAlign: 'center', mb: '32px' })}>
+                    <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
+                        <Image src="/logo.png" alt="OnVoy Logo" width={32} height={32} priority />
+                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#172554', letterSpacing: '-0.02em' })}>OnVoy</span>
                     </div>
                     <h1 className={css({
-                        fontSize: { base: '24px', sm: '28px' },
+                        fontSize: { base: '26px', sm: '32px' },
                         fontWeight: '800',
-                        color: '#172554',
-                        mb: '8px',
-                        letterSpacing: '-0.02em',
-                        wordBreak: 'keep-all',
-                        lineHeight: 1.3,
+                        color: '#222',
+                        mb: '12px',
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1.2,
                     })}>
-                        새로운 여행의 시작 🌿
+                        함께 떠날 준비가 되셨나요?
                     </h1>
-                    <p className={css({ fontSize: { base: '14px', sm: '15px' }, color: '#666', lineHeight: 1.5, wordBreak: 'keep-all' })}>
-                        OnVoy와 함께 당신만의 특별한 일정을 만들어보세요.
+                    <p className={css({ fontSize: '16px', color: '#717171', wordBreak: 'keep-all' })}>
+                        설레는 여행의 첫 걸음, 온여정과 함께 시작해 보세요.
                     </p>
                 </div>
 
-                <form onSubmit={handleSignUp} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
-                        <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
-                            <Mail size={16} /> 이메일
-                        </label>
-                        <div className={css({ position: 'relative' })}>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className={css({
-                                    w: '100%',
-                                    p: '13px 16px',
-                                    pr: '40px',
-                                    bg: '#f9f9f9',
-                                    border: '1px solid',
-                                    borderColor: email.length > 0 ? (isEmailValid ? '#2563EB' : '#eee') : '#eee',
-                                    borderRadius: '12px',
-                                    outline: 'none',
-                                    transition: 'all 0.2s',
-                                    fontSize: '15px',
-                                    _focus: { bg: 'white', borderColor: '#2563EB', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
-                                })}
-                                placeholder="you@example.com"
-                            />
-                            {isEmailValid && <Check size={18} color="#2563EB" className={css({ position: 'absolute', right: '16px', top: '50%', transform: 'translateY(-50%)' })} />}
+                <form onSubmit={handleSignUp} className={css({ display: 'flex', flexDirection: 'column' })}>
+                    <div className={css({ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        border: '1px solid #B0B0B0',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        mb: '16px'
+                    })}>
+                        <div className={css({ 
+                            borderBottom: '1px solid #B0B0B0',
+                            p: '12px 16px',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            _focusWithin: { bg: touched.email && !isEmailValid ? '#fff1f0' : 'blue.50' }
+                        })}>
+                            {/* Focus/Error Indicator Bar */}
+                            <div className={css({ 
+                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                bg: touched.email && !isEmailValid ? '#ff4d4f' : 'brand.primary', 
+                                opacity: (touched.email && !isEmailValid) ? 1 : 0, 
+                                transition: 'all 0.2s',
+                                '.email-group:focus-within &': { opacity: 1 } 
+                            })} />
+                            <div className="email-group">
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: touched.email && !isEmailValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                    이메일
+                                </label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                                    required
+                                    className={css({
+                                        w: '100%',
+                                        outline: 'none',
+                                        fontSize: '15px',
+                                        color: '#222',
+                                        bg: 'transparent',
+                                    })}
+                                    placeholder="you@example.com"
+                                />
+                                {touched.email && !isEmailValid && (
+                                    <p className={css({ fontSize: '11px', color: '#ff4d4f', mt: '4px', fontWeight: '600' })}>유효한 이메일 주소를 입력해 주세요.</p>
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
-                        <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
-                            <Lock size={16} /> 비밀번호
-                        </label>
-                        <div className={css({ position: 'relative' })}>
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                minLength={6}
-                                className={css({
-                                    w: '100%',
-                                    p: '13px 16px',
-                                    pr: '44px',
-                                    bg: '#f9f9f9',
-                                    border: '1px solid',
-                                    borderColor: password.length > 0 ? (isPasswordValid ? '#2563EB' : '#d93025') : '#eee',
-                                    borderRadius: '12px',
-                                    outline: 'none',
-                                    transition: 'all 0.2s',
-                                    fontSize: '15px',
-                                    _focus: { bg: 'white', borderColor: '#2563EB', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
-                                })}
-                                placeholder="6자리 이상 입력해 주세요"
-                            />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#172554' } })}>
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
+                        <div className={css({ 
+                            borderBottom: '1px solid #B0B0B0',
+                            p: '12px 16px',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            _focusWithin: { bg: touched.password && !isPasswordValid ? '#fff1f0' : 'blue.50' }
+                        })}>
+                            {/* Focus/Error Indicator Bar */}
+                            <div className={css({ 
+                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                bg: touched.password && !isPasswordValid ? '#ff4d4f' : 'brand.primary', 
+                                opacity: (touched.password && !isPasswordValid) ? 1 : 0, 
+                                transition: 'all 0.2s',
+                                '.pw-group:focus-within &': { opacity: 1 } 
+                            })} />
+                            <div className="pw-group">
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: touched.password && !isPasswordValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                    비밀번호
+                                </label>
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
+                                    required
+                                    minLength={6}
+                                    className={css({
+                                        w: '100%',
+                                        outline: 'none',
+                                        fontSize: '15px',
+                                        color: '#222',
+                                        bg: 'transparent',
+                                    })}
+                                    placeholder="6자리 이상 입력해 주세요"
+                                />
+                                {touched.password && !isPasswordValid && (
+                                    <p className={css({ fontSize: '11px', color: '#ff4d4f', mt: '4px', fontWeight: '600' })}>6자리 이상 입력해 주세요.</p>
+                                )}
+                            </div>
                         </div>
-                    </div>
 
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
-                        <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
-                            <CheckCircle2 size={16} /> 비밀번호 확인
-                        </label>
-                        <div className={css({ position: 'relative' })}>
-                            <input
-                                type={showConfirmPassword ? 'text' : 'password'}
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                required
-                                minLength={6}
-                                className={css({
-                                    w: '100%',
-                                    p: '13px 16px',
-                                    pr: '44px',
-                                    bg: '#f9f9f9',
-                                    border: '1px solid',
-                                    borderColor: confirmPassword.length > 0 ? (isConfirmPasswordValid ? '#2563EB' : '#d93025') : '#eee',
-                                    borderRadius: '12px',
-                                    outline: 'none',
-                                    transition: 'all 0.2s',
-                                    fontSize: '15px',
-                                    _focus: { bg: 'white', borderColor: '#2563EB', boxShadow: '0 0 0 4px rgba(52, 168, 83, 0.1)' },
-                                })}
-                                placeholder="비밀번호를 다시 한 번 입력해 주세요"
-                            />
-                            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', p: '4px', color: '#666', _hover: { color: '#172554' } })}>
-                                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
+                        <div className={css({ 
+                            p: '12px 16px',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            _focusWithin: { bg: touched.confirmPassword && !isConfirmPasswordValid ? '#fff1f0' : 'blue.50' }
+                        })}>
+                            {/* Focus/Error Indicator Bar */}
+                            <div className={css({ 
+                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                bg: touched.confirmPassword && !isConfirmPasswordValid ? '#ff4d4f' : 'brand.primary', 
+                                opacity: (touched.confirmPassword && !isConfirmPasswordValid) ? 1 : 0, 
+                                transition: 'all 0.2s',
+                                '.cpw-group:focus-within &': { opacity: 1 } 
+                            })} />
+                            <div className="cpw-group">
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: touched.confirmPassword && !isConfirmPasswordValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                    비밀번호 확인
+                                </label>
+                                <input
+                                    type={showConfirmPassword ? 'text' : 'password'}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
+                                    required
+                                    minLength={6}
+                                    className={css({
+                                        w: '100%',
+                                        outline: 'none',
+                                        fontSize: '15px',
+                                        color: '#222',
+                                        bg: 'transparent',
+                                    })}
+                                    placeholder="비밀번호를 다시 한 번 입력해 주세요"
+                                />
+                                {touched.confirmPassword && !isConfirmPasswordValid && (
+                                    <p className={css({ fontSize: '11px', color: '#ff4d4f', mt: '4px', fontWeight: '600' })}>비밀번호가 일치하지 않습니다.</p>
+                                )}
+                            </div>
                         </div>
                     </div>
 
@@ -243,16 +268,16 @@ export default function SignUpPage() {
                         </div>
                     )}
 
-                    <div className={css({ mt: '4px', mb: '8px', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                    <div className={css({ mb: '16px', display: 'flex', alignItems: 'center', gap: '10px' })}>
                         <input
                             type="checkbox"
                             id="terms"
                             checked={termsAgreed}
                             onChange={(e) => setTermsAgreed(e.target.checked)}
-                            className={css({ w: '18px', h: '18px', cursor: 'pointer', accentColor: '#2563EB', flexShrink: 0 })}
+                            className={css({ w: '20px', h: '20px', cursor: 'pointer', accentColor: '#222', flexShrink: 0 })}
                         />
-                        <div className={css({ fontSize: '14px', color: '#555', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' })}>
-                            <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: '#2563EB', fontWeight: '600', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
+                        <div className={css({ fontSize: '14px', color: '#484848', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' })}>
+                            <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: '#222', fontWeight: '800', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
                                 이용약관 및 개인정보 처리방침
                             </button>
                             <label htmlFor="terms" className={css({ cursor: 'pointer', userSelect: 'none' })}>
@@ -266,26 +291,26 @@ export default function SignUpPage() {
                         disabled={loading || !termsAgreed || !isEmailValid || !isConfirmPasswordValid}
                         className={css({
                             w: '100%',
-                            py: '15px',
-                            bg: '#2563EB',
+                            py: '14px',
+                            bg: 'brand.primary',
                             color: 'white',
-                            fontWeight: 'bold',
+                            fontWeight: '800',
                             fontSize: '16px',
-                            borderRadius: '12px',
+                            borderRadius: '10px',
                             cursor: 'pointer',
-                            transition: 'all 0.2s',
+                            transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
-                            _hover: { bg: '#2d8a45', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(52, 168, 83, 0.2)' },
-                            _active: { transform: 'translateY(0)' },
-                            _disabled: { opacity: 0.5, cursor: 'not-allowed', bg: '#a5d6a7', transform: 'none', boxShadow: 'none', pointerEvents: 'none' },
-                            mt: '4px',
+                            _hover: { bg: 'brand.primaryDark', boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)' },
+                            _active: { transform: 'scale(0.96)', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' },
+                            _disabled: { opacity: 0.5, cursor: 'not-allowed', bg: '#DDDDDD', transform: 'none', boxShadow: 'none', pointerEvents: 'none' },
+                            mt: '8px',
                         })}
                     >
                         {loading ? <Loader2 size={20} className={css({ animation: 'spin 1s linear infinite' })} /> : (
-                            <>무료로 시작하기 <Sparkles size={18} /></>
+                            <>회원가입하기</>
                         )}
                     </button>
                 </form>
@@ -302,10 +327,10 @@ export default function SignUpPage() {
                     <Link
                         href="/login"
                         className={css({
-                            color: '#2563EB',
-                            fontWeight: '700',
-                            textDecoration: 'none',
-                            _hover: { textDecoration: 'underline' },
+                            color: '#222',
+                            fontWeight: '800',
+                            textDecoration: 'underline',
+                            _hover: { color: '#000' },
                         })}
                     >
                         로그인하기

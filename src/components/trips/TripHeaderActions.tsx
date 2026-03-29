@@ -195,21 +195,21 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                 {/* 첫 번째 줄: 여행 타이틀 + (오너인 경우) 수정/삭제 버튼 */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' })}>
                     <h1 className={css({
-                        fontSize: { base: '24px', sm: '30px' },
+                        fontSize: { base: '26px', sm: '32px' },
                         fontWeight: '800',
-                        color: '#172554',
+                        color: '#222',
                         wordBreak: 'keep-all',
-                        lineHeight: 1.3,
-                        letterSpacing: '-0.5px',
+                        lineHeight: 1.2,
+                        letterSpacing: '-1px',
                         flex: 1,
-                        mt: '-2px'
+                        mt: '4px'
                     })}>
                         {trip.destination} 여행
                     </h1>
 
                     {/* 오너만 수정/삭제 아이콘 표시 */}
                     {isOwner && (
-                        <div className={css({ display: 'flex', gap: '6px', flexShrink: 0 })}>
+                        <div className={css({ display: 'flex', gap: '8px', flexShrink: 0 })}>
                             <button
                                 onClick={() => {
                                     setDestination(trip.destination)
@@ -222,7 +222,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                                 }}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    p: '8px', bg: '#EFF6FF', color: '#3B82F6', border: 'none', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#BFDBFE', transform: 'scale(1.05)' }
+                                    p: '8px', bg: 'transparent', color: '#222', border: '1px solid #DDDDDD', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' }
                                 })}
                                 title="여행 수정"
                             >
@@ -232,7 +232,7 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                                 onClick={() => setShowDeleteConfirm(true)}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    p: '8px', bg: '#fce8e6', color: '#d93025', border: 'none', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#fad2cf', transform: 'scale(1.05)' }
+                                    p: '8px', bg: 'transparent', color: '#222', border: '1px solid #DDDDDD', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' }
                                 })}
                                 title="여행 삭제"
                             >
@@ -254,25 +254,25 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
                 })}>
                     {/* 날짜 */}
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
-                        <Calendar size={15} color="#3B82F6" />
+                        <Calendar size={15} color="#3B82F6" strokeWidth={2.5} />
                         <span>{start} ~ {end}</span>
                     </div>
 
-                    <span className={css({ color: '#ccc', px: '2px' })}>•</span>
+                    <span className={css({ color: '#DDDDDD', px: '2px' })}>•</span>
                     
                     {/* 인원 */}
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
-                        <Users size={15} color="#2563EB" />
+                        <Users size={15} color="#10B981" strokeWidth={2.5} />
                         <span>성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}</span>
                     </div>
                     
                     {/* 총 예상 비용 */}
                     {!costSummary.loading && costSummary.byCurrency.length > 0 && (
                         <>
-                            <span className={css({ color: '#ccc', px: '2px' })}>•</span>
+                            <span className={css({ color: '#DDDDDD', px: '2px' })}>•</span>
                             <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
-                                <Wallet size={15} color="#FBBC05" />
-                                <span className={css({ fontWeight: '700', color: '#172554' })}>
+                                <Wallet size={15} color="#F59E0B" strokeWidth={2.5} />
+                                <span className={css({ fontWeight: '700', color: '#222' })}>
                                     {costSummary.totalKrw !== null ? `약 ${formatKRW(costSummary.totalKrw)}` : '비용 합산 중'}
                                 </span>
                             </div>

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { LogIn, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 
@@ -54,7 +55,6 @@ export default function LoginPage() {
         // 모바일(330px)에서는 배경과 카드를 통합: 전체 높이를 카드로 채워 여백 손실 최소화
         // sm(640px) 이상에서는 기존 그라디언트 배경 위에 카드를 띄우는 구조 유지
         <div className={css({
-            // 1280px max-width 컨테이너를 완전히 탈출하여 뷰포트 전체 너비를 채움
             width: '100vw',
             marginLeft: 'calc(-50vw + 50%)',
             mt: { base: '-80px', md: '-88px' },
@@ -63,99 +63,114 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center',
-            bg: { base: 'white', sm: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)' },
+            bg: { base: 'white', sm: '#F7F7F7' },
             p: { base: '0', sm: '20px' },
         })}>
             <div className={css({
-                bg: { base: 'white', sm: 'rgba(255, 255, 255, 0.9)' },
-                backdropFilter: { base: 'none', sm: 'blur(10px)' },
-                p: { base: '80px 20px 40px', sm: '40px 32px', md: '48px' },
+                bg: 'white',
+                p: { base: '80px 24px 40px', sm: '48px' },
                 borderRadius: { base: '0', sm: '24px' },
-                boxShadow: { base: 'none', sm: '0 20px 40px rgba(0,0,0,0.1)' },
-                maxW: { base: '100%', sm: '440px' },
+                boxShadow: { base: 'none', sm: '0 8px 28px rgba(0,0,0,0.12)' },
+                maxW: { base: '100%', sm: '480px' },
                 w: '100%',
                 minH: { base: '100vh', sm: 'auto' },
-                border: { base: 'none', sm: '1px solid rgba(255, 255, 255, 0.3)' },
+                border: { base: 'none', sm: '1px solid #DDDDDD' },
             })}>
-                <div className={css({ textAlign: 'center', mb: '28px' })}>
-                    <div className={css({
-                        w: '60px',
-                        h: '60px',
-                        bg: '#3B82F6',
-                        color: 'white',
-                        borderRadius: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        mx: 'auto',
-                        mb: '16px',
-                        boxShadow: '0 8px 16px rgba(66, 133, 244, 0.2)'
-                    })}>
-                        <LogIn size={28} />
+                <div className={css({ textAlign: 'center', mb: '32px' })}>
+                    <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
+                        <Image src="/logo.png" alt="OnVoy Logo" width={32} height={32} priority />
+                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#172554', letterSpacing: '-0.02em' })}>OnVoy</span>
                     </div>
                     <h1 className={css({
-                        fontSize: { base: '24px', sm: '28px' },
+                        fontSize: { base: '26px', sm: '32px' },
                         fontWeight: '800',
-                        color: '#172554',
-                        mb: '8px',
-                        letterSpacing: '-0.02em',
-                        wordBreak: 'keep-all',
-                        lineHeight: 1.3,
+                        color: '#222',
+                        mb: '12px',
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1.2,
                     })}>
                         반가워요! 다시 오셨네요.
                     </h1>
-                    <p className={css({ fontSize: { base: '14px', sm: '15px' }, color: '#666', lineHeight: 1.5, wordBreak: 'keep-all' })}>
-                        OnVoy와 함께 당신의 모험을 기록해 보세요.
+                    <p className={css({ fontSize: '16px', color: '#717171', wordBreak: 'keep-all' })}>
+                        소중한 여행의 모든 순간, 온여정이 동행할게요.
                     </p>
                 </div>
 
-                <form onSubmit={handleLogin} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
-                        <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
-                            <Mail size={16} /> 이메일
-                        </label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                            className={css({
-                                w: '100%',
-                                p: '13px 16px',
-                                bg: '#f9f9f9',
-                                border: '1px solid #eee',
-                                borderRadius: '12px',
-                                outline: 'none',
-                                transition: 'all 0.2s',
-                                fontSize: '15px',
-                                _focus: { bg: 'white', borderColor: '#3B82F6', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
-                            })}
-                            placeholder="you@example.com"
-                        />
-                    </div>
+                <form onSubmit={handleLogin} className={css({ display: 'flex', flexDirection: 'column' })}>
+                    <div className={css({ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        border: '1px solid #B0B0B0',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        mb: '16px'
+                    })}>
+                        <div className={css({ 
+                            borderBottom: '1px solid #B0B0B0',
+                            p: '12px 16px',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            _focusWithin: { bg: 'blue.50' }
+                        })}>
+                            {/* Focus Indicator Bar */}
+                            <div className={css({ 
+                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                bg: 'brand.primary', opacity: 0, transition: 'opacity 0.2s',
+                                '.group:focus-within &': { opacity: 1 } 
+                            })} />
+                            <div className="group">
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                    이메일
+                                </label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className={css({
+                                        w: '100%',
+                                        outline: 'none',
+                                        fontSize: '15px',
+                                        color: '#222',
+                                        bg: 'transparent',
+                                    })}
+                                    placeholder="you@example.com"
+                                />
+                            </div>
+                        </div>
 
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
-                        <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', color: '#444' })}>
-                            <Lock size={16} /> 비밀번호
-                        </label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                            className={css({
-                                w: '100%',
-                                p: '13px 16px',
-                                bg: '#f9f9f9',
-                                border: '1px solid #eee',
-                                borderRadius: '12px',
-                                outline: 'none',
-                                transition: 'all 0.2s',
-                                fontSize: '15px',
-                                _focus: { bg: 'white', borderColor: '#3B82F6', boxShadow: '0 0 0 4px rgba(66, 133, 244, 0.1)' },
-                            })}
-                            placeholder="••••••••"
-                        />
+                        <div className={css({ 
+                            p: '12px 16px',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            _focusWithin: { bg: 'blue.50' }
+                        })}>
+                            {/* Focus Indicator Bar */}
+                            <div className={css({ 
+                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                bg: 'brand.primary', opacity: 0, transition: 'opacity 0.2s',
+                                '.group:focus-within &': { opacity: 1 } 
+                            })} />
+                            <div className="group">
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                    비밀번호
+                                </label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    className={css({
+                                        w: '100%',
+                                        outline: 'none',
+                                        fontSize: '15px',
+                                        color: '#222',
+                                        bg: 'transparent',
+                                    })}
+                                    placeholder="••••••••"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
@@ -218,26 +233,26 @@ export default function LoginPage() {
                         disabled={loading}
                         className={css({
                             w: '100%',
-                            py: '15px',
-                            bg: '#111',
+                            py: '14px',
+                            bg: 'brand.primary',
                             color: 'white',
-                            fontWeight: 'bold',
+                            fontWeight: '800',
                             fontSize: '16px',
-                            borderRadius: '12px',
+                            borderRadius: '10px',
                             cursor: loading ? 'not-allowed' : 'pointer',
-                            transition: 'all 0.2s',
+                            transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
-                            _hover: { bg: '#333', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' },
-                            _active: { transform: 'translateY(0)' },
+                            _hover: { bg: 'brand.primaryDark', boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)' },
+                            _active: { transform: 'scale(0.96)', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' },
                             _disabled: { opacity: 0.7, transform: 'none' },
-                            mt: '4px',
+                            mt: '8px',
                         })}
                     >
                         {loading ? <Loader2 size={20} className={css({ animation: 'spin 1s linear infinite' })} /> : (
-                            <>로그인 <ArrowRight size={18} /></>
+                            <>계속하기</>
                         )}
                     </button>
                 </form>
@@ -254,10 +269,10 @@ export default function LoginPage() {
                     <Link
                         href="/signup"
                         className={css({
-                            color: '#3B82F6',
-                            fontWeight: '700',
-                            textDecoration: 'none',
-                            _hover: { textDecoration: 'underline' },
+                            color: '#222',
+                            fontWeight: '800',
+                            textDecoration: 'underline',
+                            _hover: { color: '#000' },
                         })}
                     >
                         회원가입하기
