@@ -47,7 +47,7 @@ BEGIN
         url := 'https://runbcaegpefqnljsswhv.supabase.co/functions/v1/send-push-notification',
         headers := jsonb_build_object(
             'Content-Type', 'application/json',
-            'Authorization', 'Bearer ' || current_setting('request.headers')::json->>'authorization'
+            'Authorization', 'Bearer ' || COALESCE((current_setting('request.headers', true)::jsonb)->>'authorization', '')
         ),
         body := payload
       );

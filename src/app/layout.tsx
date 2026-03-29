@@ -7,6 +7,7 @@ import OfflineBanner from '@/components/common/OfflineBanner'
 import { css } from 'styled-system/css'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import NativeAnalytics from '@/components/common/NativeAnalytics'
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
   title: 'OnVoy (온여정) - 당신의 친절한 여행 동반자',
@@ -41,6 +42,7 @@ export default function RootLayout({
           전역 레이아웃
           TODO: 인증 여부에 따라 Navbar 표시 속성 변경 처리 가능
         */}
+        <SpeedInsights />
         <OfflineBanner />
         <Navbar />
         <NotificationBanner />
@@ -50,9 +52,9 @@ export default function RootLayout({
             w: '100%',
             maxW: '1280px',
             mx: 'auto',
-            p: { 
-                base: 'calc(64px + env(safe-area-inset-top)) 16px calc(80px + env(safe-area-inset-bottom))', 
-                md: 'calc(88px + env(safe-area-inset-top)) 24px 32px' 
+            p: {
+              base: 'calc(64px + env(safe-area-inset-top)) 16px calc(80px + env(safe-area-inset-bottom))',
+              md: 'calc(88px + env(safe-area-inset-top)) 24px 32px'
             },
           })}
         >
