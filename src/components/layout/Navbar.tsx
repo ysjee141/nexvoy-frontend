@@ -19,7 +19,6 @@ const PAGE_TITLES: Record<string, string> = {
     '/trips/detail': '여행 상세',
     '/templates/detail': '템플릿 수정',
     '/trips/checklist': '준비물 체크리스트',
-    '/guide': '소개',
     '/login': '로그인',
     '/signup': '회원가입',
     '/profile/withdrawal': '회원 탈퇴',
@@ -93,9 +92,6 @@ export default function Navbar() {
                     <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: '#172554' })}>
                         <Image src="/logo.png" alt="OnVoy Logo" width={28} height={28} priority />
                         <span>OnVoy</span>
-                    </Link>
-                    <Link href="/guide" className={css({ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '14px', fontWeight: '500', color: '#555', _hover: { color: '#3B82F6' }, transition: 'color 0.15s' })}>
-                        <BookOpen size={16} /> 소개
                     </Link>
                 </div>
 
