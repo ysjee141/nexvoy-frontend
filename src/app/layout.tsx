@@ -7,6 +7,7 @@ import OfflineBanner from '@/components/common/OfflineBanner'
 import { css } from 'styled-system/css'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import NativeAnalytics from '@/components/common/NativeAnalytics'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata: Metadata = {
   title: 'OnVoy (온여정) - 당신의 친절한 여행 동반자',
@@ -63,6 +64,7 @@ export default function RootLayout({
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}
         <NativeAnalytics />
+        <SpeedInsights />
       </body>
     </html>
   )
