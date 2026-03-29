@@ -69,12 +69,11 @@ export default function Navbar() {
                 zIndex: 50,
                 w: '100%',
                 display: 'block',
-                bg: 'rgba(255, 255, 255, 0.7)',
-                backdropFilter: 'blur(20px)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.2)',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                bg: '#FFFFFF',
+                borderBottom: '1px solid #EBEBEB',
+                boxShadow: '0 1px 12px rgba(0,0,0,0.08)',
                 paddingTop: 'env(safe-area-inset-top)',
-                transition: 'all 0.3s ease',
+                transition: 'transform 0.3s ease',
             })}
         >
             {/* ── 데스크톱 버전 (sm 이상) ── */}
@@ -124,12 +123,12 @@ export default function Navbar() {
                                     </button>
                                 </>
                             ) : (
-                                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '5px', bg: 'transparent', color: 'brand.primary', px: '14px', py: '8px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', border: '1px solid', borderColor: 'rgba(59, 130, 246, 0.2)', _hover: { bg: 'rgba(59, 130, 246, 0.05)' } })}>
-                                        <UserPlus size={15} /> 회원가입
+                                <div className={css({ display: 'flex', alignItems: 'center', gap: '12px' })}>
+                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'transparent', color: '#222', px: '12px', py: '10px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', _hover: { bg: '#F7F7F7' } })}>
+                                        회원가입
                                     </Link>
-                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '5px', bg: 'brand.secondary', color: 'white', px: '14px', py: '8px', borderRadius: '10px', fontSize: '14px', fontWeight: '600', transition: 'all 0.2s', _hover: { transform: 'translateY(-1px)', boxShadow: '0 4px 12px rgba(23, 37, 84, 0.2)' } })}>
-                                        <LogIn size={15} /> 로그인
+                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'brand.primary', color: 'white', px: '24px', py: '12px', borderRadius: '32px', fontSize: '14px', fontWeight: '800', transition: 'all 0.2s ease', _hover: { transform: 'scale(1.02)', boxShadow: '0 6px 20px rgba(255, 56, 92, 0.3)' } })}>
+                                        로그인
                                     </Link>
                                 </div>
                             )}
