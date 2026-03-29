@@ -121,55 +121,107 @@ export default function SharePage() {
     }
 
     return (
-        <div className={css({ maxW: '800px', mx: 'auto', p: '24px', bg: 'white', minH: '100vh' })}>
-            <div className={css({ mb: '40px', textAlign: 'center' })}>
-                <span className={css({ px: '12px', py: '6px', bg: '#EFF6FF', color: '#3B82F6', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', mb: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' })}>
-                    <BadgeCheck size={14} /> OnVoy 인증 공유 일정
-                </span>
-                <h1 className={css({ fontSize: '32px', fontWeight: '900', mb: '12px', color: '#172554' })}>
-                    {trip?.destination ? `${trip.destination} 여행` : '여행 일정'}
+        <div className={css({ maxW: '800px', mx: 'auto', p: { base: '24px 20px', sm: '40px 24px' }, bg: 'white', minH: '100vh' })}>
+            <div className={css({ mb: '48px', textAlign: 'left', borderBottom: '1px solid #EEEEEE', pb: '32px' })}>
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '20px' })}>
+                    <div className={css({ w: '32px', h: '32px', bg: 'brand.primary', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '900', fontSize: '18px' })}>O</div>
+                    <span className={css({ fontSize: '16px', fontWeight: '800', color: '#222', letterSpacing: '-0.5px' })}>OnVoy</span>
+                </div>
+                
+                <h1 className={css({ 
+                    fontSize: { base: '30px', sm: '40px' }, 
+                    fontWeight: '900', 
+                    mb: '16px', 
+                    color: '#222',
+                    lineHeight: 1.1,
+                    letterSpacing: '-1.5px'
+                })}>
+                    {trip?.destination ? `${trip.destination} 여행 일정` : '공유된 여행 일정'}
                 </h1>
-                <div className={css({ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '16px', color: '#666', fontSize: '14px' })}>
+
+                <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '16px', color: '#717171', fontSize: '15px', fontWeight: '500' })}>
                     {trip?.start_date && (
-                        <span className={css({ display: 'flex', alignItems: 'center', gap: '4px' })}>
-                            <Calendar size={16} /> {formatDate(trip.start_date)} ~ {formatDate(trip.end_date)}
+                        <span className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
+                            <Calendar size={18} /> {formatDate(trip.start_date)} ~ {formatDate(trip.end_date)}
                         </span>
                     )}
                     {trip?.destination && (
-                        <span className={css({ display: 'flex', alignItems: 'center', gap: '4px' })}>
-                            <MapPin size={16} /> {trip.destination}
+                        <span className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
+                            <MapPin size={18} /> {trip.destination}
                         </span>
                     )}
                 </div>
             </div>
 
-            <div className={css({ display: 'flex', flexDirection: 'column', gap: '20px' })}>
+            <div className={css({ display: 'flex', flexDirection: 'column' })}>
                 {plans.length === 0 ? (
-                    <div className={css({ textAlign: 'center', py: '60px', color: '#999' })}>등록된 일정이 없습니다.</div>
+                    <div className={css({ textAlign: 'center', py: '60px', color: '#717171' })}>등록된 일정이 없습니다.</div>
                 ) : (
                     plans.map((plan) => (
-                        <div key={plan.id} className={css({ p: '20px', border: '1px solid #eee', borderRadius: '16px', _hover: { borderColor: '#3B82F6' } })}>
-                            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: '12px' })}>
-                                <div>
-                                    <h3 className={css({ fontSize: '18px', fontWeight: '700', mb: '4px' })}>{plan.title}</h3>
-                                    <div className={css({ fontSize: '12px', color: '#888', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                        <Calendar size={12} /> {formatDate(plan.start_datetime_local)}
-                                    </div>
-                                </div>
-                                <span className={css({ fontSize: '14px', fontWeight: 'bold', color: '#3B82F6', bg: '#EFF6FF', px: '10px', py: '4px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 })}>
-                                    <Clock size={14} /> {formatLocalTime(plan.start_datetime_local)}
+                        <div key={plan.id} className={css({ 
+                            py: '24px', 
+                            borderBottom: '1px solid #EEEEEE',
+                            display: 'flex',
+                            flexDirection: { base: 'column', sm: 'row' },
+                            gap: { base: '12px', sm: '24px' }
+                        })}>
+                            <div className={css({ minW: '100px', pt: '4px' })}>
+                                <span className={css({ 
+                                    fontSize: '15px', 
+                                    fontWeight: '800', 
+                                    color: '#222', 
+                                    bg: '#F7F7F7', 
+                                    px: '10px', 
+                                    py: '4px', 
+                                    borderRadius: '6px',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px'
+                                })}>
+                                    <Clock size={16} /> {formatLocalTime(plan.start_datetime_local)}
                                 </span>
                             </div>
-                            {plan.location && <p className={css({ fontSize: '14px', color: '#666', mb: '8px', display: 'flex', alignItems: 'center', gap: '4px' })}><MapPin size={14} /> {plan.location}</p>}
-                            {plan.memo && <p className={css({ fontSize: '14px', color: '#444', bg: '#f8f9fa', p: '12px', borderRadius: '8px' })}>📝 {plan.memo}</p>}
+                            
+                            <div className={css({ flex: 1 })}>
+                                <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '8px', color: '#222' })}>{plan.title}</h3>
+                                <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '12px', mb: '12px' })}>
+                                    <span className={css({ fontSize: '14px', color: '#717171', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                        <Calendar size={14} /> {formatDate(plan.start_datetime_local)}
+                                    </span>
+                                    {plan.location && (
+                                        <span className={css({ fontSize: '14px', color: '#717171', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                            <MapPin size={14} /> {plan.location}
+                                        </span>
+                                    )}
+                                </div>
+                                {plan.memo && (
+                                    <div className={css({ 
+                                        fontSize: '15px', 
+                                        color: '#484848', 
+                                        lineHeight: 1.6,
+                                        p: '16px',
+                                        bg: '#F7F7F7',
+                                        borderRadius: '12px',
+                                        border: '1px solid #EEEEEE'
+                                    })}>
+                                        {plan.memo}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     ))
                 )}
             </div>
 
-            <div className={css({ mt: '60px', pt: '40px', borderTop: '1px solid #eee', textAlign: 'center' })}>
-                <p className={css({ color: '#888', fontSize: '14px', mb: '16px' })}>나만의 멋진 여행 계획을 세우고 싶다면?</p>
-                <a href="/" className={css({ px: '24px', py: '12px', bg: '#111', color: 'white', borderRadius: '12px', fontWeight: 'bold', textDecoration: 'none', display: 'inline-block' })}>OnVoy 시작하기</a>
+            <div className={css({ mt: '80px', pt: '40px', borderTop: '1px solid #EEEEEE', textAlign: 'center' })}>
+                <p className={css({ color: '#717171', fontSize: '15px', mb: '20px', fontWeight: '500' })}>나만의 멋진 여행 계획을 세우고 싶다면?</p>
+                <a href="/" className={css({ 
+                    px: '32px', py: '16px', bg: 'brand.primary', color: 'white', borderRadius: '12px', 
+                    fontWeight: '800', textDecoration: 'none', display: 'inline-block',
+                    boxShadow: '0 8px 16px rgba(59, 130, 246, 0.2)',
+                    transition: 'all 0.2s',
+                    _active: { transform: 'scale(0.96)' }
+                })}>OnVoy 시작하기</a>
             </div>
         </div>
     )

@@ -213,15 +213,15 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     }, {})
 
     return (
-        <div className={css({ bg: 'white', p: { base: '16px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
+        <div className={css({ bg: 'white', p: { base: '0', sm: '24px' }, borderRadius: { base: 0, sm: '16px' }, boxShadow: { base: 'none', sm: '0 4px 12px rgba(0,0,0,0.03)' }, pb: { base: '80px', sm: '24px' } })}>
             
             {/* 1. 타이틀 & 보기 모드, 버튼 영역 (반응형 다중 구조) */}
-            <div className={css({ display: 'flex', flexDirection: 'column', gap: '16px', mb: '20px' })}>
+            <div className={css({ display: 'flex', flexDirection: 'column', gap: '16px', mb: '20px', px: { base: '20px', sm: 0 }, pt: { base: '20px', sm: 0 } })}>
                 
                 {/* 상단 라인: 타이틀 + 모바일 필터(드롭다운) */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold' })}>
-                        준비물 챙기기 {totalItems > 0 && <span className={css({ color: '#3B82F6', ml: '8px' })}>{progressPercent}%</span>}
+                    <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', color: '#222' })}>
+                        준비물 챙기기 {totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>}
                     </h2>
                     
                     {/* 모바일 전용 뷰 드롭다운 */}
@@ -253,16 +253,14 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
 
                     {/* 모바일/PC 액션 버튼 */}
                     <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'nowrap' })}>
-                        {/* 항목 추가 버튼 (모바일: flex-1 맨왼쪽) */}
+                        {/* 항목 추가 버튼 (PC에서만 보임, 모바일은 하단 Sticky) */}
                         <button
                             onClick={() => setIsAdding(!isAdding)}
                             className={css({
-                                order: { base: -1, sm: 1 },
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: '#111', color: 'white', px: '16px', py: { base: '10px', sm: '8px' },
-                                borderRadius: '8px', fontWeight: '600', fontSize: '13px', cursor: 'pointer', border: 'none',
-                                w: { base: '100%', sm: 'auto' }, flex: { base: 1, sm: 'none' },
-                                _hover: { bg: '#333' }, whiteSpace: 'nowrap'
+                                display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                bg: '#222', color: 'white', px: '16px', py: '10px',
+                                borderRadius: '8px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', border: 'none',
+                                _hover: { bg: '#000' }, whiteSpace: 'nowrap'
                             })}
                         >
                             <Plus size={16} /> 항목 추가
@@ -272,73 +270,73 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             onClick={() => setIsTemplateModalOpen(true)}
                             className={css({
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                px: '16px', py: { base: '10px', sm: '8px' },
-                                bg: 'white', color: '#3B82F6', border: '1px solid rgba(16, 185, 129, 0.4)', borderRadius: '8px',
-                                fontSize: '13px', fontWeight: '700', cursor: 'pointer',
-                                flex: { base: 'none', sm: 'none' }, flexShrink: 0,
+                                px: '16px', py: { base: '10px', sm: '10px' },
+                                bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px',
+                                fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                                w: { base: '100%', sm: 'auto' }, flex: { base: 1, sm: 'none' },
+                                flexShrink: 0,
                                 whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                boxShadow: '0 2px 6px rgba(16, 185, 129, 0.08)',
-                                _hover: { bg: '#EFF6FF', borderColor: '#3B82F6', transform: 'translateY(-1px)', boxShadow: '0 4px 10px rgba(16, 185, 129, 0.15)' },
+                                _hover: { bg: '#F7F7F7', borderColor: '#222' },
                                 _active: { transform: 'scale(0.98)' }
                             })}
                         >
                             <ListTodo size={15} />
-                            <span>템플릿</span>
+                            <span>템플릿 불러오기</span>
                         </button>
                     </div>
                 </div>
             </div>
 
             {totalItems > 0 && (
-                <div className={css({ w: '100%', bg: '#eee', h: '8px', borderRadius: '4px', mb: '24px', overflow: 'hidden' })}>
+                <div className={css({ w: '100%', bg: '#F7F7F7', h: '6px', borderRadius: '3px', mb: '24px', overflow: 'hidden', px: { base: '20px', sm: 0 } })}>
                     <div
-                        className={css({ h: '100%', bg: 'linear-gradient(90deg, #3B82F6, #2563EB)', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                        className={css({ h: '100%', bg: '#222', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
                         style={{ width: `${progressPercent}%` }}
                     />
                 </div>
             )}
 
             {isAdding && (
-                <form onSubmit={addItem} className={css({ mb: '20px' })}>
-                    <div className={css({ display: 'flex', gap: '8px', flexDirection: { base: 'column', sm: 'row' } })}>
-                        {/* 1. 카테고리 (Mobile: 위에 독립적으로 배치됨, PC: 한 줄에 배치됨) */}
-                        <div className={css({ position: 'relative', w: { base: '100%', sm: 'auto' }, flexShrink: 0 })}>
-                            <select
-                                value={newItemCategory}
-                                onChange={e => setNewItemCategory(e.target.value)}
-                                className={css({ w: '100%', p: '12px 30px 12px 12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', minWidth: '120px', fontSize: '14px', fontWeight: '500', color: '#1E3A8A', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6' } })}
-                            >
-                                {CATEGORIES.map((cat: any) => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                            </select>
-                            <div className={css({ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
-                                <ChevronDown size={14} />
-                            </div>
-                        </div>
-
-                        {/* 2. 입력창 및 액션 버튼들 (Mobile/PC 모두 1줄 구성) */}
-                        <div className={css({ display: 'flex', gap: '8px', flex: 1, flexDirection: 'row', w: '100%' })}>
+                <form onSubmit={addItem} className={css({ mb: '24px', px: { base: '20px', sm: 0 } })}>
+                    <div className={css({ 
+                        display: 'flex', 
+                        flexDirection: 'column',
+                        bg: '#F7F7F7',
+                        p: '16px',
+                        borderRadius: '16px',
+                        border: '1px solid #DDDDDD'
+                    })}>
+                        <div className={css({ display: 'flex', gap: '8px', mb: '12px' })}>
                             <input
                                 type="text"
                                 autoFocus
                                 value={newItemName}
                                 onChange={e => setNewItemName(e.target.value)}
-                                placeholder="예: 여권, 충전기"
-                                className={css({ w: '100%', flex: 1, minW: 0, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
+                                placeholder="어떤 준비물인가요?"
+                                className={css({ flex: 1, p: '12px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '15px' })}
                             />
+                        </div>
+                        <div className={css({ display: 'flex', gap: '8px', alignItems: 'center' })}>
+                             <select
+                                value={newItemCategory}
+                                onChange={e => setNewItemCategory(e.target.value)}
+                                className={css({ flex: 1, p: '10px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '14px' })}
+                            >
+                                {CATEGORIES.map((cat: any) => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                            </select>
                             <button
                                 type="submit"
                                 disabled={!newItemName.trim()}
-                                className={css({ w: 'auto', p: { base: '12px 14px', sm: '12px 20px' }, bg: '#3B82F6', color: 'white', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', flexShrink: 0, textAlign: 'center', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _active: { transform: 'scale(0.98)' } })}
+                                className={css({ py: '10px', px: '20px', bg: 'brand.primary', color: 'white', fontWeight: '800', borderRadius: '8px', border: 'none', cursor: 'pointer' })}
                             >
-                                등록
+                                추가
                             </button>
-
                             <button
                                 type="button"
                                 onClick={() => { setIsAdding(false); setNewItemName(''); }}
-                                className={css({ w: 'auto', p: { base: '12px 14px', sm: '12px 20px' }, bg: '#f1f3f4', color: '#555', fontWeight: 'bold', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '14px', flexShrink: 0, textAlign: 'center', _hover: { bg: '#e8eaed' }, _active: { transform: 'scale(0.98)' } })}
+                                className={css({ py: '10px', px: '16px', bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px', fontWeight: '800' })}
                             >
                                 취소
                             </button>
@@ -360,11 +358,11 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             if (categoryItems.length === 0) return null
 
                             return (
-                                <div key={cat} className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                                    <h3 className={css({ fontSize: '15px', fontWeight: 'bold', color: '#555', borderBottom: '1px solid #eee', pb: '4px' })}>
-                                        {cat} <span className={css({ color: '#888', fontWeight: 'normal', fontSize: '13px', ml: '4px' })}>{categoryItems.length}</span>
+                                <div key={cat} className={css({ display: 'flex', flexDirection: 'column' })}>
+                                    <h3 className={css({ px: '20px', fontSize: '14px', fontWeight: '800', color: '#222', bg: '#F7F7F7', py: '10px', borderBottom: '1px solid #EEEEEE' })}>
+                                        {cat} <span className={css({ color: '#717171', fontWeight: 'normal', fontSize: '12px', ml: '4px' })}>{categoryItems.length}</span>
                                     </h3>
-                                    <ul className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
+                                    <ul className={css({ display: 'flex', flexDirection: 'column' })}>
                                         {categoryItems.map((item) => (
                                             <li
                                                 key={item.id}
@@ -373,17 +371,27 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'space-between',
-                                                    p: '14px 16px',
-                                                    border: '1px solid #eaeaea',
-                                                    borderRadius: '8px',
+                                                    p: '16px 20px',
+                                                    borderBottom: '1px solid #EEEEEE',
                                                     cursor: 'pointer',
-                                                    transition: 'bg 0.2s',
-                                                    _hover: { bg: '#fafafa', '& .delete-btn': { opacity: 1 } }
+                                                    transition: 'bg 0.1s',
+                                                    _active: { bg: '#F7F7F7' },
+                                                    _hover: { bg: { base: 'transparent', sm: '#fafafa' }, '& .delete-btn': { opacity: 1 } }
                                                 })}
                                             >
-                                                <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' })}>
-                                                    {item.is_checked ? <CheckSquare color="#3B82F6" size={20} /> : <Square color="#ccc" size={20} />}
-                                                    <span className={css({ fontSize: '15px', color: item.is_checked ? '#888' : '#333', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
+                                                <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
+                                                    <div className={css({ 
+                                                        w: '24px', h: '24px', 
+                                                        border: '2px solid', 
+                                                        borderColor: item.is_checked ? '#222' : '#B0B0B0',
+                                                        borderRadius: '4px',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        bg: item.is_checked ? '#222' : 'transparent',
+                                                        transition: 'all 0.2s'
+                                                    })}>
+                                                        {item.is_checked && <Check size={16} color="white" />}
+                                                    </div>
+                                                    <span className={css({ fontSize: '16px', fontWeight: '500', color: item.is_checked ? '#B0B0B0' : '#222', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
                                                         {item.item_name}
                                                     </span>
                                                     {/* 템플릿 배지 표시 */}
@@ -407,12 +415,12 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         })
                     ) : (
                         Object.entries(templateGroups).map(([grpName, grpItems]) => (
-                            <div key={grpName} className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                                <h3 className={css({ fontSize: '15px', fontWeight: 'bold', color: '#555', borderBottom: '1px solid #eee', pb: '4px', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                            <div key={grpName} className={css({ display: 'flex', flexDirection: 'column' })}>
+                                <h3 className={css({ px: '20px', fontSize: '14px', fontWeight: '800', color: '#222', bg: '#F7F7F7', py: '10px', borderBottom: '1px solid #EEEEEE', display: 'flex', alignItems: 'center', gap: '6px' })}>
                                     {grpName === '직접 추가함' ? '✍️ 직접 추가함' : `📦 ${grpName}`}
-                                    <span className={css({ color: '#888', fontWeight: 'normal', fontSize: '13px', ml: '4px' })}>{grpItems.length}</span>
+                                    <span className={css({ color: '#717171', fontWeight: 'normal', fontSize: '12px', ml: '4px' })}>{grpItems.length}</span>
                                 </h3>
-                                <ul className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
+                                <ul className={css({ display: 'flex', flexDirection: 'column' })}>
                                     {grpItems.map((item) => (
                                         <li
                                             key={item.id}
@@ -421,20 +429,30 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'space-between',
-                                                p: '14px 16px',
-                                                border: '1px solid #eaeaea',
-                                                borderRadius: '8px',
+                                                p: '16px 20px',
+                                                borderBottom: '1px solid #EEEEEE',
                                                 cursor: 'pointer',
-                                                transition: 'bg 0.2s',
-                                                _hover: { bg: '#fafafa', '& .delete-btn': { opacity: 1 } }
+                                                transition: 'bg 0.1s',
+                                                _active: { bg: '#F7F7F7' },
+                                                _hover: { bg: { base: 'transparent', sm: '#fafafa' }, '& .delete-btn': { opacity: 1 } }
                                             })}
                                         >
-                                            <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' })}>
-                                                {item.is_checked ? <CheckSquare color="#3B82F6" size={20} /> : <Square color="#ccc" size={20} />}
-                                                <span className={css({ fontSize: '15px', color: item.is_checked ? '#888' : '#333', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
+                                            <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
+                                                <div className={css({ 
+                                                    w: '24px', h: '24px', 
+                                                    border: '2px solid', 
+                                                    borderColor: item.is_checked ? '#222' : '#B0B0B0',
+                                                    borderRadius: '4px',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    bg: item.is_checked ? '#222' : 'transparent',
+                                                    transition: 'all 0.2s'
+                                                })}>
+                                                    {item.is_checked && <Check size={16} color="white" />}
+                                                </div>
+                                                <span className={css({ fontSize: '16px', fontWeight: '500', color: item.is_checked ? '#B0B0B0' : '#222', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
                                                     {item.item_name}
                                                 </span>
-                                                <span className={css({ fontSize: '11px', bg: '#f8f9fa', border: '1px solid #eee', color: '#888', px: '6px', py: '2px', borderRadius: '4px' })}>
+                                                <span className={css({ fontSize: '11px', bg: '#f1f3f4', color: '#666', px: '6px', py: '2px', borderRadius: '4px' })}>
                                                     {item.category || '기타'}
                                                 </span>
                                             </div>
@@ -451,6 +469,33 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         ))
                     )}
                 </div>
+            )}
+
+            {isActive && !isAdding && !isTemplateModalOpen && (
+                <button
+                    onClick={() => setIsAdding(true)}
+                    className={css({
+                        position: 'fixed',
+                        bottom: '90px',
+                        right: '20px',
+                        w: '56px',
+                        h: '56px',
+                        bg: '#222',
+                        color: 'white',
+                        borderRadius: '50%',
+                        display: { base: 'flex', sm: 'none' },
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                        zIndex: 40,
+                        transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                        _active: { transform: 'scale(0.88)' },
+                        _hover: { bg: '#000' }
+                    })}
+                    aria-label="준비물 추가"
+                >
+                    <Plus size={28} />
+                </button>
             )}
 
             {checklistId && (

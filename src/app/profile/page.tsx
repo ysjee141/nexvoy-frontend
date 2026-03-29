@@ -174,10 +174,10 @@ export default function ProfilePage() {
             {/* 헤더 */}
             <div className={css({ display: 'flex', alignItems: 'center', gap: '16px', mb: '4px' })}>
                 <div className={css({
-                    w: { base: '56px', sm: '64px' }, h: { base: '56px', sm: '64px' }, borderRadius: '50%',
-                    bg: 'linear-gradient(135deg, #3B82F6, #2563EB)',
+                    w: { base: '64px', sm: '72px' }, h: { base: '64px', sm: '72px' }, borderRadius: '50%',
+                    bg: '#222',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', flexShrink: 0
+                    color: 'white', fontSize: { base: '26px', sm: '30px' }, fontWeight: '800', flexShrink: 0
                 })}>
                     {displayName.charAt(0).toUpperCase()}
                 </div>
@@ -211,38 +211,38 @@ export default function ProfilePage() {
                     ) : (
                         <>
                             <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                <h1 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: 'bold', color: '#172554', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' })}>
+                                <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '900', color: '#222', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', letterSpacing: '-0.5px' })}>
                                     {displayName}
                                 </h1>
                                 <button
                                     onClick={() => setIsEditingNickname(true)}
-                                    className={css({ bg: 'transparent', border: 'none', color: '#888', cursor: 'pointer', p: '4px', borderRadius: '4px', _hover: { bg: '#eee', color: '#555' }, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' })}
+                                    className={css({ bg: 'transparent', border: 'none', color: '#717171', cursor: 'pointer', p: '4px', borderRadius: '4px', _hover: { bg: '#F7F7F7', color: '#222' }, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' })}
                                     aria-label="닉네임 수정"
                                 >
                                     <Edit2 size={16} />
                                 </button>
                             </div>
-                            <p className={css({ color: '#888', fontSize: '14px', mt: '2px', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' })}>{user.email}</p>
+                            <p className={css({ color: '#717171', fontSize: '15px', mt: '2px', fontWeight: '500', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' })}>{user.email}</p>
                         </>
                     )}
                 </div>
             </div>
 
             {/* 활동 통계 */}
-            <section className={css({ bg: 'white', borderRadius: '16px', p: { base: '16px', sm: '24px' }, boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '15px', fontWeight: 'bold', mb: '16px', color: '#222' })}>활동 요약</h2>
+            <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #DDDDDD', boxShadow: '0 6px 16px rgba(0,0,0,0.06)' })}>
+                <h2 className={css({ fontSize: '18px', fontWeight: '800', mb: '24px', color: '#222' })}>활동 요약</h2>
                 {/* 모바일: 2x2 grid / 데스크탑: 4열 */}
-                <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '10px', textAlign: 'center' })}>
+                <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '12px', textAlign: 'center' })}>
                     {[
                         { label: '총 여행', value: stats.totalTrips, icon: '✈️' },
                         { label: '일정 수', value: stats.totalPlans, icon: '📅' },
                         { label: '내 템플릿', value: stats.totalTemplates, icon: '📦' },
                         { label: '짐 준비율', value: `${packingRate}%`, icon: '🧳' },
                     ].map(item => (
-                        <div key={item.label} className={css({ p: { base: '12px 8px', sm: '16px' }, bg: '#fafafa', borderRadius: '12px' })}>
-                            <div className={css({ fontSize: '22px', mb: '6px' })}>{item.icon}</div>
-                            <div className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: 'bold', color: '#172554' })}>{item.value}</div>
-                            <div className={css({ fontSize: '12px', color: '#888', mt: '4px', whiteSpace: 'nowrap' })}>{item.label}</div>
+                        <div key={item.label} className={css({ p: { base: '16px 8px', sm: '20px' }, bg: '#F7F7F7', borderRadius: '16px', border: '1px solid #EEEEEE' })}>
+                            <div className={css({ fontSize: '24px', mb: '8px' })}>{item.icon}</div>
+                            <div className={css({ fontSize: { base: '22px', sm: '26px' }, fontWeight: '900', color: '#222', letterSpacing: '-0.5px' })}>{item.value}</div>
+                            <div className={css({ fontSize: '13px', color: '#717171', mt: '4px', whiteSpace: 'nowrap', fontWeight: '600' })}>{item.label}</div>
                         </div>
                     ))}
                 </div>
@@ -341,8 +341,8 @@ export default function ProfilePage() {
             </section>
 
             {/* 바로가기 링크 */}
-            <section className={css({ bg: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '16px', fontWeight: 'bold', p: '20px 24px 12px', color: '#222' })}>바로가기</h2>
+            <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #DDDDDD', boxShadow: '0 6px 16px rgba(0,0,0,0.06)' })}>
+                <h2 className={css({ fontSize: '18px', fontWeight: '800', p: '24px 24px 16px', color: '#222' })}>바로가기</h2>
                 {[
                     { href: '/templates', icon: '📦', label: '나만의 템플릿 관리', desc: '체크리스트 템플릿을 관리합니다' },
                     { href: '/', icon: '✈️', label: '내 여행 목록', desc: '등록한 여행들을 확인합니다' },
@@ -355,28 +355,29 @@ export default function ProfilePage() {
                             alignItems: 'center',
                             justifyContent: 'space-between',
                             px: '24px',
-                            py: '16px',
-                            borderTop: i === 0 ? '1px solid #f0f0f0' : 'none',
-                            borderBottom: i < arr.length - 1 ? '1px solid #f0f0f0' : 'none',
+                            py: '20px',
+                            borderTop: '1px solid #EEEEEE',
                             textDecoration: 'none',
-                            color: '#1E3A8A',
-                            _hover: { bg: '#fafafa' },
+                            color: '#222',
+                            transition: 'all 0.2s',
+                            _hover: { bg: '#F7F7F7' },
+                            _active: { transform: 'scale(0.98)' }
                         })}
                     >
                         <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
                             <span className={css({ fontSize: '20px' })}>{item.icon}</span>
                             <div>
-                                <div className={css({ fontSize: '15px', fontWeight: '600' })}>{item.label}</div>
-                                <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>{item.desc}</div>
+                                <div className={css({ fontSize: '16px', fontWeight: '700' })}>{item.label}</div>
+                                <div className={css({ fontSize: '13px', color: '#717171', mt: '2px' })}>{item.desc}</div>
                             </div>
                         </div>
-                        <ChevronRight size={18} color="#ccc" />
+                        <ChevronRight size={18} color="#B0B0B0" />
                     </Link>
                 ))}
             </section>
 
             {/* 기타 메뉴 */}
-            <section className={css({ bg: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
+            <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #DDDDDD', boxShadow: '0 6px 16px rgba(0,0,0,0.06)' })}>
                 <button
                     onClick={() => setShowTerms(true)}
                     className={css({
@@ -385,23 +386,25 @@ export default function ProfilePage() {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         px: '24px',
-                        py: '16px',
+                        py: '20px',
                         bg: 'transparent',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#1E3A8A',
-                        _hover: { bg: '#fafafa' },
-                        borderBottom: '1px solid #f0f0f0'
+                        color: '#222',
+                        transition: 'all 0.2s',
+                        _hover: { bg: '#F7F7F7' },
+                        _active: { transform: 'scale(0.98)' },
+                        borderBottom: '1px solid #EEEEEE'
                     })}
                 >
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                        <ShieldCheck size={20} color="#3B82F6" />
+                        <ShieldCheck size={20} color="#717171" />
                         <div className={css({ textAlign: 'left' })}>
-                            <div className={css({ fontSize: '15px', fontWeight: '600' })}>이용약관 및 개인정보 처리방침</div>
-                            <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>온여정의 정책을 확인합니다</div>
+                            <div className={css({ fontSize: '16px', fontWeight: '700' })}>이용약관 및 개인정보 처리방침</div>
+                            <div className={css({ fontSize: '13px', color: '#717171', mt: '2px' })}>온여정의 정책을 확인합니다</div>
                         </div>
                     </div>
-                    <ChevronRight size={18} color="#ccc" />
+                    <ChevronRight size={18} color="#B0B0B0" />
                 </button>
                 <Link
                     href="/profile/licenses"
@@ -411,20 +414,22 @@ export default function ProfilePage() {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         px: '24px',
-                        py: '16px',
+                        py: '20px',
                         textDecoration: 'none',
-                        color: '#1E3A8A',
-                        _hover: { bg: '#fafafa' },
+                        color: '#222',
+                        transition: 'all 0.2s',
+                        _hover: { bg: '#F7F7F7' },
+                        _active: { transform: 'scale(0.98)' }
                     })}
                 >
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                        <Edit2 size={20} color="#3B82F6" />
+                        <Edit2 size={20} color="#717171" />
                         <div className={css({ textAlign: 'left' })}>
-                            <div className={css({ fontSize: '15px', fontWeight: '600' })}>오픈 소스 라이선스</div>
-                            <div className={css({ fontSize: '12px', color: '#888', mt: '2px' })}>사용된 오픈 소스 라이브러리 목록을 확인합니다</div>
+                            <div className={css({ fontSize: '16px', fontWeight: '700' })}>오픈 소스 라이선스</div>
+                            <div className={css({ fontSize: '13px', color: '#717171', mt: '2px' })}>라이브러리 목록 확인</div>
                         </div>
                     </div>
-                    <ChevronRight size={18} color="#ccc" />
+                    <ChevronRight size={18} color="#B0B0B0" />
                 </Link>
             </section>
 

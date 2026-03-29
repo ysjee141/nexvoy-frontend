@@ -81,7 +81,7 @@ export default function TripLayoutClient() {
     return (
         <div className={css({ w: '100%', py: '16px' })}>
 
-            {/* Trip Info Header (Airbnb Style) */}
+            {/* Trip Info Header (OnVoy Style) */}
             <div className={css({
                 mb: '24px',
                 pb: '20px',
@@ -95,23 +95,30 @@ export default function TripLayoutClient() {
             <div
                 className={css({
                     display: 'flex',
-                    gap: '16px',
-                    borderBottom: '1px solid #ddd',
+                    gap: { base: '8px', sm: '16px' },
+                    borderBottom: '1px solid #EEEEEE',
                     mb: '24px',
+                    position: 'sticky',
+                    top: '0',
+                    bg: 'white',
+                    zIndex: 20,
+                    px: { base: '4px', sm: 0 },
+                    mx: { base: '-20px', sm: 0 },
+                    justifyContent: { base: 'center', sm: 'flex-start' }
                 })}
             >
                 <button
                     onClick={() => handleTabChange('plans')}
                     className={css({
-                        display: 'flex', alignItems: 'center', gap: '8px', px: '20px', py: '14px',
+                        display: 'flex', alignItems: 'center', gap: '8px', px: '20px', py: '16px',
                         bg: 'transparent',
                         cursor: 'pointer', border: 'none',
                         color: activeTab === 'plans' ? '#222' : '#717171',
                         fontWeight: '700',
                         fontSize: '15px',
-                        position: 'relative',
-                        transition: 'all 0.2s ease',
+                        transition: 'all 0.1s ease',
                         borderBottom: activeTab === 'plans' ? '2px solid #222' : '2px solid transparent',
+                        _active: { transform: 'scale(0.96)' },
                         _hover: { color: '#000' },
                     })}
                 >
@@ -120,19 +127,19 @@ export default function TripLayoutClient() {
                 <button
                     onClick={() => handleTabChange('checklist')}
                     className={css({
-                        display: 'flex', alignItems: 'center', gap: '8px', px: '20px', py: '14px',
+                        display: 'flex', alignItems: 'center', gap: '8px', px: '20px', py: '16px',
                         bg: 'transparent',
                         cursor: 'pointer', border: 'none',
                         color: activeTab === 'checklist' ? '#222' : '#717171',
                         fontWeight: '700',
                         fontSize: '15px',
-                        position: 'relative',
-                        transition: 'all 0.2s ease',
+                        transition: 'all 0.1s ease',
                         borderBottom: activeTab === 'checklist' ? '2px solid #222' : '2px solid transparent',
+                        _active: { transform: 'scale(0.96)' },
                         _hover: { color: '#000' },
                     })}
                 >
-                    <ListChecks size={18} /> 준비물 체크리스트
+                    <ListChecks size={18} /> 준비물
                 </button>
             </div>
 

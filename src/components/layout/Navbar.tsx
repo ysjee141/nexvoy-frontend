@@ -127,7 +127,7 @@ export default function Navbar() {
                                     <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'transparent', color: '#222', px: '12px', py: '10px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', _hover: { bg: '#F7F7F7' } })}>
                                         회원가입
                                     </Link>
-                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'brand.primary', color: 'white', px: '24px', py: '12px', borderRadius: '32px', fontSize: '14px', fontWeight: '800', transition: 'all 0.2s ease', _hover: { transform: 'scale(1.02)', boxShadow: '0 6px 20px rgba(255, 56, 92, 0.3)' } })}>
+                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'brand.primary', color: 'white', px: '24px', py: '12px', borderRadius: '32px', fontSize: '14px', fontWeight: '800', transition: 'all 0.2s ease', _hover: { transform: 'scale(1.02)', boxShadow: '0 6px 20px rgba(59, 130, 246, 0.3)' } })}>
                                         로그인
                                     </Link>
                                 </div>

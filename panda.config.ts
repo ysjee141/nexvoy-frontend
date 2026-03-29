@@ -16,16 +16,19 @@ export default defineConfig({
       tokens: {
         colors: {
           brand: {
-            primary: { value: '#FF385C' }, // Airbnb Red-ish
-            secondary: { value: '#222222' },
+            primary: { value: '#3B82F6' }, // OnVoy Blue
+            primaryDark: { value: '#1E40AF' },
+            secondary: { value: '#222222' }, // Dark text/bg
+            muted: { value: '#717171' }, // Secondary gray
+            light: { value: '#F7F7F7' }, // Light gray bg
+            border: { value: '#DDDDDD' },
             accent: { value: '#008489' },
-            success: { value: '#484848' },
-            error: { value: '#C13515' },
           },
           bg: {
             surface: { value: '#FFFFFF' },
             card: { value: '#FFFFFF' },
-            input: { value: '#F7F7F7' },
+            input: { value: '#FFFFFF' },
+            light: { value: '#F7F7F7' },
           }
         },
         shadows: {

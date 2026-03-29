@@ -223,7 +223,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
     }
 
     return (
-        <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
+        <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, pb: { base: '80px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
             <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, mb: { base: '16px', sm: '24px' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
                 {/* 1. 타이틀 & 시간 필터 */}
                 <div className={css({ display: 'flex', w: { base: '100%', sm: 'auto' }, justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, flexDirection: { base: 'row', sm: 'column' } })}>
@@ -268,11 +268,12 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                             onClick={() => setIsCollaboratorModalOpen(true)}
                             className={css({
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: 'white', color: '#172554',
+                                bg: 'white', color: '#222',
                                 px: { base: '0', sm: '12px' }, w: { base: '44px', sm: 'auto' }, h: '44px',
-                                borderRadius: '8px', fontWeight: '600', fontSize: '13px',
-                                border: '1px solid #ddd', whiteSpace: 'nowrap',
-                                _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' },
+                                borderRadius: '8px', fontWeight: '800', fontSize: '13px',
+                                border: '1px solid #DDDDDD', whiteSpace: 'nowrap',
+                                transition: 'all 0.2s',
+                                _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' },
                                 opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
                                 flex: { base: 'none', sm: 1 }
                             })}
@@ -285,11 +286,12 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 onClick={() => setIsShareModalOpen(true)}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    bg: 'white', color: '#172554',
+                                    bg: 'white', color: '#222',
                                     px: { base: '0', sm: '12px' }, w: { base: '44px', sm: 'auto' }, h: '44px',
-                                    borderRadius: '8px', fontWeight: '600', fontSize: '13px',
-                                    border: '1px solid #ddd', whiteSpace: 'nowrap',
-                                    _hover: { bg: '#f9f9f9', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' },
+                                    borderRadius: '8px', fontWeight: '800', fontSize: '13px',
+                                    border: '1px solid #DDDDDD', whiteSpace: 'nowrap',
+                                    transition: 'all 0.2s',
+                                    _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' },
                                     opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
                                     flex: { base: 'none', sm: 1 }
                                 })}
@@ -299,17 +301,19 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                             </button>
                         )}
                     </div>
-                    {/* 편집 권한이 있을 때만 일정 추가 버튼 노출 */}
+                    {/* PC 전용 일정 추가 버튼 (모바일에서는 Sticky CTA로 대체됨) */}
                     {(userRole === 'owner' || userRole === 'editor') && (
                         <button
                             onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                             className={css({
+                                display: { base: 'none', sm: 'flex' },
                                 order: { base: -1, sm: 1 },
                                 flex: { base: 1, sm: 'none' }, w: { base: 'auto', sm: '100%' }, h: '44px',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: '#3B82F6', color: 'white', px: '16px', borderRadius: '8px',
-                                fontWeight: '600', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
-                                _hover: { bg: '#3B82F6', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' }
+                                alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                bg: '#222', color: 'white', px: '16px', borderRadius: '8px',
+                                fontWeight: '800', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
+                                transition: 'all 0.2s',
+                                _hover: { bg: '#000' }, _active: { transform: 'scale(0.96)' }
                             })}
                         >
                             <Plus size={18} /> 일정 추가
@@ -364,6 +368,33 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     onClose={() => setIsShareModalOpen(false)}
                     tripTitle={trip?.destination || '여행'}
                 />
+            )}
+            {/* 모바일 전용 Sticky CTA (편집 권한 있을 때만) */}
+            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && (
+                <button
+                    onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
+                    className={css({
+                        position: 'fixed',
+                        bottom: '90px', // BNB(64px) + 여점(26px)
+                        right: '20px',
+                        w: '56px',
+                        h: '56px',
+                        bg: '#222',
+                        color: 'white',
+                        borderRadius: '50%',
+                        display: { base: 'flex', sm: 'none' },
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                        zIndex: 40,
+                        transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                        _active: { transform: 'scale(0.88)' },
+                        _hover: { bg: '#000' }
+                    })}
+                    aria-label="일정 추가"
+                >
+                    <Plus size={28} />
+                </button>
             )}
         </div>
     )

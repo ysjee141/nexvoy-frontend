@@ -94,34 +94,37 @@ export default function TripSection({
                                     display: 'block', 
                                     bg: 'white',
                                     p: { base: '16px', sm: '20px' },
-                                    borderRadius: '12px',
-                                    boxShadow: 'airbnb',
-                                    border: '1px solid #EBEBEB',
+                                    borderRadius: '16px',
+                                    boxShadow: '0 6px 16px rgba(0,0,0,0.06)',
+                                    border: '1px solid #DDDDDD',
                                     transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                     position: 'relative', 
                                     overflow: 'hidden',
                                     _hover: {
-                                        transform: 'scale(1.01)',
-                                        boxShadow: '0 12px 20px rgba(0,0,0,0.12)',
-                                        borderColor: '#DDDDDD',
+                                        transform: 'translateY(-4px)',
+                                        boxShadow: '0 12px 24px rgba(0,0,0,0.12)',
+                                        borderColor: '#CCCCCC',
                                     },
+                                    _active: { transform: 'scale(0.98)' }
                                 })}
                             >
-                                {/* 왼쪽 컬러 바 */}
+                                {/* 상단 포인트 바 */}
                                 <div className={css({
-                                    position: 'absolute', top: 0, left: 0,
-                                    w: '4px', h: '100%',
+                                    position: 'absolute', top: 0, left: 0, right: 0,
+                                    h: '4px',
                                     bg: isOwner
-                                        ? 'linear-gradient(to bottom, #3B82F6, #2563EB)'
-                                        : 'linear-gradient(to bottom, #FBBC05, #EA4335)',
+                                        ? 'brand.primary'
+                                        : '#222',
                                 })} />
 
                                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '10px' })}>
                                     <span className={css({
                                         fontSize: '11px', fontWeight: '800', px: '8px', py: '4px',
-                                        borderRadius: '6px', bg: isOwner ? '#EFF6FF' : '#fef7e0',
-                                        color: isOwner ? '#3B82F6' : '#ea8600',
+                                        borderRadius: '6px', 
+                                        bg: isOwner ? '#EFF6FF' : '#F7F7F7',
+                                        color: isOwner ? 'brand.primary' : '#222',
                                         display: 'inline-flex', alignItems: 'center', gap: '4px',
+                                        border: isOwner ? '1px solid rgba(59, 130, 246, 0.1)' : '1px solid #EEEEEE'
                                     })}>
                                         {isOwner ? '내 여정' : '참여 중'}
                                     </span>
@@ -157,13 +160,13 @@ export default function TripSection({
                                 <div className={css({ borderTop: '1px solid #f0f0f0', pt: '12px' })}>
                                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '6px' })}>
                                         <span className={css({ fontSize: '12px', fontWeight: '600', color: '#666' })}>준비물</span>
-                                        <span className={css({ fontSize: '12px', fontWeight: 'bold', color: progressPercent === 100 ? '#2563EB' : '#3B82F6' })}>
+                                        <span className={css({ fontSize: '12px', fontWeight: '800', color: progressPercent === 100 ? '#222' : 'brand.primary' })}>
                                             {progressPercent}%
                                         </span>
                                     </div>
-                                    <div className={css({ w: '100%', h: '4px', bg: '#F7F7F7', borderRadius: '2px', overflow: 'hidden' })}>
+                                    <div className={css({ w: '100%', h: '6px', bg: '#F7F7F7', borderRadius: '3px', overflow: 'hidden', border: '1px solid #EEEEEE' })}>
                                         <div
-                                            className={css({ h: '100%', bg: progressPercent === 100 ? '#008489' : 'brand.primary', transition: 'width 0.8s cubic-bezier(0.2, 0, 0, 1)' })}
+                                            className={css({ h: '100%', bg: progressPercent === 100 ? '#222' : 'brand.primary', transition: 'width 1s cubic-bezier(0.2, 0, 0, 1)' })}
                                             style={{ width: `${progressPercent}%` }}
                                         />
                                     </div>

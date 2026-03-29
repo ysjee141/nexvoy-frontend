@@ -112,8 +112,9 @@ export default function HomeClient() {
               href="/signup"
               className={css({
                 bg: 'brand.primary', color: 'white', px: '36px', py: '18px', borderRadius: '32px', fontWeight: '800', fontSize: '18px', transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
-                boxShadow: '0 6px 20px rgba(255, 56, 92, 0.3)',
-                _hover: { transform: 'scale(1.02)', boxShadow: '0 10px 25px rgba(255, 56, 92, 0.4)' }
+                boxShadow: '0 8px 16px rgba(59, 130, 246, 0.25)',
+                _hover: { transform: 'scale(1.02)', boxShadow: '0 12px 24px rgba(59, 130, 246, 0.35)' },
+                _active: { transform: 'scale(0.96)' }
               })}
             >
               지금 시작하기
@@ -121,7 +122,9 @@ export default function HomeClient() {
             <Link
               href="/login"
               className={css({
-                bg: 'white', color: '#172554', px: '32px', py: '16px', borderRadius: '12px', border: '1px solid #ddd', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.2s', _hover: { bg: 'white', transform: 'translateY(-2px)' }
+                bg: 'white', color: '#222', px: '32px', py: '16px', borderRadius: '12px', border: '1px solid #DDDDDD', fontWeight: '800', fontSize: '18px', transition: 'all 0.2s', 
+                _hover: { bg: '#F7F7F7', transform: 'translateY(-2px)' },
+                _active: { transform: 'scale(0.96)' }
               })}
             >
               로그인하기
@@ -133,7 +136,7 @@ export default function HomeClient() {
         <section className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: '24px' })}>
           <div className={css({ bg: 'white', p: '32px', borderRadius: '16px', border: '1px solid #EBEBEB', boxShadow: 'dimensional', transition: 'all 0.4s', _hover: { boxShadow: 'airbnb', transform: 'translateY(-4px)' } })}>
             <div className={css({ w: '56px', h: '56px', bg: '#F7F7F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
-              <CalendarDays size={28} color="#FF385C" />
+              <CalendarDays size={28} color="brand.primary" />
             </div>
             <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '12px', color: '#222' })}>스마트 일정표</h3>
             <p className={css({ color: '#717171', fontSize: '15px', lineHeight: 1.6 })}>주간 캘린더를 통해 여행 일정을 한눈에 파악하고 간편하게 관리하세요.</p>
@@ -141,7 +144,7 @@ export default function HomeClient() {
 
           <div className={css({ bg: 'white', p: '32px', borderRadius: '16px', border: '1px solid #EBEBEB', boxShadow: 'dimensional', transition: 'all 0.4s', _hover: { boxShadow: 'airbnb', transform: 'translateY(-4px)' } })}>
             <div className={css({ w: '56px', h: '56px', bg: '#F7F7F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
-              <Luggage size={28} color="#FF385C" />
+              <Luggage size={28} color="brand.primary" />
             </div>
             <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '12px', color: '#222' })}>꼼꼼한 체크리스트</h3>
             <p className={css({ color: '#717171', fontSize: '15px', lineHeight: 1.6 })}>준비물 템플릿을 활용하고 진행률을 확인하며 여행을 준비하세요.</p>
@@ -149,7 +152,7 @@ export default function HomeClient() {
 
           <div className={css({ bg: 'white', p: '32px', borderRadius: '16px', border: '1px solid #EBEBEB', boxShadow: 'dimensional', transition: 'all 0.4s', _hover: { boxShadow: 'airbnb', transform: 'translateY(-4px)' } })}>
             <div className={css({ w: '56px', h: '56px', bg: '#F7F7F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
-              <MapPin size={28} color="#FF385C" />
+              <MapPin size={28} color="brand.primary" />
             </div>
             <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '12px', color: '#222' })}>타임존 자동 계산</h3>
             <p className={css({ color: '#717171', fontSize: '15px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. OnVoy가 자동으로 맞춰 드립니다.</p>
@@ -157,7 +160,7 @@ export default function HomeClient() {
 
           <div className={css({ bg: 'white', p: '32px', borderRadius: '16px', border: '1px solid #EBEBEB', boxShadow: 'dimensional', transition: 'all 0.4s', _hover: { boxShadow: 'airbnb', transform: 'translateY(-4px)' } })}>
             <div className={css({ w: '56px', h: '56px', bg: '#F7F7F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
-              <Plus size={28} color="#FF385C" />
+              <Plus size={28} color="brand.primary" />
             </div>
             <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '12px', color: '#222' })}>실시간 스마트 알림</h3>
             <p className={css({ color: '#717171', fontSize: '15px', lineHeight: 1.6 })}>설정한 일정에 맞춰 브라우저 알림을 보내드려 소중한 계획을 놓치지 않게 합니다.</p>
@@ -173,10 +176,10 @@ export default function HomeClient() {
       <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
         <header className={css({ mb: { base: '28px', sm: '40px' }, display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
           <div>
-            <h1 className={css({ fontSize: { base: '26px', sm: '32px' }, fontWeight: '800', color: '#222' })}>
-              안녕하세요, {nickname}님! 👋
+            <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '900', color: '#222', letterSpacing: '-1px' })}>
+                안녕하세요, {nickname}님! 👋
             </h1>
-            <p className={css({ color: '#717171', mt: '6px', fontSize: { base: '15px', sm: '18px' }, fontWeight: '500' })}>
+            <p className={css({ color: '#717171', mt: '8px', fontSize: { base: '16px', sm: '19px' }, fontWeight: '600', letterSpacing: '-0.5px' })}>
               {ongoing.length > 0
                 ? `현재 ${ongoing[0].destination} 여행 중이에요 ✈️`
                 : upcoming.length > 0
@@ -188,14 +191,15 @@ export default function HomeClient() {
             href="/trips/new"
             className={css({
               display: 'flex', alignItems: 'center', gap: '8px',
-              bg: '#111', color: 'white', px: '20px', py: '12px',
-              borderRadius: '12px', fontWeight: '600', transition: 'all 0.2s',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              bg: '#222', color: 'white', px: '24px', py: '14px',
+              borderRadius: '12px', fontWeight: '800', transition: 'all 0.2s',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
               w: { base: '100%', sm: 'auto' }, justifyContent: 'center',
-              _hover: { bg: '#333', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(0,0,0,0.15)' },
+              _hover: { bg: '#000', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(0,0,0,0.2)' },
+              _active: { transform: 'scale(0.96)' }
             })}
           >
-            <Plus size={20} /> 새 여행 만들기
+            <Plus size={22} /> 새 여행 만들기
           </Link>
         </header>
 
