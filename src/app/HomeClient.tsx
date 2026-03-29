@@ -99,22 +99,21 @@ export default function HomeClient() {
       <div className={css({ w: '100%', py: { base: '40px', md: '80px' } })}>
         {/* Hero Section */}
         <section className={css({ textAlign: 'center', mb: '80px' })}>
-          <h1 className={css({ fontSize: { base: '32px', md: '56px' }, fontWeight: '900', color: '#172554', mb: '20px', lineHeight: 1.1, letterSpacing: '-0.02em' })}>
+          <h1 className={css({ fontSize: { base: '36px', md: '64px' }, fontWeight: '900', color: '#222', mb: '24px', lineHeight: 1.1, letterSpacing: '-0.04em' })}>
             OnVoy와 함께하는<br />
-            <span className={css({ color: '#3B82F6' })}>완벽한 여행 계획</span>
+            <span className={css({ color: 'brand.primary' })}>완벽한 여행 계획</span>
           </h1>
-          <p className={css({ fontSize: { base: '16px', md: '20px' }, color: '#666', maxW: '600px', mx: 'auto', mb: '40px', lineHeight: 1.6 })}>
+          <p className={css({ fontSize: { base: '18px', md: '22px' }, color: '#717171', maxW: '700px', mx: 'auto', mb: '48px', lineHeight: 1.6, fontWeight: '500' })}>
             복잡한 여행 계획부터 꼼꼼한 체크리스트까지.<br />
-            당신의 여행을 더 스마트하고 즐겁게 만들어 드립니다.
+            당신의 여행을 더 인간적이고 즐겁게 만들어 드립니다.
           </p>
           <div className={css({ display: 'flex', gap: '16px', justifyContent: 'center', flexDirection: { base: 'column', sm: 'row' } })}>
             <Link
               href="/signup"
               className={css({
-                background: 'linear-gradient(135deg, #172554 0%, #1e3a8a 100%)', 
-                color: 'white', px: '32px', py: '18px', borderRadius: '16px', fontWeight: 'bold', fontSize: '18px', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
-                boxShadow: '0 10px 25px rgba(23, 37, 84, 0.2)',
-                _hover: { transform: 'translateY(-3px)', boxShadow: '0 15px 30px rgba(23, 37, 84, 0.3)', filter: 'brightness(1.1)' }
+                bg: 'brand.primary', color: 'white', px: '36px', py: '18px', borderRadius: '32px', fontWeight: '800', fontSize: '18px', transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
+                boxShadow: '0 6px 20px rgba(255, 56, 92, 0.3)',
+                _hover: { transform: 'scale(1.02)', boxShadow: '0 10px 25px rgba(255, 56, 92, 0.4)' }
               })}
             >
               지금 시작하기
@@ -132,36 +131,36 @@ export default function HomeClient() {
 
         {/* Features Grid */}
         <section className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: '24px' })}>
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: 'premium', transition: 'all 0.4s', _hover: { borderColor: 'brand.primary', transform: 'translateY(-8px)', boxShadow: '0 20px 40px rgba(0,0,0,0.08)' } })}>
-            <div className={css({ w: '56px', h: '56px', bg: 'rgba(59, 130, 246, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
-              <CalendarDays size={28} color="#3B82F6" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '16px', border: '1px solid #EBEBEB', boxShadow: 'dimensional', transition: 'all 0.4s', _hover: { boxShadow: 'airbnb', transform: 'translateY(-4px)' } })}>
+            <div className={css({ w: '56px', h: '56px', bg: '#F7F7F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
+              <CalendarDays size={28} color="#FF385C" />
             </div>
-            <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '12px', color: 'brand.secondary' })}>스마트 일정표</h3>
-            <p className={css({ color: '#64748B', fontSize: '15px', lineHeight: 1.6 })}>주간 캘린더를 통해 여행 일정을 한눈에 파악하고 드래그하듯 간편하게 관리하세요.</p>
+            <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '12px', color: '#222' })}>스마트 일정표</h3>
+            <p className={css({ color: '#717171', fontSize: '15px', lineHeight: 1.6 })}>주간 캘린더를 통해 여행 일정을 한눈에 파악하고 간편하게 관리하세요.</p>
           </div>
 
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: 'premium', transition: 'all 0.4s', _hover: { borderColor: 'brand.accent', transform: 'translateY(-8px)', boxShadow: '0 20px 40px rgba(0,0,0,0.08)' } })}>
-            <div className={css({ w: '56px', h: '56px', bg: 'rgba(99, 102, 241, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
-              <Luggage size={28} color="#6366F1" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '16px', border: '1px solid #EBEBEB', boxShadow: 'dimensional', transition: 'all 0.4s', _hover: { boxShadow: 'airbnb', transform: 'translateY(-4px)' } })}>
+            <div className={css({ w: '56px', h: '56px', bg: '#F7F7F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
+              <Luggage size={28} color="#FF385C" />
             </div>
-            <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '12px', color: 'brand.secondary' })}>꼼꼼한 체크리스트</h3>
-            <p className={css({ color: '#64748B', fontSize: '15px', lineHeight: 1.6 })}>준비물 템플릿을 활용하고 진행률을 확인하며 빠짐없이 여행을 준비하세요.</p>
+            <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '12px', color: '#222' })}>꼼꼼한 체크리스트</h3>
+            <p className={css({ color: '#717171', fontSize: '15px', lineHeight: 1.6 })}>준비물 템플릿을 활용하고 진행률을 확인하며 여행을 준비하세요.</p>
           </div>
 
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: 'premium', transition: 'all 0.4s', _hover: { borderColor: '#FBBC05', transform: 'translateY(-8px)', boxShadow: '0 20px 40px rgba(0,0,0,0.08)' } })}>
-            <div className={css({ w: '56px', h: '56px', bg: 'rgba(251, 188, 5, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
-              <MapPin size={28} color="#FBBC05" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '16px', border: '1px solid #EBEBEB', boxShadow: 'dimensional', transition: 'all 0.4s', _hover: { boxShadow: 'airbnb', transform: 'translateY(-4px)' } })}>
+            <div className={css({ w: '56px', h: '56px', bg: '#F7F7F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
+              <MapPin size={28} color="#FF385C" />
             </div>
-            <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '12px', color: 'brand.secondary' })}>타임존 자동 계산</h3>
-            <p className={css({ color: '#64748B', fontSize: '15px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. OnVoy가 실시간으로 맞춰 드립니다.</p>
+            <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '12px', color: '#222' })}>타임존 자동 계산</h3>
+            <p className={css({ color: '#717171', fontSize: '15px', lineHeight: 1.6 })}>현지 시간을 일일이 계산할 필요 없습니다. OnVoy가 자동으로 맞춰 드립니다.</p>
           </div>
 
-          <div className={css({ bg: 'white', p: '32px', borderRadius: '28px', border: '1px solid rgba(255, 255, 255, 0.5)', boxShadow: 'premium', transition: 'all 0.4s', _hover: { borderColor: '#EA4335', transform: 'translateY(-8px)', boxShadow: '0 20px 40px rgba(0,0,0,0.08)' } })}>
-            <div className={css({ w: '56px', h: '56px', bg: 'rgba(234, 67, 53, 0.1)', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
-              <Plus size={28} color="#EA4335" />
+          <div className={css({ bg: 'white', p: '32px', borderRadius: '16px', border: '1px solid #EBEBEB', boxShadow: 'dimensional', transition: 'all 0.4s', _hover: { boxShadow: 'airbnb', transform: 'translateY(-4px)' } })}>
+            <div className={css({ w: '56px', h: '56px', bg: '#F7F7F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', mb: '24px' })}>
+              <Plus size={28} color="#FF385C" />
             </div>
-            <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '12px', color: 'brand.secondary' })}>실시간 스마트 알림</h3>
-            <p className={css({ color: '#64748B', fontSize: '15px', lineHeight: 1.6 })}>설정한 일정에 맞춰 브라우저 알림을 보내드려 소중한 계획을 놓치지 않게 합니다.</p>
+            <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '12px', color: '#222' })}>실시간 스마트 알림</h3>
+            <p className={css({ color: '#717171', fontSize: '15px', lineHeight: 1.6 })}>설정한 일정에 맞춰 브라우저 알림을 보내드려 소중한 계획을 놓치지 않게 합니다.</p>
           </div>
         </section>
       </div>
@@ -174,10 +173,10 @@ export default function HomeClient() {
       <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
         <header className={css({ mb: { base: '28px', sm: '40px' }, display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
           <div>
-            <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#172554' })}>
+            <h1 className={css({ fontSize: { base: '26px', sm: '32px' }, fontWeight: '800', color: '#222' })}>
               안녕하세요, {nickname}님! 👋
             </h1>
-            <p className={css({ color: '#666', mt: '4px', fontSize: { base: '14px', sm: '16px' } })}>
+            <p className={css({ color: '#717171', mt: '6px', fontSize: { base: '15px', sm: '18px' }, fontWeight: '500' })}>
               {ongoing.length > 0
                 ? `현재 ${ongoing[0].destination} 여행 중이에요 ✈️`
                 : upcoming.length > 0

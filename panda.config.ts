@@ -16,20 +16,22 @@ export default defineConfig({
       tokens: {
         colors: {
           brand: {
-            primary: { value: '#3B82F6' },
-            secondary: { value: '#172554' },
-            accent: { value: '#6366F1' },
-            success: { value: '#10B981' },
-            error: { value: '#EF4444' },
+            primary: { value: '#FF385C' }, // Airbnb Red-ish
+            secondary: { value: '#222222' },
+            accent: { value: '#008489' },
+            success: { value: '#484848' },
+            error: { value: '#C13515' },
           },
           bg: {
-            surface: { value: '#F8FAFF' },
-            card: { value: 'rgba(255, 255, 255, 0.8)' },
+            surface: { value: '#FFFFFF' },
+            card: { value: '#FFFFFF' },
+            input: { value: '#F7F7F7' },
           }
         },
         shadows: {
-          premium: { value: '0 10px 30px -10px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' },
-          glow: { value: '0 0 20px rgba(59, 130, 246, 0.15)' },
+          airbnb: { value: '0 6px 16px rgba(0,0,0,0.12)' },
+          floating: { value: '0 12px 20px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.05)' },
+          dimensional: { value: '0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)' },
         }
       }
     },
