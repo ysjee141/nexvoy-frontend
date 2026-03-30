@@ -202,7 +202,8 @@ export default function SharePage() {
                                         p: '16px',
                                         bg: '#F7F7F7',
                                         borderRadius: '12px',
-                                        border: '1px solid #EEEEEE'
+                                        border: '1px solid #EEEEEE',
+                                        whiteSpace: 'pre-wrap'
                                     })}>
                                         {plan.memo}
                                     </div>
