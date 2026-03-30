@@ -57,28 +57,32 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
             return
         }
 
-        // 2. 현재 체크리스트에 이미 존재하는 항목 가져오기 (중복 방지)
+        // 2. 선택한 템플릿 이름 찾기 (중복 체크 키 생성을 위해 먼저 조회)
+        const selectedTemplate = templates.find(t => t.id === templateId)
+        const templateName = selectedTemplate ? selectedTemplate.title : null
+
+        // 3. 현재 체크리스트에 이미 존재하는 항목 가져오기 (중복 방지)
         const { data: existingItems } = await supabase
             .from('checklist_items')
-            .select('item_name')
+            .select('item_name, source_template_name')
             .eq('checklist_id', checklistId)
 
-        const existingNames = new Set(existingItems?.map((item: any) => item.item_name.trim().toLowerCase()) || [])
+        // 중복 판단 기준: 항목명(item_name) + 출처(source_template_name)
+        const existingKeys = new Set(existingItems?.map((item: any) => 
+            `${item.item_name.trim().toLowerCase()}|${(item.source_template_name || '').trim().toLowerCase()}`
+        ) || [])
 
-        // 3. 템플릿 아이템 중복 필터링
-        const newItemsToInsert = templateItems.filter((tItem: any) => 
-            !existingNames.has(tItem.item_name.trim().toLowerCase())
-        )
+        // 4. 템플릿 아이템 중복 필터링
+        const newItemsToInsert = templateItems.filter((tItem: any) => {
+            const key = `${tItem.item_name.trim().toLowerCase()}|${(templateName || '').trim().toLowerCase()}`
+            return !existingKeys.has(key)
+        })
 
         if (newItemsToInsert.length === 0) {
             alert('해당 템플릿의 모든 항목이 이미 체크리스트에 포함되어 있습니다.')
             setLoadingTemplateId(null)
             return
         }
-
-        // 선택한 템플릿 이름 찾기
-        const selectedTemplate = templates.find(t => t.id === templateId)
-        const templateName = selectedTemplate ? selectedTemplate.title : null
 
         // 4. 현재 체크리스트에 새 항목들만 벌크 인서트할 포맷팅 배열 만들기
         const insertData = newItemsToInsert.map((tItem: any) => ({
