@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X, ShieldCheck, LogOut } from 'lucide-react'
@@ -8,7 +8,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import TermsModal from '../signup/TermsModal'
 
-export default function ProfilePage() {
+function ProfileContent() {
     const supabase = createClient()
 
     const [user, setUser] = useState<any>(null)
@@ -484,5 +484,17 @@ export default function ProfilePage() {
             </div>
             <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
         </div>
+    )
+}
+
+export default function ProfilePage() {
+    return (
+        <Suspense fallback={
+            <div className={css({ textAlign: 'center', py: '80px', color: '#888' })}>
+                불러오는 중...
+            </div>
+        }>
+            <ProfileContent />
+        </Suspense>
     )
 }
