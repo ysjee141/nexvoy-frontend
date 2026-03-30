@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Next Voyage</string>
-    <string name="title_activity_main">Next Voyage</string>
+    <string name="app_name">OnVoy</string>
+    <string name="title_activity_main">OnVoy</string>
     <string name="package_name">xyz.nexvoy.app</string>
     <string name="custom_url_scheme">xyz.nexvoy.app</string>
 </resources>
