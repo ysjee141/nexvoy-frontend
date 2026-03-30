@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { analytics } from '@/services/AnalyticsService'
 import { css } from 'styled-system/css'
-import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo } from 'lucide-react'
+import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X } from 'lucide-react'
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 
@@ -76,8 +76,15 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
     const [groupBy, setGroupBy] = useState<'category' | 'template'>('category')
     const [tripInfo, setTripInfo] = useState<{ destination: string, start_date: string } | null>(null)
+    const [members, setMembers] = useState<any[]>([])
+    const [userChecks, setUserChecks] = useState<any[]>([])
+    const [currentUser, setCurrentUser] = useState<any>(null)
+    const [tripOwner, setTripOwner] = useState<any>(null)
+    const [newItemAssignmentType, setNewItemAssignmentType] = useState<'anyone' | 'specific' | 'everyone'>('anyone')
+    const [newItemAssignedUserId, setNewItemAssignedUserId] = useState<string>('')
+    const [editingItem, setEditingItem] = useState<any | null>(null)
 
-    const CATEGORIES = ['필수', '의류', '세면도구', '전자기기', '상비약', '기타']
+    const CATEGORIES = ['필수', '의류', '세면도구', '전자기기', '상비약', '음식', '기타']
 
     const fetchChecklist = useCallback(async () => {
         if (!tripId) return
@@ -107,16 +114,31 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         if (currentChecklistId) {
             setChecklistId(currentChecklistId)
 
-            // 2. 여행 정보 및 항목 병렬 조회
-            const [tripRes, itemsRes] = await Promise.all([
-                supabase.from('trips').select('destination, start_date').eq('id', tripId).single(),
-                supabase.from('checklist_items').select('*').eq('checklist_id', currentChecklistId).order('created_at', { ascending: true })
+            // 2. 여행 정보, 항목, 멤버, 개별 체크 내역 병렬 조회
+            const [tripRes, itemsRes, membersRes] = await Promise.all([
+                supabase.from('trips').select('*, profiles(nickname, email)').eq('id', tripId).single(),
+                supabase.from('checklist_items').select('*').eq('checklist_id', currentChecklistId).order('created_at', { ascending: true }),
+                supabase.from('trip_members').select('user_id, invited_email, role, status, profiles(nickname, email)').eq('trip_id', tripId).eq('status', 'accepted'),
             ])
 
-            if (tripRes.data) setTripInfo(tripRes.data)
+            if (tripRes.data) {
+                setTripInfo(tripRes.data)
+                setTripOwner({ id: tripRes.data.user_id, profiles: tripRes.data.profiles, email: tripRes.data.profiles?.email })
+            }
             
             if (itemsRes.data) {
                 setItems(itemsRes.data)
+                
+                // 항목이 로드된 후 개별 체크 내역 다시 조회 (ID 리스트 필요)
+                const itemIds = itemsRes.data.map((i: any) => i.id)
+                if (itemIds.length > 0) {
+                    const { data: checks } = await supabase
+                        .from('checklist_item_user_checks')
+                        .select('*')
+                        .in('item_id', itemIds)
+                    if (checks) setUserChecks(checks)
+                }
+
                 if (tripRes.data) {
                     const pendingCount = itemsRes.data.filter((i: any) => !i.is_checked).length
                     import('@/services/NotificationService').then(({ NotificationService }) => {
@@ -124,20 +146,72 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     })
                 }
             }
+
+            if (membersRes.data) {
+                setMembers(membersRes.data)
+            }
         }
     }, [tripId, supabase])
 
     useEffect(() => {
         if (isActive) {
             fetchChecklist()
+            supabase.auth.getUser().then(({ data }: { data: { user: any } }) => setCurrentUser(data.user))
         }
     }, [isActive, fetchChecklist])
 
     const toggleItem = async (itemId: string, currentStatus: boolean) => {
+        const item = items.find(i => i.id === itemId)
+        if (!item) return
+
+        // 1. 유형별 처리
+        if (item.assignment_type === 'specific') {
+            if (currentUser?.id !== item.assigned_user_id) {
+                alert('본인에게 할당된 항목만 체크할 수 있습니다.')
+                return
+            }
+        }
+
+        if (item.assignment_type === 'everyone') {
+            const myCheck = userChecks.find(c => c.item_id === itemId && c.user_id === currentUser?.id)
+            if (myCheck) {
+                // 체크 해제 (Optimistic)
+                setUserChecks(prev => prev.filter(c => c.id !== myCheck.id))
+                const { error } = await supabase.from('checklist_item_user_checks').delete().eq('id', myCheck.id)
+                if (error) {
+                    setUserChecks(prev => [...prev, myCheck]) // Rollback
+                }
+            } else {
+                // 체크 추가 (Optimistic)
+                const tempId = Math.random().toString()
+                const optimisticCheck = { id: tempId, item_id: itemId, user_id: currentUser?.id }
+                setUserChecks(prev => [...prev, optimisticCheck])
+                const { data, error } = await supabase.from('checklist_item_user_checks').insert({
+                    item_id: itemId,
+                    user_id: currentUser?.id
+                }).select().single()
+                
+                if (error || !data) {
+                    setUserChecks(prev => prev.filter(c => c.id !== tempId)) // Rollback
+                } else {
+                    setUserChecks(prev => prev.map(c => c.id === tempId ? data : c))
+                }
+            }
+            
+            // 리마인더 갱신
+            if (tripInfo && tripId) {
+                const pendingCount = items.filter((i: any) => !getItemStatus(i).is_checked).length
+                import('@/services/NotificationService').then(({ NotificationService }) => {
+                    NotificationService.scheduleChecklistReminder(tripId, tripInfo.destination, tripInfo.start_date, pendingCount)
+                })
+            }
+            return
+        }
+
+        // '누구라도' 또는 '특정인' (자신인 경우)
         // Optimistic UI update
         setItems(prev => prev.map((item: any) => item.id === itemId ? { ...item, is_checked: !currentStatus } : item))
 
-        const item = items.find(i => i.id === itemId)
         if (item) {
             analytics.logChecklistCheck(item.item_name, !currentStatus)
         }
@@ -151,15 +225,6 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             console.error('Toggle error:', error)
             // Rollback
             setItems(prev => prev.map((item: any) => item.id === itemId ? { ...item, is_checked: currentStatus } : item))
-        } else {
-            // 리마인더 갱신
-            if (tripInfo && tripId) {
-                const updatedItems = items.map((item: any) => item.id === itemId ? { ...item, is_checked: !currentStatus } : item)
-                const pendingCount = updatedItems.filter((i: any) => !i.is_checked).length
-                import('@/services/NotificationService').then(({ NotificationService }) => {
-                    NotificationService.scheduleChecklistReminder(tripId, tripInfo.destination, tripInfo.start_date, pendingCount)
-                })
-            }
         }
     }
 
@@ -173,7 +238,9 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 checklist_id: checklistId,
                 item_name: newItemName.trim(),
                 category: newItemCategory,
-                is_checked: false
+                is_checked: false,
+                assignment_type: newItemAssignmentType,
+                assigned_user_id: newItemAssignmentType === 'specific' ? newItemAssignedUserId : null
             })
             .select()
             .single()
@@ -195,14 +262,291 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         }
     }
 
+    const updateItem = async (updatedFields: any) => {
+        if (!editingItem) return
+
+        const { data, error } = await supabase
+            .from('checklist_items')
+            .update(updatedFields)
+            .eq('id', editingItem.id)
+            .select()
+            .single()
+
+        if (!error && data) {
+            setItems(prev => prev.map(item => item.id === data.id ? data : item))
+            setEditingItem(null)
+        }
+    }
+
     const deleteItem = async (e: React.MouseEvent, itemId: string) => {
         e.stopPropagation()
         setItems(prev => prev.filter((item: any) => item.id !== itemId))
         await supabase.from('checklist_items').delete().eq('id', itemId)
     }
 
+    const getParticipants = () => {
+        const list = []
+        if (tripOwner) {
+            list.push({ user_id: tripOwner.id, profiles: tripOwner.profiles, email: tripOwner.email })
+        }
+        members.forEach(m => {
+            if (m.user_id !== tripOwner?.id) {
+                list.push({ user_id: m.user_id, profiles: m.profiles, email: m.invited_email })
+            }
+        })
+        return list
+    }
+
+    const participants = getParticipants()
+    const totalMembersCount = participants.length
+    
+    const getItemStatus = (item: any): { is_checked: boolean, checks_count: number, is_my_checked: boolean } => {
+        if (item.assignment_type === 'everyone') {
+            const checks = userChecks.filter(c => c.item_id === item.id)
+            const checksCount = checks.length
+            const isMyChecked = checks.some(c => c.user_id === currentUser?.id)
+            return {
+                is_checked: checksCount >= totalMembersCount,
+                checks_count: checksCount,
+                is_my_checked: isMyChecked
+            }
+        }
+        return {
+            is_checked: item.is_checked,
+            checks_count: item.is_checked ? 1 : 0,
+            is_my_checked: item.is_checked
+        }
+    }
+
+    const [showChecksModal, setShowChecksModal] = useState<string | null>(null)
+
+    const ChecklistItem = ({ item }: { item: any }) => {
+        const status = getItemStatus(item)
+        const isAssignedToMe = item.assignment_type === 'specific' ? item.assigned_user_id === currentUser?.id : true
+        const canCheck = item.assignment_type === 'specific' ? isAssignedToMe : true
+
+        const getAssignedUserLabel = () => {
+            if (item.assigned_user_id === currentUser?.id) return '나'
+            const p = participants.find(p => p.user_id === item.assigned_user_id)
+            if (!p) return '담당자'
+            return p.profiles?.nickname || p.email?.split('@')[0] || '참여자'
+        }
+
+        const assignedUser = item.assignment_type === 'specific' ? getAssignedUserLabel() : null
+
+        return (
+            <li
+                className={css({
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    p: '16px 20px',
+                    borderBottom: '1px solid #EEEEEE',
+                    transition: 'bg 0.1s',
+                    _active: { bg: '#F7F7F7' },
+                    _hover: { bg: { base: 'transparent', sm: '#fafafa' }, '& .action-btns': { opacity: 1 } }
+                })}
+            >
+                <div 
+                    onClick={() => canCheck && toggleItem(item.id, item.is_checked)}
+                    className={css({ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, cursor: canCheck ? 'pointer' : 'not-allowed' })}
+                >
+                    {/* 체크박스 */}
+                    <div className={css({ 
+                        w: '24px', h: '24px', 
+                        border: '2px solid', 
+                        borderColor: status.is_checked ? '#222' : (status.is_my_checked ? '#3B82F6' : '#B0B0B0'),
+                        borderRadius: '4px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        bg: status.is_checked ? '#222' : (status.is_my_checked ? '#3B82F6' : 'transparent'),
+                        transition: 'all 0.2s',
+                        opacity: !canCheck ? 0.3 : 1
+                    })}>
+                        {(status.is_checked || status.is_my_checked) && <Check size={16} color="white" />}
+                    </div>
+
+                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '2px' })}>
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
+                            <span className={css({ 
+                                fontSize: '16px', 
+                                fontWeight: '500', 
+                                color: status.is_checked ? '#B0B0B0' : '#222', 
+                                textDecoration: status.is_checked ? 'line-through' : 'none' 
+                            })}>
+                                {item.item_name}
+                            </span>
+                            
+                            {/* 유형 배지 */}
+                            {item.assignment_type === 'specific' && (
+                                <span className={css({ 
+                                    fontSize: '11px', px: '6px', py: '2px', borderRadius: '4px',
+                                    bg: isAssignedToMe ? '#EFF6FF' : '#f1f3f4',
+                                    color: isAssignedToMe ? '#3B82F6' : '#666',
+                                    fontWeight: '700',
+                                    display: 'flex', alignItems: 'center', gap: '3px'
+                                })}>
+                                    <User size={10} /> {assignedUser}
+                                </span>
+                            )}
+
+                            {item.assignment_type === 'everyone' && (
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setShowChecksModal(item.id)
+                                    }}
+                                    className={css({ 
+                                        fontSize: '11px', px: '6px', py: '2px', borderRadius: '4px',
+                                        bg: status.is_checked ? '#f1f3f4' : '#EFF6FF',
+                                        color: status.is_checked ? '#666' : '#3B82F6',
+                                        fontWeight: '800', border: 'none', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', gap: '3px'
+                                    })}
+                                >
+                                    <Users size={10} /> {status.checks_count}/{totalMembersCount}
+                                </button>
+                            )}
+                        </div>
+
+                        <div className={css({ display: 'flex', gap: '6px', alignItems: 'center' })}>
+                            {item.source_template_name && (
+                                <span className={css({ fontSize: '11px', color: '#888' })}>
+                                    {item.source_template_name}
+                                </span>
+                            )}
+                            {item.category && groupBy === 'template' && (
+                                <span className={css({ fontSize: '11px', color: '#888', bg: '#f1f3f4', px: '6px', py: '1px', borderRadius: '4px' })}>
+                                    {item.category}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className={`action-btns ${css({ display: 'flex', gap: '4px', opacity: { base: 1, sm: 0 }, transition: 'all 0.2s' })}`}>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
+                        className={css({ bg: 'transparent', border: 'none', color: '#888', cursor: 'pointer', p: '8px', borderRadius: '4px', _hover: { color: '#222', bg: '#f1f3f4' } })}
+                    >
+                        <Settings size={16} />
+                    </button>
+                    <button
+                        onClick={(e) => deleteItem(e, item.id)}
+                        className={css({ bg: 'transparent', border: 'none', color: { base: '#ff4d4f', sm: '#ccc' }, cursor: 'pointer', p: '8px', borderRadius: '4px', _hover: { color: '#dc2626', bg: '#ffeeee' } })}
+                    >
+                        <Trash2 size={16} />
+                    </button>
+                </div>
+            </li>
+        )
+    }
+
+    const ChecksModal = () => {
+        if (!showChecksModal) return null
+        const item = items.find(i => i.id === showChecksModal)
+        if (!item) return null
+        
+        const checkedUserIds = userChecks.filter(c => c.item_id === item.id).map(c => c.user_id)
+        
+        return (
+            <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setShowChecksModal(null)}>
+                <div className={css({ bg: 'white', w: '100%', maxW: '400px', borderRadius: '20px', overflow: 'hidden' })} onClick={e => e.stopPropagation()}>
+                    <div className={css({ p: '20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+                        <h3 className={css({ fontSize: '18px', fontWeight: '800' })}>체크 현황</h3>
+                        <button onClick={() => setShowChecksModal(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer' })}><X size={20} /></button>
+                    </div>
+                    <div className={css({ p: '20px', maxHeight: '300px', overflowY: 'auto' })}>
+                        <div className={css({ mb: '16px', fontSize: '14px', color: '#666', fontWeight: '700' })}>
+                            "{item.item_name}" 준비 완료 인원 ({checkedUserIds.length}/{totalMembersCount})
+                        </div>
+                        <ul className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
+                            {participants.map(p => {
+                                const isMe = p.user_id === currentUser?.id
+                                const name = p.profiles?.nickname || p.email || '참여자'
+                                return (
+                                    <li key={p.user_id} className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
+                                        <span className={css({ fontSize: '15px' })}>
+                                            {isMe ? `나 (${name})` : name}
+                                        </span>
+                                        {checkedUserIds.includes(p.user_id) ? <Check size={18} color="#3B82F6" /> : <div className={css({ w: '18px' })} />}
+                                    </li>
+                                )
+                            })}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    const EditItemModal = () => {
+        if (!editingItem) return null
+
+        const [name, setName] = useState(editingItem.item_name)
+        const [category, setCategory] = useState(editingItem.category || '기타')
+        const [type, setType] = useState(editingItem.assignment_type || 'anyone')
+        const [assignedTo, setAssignedTo] = useState(editingItem.assigned_user_id || '')
+
+        return (
+            <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setEditingItem(null)}>
+                <div className={css({ bg: 'white', w: '100%', maxW: '450px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' })} onClick={e => e.stopPropagation()}>
+                    <div className={css({ p: '24px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+                        <h3 className={css({ fontSize: '20px', fontWeight: '800' })}>항목 수정</h3>
+                        <button onClick={() => setEditingItem(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer', color: '#666' })}><X size={24} /></button>
+                    </div>
+                    <div className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '20px' })}>
+                        <div>
+                            <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>항목 이름</label>
+                            <input 
+                                type="text" value={name} onChange={e => setName(e.target.value)}
+                                className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: '#222' } })}
+                            />
+                        </div>
+                        <div className={css({ display: 'flex', gap: '12px' })}>
+                            <div className={css({ flex: 1 })}>
+                                <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>카테고리</label>
+                                <select value={category} onChange={e => setCategory(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white' })}>
+                                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>완료 조건 유형</label>
+                            <select value={type} onChange={e => setType(e.target.value as any)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mb: '8px' })}>
+                                <option value="anyone">함께 준비해요</option>
+                                {members.length > 0 && <option value="specific">담당자를 정해요</option>}
+                                {members.length > 0 && <option value="everyone">각자 꼭 챙겨요</option>}
+                            </select>
+                            
+                            {type === 'specific' && (
+                                <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mt: '8px' })}>
+                                    {participants.map(p => (
+                                        <option key={p.user_id} value={p.user_id}>
+                                            {p.profiles?.nickname || p.email || (p.user_id === currentUser?.id ? '나' : '참여자')}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                        </div>
+                    </div>
+                    <div className={css({ p: '24px', bg: '#F9F9F9', display: 'flex', gap: '12px' })}>
+                        <button 
+                            onClick={() => updateItem({ item_name: name, category, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null })}
+                            className={css({ flex: 1, py: '14px', bg: '#222', color: 'white', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer', _hover: { bg: '#000' } })}
+                        >
+                            저장하기
+                        </button>
+                        <button onClick={() => setEditingItem(null)} className={css({ flex: 1, py: '14px', bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' })}>
+                            취소
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
     const totalItems = items.length
-    const checkedItems = items.filter((item: any) => item.is_checked).length
+    const checkedItems = items.filter((item: any) => getItemStatus(item).is_checked).length
     const progressPercent = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0
 
     const templateGroups = items.reduce((acc: Record<string, any[]>, item) => {
@@ -316,7 +660,47 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 className={css({ flex: 1, p: '12px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '15px' })}
                             />
                         </div>
-                        <div className={css({ display: 'flex', gap: '8px', alignItems: 'center' })}>
+                        {members.length > 0 && (
+                            <div className={css({ display: 'flex', gap: '8px', mt: '12px', flexWrap: 'wrap' })}>
+                                <select
+                                    value={newItemAssignmentType}
+                                    onChange={e => {
+                                        setNewItemAssignmentType(e.target.value as any)
+                                        if (e.target.value === 'specific' && !newItemAssignedUserId) {
+                                            setNewItemAssignedUserId(currentUser?.id || '')
+                                        }
+                                    }}
+                                    className={css({ p: '8px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '13px', fontWeight: '600' })}
+                                >
+                                    <option value="anyone">함께 준비해요</option>
+                                    <option value="specific">담당자를 정해요</option>
+                                    <option value="everyone">각자 꼭 챙겨요</option>
+                                </select>
+
+                                {newItemAssignmentType === 'specific' && (
+                                    <select
+                                        value={newItemAssignedUserId}
+                                        onChange={e => setNewItemAssignedUserId(e.target.value)}
+                                        className={css({ p: '8px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '13px' })}
+                                    >
+                                        {participants.map(p => (
+                                            <option key={p.user_id} value={p.user_id}>
+                                                {p.profiles?.nickname || p.email || (p.user_id === currentUser?.id ? '나' : '참여자')}
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                                
+                                <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', color: '#717171', fontSize: '12px' })}>
+                                    <Info size={14} />
+                                    {newItemAssignmentType === 'anyone' && '한 명이라도 챙기면 완료된 것으로 표시돼요.'}
+                                    {newItemAssignmentType === 'specific' && '정해진 담당자만 체크할 수 있어요.'}
+                                    {newItemAssignmentType === 'everyone' && '참여자 모두가 각자 챙겨야 완료돼요.'}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className={css({ display: 'flex', gap: '8px', alignItems: 'center', mt: '16px' })}>
                              <select
                                 value={newItemCategory}
                                 onChange={e => setNewItemCategory(e.target.value)}
@@ -364,50 +748,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                     </h3>
                                     <ul className={css({ display: 'flex', flexDirection: 'column' })}>
                                         {categoryItems.map((item) => (
-                                            <li
-                                                key={item.id}
-                                                onClick={() => toggleItem(item.id, item.is_checked)}
-                                                className={css({
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'space-between',
-                                                    p: '16px 20px',
-                                                    borderBottom: '1px solid #EEEEEE',
-                                                    cursor: 'pointer',
-                                                    transition: 'bg 0.1s',
-                                                    _active: { bg: '#F7F7F7' },
-                                                    _hover: { bg: { base: 'transparent', sm: '#fafafa' }, '& .delete-btn': { opacity: 1 } }
-                                                })}
-                                            >
-                                                <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                                                    <div className={css({ 
-                                                        w: '24px', h: '24px', 
-                                                        border: '2px solid', 
-                                                        borderColor: item.is_checked ? '#222' : '#B0B0B0',
-                                                        borderRadius: '4px',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                        bg: item.is_checked ? '#222' : 'transparent',
-                                                        transition: 'all 0.2s'
-                                                    })}>
-                                                        {item.is_checked && <Check size={16} color="white" />}
-                                                    </div>
-                                                    <span className={css({ fontSize: '16px', fontWeight: '500', color: item.is_checked ? '#B0B0B0' : '#222', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
-                                                        {item.item_name}
-                                                    </span>
-                                                    {/* 템플릿 배지 표시 */}
-                                                    {item.source_template_name && (
-                                                        <span className={css({ fontSize: '11px', bg: '#f1f3f4', color: '#666', px: '6px', py: '2px', borderRadius: '4px' })}>
-                                                            {item.source_template_name}
-                                                        </span>
-                                                    )}
-                                                </div>
-                                                <button
-                                                    onClick={(e) => deleteItem(e, item.id)}
-                                                    className={`delete-btn ${css({ bg: 'transparent', border: 'none', color: { base: '#ff4d4f', sm: '#ccc' }, cursor: 'pointer', opacity: { base: 1, sm: 0 }, transition: 'all 0.2s', p: '8px', borderRadius: '4px', _hover: { color: '#dc2626', bg: '#ffeeee' } })}`}
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            </li>
+                                            <ChecklistItem key={item.id} item={item} />
                                         ))}
                                     </ul>
                                 </div>
@@ -422,47 +763,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 </h3>
                                 <ul className={css({ display: 'flex', flexDirection: 'column' })}>
                                     {grpItems.map((item) => (
-                                        <li
-                                            key={item.id}
-                                            onClick={() => toggleItem(item.id, item.is_checked)}
-                                            className={css({
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                p: '16px 20px',
-                                                borderBottom: '1px solid #EEEEEE',
-                                                cursor: 'pointer',
-                                                transition: 'bg 0.1s',
-                                                _active: { bg: '#F7F7F7' },
-                                                _hover: { bg: { base: 'transparent', sm: '#fafafa' }, '& .delete-btn': { opacity: 1 } }
-                                            })}
-                                        >
-                                            <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                                                <div className={css({ 
-                                                    w: '24px', h: '24px', 
-                                                    border: '2px solid', 
-                                                    borderColor: item.is_checked ? '#222' : '#B0B0B0',
-                                                    borderRadius: '4px',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    bg: item.is_checked ? '#222' : 'transparent',
-                                                    transition: 'all 0.2s'
-                                                })}>
-                                                    {item.is_checked && <Check size={16} color="white" />}
-                                                </div>
-                                                <span className={css({ fontSize: '16px', fontWeight: '500', color: item.is_checked ? '#B0B0B0' : '#222', textDecoration: item.is_checked ? 'line-through' : 'none' })}>
-                                                    {item.item_name}
-                                                </span>
-                                                <span className={css({ fontSize: '11px', bg: '#f1f3f4', color: '#666', px: '6px', py: '2px', borderRadius: '4px' })}>
-                                                    {item.category || '기타'}
-                                                </span>
-                                            </div>
-                                            <button
-                                                onClick={(e) => deleteItem(e, item.id)}
-                                                className={`delete-btn ${css({ bg: 'transparent', border: 'none', color: { base: '#ff4d4f', sm: '#ccc' }, cursor: 'pointer', opacity: { base: 1, sm: 0 }, transition: 'all 0.2s', p: '8px', borderRadius: '4px', _hover: { color: '#dc2626', bg: '#ffeeee' } })}`}
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
-                                        </li>
+                                        <ChecklistItem key={item.id} item={item} />
                                     ))}
                                 </ul>
                             </div>
@@ -508,6 +809,9 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     }}
                 />
             )}
+
+            <ChecksModal />
+            <EditItemModal />
         </div>
     )
 }
