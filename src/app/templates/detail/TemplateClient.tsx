@@ -15,7 +15,7 @@ interface TemplateItemInput {
     isNew?: boolean; // 신규 추가된 항목 식별용
 }
 
-const CATEGORIES = ['의류', '전자기기', '세면도구', '상비약', '서류', '기타']
+const CATEGORIES = ['의류', '전자기기', '세면도구', '상비약', '서류', '음식', '기타']
 
 export default function EditTemplatePage() {
     const searchParams = useSearchParams()

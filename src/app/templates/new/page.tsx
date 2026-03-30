@@ -13,7 +13,7 @@ interface TemplateItemInput {
     category: string;
 }
 
-const CATEGORIES = ['의류', '전자기기', '세면도구', '상비약', '서류', '기타']
+const CATEGORIES = ['의류', '전자기기', '세면도구', '상비약', '서류', '음식', '기타']
 
 export default function NewTemplatePage() {
     const router = useRouter()
