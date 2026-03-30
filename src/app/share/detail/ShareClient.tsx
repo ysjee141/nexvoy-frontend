@@ -125,7 +125,7 @@ export default function SharePage() {
             <div className={css({ mb: '48px', textAlign: 'left', borderBottom: '1px solid #EEEEEE', pb: '32px' })}>
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '20px' })}>
                     <div className={css({ w: '32px', h: '32px', bg: 'brand.primary', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '900', fontSize: '18px' })}>O</div>
-                    <span className={css({ fontSize: '16px', fontWeight: '800', color: '#222', letterSpacing: '-0.5px' })}>OnVoy</span>
+                    <span className={css({ fontSize: '16px', fontWeight: '800', color: '#222', letterSpacing: '-0.5px' })}>온여정</span>
                 </div>
                 
                 <h1 className={css({ 
@@ -222,7 +222,7 @@ export default function SharePage() {
                     boxShadow: '0 8px 16px rgba(59, 130, 246, 0.2)',
                     transition: 'all 0.2s',
                     _active: { transform: 'scale(0.96)' }
-                })}>OnVoy 시작하기</a>
+                })}>온여정 시작하기</a>
             </div>
         </div>
     )

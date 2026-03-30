@@ -10,7 +10,7 @@ import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft } 
 import { useUIStore } from '@/stores/useUIStore'
 
 const PAGE_TITLES: Record<string, string> = {
-    '/': '온여정(OnVoy)',
+    '/': '온여정',
     '/templates': '체크리스트 템플릿',
     '/templates/': '체크리스트 템플릿',
     '/profile': '내 정보',
@@ -33,7 +33,7 @@ export default function Navbar() {
     const { mobileTitle } = useUIStore()
 
     const isRootPage = normalizedPath === '/'
-    const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || PAGE_TITLES[pathname] || 'OnVoy'
+    const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || PAGE_TITLES[pathname] || '온여정'
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
@@ -90,8 +90,8 @@ export default function Navbar() {
                 {/* 왼쪽: 로고 + 가이드 */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '20px' })}>
                     <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: '#172554' })}>
-                        <Image src="/logo.png" alt="OnVoy Logo" width={28} height={28} priority />
-                        <span>OnVoy</span>
+                        <Image src="/logo.png" alt="온여정 로고" width={28} height={28} priority />
+                        <span>온여정</span>
                     </Link>
                 </div>
 

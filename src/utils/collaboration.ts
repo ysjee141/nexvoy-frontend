@@ -1,12 +1,12 @@
 import { createClient } from '@/utils/supabase/client'
 
 /**
- * 협업 및 공유 관련 유틸리티
+ * 동행 및 공유 관련 유틸리티
  * 모든 메서드 내부에서 createClient()를 호출하여 최신 클라이언트 인스턴스(특히 앱 리셋 후)를 사용하도록 합니다.
  */
 export const collaboration = {
     /**
-     * 특정 이메일로 협업자 초대
+     * 특정 이메일로 동행자 초대
      */
     async inviteMember(tripId: string, email: string, role: 'editor' | 'viewer' = 'editor') {
         const supabase = createClient()
@@ -115,7 +115,7 @@ export const collaboration = {
     },
 
     /**
-     * 협업자 역할 업데이트
+     * 동행자 역할 업데이트
      */
     async updateMemberRole(memberId: string, role: 'editor' | 'viewer') {
         const supabase = createClient()
@@ -130,7 +130,7 @@ export const collaboration = {
     },
 
     /**
-     * 협업자 삭제
+     * 동행자 삭제
      */
     async removeMember(memberId: string) {
         const supabase = createClient()

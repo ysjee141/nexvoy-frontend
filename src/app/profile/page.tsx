@@ -124,7 +124,7 @@ function ProfileContent() {
             .maybeSingle()
 
         if (existingNickname) {
-            setNicknameError('이미 사용 중인 닉네임입니다.')
+            setNicknameError('아쉽게도 이 이름은 이미 쓰고 계신 분이 있네요!')
             setIsSavingNickname(false)
             return
         }
@@ -147,11 +147,11 @@ function ProfileContent() {
         setPasswordSuccess('')
 
         if (newPassword.length < 6) {
-            setPasswordError('새 비밀번호는 6자 이상이어야 합니다.')
+            setPasswordError('새 비밀번호는 6자 이상으로 더 튼튼하게 만들어 주세요.')
             return
         }
         if (newPassword !== confirmPassword) {
-            setPasswordError('새 비밀번호와 확인 비밀번호가 일치하지 않습니다.')
+            setPasswordError('비밀번호가 서로 달라서 다시 한번 확인이 필요해요.')
             return
         }
 
@@ -161,9 +161,9 @@ function ProfileContent() {
         const { error } = await supabase.auth.updateUser({ password: newPassword })
 
         if (error) {
-            setPasswordError(error.message || '비밀번호 변경에 실패했습니다.')
+            setPasswordError(error.message || '비밀번호를 바꾸는 중에 잠시 문제가 생겼어요. 다시 한번 시도해 주시겠어요?')
         } else {
-            setPasswordSuccess('비밀번호가 성공적으로 변경되었습니다.')
+            setPasswordSuccess('비밀번호가 안전하게 변경되었어요. 이제 안심하고 준비하세요! ✅')
             setCurrentPassword('')
             setNewPassword('')
             setConfirmPassword('')
@@ -183,7 +183,7 @@ function ProfileContent() {
     if (!user) {
         return (
             <div className={css({ textAlign: 'center', py: '80px', color: '#888' })}>
-                불러오는 중...
+                여정 정보를 열심히 가져오고 있어요, 잠시만 기다려 주세요! ✈️
             </div>
         )
     }
@@ -261,14 +261,14 @@ function ProfileContent() {
 
             {/* 활동 통계 */}
             <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #DDDDDD', boxShadow: '0 6px 16px rgba(0,0,0,0.06)' })}>
-                <h2 className={css({ fontSize: '18px', fontWeight: '800', mb: '24px', color: '#222' })}>활동 요약</h2>
+                <h2 className={css({ fontSize: '18px', fontWeight: '800', mb: '24px', color: '#222' })}>나의 여정 기록</h2>
                 {/* 모바일: 2x2 grid / 데스크탑: 4열 */}
                 <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '12px', textAlign: 'center' })}>
                     {[
-                        { label: '총 여행', value: stats.totalTrips, icon: '✈️' },
-                        { label: '일정 수', value: stats.totalPlans, icon: '📅' },
-                        { label: '내 템플릿', value: stats.totalTemplates, icon: '📦' },
-                        { label: '짐 준비율', value: `${packingRate}%`, icon: '🧳' },
+                        { label: '기록한 여행', value: stats.totalTrips, icon: '✈️' },
+                        { label: '채워진 일정', value: stats.totalPlans, icon: '📅' },
+                        { label: '나만의 템플릿', value: stats.totalTemplates, icon: '📦' },
+                        { label: '짐 챙기기 달성률', value: `${packingRate}%`, icon: '🧳' },
                     ].map(item => (
                         <div key={item.label} className={css({ p: { base: '16px 8px', sm: '20px' }, bg: '#F7F7F7', borderRadius: '16px', border: '1px solid #EEEEEE' })}>
                             <div className={css({ fontSize: '24px', mb: '8px' })}>{item.icon}</div>
@@ -295,7 +295,7 @@ function ProfileContent() {
                                 type={showNew ? 'text' : 'password'}
                                 value={newPassword}
                                 onChange={e => { setNewPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
-                                placeholder="6자 이상 입력"
+                                placeholder="6자 이상 입력해 주세요"
                                 className={css({ w: '100%', p: '12px 48px 12px 16px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
                             />
                             <button type="button" onClick={() => setShowNew(!showNew)}
@@ -306,12 +306,12 @@ function ProfileContent() {
                         {/* 최소 길이 안내 */}
                         {newPassword.length > 0 && newPassword.length < 6 && (
                             <p className={css({ fontSize: '12px', color: '#f59e0b', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                <XCircle size={13} /> 6자 이상 입력해주세요 ({newPassword.length}/6)
+                                <XCircle size={13} /> 6자 이상으로 조금 더 튼튼하게 만들어 주세요! ({newPassword.length}/6)
                             </p>
                         )}
                         {newPassword.length >= 6 && (
                             <p className={css({ fontSize: '12px', color: '#16a34a', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                <CheckCircle2 size={13} /> 사용 가능한 비밀번호입니다
+                                <CheckCircle2 size={13} /> 아주 좋은 비밀번호예요!
                             </p>
                         )}
                     </div>
@@ -324,7 +324,7 @@ function ProfileContent() {
                                 type={showConfirm ? 'text' : 'password'}
                                 value={confirmPassword}
                                 onChange={e => { setConfirmPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
-                                placeholder="비밀번호를 다시 입력"
+                                placeholder="한 번 더 입력해 주세요"
                                 className={css({
                                     w: '100%', p: '12px 48px 12px 16px', fontSize: '15px', outline: 'none', borderRadius: '8px',
                                     border: confirmPassword.length === 0
@@ -344,11 +344,11 @@ function ProfileContent() {
                         {confirmPassword.length > 0 && (
                             confirmPassword === newPassword ? (
                                 <p className={css({ fontSize: '12px', color: '#16a34a', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                    <CheckCircle2 size={13} /> 비밀번호가 일치합니다
+                                    <CheckCircle2 size={13} /> 완벽해요! 비밀번호가 일치합니다.
                                 </p>
                             ) : (
                                 <p className={css({ fontSize: '12px', color: '#dc2626', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                    <XCircle size={13} /> 비밀번호가 일치하지 않습니다
+                                    <XCircle size={13} /> 비밀번호가 달라요. 다시 한번 확인해 볼까요?
                                 </p>
                             )
                         )}
@@ -366,7 +366,7 @@ function ProfileContent() {
                         disabled={isChangingPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6}
                         className={css({ mt: '4px', py: '12px', bg: '#111', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _hover: { bg: '#333' } })}
                     >
-                        {isChangingPassword ? '변경 중...' : '비밀번호 변경하기'}
+                        {isChangingPassword ? '안전하게 바꾸는 중...' : '비밀번호 변경할게요'}
                     </button>
                 </form>
             </section>
@@ -375,8 +375,8 @@ function ProfileContent() {
             <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #DDDDDD', boxShadow: '0 6px 16px rgba(0,0,0,0.06)' })}>
                 <h2 className={css({ fontSize: '18px', fontWeight: '800', p: '24px 24px 16px', color: '#222' })}>바로가기</h2>
                 {[
-                    { href: '/templates', icon: '📦', label: '나만의 템플릿 관리', desc: '체크리스트 템플릿을 관리합니다' },
-                    { href: '/', icon: '✈️', label: '내 여행 목록', desc: '등록한 여행들을 확인합니다' },
+                    { href: '/templates', icon: '📦', label: '나만의 템플릿', desc: '자주 쓰는 준비물을 미리 만들어 보세요' },
+                    { href: '/', icon: '✈️', label: '내 여행 목록', desc: '지금까지의 모든 여행을 확인해 보세요' },
                 ].map((item, i, arr) => (
                     <Link
                         key={item.href}
@@ -491,7 +491,7 @@ export default function ProfilePage() {
     return (
         <Suspense fallback={
             <div className={css({ textAlign: 'center', py: '80px', color: '#888' })}>
-                불러오는 중...
+                정보를 열심히 가져오고 있어요, 잠시만 기다려 주세요! ✈️
             </div>
         }>
             <ProfileContent />

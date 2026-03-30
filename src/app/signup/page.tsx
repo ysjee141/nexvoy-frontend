@@ -44,7 +44,7 @@ export default function SignUpPage() {
                 .maybeSingle()
 
             if (existingNickname) {
-                setMessage({ type: 'error', text: '이미 사용 중인 닉네임입니다. 다른 닉네임을 사용해 주세요.' })
+                setMessage({ type: 'error', text: '아쉽게도 이 멋진 이름은 이미 다른 분이 쓰고 있네요! 다른 이름을 시도해 볼까요?' })
                 setLoading(false)
                 return
             }
@@ -66,7 +66,7 @@ export default function SignUpPage() {
         if (error) {
             setMessage({ type: 'error', text: error.message })
         } else if (data?.user?.identities && data.user.identities.length === 0) {
-            setMessage({ type: 'error', text: '이미 가입된 이메일 주소입니다. 로그인하거나 다른 이메일을 사용해 주세요.' })
+            setMessage({ type: 'error', text: '이미 온여정의 식구인 이메일이에요! 로그인하시거나 다른 메일을 사용해 주세요.' })
         } else {
             setIsSuccess(true)
         }
@@ -80,9 +80,9 @@ export default function SignUpPage() {
                     <div className={css({ w: '80px', h: '80px', bg: '#F7F7F7', color: '#222', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: '24px' })}>
                         <Mail size={40} />
                     </div>
-                    <h2 className={css({ fontSize: '26px', fontWeight: '800', color: '#222', mb: '12px', letterSpacing: '-0.02em' })}>이메일함을 확인해주세요</h2>
+                    <h2 className={css({ fontSize: '26px', fontWeight: '800', color: '#222', mb: '12px', letterSpacing: '-0.02em' })}>메일함을 확인해 주세요! 💌</h2>
                     <p className={css({ fontSize: '15px', color: '#666', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
-                        <strong>{email}</strong> 주소로 가입 인증 메일을 발송했습니다.<br />메일 내의 인증 링크를 클릭하시면 가입이 완료됩니다.
+                        <strong>{email}</strong> 주소로 소중한 인증 메일을 보냈어요.<br />메일함에서 확인 버튼만 누르면, 우리는 이제 소중한 인연이에요!
                     </p>
                     <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#222', fontWeight: '800', fontSize: '15px', textDecoration: 'underline' })}>
                         로그인 페이지로 돌아가기 <ArrowRight size={16} />
@@ -120,8 +120,8 @@ export default function SignUpPage() {
             })}>
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
-                        <Image src="/logo.png" alt="OnVoy Logo" width={32} height={32} priority />
-                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#172554', letterSpacing: '-0.02em' })}>OnVoy</span>
+                        <Image src="/logo.png" alt="온여정 로고" width={32} height={32} priority />
+                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#172554', letterSpacing: '-0.02em' })}>온여정</span>
                     </div>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
@@ -335,7 +335,7 @@ export default function SignUpPage() {
                                 이용약관 및 개인정보 처리방침
                             </button>
                             <label htmlFor="terms" className={css({ cursor: 'pointer', userSelect: 'none' })}>
-                                에 동의합니다. (필수)
+                                에 동의해요 (필수)
                             </label>
                         </div>
                     </div>

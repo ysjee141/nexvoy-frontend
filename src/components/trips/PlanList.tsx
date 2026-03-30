@@ -112,11 +112,14 @@ function PlanCard({
                     {plan.location && (
                         <span className={css({
                             display: 'inline-flex', alignItems: 'center', gap: '3px',
-                            fontSize: '12px', color: '#666',
-                            bg: '#f5f5f5', px: '7px', py: '3px', borderRadius: '6px',
+                            fontSize: '12px',
+                            color: isOngoing ? '#1a56db' : '#666',
+                            bg: isOngoing ? 'white' : '#f5f5f5',
+                            px: '7px', py: '3px', borderRadius: '6px',
                             maxW: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            boxShadow: isOngoing ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
                         })}>
-                            <MapPin size={11} color="#F4511E" />
+                            <MapPin size={11} color={isOngoing ? '#3B82F6' : '#F4511E'} />
                             {plan.location}
                         </span>
                     )}
@@ -283,7 +286,7 @@ export default function PlanList({
                 <section>
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '16px', pb: '10px', borderBottom: '2px solid #EFF6FF' })}>
                         <span className={css({ fontSize: '18px' })}>🗺️</span>
-                        <h2 className={css({ fontSize: { base: '15px', sm: '17px' }, fontWeight: '800', color: '#1a56db' })}>남은 일정</h2>
+                        <h2 className={css({ fontSize: { base: '15px', sm: '17px' }, fontWeight: '800', color: '#1a56db' })}>다가올 여정</h2>
                         <span className={css({ fontSize: '12px', color: '#888', bg: '#f1f3f4', px: '8px', py: '2px', borderRadius: '10px' })}>
                             {remainingDays.reduce((s, d) => s + d.plans.length, 0)}개
                         </span>
@@ -308,7 +311,7 @@ export default function PlanList({
                     >
                         <span className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
                             <span className={css({ fontSize: '16px' })}>📸</span>
-                            <span className={css({ fontWeight: '700', fontSize: '15px', color: '#555' })}>지나간 일정</span>
+                            <span className={css({ fontWeight: '700', fontSize: '15px', color: '#555' })}>추억으로 남은 여정</span>
                             <span className={css({ fontSize: '12px', color: '#aaa', bg: '#f5f5f5', px: '8px', py: '2px', borderRadius: '10px' })}>
                                 {pastDays.reduce((s, d) => s + d.plans.length, 0)}개
                             </span>

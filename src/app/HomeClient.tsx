@@ -33,9 +33,9 @@ const FEATURES = [
   {
       icon: <User size={28} />,
       bg: '#fce8b2', color: '#E37400',
-      title: '실시간 협업',
-      desc: '동행자를 이메일로 초대하고 편집자/뷰어 권한으로 함께 계획하세요. 혼자 세우는 여행 계획은 이제 그만.',
-      badge: '협업',
+      title: '동행자와 함께하기',
+      desc: '동행자를 이메일로 초대하고 편집/조회 권한으로 함께 계획하세요. 혼자 세우는 여행 계획은 이제 그만.',
+      badge: '동행',
   },
   {
       icon: <CheckSquare size={28} />,
@@ -125,24 +125,24 @@ const ADVANCED = [
 // ── FAQ ──
 const FAQS = [
   {
-      q: 'OnVoy는 무료인가요?',
-      a: '네, 완전 무료입니다. 별도 결제나 신용카드 등록 없이 바로 사용하실 수 있습니다.',
+      q: '온여정는 무료인가요?',
+      a: '네, 완전 무료예요! 별도 결제나 신용카드 등록 없이 바로 시작해 보세요.',
   },
   {
       q: '동행자는 몇 명까지 초대할 수 있나요?',
-      a: '현재 초대 인원에 별도 제한은 없습니다. 소규모 커플 여행부터 대규모 단체 여행까지 함께 계획하세요.',
+      a: '현재 초대 인원에 별도 제한은 없어요. 소규모 커플 여행부터 대규모 단체 여행까지 함께 즐거운 계획을 세워 보세요.',
   },
   {
       q: '여행 일정을 공유하면 상대방도 수정할 수 있나요?',
-      a: '공유 링크는 읽기 전용입니다. 함께 수정하려면 협업 기능으로 직접 초대해 편집자 권한을 부여하세요.',
+      a: '공유 링크는 읽기 전용입니다. 함께 수정하려면 동행자 초대 기능으로 직접 초대해 편집 권한을 나누어 보세요.',
   },
   {
       q: '환율은 얼마나 자주 업데이트되나요?',
-      a: '환율 정보는 1시간마다 자동으로 최신 데이터로 업데이트됩니다. 항상 비교적 최신 환율을 기준으로 예상 금액을 확인할 수 있습니다.',
+      a: '환율 정보는 1시간마다 자동으로 최신 데이터로 업데이트돼요. 항상 따끈따끈한 최신 환율을 기준으로 예상 금액을 확인할 수 있답니다.',
   },
   {
       q: '모바일에서도 동일하게 사용할 수 있나요?',
-      a: '물론입니다. 반응형으로 설계되어 스마트폰에서도 동일한 기능을 쾌적하게 사용할 수 있습니다. 별도 앱 설치도 필요 없습니다.',
+      a: '물론이죠! 반응형으로 설계되어 스마트폰에서도 동일한 기능을 쾌적하게 사용할 수 있어요. 별도 앱 설치 없이도 충분히 편리하답니다.',
   },
 ]
 
@@ -283,7 +283,7 @@ export default function HomeClient() {
   }, [supabase])
 
   if (loading) {
-    return <div className={css({ w: '100%', py: '80px', textAlign: 'center', color: '#888' })}>여정을 불러오는 중...</div>
+    return <div className={css({ w: '100%', py: '80px', textAlign: 'center', color: '#888' })}>여정 정보를 열심히 가져오고 있어요...✈️</div>
   }
 
   if (!user) {
@@ -318,15 +318,15 @@ export default function HomeClient() {
                   fontSize: { base: '30px', md: '48px' }, fontWeight: '900',
                   color: '#172554', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
               })}>
-                  여행 계획, 가이드 없이<br />
-                  <span className={css({ color: '#3B82F6' })}>더 쉽고 즐겁게</span> 세우세요
+                  여행 계획, 가이드 없이도<br />
+                  <span className={css({ color: '#3B82F6' })}>더 쉽고 즐겁게</span> 세워 보세요
               </h1>
               <p className={css({
                   fontSize: { base: '15px', md: '18px' }, color: '#555',
                   maxW: '520px', mx: 'auto', lineHeight: 1.8, mb: '36px', wordBreak: 'keep-all',
               })}>
-                  일정 관리부터 환율 변환, 동행자 협업까지.<br />
-                  OnVoy 하나로 여행의 모든 것을 해결하세요.
+                  일정 관리부터 환율 변환, 동행자와의 계획까지.<br />
+                  복잡한 준비는 온여정에게 맡기고, 오직 여행의 설렘에만 집중하세요!
               </p>
               <div className={css({ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' })}>
                   <Link href="/signup" className={css({
@@ -354,7 +354,7 @@ export default function HomeClient() {
 
           {/* ── 주요 기능 ── */}
           <section className={css({ mb: '72px' })}>
-              <SectionTitle badge="핵심 기능" title="여행에 필요한 모든 것, 한 곳에" sub="여러 앱을 오갈 필요 없습니다. OnVoy 하나로 충분합니다." />
+              <SectionTitle badge="핵심 기능" title="여행에 필요한 모든 것, 한 곳에" sub="여러 앱을 오갈 필요 없습니다. 온여정 하나로 충분합니다." />
               <div className={css({
                   display: 'grid',
                   gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
@@ -382,7 +382,7 @@ export default function HomeClient() {
 
           {/* ── 사용 흐름 ── */}
           <section className={css({ mb: '72px' })}>
-              <SectionTitle badge="시작하기" title="딱 4단계면 충분합니다" sub="복잡한 설정 없이 바로 쓸 수 있습니다. 지금 바로 첫 여행을 만들어보세요." />
+              <SectionTitle badge="시작하기" title="딱 4단계면 충분합니다" sub="어려운 설정은 NO! 가벼운 마음으로 바로 첫 여행을 만들어 보세요. ✨" />
               <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px' })}>
                   {STEPS.map((s, i) => (
                       <div key={s.num} className={css({
@@ -464,11 +464,11 @@ export default function HomeClient() {
                   <Zap size={13} /> 지금 바로 시작하세요
               </div>
               <h2 className={css({ fontSize: { base: '24px', md: '34px' }, fontWeight: '900', color: 'white', mb: '12px', letterSpacing: '-0.02em', lineHeight: 1.2 })}>
-                  다음 여행, OnVoy와<br />함께 계획하세요 ✈️
+                  다음 여행, 온여정와<br />함께 계획하세요 ✈️
               </h2>
               <p className={css({ fontSize: '15px', color: 'rgba(255,255,255,0.83)', mb: '32px', lineHeight: 1.7, wordBreak: 'keep-all' })}>
-                  무료 계정 하나로 무제한 여행을 관리하세요.<br />
-                  신용카드도, 복잡한 설정도 필요 없습니다.
+                  무료 계정 하나로 무제한 여행을 관리해 보세요.<br />
+                  카드 등록이나 복잡한 절차 없이, 누구나 바로 시작할 수 있어요.
               </p>
               <Link href="/signup" className={css({
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -527,9 +527,9 @@ export default function HomeClient() {
           })}>
             <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: '#ccc' })} />
             <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: '#555' })}>
-              아직 계획된 여행이 없습니다.
+              아직 계획된 여행이 없네요.
             </p>
-            <p className={css({ fontSize: '14px', color: '#999' })}>상단의 버튼을 눌러 첫 여행을 등록해보세요!</p>
+            <p className={css({ fontSize: '14px', color: '#999' })}>새로운 설렘을 위해 첫 여정을 만들어 볼까요? 🗺️</p>
           </div>
         ) : (
           <div>

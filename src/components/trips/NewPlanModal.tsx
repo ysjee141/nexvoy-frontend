@@ -40,7 +40,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
     const [locationLng, setLocationLng] = useState<number | null>(null)
     const [googlePlaceId, setGooglePlaceId] = useState<string | null>(null)
     const [timezoneString, setTimezoneString] = useState('Asia/Seoul')
-    const [cost, setCost] = useState<number | ''>('')
+    const [cost, setCost] = useState<number>(0)
     const [memo, setMemo] = useState('')
     const [urls, setUrls] = useState<string[]>([''])
     const [alarmMinutesBefore, setAlarmMinutesBefore] = useState<number | null>(null)
@@ -84,12 +84,38 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
             setLocationLng(null)
             setGooglePlaceId(null)
             setTimezoneString('Asia/Seoul')
-            setCost('')
-            setMemo('')
+            setCost(0)
             setUrls([''])
             setAlarmMinutesBefore(null)
         }
     }, [isOpen, editData])
+
+    // 통화별 퀵 버튼 설정
+    const getQuickAddButtons = (currencyCode: string) => {
+        const highVal = ['KRW', 'VND', 'IDR'] // +1만, +5만, +10만
+        const midVal = ['JPY', 'THB', 'TWD', 'PHP'] // +1천, +5천, +1만
+        
+        if (highVal.includes(currencyCode)) {
+            return [
+                { label: '+1만', value: 10000 },
+                { label: '+5만', value: 50000 },
+                { label: '+10만', value: 100000 },
+            ]
+        }
+        if (midVal.includes(currencyCode)) {
+            return [
+                { label: '+1천', value: 1000 },
+                { label: '+5천', value: 5000 },
+                { label: '+1만', value: 10000 },
+            ]
+        }
+        // 기본 (USD, EUR 등)
+        return [
+            { label: '+10', value: 10 },
+            { label: '+50', value: 50 },
+            { label: '+100', value: 100 },
+        ]
+    }
 
     const handleUrlChange = (index: number, value: string) => {
         const newUrls = [...urls]
@@ -148,7 +174,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
             location_lat: locationLat,
             location_lng: locationLng,
             google_place_id: googlePlaceId,
-            cost: cost === '' ? 0 : cost,
+            cost: cost,
             memo,
             start_datetime_local: startDatetime,
             end_datetime_local: endDatetime,
@@ -206,6 +232,9 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
     }
 
     if (!isOpen) return null
+
+    const currency = getCurrencyFromTimezone(timezoneString)
+    const quickButtons = getQuickAddButtons(currency.code)
 
     return (
         // sm 미만(모바일): 전체 화면 표시 / sm 이상(데스크탑): dim 오버레이 위에 모달
@@ -265,7 +294,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         flex: { base: 'none', sm: 1 },
                         whiteSpace: 'nowrap',
                     })}>
-                        {editData ? '일정 수정' : '새 일정 추가'}
+                        {editData ? '일정 수정하기' : '새 일정 추가하기'}
                     </h2>
                     {/* 데스크탑: X 닫기 버튼 */}
                     <button
@@ -291,7 +320,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             required
                             value={title}
                             onChange={e => setTitle(e.target.value)}
-                            placeholder="예: 에펠탑 방문"
+                            placeholder="예: 에펠탑 방문 🗼"
                             className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
                         />
                     </div>
@@ -311,7 +340,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                         setLocationLng(null)
                                         setGooglePlaceId(null)
                                     }}
-                                    placeholder="어디에 가시나요? 장소 자동완성"
+                                    placeholder="어디로 떠나시나요? 🗺️"
                                     className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' }, bg: '#f9f9f9' })}
                                 />
                             </Autocomplete>
@@ -362,13 +391,13 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
 
                     <div className={css({ bg: '#f8f9fa', p: '12px', borderRadius: '8px', border: '1px solid #eee' })}>
                         <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '4px' })}>
-                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#444' })}>✈️ 현재 설정된 타임존</span>
+                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#444' })}>✈️ 지금 이 일정의 시간 기준</span>
                             <span className={css({ fontSize: '12px', bg: '#EFF6FF', color: '#3B82F6', px: '8px', py: '2px', borderRadius: '4px', fontWeight: 'bold' })}>
                                 {timezoneString}
                             </span>
                         </div>
                         <p className={css({ fontSize: '12px', color: '#666', lineHeight: 1.4 })}>
-                            입력하신 시간은 현지 타임존 기준입니다. 장소를 검색하면 타임존이 현지에 맞게 자동 변경됩니다.
+                            입력하신 시간은 현지 타임존을 기준으로 표시돼요. 장소를 검색하시면 그곳의 시간에 맞춰 자동으로 변경해 드릴게요! ✨
                         </p>
                     </div>
 
@@ -386,18 +415,112 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                 </label>
                             )
                         })()}
-                        <input
-                            type="number"
-                            value={cost}
-                            onChange={e => setCost(Number(e.target.value) || '')}
-                            placeholder="숫자만 입력"
-                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
-                        />
+                        <div className={css({ 
+                            position: 'relative', 
+                            display: 'flex', 
+                            alignItems: 'center',
+                            border: '1px solid #ddd', 
+                            borderRadius: '12px',
+                            bg: 'white',
+                            _focusWithin: { borderColor: '#3B82F6', ring: '2px solid rgba(59, 130, 246, 0.1)' },
+                            transition: 'all 0.2s'
+                        })}>
+                            {/* 좌측 고정 통화 기호 */}
+                            <span className={css({ 
+                                paddingLeft: '16px',
+                                fontSize: '16px',
+                                fontWeight: '700',
+                                color: '#3B82F6',
+                                userSelect: 'none',
+                                pointerEvents: 'none'
+                            })}>
+                                {currency.symbol}
+                            </span>
+                            
+                            <input
+                                type="text"
+                                value={cost === 0 ? '' : cost.toLocaleString()}
+                                onChange={e => {
+                                    const val = e.target.value.replace(/[^0-9]/g, '')
+                                    setCost(val === '' ? 0 : Number(val))
+                                }}
+                                placeholder="0"
+                                className={css({ 
+                                    flex: 1,
+                                    p: '14px 16px', 
+                                    paddingLeft: '8px',
+                                    paddingRight: '44px',
+                                    border: 'none', 
+                                    bg: 'transparent',
+                                    outline: 'none', 
+                                    fontSize: '18px', 
+                                    fontWeight: '700',
+                                    textAlign: 'right',
+                                    color: '#222',
+                                    _placeholder: { color: '#ccc' }
+                                })}
+                            />
+                            
+                            {cost > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setCost(0)}
+                                    className={css({ 
+                                        position: 'absolute', 
+                                        right: '12px', 
+                                        border: 'none', 
+                                        bg: '#f1f3f4', 
+                                        color: '#666', 
+                                        cursor: 'pointer', 
+                                        w: '24px',
+                                        h: '24px',
+                                        borderRadius: '50%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'all 0.2s',
+                                        _hover: { bg: '#e8eaed', color: '#222' }
+                                    })}
+                                >
+                                    <X size={14} />
+                                </button>
+                            )}
+                        </div>
+                        {/* 퀵 버튼 도구 */}
+                        <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '8px', mt: '10px' })}>
+                            {quickButtons.map((btn, idx) => (
+                                <button
+                                    key={idx}
+                                    type="button"
+                                    onClick={() => setCost(prev => (typeof prev === 'number' ? prev : 0) + btn.value)}
+                                    className={css({
+                                        px: '12px', py: '6px', fontSize: '12px', fontWeight: '700',
+                                        bg: '#f1f3f4', color: '#555', border: '1px solid #eee', borderRadius: '20px',
+                                        cursor: 'pointer', transition: 'all 0.2s',
+                                        _hover: { bg: '#e8eaed', borderColor: '#ddd', color: '#222' },
+                                        _active: { transform: 'scale(0.95)', bg: '#3B82F6', color: 'white', borderColor: '#3B82F6' }
+                                    })}
+                                >
+                                    {btn.label}
+                                </button>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={() => setCost(0)}
+                                className={css({
+                                    px: '10px', py: '6px', fontSize: '12px', fontWeight: 'bold',
+                                    bg: 'white', color: '#ef4444', border: '1px solid #fee2e2', borderRadius: '20px',
+                                    cursor: 'pointer', _hover: { bg: '#fef2f2' }
+                                })}
+                            >
+                                초기화
+                            </button>
+                        </div>
                     </div>
 
                     <div>
                         <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
-                            <LinkIcon size={16} /> 참조 URL 목록
+                            <LinkIcon size={16} /> 참고할 링크 (URL)
                         </label>
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
                             {urls.map((url, i) => (
@@ -425,7 +548,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                     {/* 알림 설정 */}
                     <div>
                         <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
-                            🔔 알림 설정
+                            🔔 언제 알려드릴까요?
                         </label>
                         <div className={css({ position: 'relative', w: '100%' })}>
                             <select
@@ -446,7 +569,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         </div>
                         {alarmMinutesBefore !== null && (
                             <p className={css({ fontSize: '12px', color: '#666', mt: '6px' })}>
-                                💡 브라우저 알림 권한이 허용되어 있어야 알림이 동작합니다.
+                                💡 알림 권한을 허용해 주시면 제때 알려드릴 수 있어요!
                             </p>
                         )}
                     </div>
@@ -458,7 +581,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         <textarea
                             value={memo}
                             onChange={e => setMemo(e.target.value)}
-                            placeholder="일정에 필요한 메모를 남겨주세요"
+                            placeholder="함께 적어둘 내용이 있나요? ✍️"
                             rows={3}
                             className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', resize: 'vertical', _focus: { borderColor: '#3B82F6' } })}
                         />
@@ -477,7 +600,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             disabled={loading}
                             className={css({ px: '24px', py: '12px', bg: '#111', color: 'white', borderRadius: '8px', fontWeight: '800', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontSize: '14px', _hover: { bg: '#333' } })}
                         >
-                            {loading ? '저장 중...' : editData ? '수정 완료' : '일정 추가하기'}
+                            {loading ? '저장 중...' : editData ? '수정할게요' : '일정 추가하기'}
                         </button>
                     </div>
                 </form>

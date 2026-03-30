@@ -34,7 +34,7 @@ export default function EditTemplatePage() {
 
     useEffect(() => {
         if (title) {
-            setMobileTitle(`${title} 템플릿 수정`)
+            setMobileTitle(`${title} 수정하기`)
         }
         return () => setMobileTitle(null)
     }, [title, setMobileTitle])
@@ -65,7 +65,7 @@ export default function EditTemplatePage() {
                 }
             } else if (error) {
                 console.error("Fetch template error:", error)
-                alert('템플릿을 불러올 수 없습니다.')
+                alert('템플릿 정보를 불러오는 데 실패했어요.')
                 router.push('/templates')
             }
             setInitialLoading(false)
@@ -97,12 +97,12 @@ export default function EditTemplatePage() {
     }
 
     const handleDeleteTemplate = async () => {
-        if (!confirm('정말 이 템플릿을 삭제하시겠습니까? 관련된 시스템 내 항목들도 모두 삭제됩니다.')) return
+        if (!confirm('정말 이 템플릿을 삭제하시겠어요? 함께 등록된 모든 항목이 사라지게 돼요. 🥺')) return
 
         setLoading(true)
         const { error } = await supabase.from('checklist_templates').delete().eq('id', templateId)
         if (error) {
-            alert('삭제에 실패했습니다.')
+            alert('삭제하는 중에 문제가 생겼어요. 다시 시도해 주세요.')
             setLoading(false)
         } else {
             router.push('/templates')
@@ -113,13 +113,13 @@ export default function EditTemplatePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!title.trim()) {
-            alert('템플릿 이름을 입력해주세요.')
+            alert('템플릿 이름을 지어주세요!')
             return
         }
 
         const validItems = items.filter((item: any) => item.item_name.trim() !== '')
         if (validItems.length === 0) {
-            alert('최소 1개 이상의 유효한 항목이 필요합니다.')
+            alert('적어도 하나의 준비물은 등록되어야 해요!')
             return
         }
 
@@ -178,19 +178,19 @@ export default function EditTemplatePage() {
                 if (insertError) throw insertError
             }
 
-            alert('템플릿이 성공적으로 수정되었습니다.')
+            alert('템플릿이 성공적으로 수정되었어요! ✨')
             router.push('/templates')
             router.refresh()
 
         } catch (error: any) {
             console.error('Error updating template:', error)
-            alert('템플릿 저장 중 오류가 발생했습니다. 다시 시도해주세요.')
+            alert('저장 중에 잠시 문제가 생겼어요. 다시 한번 시도해 주시겠어요?')
             setLoading(false)
         }
     }
 
     if (initialLoading) {
-        return <div className={css({ p: '40px', textAlign: 'center', color: '#888' })}>템플릿 정보를 불러오는 중...</div>
+        return <div className={css({ p: '40px', textAlign: 'center', color: '#888' })}>템플릿 정보를 불러오고 있어요... ✈️</div>
     }
 
     return (
@@ -222,7 +222,7 @@ export default function EditTemplatePage() {
                         <ArrowLeft size={18} /> 목록으로 돌아가기
                     </Link>
                     <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#172554', lineHeight: '1.2' })}>
-                        {title} 수정
+                        {title} 수정하기
                     </h1>
                 </div>
 
@@ -258,7 +258,7 @@ export default function EditTemplatePage() {
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="예: 여름 휴양지 기본 세트"
+                        placeholder="예: 여름 바다 여행 필수템 🏖️"
                         className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#3B82F6' } })}
                         required
                     />
@@ -269,7 +269,7 @@ export default function EditTemplatePage() {
                 <div className={css({ mb: '32px' })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '16px' })}>
                         <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#1E3A8A' })}>
-                            항목 구성 수정
+                            준비물 항목을 다듬어 보세요
                         </label>
                         <span className={css({ fontSize: '13px', color: '#888' })}>총 {items.length}개</span>
                     </div>
@@ -277,7 +277,7 @@ export default function EditTemplatePage() {
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         {items.length === 0 ? (
                             <div className={css({ p: '20px', textAlign: 'center', color: '#999', bg: '#f9f9f9', borderRadius: '8px' })}>
-                                등록된 항목이 없습니다. 항목을 추가해보세요.
+                                아직 등록된 준비물이 없어요. 새로운 항목을 추가해 보세요!
                             </div>
                         ) : (
                             items.map((item, index) => (
@@ -313,7 +313,7 @@ export default function EditTemplatePage() {
                                             type="text"
                                             value={item.item_name}
                                             onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
-                                            placeholder={`항목 ${index + 1}`}
+                                            placeholder={`${index + 1}번째 준비물`}
                                             className={css({ flex: 1, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', bg: 'transparent', color: '#222' })}
                                             required
                                         />
@@ -336,7 +336,7 @@ export default function EditTemplatePage() {
                         onClick={handleAddItem}
                         className={css({ w: '100%', mt: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', p: '14px', bg: '#f8f9fa', color: '#555', borderRadius: '8px', border: '1px dashed #ccc', cursor: 'pointer', fontSize: '15px', fontWeight: '500', transition: 'all 0.2s', _hover: { bg: '#f1f3f4', borderColor: '#aaa' } })}
                     >
-                        <Plus size={18} /> 새 항목 추가하기
+                        <Plus size={18} /> 준비물 추가하기
                     </button>
                 </div>
 
@@ -352,7 +352,7 @@ export default function EditTemplatePage() {
                         disabled={loading}
                         className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '24px', py: '12px', bg: '#111', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'all 0.2s', _hover: { bg: '#333' } })}
                     >
-                        <Save size={18} /> {loading ? '저장 중...' : '변경사항 저장'}
+                        <Save size={18} /> {loading ? '저장 중...' : '변경 내용 저장할게요'}
                     </button>
                 </div>
             </form>

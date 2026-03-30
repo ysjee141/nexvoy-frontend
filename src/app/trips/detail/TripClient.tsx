@@ -227,7 +227,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
             <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, mb: { base: '16px', sm: '24px' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
                 {/* 1. 타이틀 & 시간 필터 */}
                 <div className={css({ display: 'flex', w: { base: '100%', sm: 'auto' }, justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, flexDirection: { base: 'row', sm: 'column' } })}>
-                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', mb: { base: 0, sm: '12px' } })}>일정표 (주간 캘린더)</h2>
+                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', mb: { base: 0, sm: '12px' } })}>여정 채워가기</h2>
 
                     {/* PC 전용 시간 표시 옵션 토글 */}
                     <div className={css({ display: { base: 'none', sm: 'inline-flex' }, bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: 'auto' })}>
@@ -279,7 +279,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                             })}
                             disabled={!isOnline}
                         >
-                            <UserPlus size={16} /> <span className={css({ display: { base: 'none', sm: 'inline' } })}>협업</span>
+                            <UserPlus size={16} /> <span className={css({ display: { base: 'none', sm: 'inline' } })}>동행자</span>
                         </button>
                         {userRole === 'owner' && (
                             <button
@@ -323,10 +323,10 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
             </div>
 
             {(!plans || plans.length === 0) ? (
-                <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
-                    <p className={css({ fontSize: '16px', mb: '8px' })}>등록된 세부 일정이 없습니다.</p>
+                <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
+                    <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>아직 등록된 여정이 없어요. 🗺️</p>
                     {(userRole === 'owner' || userRole === 'editor') && (
-                        <p className={css({ fontSize: '14px' })}>일정 추가 버튼을 눌러 여정을 채워보세요.</p>
+                        <p className={css({ fontSize: '15px', color: '#666', lineHeight: '1.6' })}>새로운 일정을 추가해서 설레는 여정을 완성해 볼까요?</p>
                     )}
                 </div>
             ) : (

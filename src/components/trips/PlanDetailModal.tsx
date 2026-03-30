@@ -482,7 +482,8 @@ export default function PlanDetailModal({
                                 <div className={css({ py: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: '#bbb' })}>
                                     <Link2 size={32} />
                                     <p className={css({ m: '0', fontSize: '14px', textAlign: 'center', lineHeight: 1.5 })}>
-                                        등록된 참고자료가 없습니다.<br />
+                                        참고할 자료가 아직 없네요. 📂<br />
+                                        필요한 정보들을 모아 보세요!<br />
                                         <span className={css({ fontSize: '12px' })}>일정 수정에서 URL을 추가해보세요.</span>
                                     </p>
                                 </div>
