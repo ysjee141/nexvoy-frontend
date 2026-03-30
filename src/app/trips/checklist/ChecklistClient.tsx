@@ -512,7 +512,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         </div>
                         <div>
                             <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>완료 조건 유형</label>
-                            <select value={type} onChange={e => setType(e.target.value as any)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mb: '8px' })}>
+                            <select value={type} onChange={e => {
+                                const newType = e.target.value as any
+                                setType(newType)
+                                if (newType === 'specific' && !assignedTo) {
+                                    setAssignedTo(currentUser?.id || '')
+                                }
+                            }} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mb: '8px' })}>
                                 <option value="anyone">함께 준비해요</option>
                                 {members.length > 0 && <option value="specific">담당자를 정해요</option>}
                                 {members.length > 0 && <option value="everyone">각자 꼭 챙겨요</option>}
@@ -520,11 +526,15 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             
                             {type === 'specific' && (
                                 <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mt: '8px' })}>
-                                    {participants.map(p => (
-                                        <option key={p.user_id} value={p.user_id}>
-                                            {p.profiles?.nickname || p.email || (p.user_id === currentUser?.id ? '나' : '참여자')}
-                                        </option>
-                                    ))}
+                                    {participants.map(p => {
+                                        const isMe = p.user_id === currentUser?.id
+                                        const label = p.profiles?.nickname || p.email || (isMe ? '나' : '참여자')
+                                        return (
+                                            <option key={p.user_id} value={p.user_id}>
+                                                {isMe ? `${label} (나)` : label}
+                                            </option>
+                                        )
+                                    })}
                                 </select>
                             )}
                         </div>
@@ -683,11 +693,15 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         onChange={e => setNewItemAssignedUserId(e.target.value)}
                                         className={css({ p: '8px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '13px' })}
                                     >
-                                        {participants.map(p => (
-                                            <option key={p.user_id} value={p.user_id}>
-                                                {p.profiles?.nickname || p.email || (p.user_id === currentUser?.id ? '나' : '참여자')}
-                                            </option>
-                                        ))}
+                                        {participants.map(p => {
+                                            const isMe = p.user_id === currentUser?.id
+                                            const label = p.profiles?.nickname || p.email || (isMe ? '나' : '참여자')
+                                            return (
+                                                <option key={p.user_id} value={p.user_id}>
+                                                    {isMe ? `${label} (나)` : label}
+                                                </option>
+                                            )
+                                        })}
                                     </select>
                                 )}
                                 
