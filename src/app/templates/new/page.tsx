@@ -58,13 +58,13 @@ export default function NewTemplatePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!title.trim()) {
-            alert('템플릿 이름을 입력해주세요.')
+            alert('템플릿 이름을 지어주세요!')
             return
         }
 
         const validItems = items.filter((item: any) => item.item_name.trim() !== '')
         if (validItems.length === 0) {
-            alert('최소 1개 이상의 유효한 항목을 입력해주세요.')
+            alert('적어도 하나의 준비물은 등록해야 해요!')
             return
         }
 
@@ -104,7 +104,7 @@ export default function NewTemplatePage() {
 
         } catch (error: any) {
             console.error('Error creating template:', error)
-            alert('템플릿 저장 중 오류가 발생했습니다. 다시 시도해주세요.')
+            alert('저장 중에 잠시 문제가 생겼어요. 다시 한번 시도해 주시겠어요?')
             setLoading(false)
         }
     }
@@ -113,10 +113,10 @@ export default function NewTemplatePage() {
         <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: '40px' })}>
             <div className={css({ mb: '32px' })}>
                 <h1 className={css({ fontSize: '28px', fontWeight: 'bold', color: '#172554' })}>
-                    새 템플릿 만들기
+                    나만의 새 템플릿 만들기
                 </h1>
                 <p className={css({ color: '#666', mt: '8px', fontSize: '15px' })}>
-                    새로운 체크리스트 템플릿과 기본 항목들을 설정합니다.
+                    자주 쓰는 준비물들을 모아 나만의 템플릿을 만들어 보세요! ✨
                 </p>
             </div>
 
@@ -130,7 +130,7 @@ export default function NewTemplatePage() {
                         type="text"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        placeholder="예: 여름 휴양지 기본 세트"
+                        placeholder="예: 여름 바다 여행 필수템 🏖️"
                         className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#3B82F6' } })}
                         required
                     />
@@ -142,7 +142,7 @@ export default function NewTemplatePage() {
                 <div className={css({ mb: '32px' })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '16px' })}>
                         <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#1E3A8A' })}>
-                            기본 항목 구성
+                            어떤 항목을 준비할까요?
                         </label>
                         <span className={css({ fontSize: '13px', color: '#888' })}>총 {items.length}개</span>
                     </div>
@@ -169,7 +169,7 @@ export default function NewTemplatePage() {
                                     type="text"
                                     value={item.item_name}
                                     onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
-                                    placeholder={`항목 ${index + 1}`}
+                                    placeholder={`${index + 1}번째 준비물`}
                                     className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
                                     required
                                 />
@@ -192,7 +192,7 @@ export default function NewTemplatePage() {
                         onClick={handleAddItem}
                         className={css({ w: '100%', mt: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', p: '14px', bg: '#f8f9fa', color: '#555', borderRadius: '8px', border: '1px dashed #ccc', cursor: 'pointer', fontSize: '15px', fontWeight: '500', transition: 'all 0.2s', _hover: { bg: '#f1f3f4', borderColor: '#aaa' } })}
                     >
-                        <Plus size={18} /> 항목 하나 더 추가하기
+                        <Plus size={18} /> 준비물 추가하기
                     </button>
                 </div>
 
@@ -208,7 +208,7 @@ export default function NewTemplatePage() {
                         disabled={loading}
                         className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '24px', py: '12px', bg: '#111', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'all 0.2s', _hover: { bg: '#333' } })}
                     >
-                        <Save size={18} /> {loading ? '저장 중...' : '템플릿 저장하기'}
+                        <Save size={18} /> {loading ? '저장 중...' : '템플릿 저장할게요'}
                     </button>
                 </div>
             </form>

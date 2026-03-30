@@ -126,7 +126,7 @@ export default function TripSection({
                                         display: 'inline-flex', alignItems: 'center', gap: '4px',
                                         border: isOwner ? '1px solid rgba(59, 130, 246, 0.1)' : '1px solid #EEEEEE'
                                     })}>
-                                        {isOwner ? '내 여정' : '참여 중'}
+                                        {isOwner ? '내 소중한 여정' : '함께하고 있어요'}
                                     </span>
                                     {/* 상태 뱃지 */}
                                     <span className={css({
@@ -151,7 +151,7 @@ export default function TripSection({
                                         <CalendarDays size={14} color="#888" /> {start} ~ {end}
                                     </p>
                                     <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' })}>
-                                        <User size={14} color="#888" /> 성인 {trip.adults_count}명
+                                        <User size={14} color="#888" /> 성인 {trip.adults_count}분
                                         {trip.children_count > 0 && `, 아이 ${trip.children_count}명`}
                                     </p>
                                 </div>
@@ -171,7 +171,7 @@ export default function TripSection({
                                         />
                                     </div>
                                     {totalItems === 0 && (
-                                        <p className={css({ fontSize: '11px', color: '#bbb', mt: '4px', textAlign: 'right' })}>항목 없음</p>
+                                        <p className={css({ fontSize: '11px', color: '#bbb', mt: '4px', textAlign: 'right' })}>앗, 등록된 항목이 없어요!</p>
                                     )}
                                 </div>
                             </Link>

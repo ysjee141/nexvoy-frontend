@@ -52,7 +52,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
             .eq('template_id', templateId)
 
         if (itemsError || !templateItems || templateItems.length === 0) {
-            alert('템플릿 항목을 불러올 수 없거나 비어 있습니다.')
+            alert('어라, 템플릿 항목을 불러올 수 없거나 비어 있네요. 다시 한번 확인해 볼까요?')
             setLoadingTemplateId(null)
             return
         }
@@ -79,7 +79,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
         })
 
         if (newItemsToInsert.length === 0) {
-            alert('해당 템플릿의 모든 항목이 이미 체크리스트에 포함되어 있습니다.')
+            alert('완전해요! 해당 템플릿의 모든 항목이 이미 체크리스트에 들어있어요.')
             setLoadingTemplateId(null)
             return
         }
@@ -100,7 +100,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
 
         if (insertError) {
             console.error('Template apply error', insertError)
-            alert('템플릿 적용 중 오류가 발생했습니다.')
+            alert('어라, 템플릿을 가져오다가 잠시 길을 잃었나 봐요. 다시 시도해 볼까요?')
         } else if (insertedItems) {
             analytics.logEvent('template_use', { template_id: templateId })
             onSuccess(insertedItems)
@@ -131,10 +131,10 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                 <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '16px' })}>템플릿 불러오기</h3>
 
                 {loading ? (
-                    <div className={css({ textAlign: 'center', py: '40px', color: '#888' })}>템플릿을 불러오는 중...</div>
+                    <div className={css({ textAlign: 'center', py: '40px', color: '#888' })}>템플릿을 열심히 불러오고 있어요... ✈️</div>
                 ) : templates.length === 0 ? (
                     <div className={css({ textAlign: 'center', py: '40px', color: '#888', fontSize: '14px' })}>
-                        등록된 템플릿이 없습니다.
+                        아직 등록된 템플릿이 없네요. 나만의 템플릿을 만들어 볼까요?
                     </div>
                 ) : (
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1, pr: '4px' })}>

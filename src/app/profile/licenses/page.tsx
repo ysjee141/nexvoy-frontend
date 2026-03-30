@@ -28,7 +28,7 @@ export default function LicensesPage() {
             </div>
 
             <p className={css({ color: '#666', fontSize: '14px', mb: '24px', px: '8px' })}>
-                온여정(OnVoy) 개발에 사용된 주요 오픈 소스 라이브러리 목록입니다. 각 라이선스의 저작권을 존중하며 개발되었습니다.
+                온여정 개발에 사용된 주요 오픈 소스 라이브러리 목록입니다. 각 라이선스의 저작권을 존중하며 개발되었습니다.
             </p>
 
             <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
@@ -92,7 +92,7 @@ export default function LicensesPage() {
             </div>
 
             <div className={css({ textAlign: 'center', mt: '40px', pb: '20px' })}>
-                <p className={css({ fontSize: '12px', color: '#aaa' })}>© 2026 OnVoy Team. All rights reserved.</p>
+                <p className={css({ fontSize: '12px', color: '#aaa' })}>© 2026 온여정 팀. All rights reserved.</p>
             </div>
         </div>
     )

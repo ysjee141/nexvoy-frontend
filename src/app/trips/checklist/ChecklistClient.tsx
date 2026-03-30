@@ -167,7 +167,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         // 1. 유형별 처리
         if (item.assignment_type === 'specific') {
             if (currentUser?.id !== item.assigned_user_id) {
-                alert('본인에게 할당된 항목만 체크할 수 있습니다.')
+                alert('이 항목은 담당자님이 따로 있어요! 내 준비물을 멋지게 챙겨볼까요?')
                 return
             }
         }
@@ -329,7 +329,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             if (item.assigned_user_id === currentUser?.id) return '나'
             const p = participants.find(p => p.user_id === item.assigned_user_id)
             if (!p) return '담당자'
-            return p.profiles?.nickname || p.email?.split('@')[0] || '참여자'
+            return p.profiles?.nickname || p.email?.split('@')[0] || '동행자'
         }
 
         const assignedUser = item.assignment_type === 'specific' ? getAssignedUserLabel() : null
@@ -462,7 +462,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         <ul className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                             {participants.map(p => {
                                 const isMe = p.user_id === currentUser?.id
-                                const name = p.profiles?.nickname || p.email || '참여자'
+                                const name = p.profiles?.nickname || p.email || '동행자'
                                 return (
                                     <li key={p.user_id} className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
                                         <span className={css({ fontSize: '15px' })}>
@@ -528,7 +528,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mt: '8px' })}>
                                     {participants.map(p => {
                                         const isMe = p.user_id === currentUser?.id
-                                        const label = p.profiles?.nickname || p.email || (isMe ? '나' : '참여자')
+                                        const label = p.profiles?.nickname || p.email || (isMe ? '나' : '동행자')
                                         return (
                                             <option key={p.user_id} value={p.user_id}>
                                                 {isMe ? `${label} (나)` : label}
@@ -695,7 +695,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                     >
                                         {participants.map(p => {
                                             const isMe = p.user_id === currentUser?.id
-                                            const label = p.profiles?.nickname || p.email || (isMe ? '나' : '참여자')
+                                            const label = p.profiles?.nickname || p.email || (isMe ? '나' : '동행자')
                                             return (
                                                 <option key={p.user_id} value={p.user_id}>
                                                     {isMe ? `${label} (나)` : label}
@@ -744,9 +744,11 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             )}
 
             {totalItems === 0 && !isAdding ? (
-                <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
-                    <p className={css({ fontSize: '16px', mb: '8px' })}>등록된 준비물이 없습니다.</p>
-                    <p className={css({ fontSize: '14px' })}>항목 추가 혹은 템플릿을 불러와 짐 싸기를 시작하세요.</p>
+                <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
+                        <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>
+                            아직 등록된 준비물이 없어요. 🧳
+                        </p>
+                        <p className={css({ fontSize: '15px', color: '#666', lineHeight: '1.6' })}>항목을 추가하거나 템플릿을 불러와서 짐 싸기를 시작해 보세요!</p>
                 </div>
             ) : (
                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '24px' })}>

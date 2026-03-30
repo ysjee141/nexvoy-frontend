@@ -62,7 +62,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
 
     const handleEmailShare = () => {
         if (!shareUrl) return
-        const subject = encodeURIComponent(`[OnVoy] ${tripTitle} 여행 일정 공유`);
+        const subject = encodeURIComponent(`[온여정] ${tripTitle} 여행 일정 공유`);
         const body = encodeURIComponent(`안녕하세요,\n\n${tripTitle} 여행 일정을 함께 확인해보세요!\n\n링크: ${shareUrl}\n\n감사합니다.`);
         analytics.logTripShare('system')
         window.location.href = `mailto:?subject=${subject}&body=${body}`;
@@ -94,7 +94,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
 
                 <div className={css({ mb: '24px' })}>
                     <p className={css({ fontSize: '14px', color: '#666', mb: '16px' })}>
-                        협업자가 아닌 사람에게도 일정을 공유할 수 있습니다. 공유된 일정은 **읽기 전용**으로 표시됩니다.
+                        동행자가 아닌 분들에게도 일정을 공유할 수 있어요. 공유된 일정은 **읽기 전용**으로 표시됩니다.
                     </p>
 
                     <div className={css({ display: 'flex', bg: '#f1f3f4', p: '4px', borderRadius: '12px', mb: '16px' })}>
@@ -160,7 +160,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                 {loading ? (
                     <div className={css({ py: '40px', textAlign: 'center' })}>
                         <Loader2 size={32} className={css({ animation: 'spin 1s linear infinite', mx: 'auto', mb: '12px', color: '#2563EB' })} />
-                        <p className={css({ color: '#888', fontSize: '14px' })}>공유 링크를 생성하는 중...</p>
+                        <p className={css({ color: '#888', fontSize: '14px' })}>공유 링크를 만들고 있어요... ✈️</p>
                     </div>
                 ) : shareUrl ? (
                     <div className={css({ bg: '#f9f9f9', p: '24px', borderRadius: '16px', border: '1px solid #f0f0f0' })}>

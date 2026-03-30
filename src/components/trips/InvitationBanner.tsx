@@ -29,7 +29,7 @@ export default function InvitationBanner() {
             setInvitations(prev => prev.filter(inv => inv.id !== id))
             router.refresh() // 메인 페이지의 서버 컴포넌트 데이터 갱신
         } else {
-            alert('초대 수락에 실패했습니다.')
+            alert('초대를 수락하다가 잠시 문제가 생겼어요. 다시 한번 시도해 주시겠어요?')
         }
         setProcessingId(null)
     }
@@ -54,7 +54,7 @@ export default function InvitationBanner() {
             })}>
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', color: '#3B82F6', fontSize: '14px', fontWeight: '500' })}>
                     <Mail size={18} />
-                    <span>새로운 여행 초대 {invitations.length}건이 있습니다!</span>
+                    <span>반가운 소식! 새로운 여행 초대 {invitations.length}건이 도착했어요! 💌</span>
                 </div>
 
                 <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' } })}>

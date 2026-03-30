@@ -37,7 +37,7 @@ export default function LoginPage() {
         })
 
         if (error) {
-            setMessage({ type: 'error', text: error.message === 'Invalid login credentials' ? '이메일 또는 비밀번호가 일치하지 않습니다.' : error.message })
+            setMessage({ type: 'error', text: error.message === 'Invalid login credentials' ? '이메일 또는 비밀번호를 다시 한번 확인해 주시겠어요?' : error.message })
             setLoading(false)
         } else {
             // 로그인 성공 시 이메일 기억하기 처리
@@ -78,8 +78,8 @@ export default function LoginPage() {
             })}>
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
-                        <Image src="/logo.png" alt="OnVoy Logo" width={32} height={32} priority />
-                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#172554', letterSpacing: '-0.02em' })}>OnVoy</span>
+                        <Image src="/logo.png" alt="온여정 로고" width={32} height={32} priority />
+                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#172554', letterSpacing: '-0.02em' })}>온여정</span>
                     </div>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
@@ -252,7 +252,7 @@ export default function LoginPage() {
                         })}
                     >
                         {loading ? <Loader2 size={20} className={css({ animation: 'spin 1s linear infinite' })} /> : (
-                            <>계속하기</>
+                            <>여정 시작하기</>
                         )}
                     </button>
                 </form>

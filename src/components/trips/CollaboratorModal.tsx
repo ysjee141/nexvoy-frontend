@@ -106,11 +106,11 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
     }
 
     const handleRemoveMember = async (memberId: string, memberEmail: string) => {
-        if (!confirm(`${memberEmail}님을 여행에서 제외하시겠습니까?`)) return
+        if (!confirm(`${memberEmail}님과 여정을 함께하지 않으시겠어요? 🥺`)) return
 
         const { error } = await collaboration.removeMember(memberId)
         if (error) {
-            alert('삭제에 실패했습니다.')
+            alert('제외 처리 중에 문제가 발생했습니다. 다시 시도해 주세요.')
         } else {
             fetchMembers()
         }
@@ -140,7 +140,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                 </button>
 
                 <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', mb: { base: '16px', sm: '24px' }, display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <UserPlus size={20} color="#3B82F6" /> 협업자 초대
+                    <UserPlus size={20} color="#3B82F6" /> 동행자 초대하기
                 </h2>
 
                 {/* 초대 폼 (소유자나 편집자만 가능) */}
@@ -205,10 +205,10 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                 )}
 
                 <div className={css({ borderTop: '1px solid #eee', pt: '24px' })}>
-                    <h3 className={css({ fontSize: '15px', fontWeight: 'bold', mb: '16px', color: '#555' })}>함께하는 멤버</h3>
+                    <h3 className={css({ fontSize: '15px', fontWeight: 'bold', mb: '16px', color: '#555' })}>함께하는 분들</h3>
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', maxH: '250px', overflowY: 'auto', pr: '4px' })}>
                         {loading && members.length === 0 ? (
-                            <p className={css({ textAlign: 'center', py: '20px', color: '#999', fontSize: '14px' })}>멤버를 불러오는 중...</p>
+                            <p className={css({ textAlign: 'center', py: '20px', color: '#999', fontSize: '14px' })}>동행자 정보를 불러오고 있어요... ✈️</p>
                         ) : (
                             (() => {
                                 const allDisplayMembers = [...members]
@@ -224,7 +224,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                 }
 
                                 if (allDisplayMembers.length === 0) {
-                                    return <p className={css({ textAlign: 'center', py: '20px', color: '#999', fontSize: '14px' })}>초대된 멤버가 없습니다.</p>
+                                    return <p className={css({ textAlign: 'center', py: '20px', color: '#999', fontSize: '14px' })}>아직 함께하는 분들이 없어요. 함께 떠날 소중한 분들을 초대해 볼까요? 💌</p>
                                 }
 
                                 return allDisplayMembers.map((m) => {
@@ -282,7 +282,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                                 p: '6px', color: '#999', bg: 'transparent', border: 'none', cursor: 'pointer',
                                                                 _hover: { color: '#dc2626', bg: '#fee2e2' }, borderRadius: '6px'
                                                             })}
-                                                            title="멤버 삭제"
+                                                            title="동행자 제외"
                                                         >
                                                             <Trash2 size={16} />
                                                         </button>

@@ -10,8 +10,8 @@ import NativeAnalytics from '@/components/common/NativeAnalytics'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 
 export const metadata: Metadata = {
-  title: 'OnVoy (온여정) - 당신의 친절한 여행 동반자',
-  description: '일정표 작성부터 체크리스트까지 한 곳에서 관리하는 여행 앱',
+  title: '온여정 - 당신의 따뜻한 여행 동반자',
+  description: '설레는 여행의 모든 순간, 온여정과 함께하세요. 일정표 작성부터 체크리스트까지 한 곳에서 관리하는 여행 앱',
 }
 
 export const viewport = {

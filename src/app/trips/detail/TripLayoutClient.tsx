@@ -81,7 +81,7 @@ export default function TripLayoutClient() {
     return (
         <div className={css({ w: '100%', py: '16px' })}>
 
-            {/* Trip Info Header (OnVoy Style) */}
+            {/* 여행 정보 헤더 (온여정 스타일) */}
             <div className={css({
                 mb: '24px',
                 pb: '20px',

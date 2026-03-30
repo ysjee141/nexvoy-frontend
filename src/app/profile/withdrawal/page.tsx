@@ -58,7 +58,7 @@ export default function WithdrawalPage() {
         const { error } = await supabase.rpc('delete_user')
         
         if (error) {
-            setErrorMsg('계정 삭제에 실패했습니다. 관리자에게 문의해 주세요. (' + error.message + ')')
+            setErrorMsg('계정을 삭제하다가 잠시 문제가 생겼어요. 다시 한번 시도해 주시겠어요? (' + error.message + ')')
             setIsDeleting(false)
             return
         }
@@ -74,7 +74,7 @@ export default function WithdrawalPage() {
         router.push('/')
     }
 
-    if (loading) return <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>불러오는 중...</div>
+    if (loading) return <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>잠시만요, 정보를 가져오고 있어요! ✈️</div>
 
     return (
         <div className={css({ 
@@ -104,7 +104,7 @@ export default function WithdrawalPage() {
                     <div className={css({ bg: 'white', borderRadius: '24px', p: { base: '32px 24px', sm: '48px' }, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.04)' })}>
                         <div className={css({ fontSize: '48px', mb: '16px' })}>🥺</div>
                         <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#172554', mb: '12px' })}>
-                            정말 OnVoy를 떠나시겠어요?
+                            정말 온여정을 떠나시겠어요?
                         </h2>
                         
                         {(stats.totalTrips > 0 || stats.totalItems > 0) ? (
@@ -113,13 +113,13 @@ export default function WithdrawalPage() {
                             </p>
                         ) : (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
-                                탈퇴 시 계정 정보 및 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다. OnVoy와 멋진 여행을 스케치해 보는 건 어떨까요?
+                                탈퇴 시 계정 정보와 모든 데이터가 영구적으로 삭제되어 복구할 수 없게 돼요. 온여정과 함께 멋진 여행을 다시 스케치해 보는 건 어떨까요?
                             </p>
                         )}
                         
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                             <button onClick={() => router.back()} className={css({ w: '100%', py: '16px', bg: '#2563EB', color: 'white', fontWeight: 'bold', fontSize: '16px', borderRadius: '14px', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _hover: { bg: '#2d8a45' }, boxShadow: '0 8px 20px rgba(52, 168, 83, 0.2)' })}>
-                                계속 함께하기 (돌아가기)
+                                우리 계속 함께해요! (돌아가기)
                             </button>
                             <button onClick={() => setStep(2)} className={css({ w: '100%', py: '16px', bg: 'transparent', color: '#999', fontWeight: '600', fontSize: '14px', borderRadius: '14px', cursor: 'pointer', border: 'none', textDecoration: 'underline', _hover: { color: '#666' } })}>
                                 그래도 탈퇴하기
@@ -131,11 +131,11 @@ export default function WithdrawalPage() {
                         <div className={css({ display: 'flex', alignItems: 'flex-start', gap: '12px', mb: '24px', p: '16px', bg: '#fef2f2', borderRadius: '12px', color: '#dc2626' })}>
                             <AlertTriangle size={20} className={css({ flexShrink: 0, mt: '2px' })} />
                             <p className={css({ fontSize: '14px', lineHeight: 1.5, wordBreak: 'keep-all', m: 0 })}>
-                                <strong>주의:</strong> 계정 삭제 시 등록된 연락처, 여행 일정, 템플릿 등 모든 데이터가 즉시 파기되며 복구할 수 없습니다.
+                                <strong>잠깐만요! 💡</strong> 계정 삭제 시 등록된 연락처, 여행 일정, 템플릿 등 모든 데이터가 즉시 파기되며 복구할 수 없어요.
                             </p>
                         </div>
                         
-                        <h2 className={css({ fontSize: '20px', fontWeight: 'bold', color: '#172554', mb: '8px' })}>마지막 확인</h2>
+                        <h2 className={css({ fontSize: '20px', fontWeight: 'bold', color: '#172554', mb: '8px' })}>정말 떠나실 건가요?</h2>
                         <p className={css({ fontSize: '14px', color: '#666', mb: '24px', wordBreak: 'keep-all', lineHeight: 1.5 })}>
                             정말 탈퇴를 원하신다면, 아래 입력란에 <strong>탈퇴</strong> 라고 입력해 주세요.
                         </p>
@@ -163,7 +163,7 @@ export default function WithdrawalPage() {
                                 disabled={confirmText !== '탈퇴' || isDeleting}
                                 className={css({ flex: 1, py: '14px', bg: '#dc2626', color: 'white', fontWeight: 'bold', fontSize: '15px', borderRadius: '12px', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _hover: { bg: '#b91c1c' } })}
                             >
-                                {isDeleting ? '처리 중...' : '계정 영구 삭제'}
+                                {isDeleting ? '여정을 마무리하는 중...' : '계정을 영구히 삭제할게요'}
                             </button>
                         </div>
                     </div>
