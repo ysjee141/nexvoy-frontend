@@ -10,8 +10,9 @@ import { useState, useEffect } from 'react'
 import {
   Map, CheckSquare, Globe, Wallet,
   Link2, ChevronDown, ChevronUp, ArrowRight,
-  Clock, Share2, Star, Zap, Sparkles
+  Clock, Share2, Star, Zap, Sparkles, X
 } from 'lucide-react'
+import NicknamePrompt from '@/components/profile/NicknamePrompt'
 
 // ── 주요 기능 카드 (Guide에서 이식) ──
 const FEATURES = [
@@ -205,6 +206,7 @@ export default function HomeClient() {
   const [completed, setCompleted] = useState<any[]>([])
   const [hasAnyTrip, setHasAnyTrip] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [showNicknamePrompt, setShowNicknamePrompt] = useState(false)
 
   useEffect(() => {
     async function fetchData() {
@@ -222,6 +224,8 @@ export default function HomeClient() {
         .single()
 
       setNickname(profile?.nickname || user?.email?.split('@')[0] || '여행자')
+      // 닉네임이 null이거나 없으면 배너 노출 예비
+      setShowNicknamePrompt(!profile?.nickname)
 
       // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
       const { data: memberTripData } = await supabase
@@ -485,6 +489,7 @@ export default function HomeClient() {
     <div className={css({ w: '100%' })}>
       <InvitationBanner />
       <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
+        {showNicknamePrompt && <NicknamePrompt onClose={() => setShowNicknamePrompt(false)} />}
         <header className={css({ mb: { base: '28px', sm: '40px' }, display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
           <div>
             <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '900', color: '#222', letterSpacing: '-1px' })}>

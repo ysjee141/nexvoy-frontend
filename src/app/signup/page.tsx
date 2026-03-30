@@ -10,6 +10,7 @@ import TermsModal from './TermsModal'
 
 export default function SignUpPage() {
     const [email, setEmail] = useState('')
+    const [nickname, setNickname] = useState('')
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
     const [showPassword, setShowPassword] = useState(false)
@@ -34,10 +35,28 @@ export default function SignUpPage() {
         setMessage(null)
         const supabase = createClient()
 
+        // 닉네임 중복 체크 (입력한 경우에만)
+        if (nickname.trim()) {
+            const { data: existingNickname } = await supabase
+                .from('profiles')
+                .select('nickname')
+                .ilike('nickname', nickname.trim())
+                .maybeSingle()
+
+            if (existingNickname) {
+                setMessage({ type: 'error', text: '이미 사용 중인 닉네임입니다. 다른 닉네임을 사용해 주세요.' })
+                setLoading(false)
+                return
+            }
+        }
+
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
+                data: {
+                    full_name: nickname.trim() || null
+                },
                 // 앱 빌드 시에는 Vercel (NEXT_PUBLIC_APP_URL)로 리다이렉트 하여 서버 라우트(/auth/callback)를 타도록 함
                 // 모바일 환경(Capacitor)에서 location.origin이 http://localhost로 잡히는 문제를 방지하기 위해 명시적 폴백을 둡니다.
                 emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL || (typeof window !== 'undefined' && location.origin.includes('localhost:3000') ? location.origin : 'https://app.nexvoy.xyz')}/auth/callback?next=/auth/success`,
@@ -128,6 +147,41 @@ export default function SignUpPage() {
                         overflow: 'hidden',
                         mb: '16px'
                     })}>
+                        {/* 닉네임 필드 (선택 사항) */}
+                        <div className={css({ 
+                            borderBottom: '1px solid #B0B0B0',
+                            p: '12px 16px',
+                            transition: 'all 0.2s',
+                            position: 'relative',
+                            _focusWithin: { bg: 'blue.50' }
+                        })}>
+                            <div className={css({ 
+                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                bg: 'brand.primary', 
+                                opacity: 0, 
+                                transition: 'all 0.2s',
+                                '.nick-group:focus-within &': { opacity: 1 } 
+                            })} />
+                            <div className="nick-group">
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                    닉네임 <span className={css({ fontWeight: '400', color: '#717171', ml: '4px' })}>(선택 사항)</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={nickname}
+                                    onChange={(e) => setNickname(e.target.value)}
+                                    className={css({
+                                        w: '100%',
+                                        outline: 'none',
+                                        fontSize: '15px',
+                                        color: '#222',
+                                        bg: 'transparent',
+                                    })}
+                                    placeholder="별명을 입력해 주세요"
+                                />
+                            </div>
+                        </div>
+
                         <div className={css({ 
                             borderBottom: '1px solid #B0B0B0',
                             p: '12px 16px',

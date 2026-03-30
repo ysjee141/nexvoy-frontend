@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X, ShieldCheck, LogOut } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import TermsModal from '../signup/TermsModal'
 
 export default function ProfilePage() {
@@ -16,6 +16,7 @@ export default function ProfilePage() {
     const [nickname, setNickname] = useState('')
     const [isEditingNickname, setIsEditingNickname] = useState(false)
     const [isSavingNickname, setIsSavingNickname] = useState(false)
+    const [nicknameError, setNicknameError] = useState('')
 
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -29,6 +30,7 @@ export default function ProfilePage() {
 
     const [stats, setStats] = useState({ totalTrips: 0, totalPlans: 0, totalTemplates: 0, totalChecked: 0, totalItems: 0 })
     const [showTerms, setShowTerms] = useState(false)
+    const searchParams = useSearchParams()
 
     useEffect(() => {
         const fetchData = async () => {
@@ -102,11 +104,30 @@ export default function ProfilePage() {
         }
 
         fetchData()
-    }, [supabase])
+
+        if (searchParams.get('edit') === 'nickname') {
+            setIsEditingNickname(true)
+        }
+    }, [supabase, searchParams])
 
     const saveNickname = async () => {
         if (!nickname.trim() || !user) return
+        setNicknameError('')
         setIsSavingNickname(true)
+
+        // 닉네임 중복 체크
+        const { data: existingNickname } = await supabase
+            .from('profiles')
+            .select('nickname')
+            .ilike('nickname', nickname.trim())
+            .neq('id', user.id)
+            .maybeSingle()
+
+        if (existingNickname) {
+            setNicknameError('이미 사용 중인 닉네임입니다.')
+            setIsSavingNickname(false)
+            return
+        }
 
         const { error } = await supabase
             .from('profiles')
@@ -115,6 +136,7 @@ export default function ProfilePage() {
 
         if (!error) {
             setIsEditingNickname(false)
+            setProfile({ ...profile, nickname: nickname.trim() })
         }
         setIsSavingNickname(false)
     }
@@ -183,30 +205,39 @@ export default function ProfilePage() {
                 </div>
                 <div className={css({ flex: 1, minW: 0 })}>
                     {isEditingNickname ? (
-                        <div className={css({ display: 'flex', gap: '8px', flexDirection: 'row', alignItems: 'center', w: '100%' })}>
-                            <input
-                                value={nickname}
-                                onChange={e => setNickname(e.target.value)}
-                                autoFocus
-                                className={css({ flex: 1, minW: 0, p: '6px 10px', border: '1.5px solid #3B82F6', borderRadius: '6px', fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', outline: 'none' })}
-                            />
-                            <div className={css({ display: 'flex', gap: '4px', flexShrink: 0 })}>
-                                <button
-                                    onClick={saveNickname}
-                                    disabled={isSavingNickname}
-                                    className={css({ p: '6px', bg: '#3B82F6', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', _disabled: { opacity: 0.6 } })}
-                                    title="저장"
-                                >
-                                    {isSavingNickname ? <span className={css({ fontSize: '12px', fontWeight: 'bold', px: '2px' })}>...</span> : <Check size={18} />}
-                                </button>
-                                <button
-                                    onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || '') }}
-                                    className={css({ p: '6px', bg: '#f1f3f4', color: '#555', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', _hover: { bg: '#e8eaed' } })}
-                                    title="취소"
-                                >
-                                    <X size={18} />
-                                </button>
+                        <div className={css({ display: 'flex', flexDirection: 'column', w: '100%', gap: '4px' })}>
+                            <div className={css({ display: 'flex', gap: '8px', flexDirection: 'row', alignItems: 'center', w: '100%' })}>
+                                <input
+                                    value={nickname}
+                                    onChange={e => { setNickname(e.target.value); setNicknameError('') }}
+                                    autoFocus
+                                    className={css({ 
+                                        flex: 1, minW: 0, p: '6px 10px', 
+                                        border: nicknameError ? '1.5px solid #dc2626' : '1.5px solid #3B82F6', 
+                                        borderRadius: '6px', fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', outline: 'none' 
+                                    })}
+                                />
+                                <div className={css({ display: 'flex', gap: '4px', flexShrink: 0 })}>
+                                    <button
+                                        onClick={saveNickname}
+                                        disabled={isSavingNickname}
+                                        className={css({ p: '6px', bg: '#3B82F6', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', _disabled: { opacity: 0.6 } })}
+                                        title="저장"
+                                    >
+                                        {isSavingNickname ? <span className={css({ fontSize: '12px', fontWeight: 'bold', px: '2px' })}>...</span> : <Check size={18} />}
+                                    </button>
+                                    <button
+                                        onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || ''); setNicknameError('') }}
+                                        className={css({ p: '6px', bg: '#f1f3f4', color: '#555', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', _hover: { bg: '#e8eaed' } })}
+                                        title="취소"
+                                    >
+                                        <X size={18} />
+                                    </button>
+                                </div>
                             </div>
+                            {nicknameError && (
+                                <p className={css({ fontSize: '12px', color: '#dc2626', fontWeight: '600', mt: '2px' })}>{nicknameError}</p>
+                            )}
                         </div>
                     ) : (
                         <>
