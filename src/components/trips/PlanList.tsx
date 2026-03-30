@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
-import { ChevronDown, ChevronUp, MapPin, Clock, Wallet } from 'lucide-react'
+import { ChevronDown, ChevronUp, MapPin, Clock, Wallet, BookOpen } from 'lucide-react'
 import { getCurrencyFromTimezone, formatCurrency, formatKRW } from '@/utils/currency'
 import PlanDetailModal from './PlanDetailModal'
 
@@ -46,111 +46,163 @@ function PlanCard({
     const timeLabel = timeDisplayMode === 'kst' ? '한국' : '현지'
 
     return (
-        <>
+        <div 
+            className={css({ 
+                display: 'flex', 
+                gap: { base: '12px', sm: '20px' }, 
+                position: 'relative',
+                mb: '4px'
+            })}
+        >
+            {/* 왼쪽: 시간 영역 (수직 스택) */}
+            <div className={css({ 
+                w: { base: '80px', sm: '95px' }, 
+                flexShrink: 0, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'flex-end',
+                pt: '14px',
+                whiteSpace: 'nowrap'
+            })}>
+                {/* 현지 시간 (우선순위) */}
+                {(timeDisplayMode === 'both' || timeDisplayMode === 'local') && (
+                    <span className={css({ 
+                        fontSize: { base: '13px', sm: '14px' }, 
+                        fontWeight: '800', 
+                        color: isOngoing ? '#3B82F6' : '#222',
+                        lineHeight: 1
+                    })}>
+                        {formatLocalTime(plan.start_datetime_local)}
+                    </span>
+                )}
+                {/* 한국 시간 (보조) */}
+                {(timeDisplayMode === 'both' || timeDisplayMode === 'kst') && (
+                    <span className={css({ 
+                        fontSize: { base: '13px', sm: '14px' }, 
+                        fontWeight: '700', 
+                        color: isOngoing ? '#93C5FD' : '#999',
+                        mt: '6px',
+                        lineHeight: 1,
+                        opacity: timeDisplayMode === 'both' ? 0.8 : 1
+                    })}>
+                        {timeDisplayMode === 'both' ? '한국 ' : ''}
+                        {formatKstTime(plan.start_datetime_local, plan.timezone_string || 'Asia/Seoul')}
+                    </span>
+                )}
+            </div>
+
+            {/* 중앙: 타임라인 도트 및 라인 슬롯 */}
+            <div className={css({ 
+                position: 'relative', 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center',
+                flexShrink: 0,
+                w: '20px'
+            })}>
+                {/* 도트 */}
+                <div className={css({ 
+                    w: '12px', h: '12px', 
+                    borderRadius: '50%', 
+                    bg: isOngoing ? '#3B82F6' : isToday ? '#BFDBFE' : '#DDD',
+                    border: '2px solid white',
+                    boxShadow: isOngoing ? '0 0 0 3px rgba(59, 130, 246, 0.2)' : 'none',
+                    zIndex: 2,
+                    mt: '17px',
+                    transition: 'all 0.3s'
+                })} />
+            </div>
+
+            {/* 오른쪽: 일정 카드 내용 */}
             <div
                 role="button"
                 tabIndex={0}
                 onClick={() => setShowDetail(true)}
                 onKeyDown={(e) => { if (e.key === 'Enter') setShowDetail(true) }}
                 className={css({
-                    p: { base: '12px 14px', sm: '14px 18px' },
+                    flex: 1,
+                    p: { base: '14px', sm: '16px 20px' },
                     bg: 'white',
                     border: isOngoing ? '2px solid #3B82F6' : isToday ? '1px solid #BFDBFE' : '1px solid #e8eaed',
-                    borderRadius: '12px',
+                    borderRadius: '16px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
                     position: 'relative',
                     cursor: 'pointer',
                     boxShadow: isOngoing
-                        ? '0 4px 20px rgba(66,133,244,0.18)'
-                        : isToday
-                            ? '0 2px 10px rgba(66,133,244,0.07)'
-                            : '0 1px 4px rgba(0,0,0,0.04)',
-                    transition: 'transform 0.18s, box-shadow 0.18s',
+                        ? '0 8px 24px rgba(59,130,246,0.12)'
+                        : '0 2px 8px rgba(0,0,0,0.04)',
+                    transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
                     _hover: {
-                        transform: 'translateY(-2px)',
-                        boxShadow: isOngoing
-                            ? '0 8px 28px rgba(66,133,244,0.25)'
-                            : '0 4px 14px rgba(0,0,0,0.09)',
+                        transform: 'translateX(4px)',
+                        boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
+                        borderColor: isOngoing ? '#3B82F6' : '#CCC',
                     },
+                    _active: { transform: 'scale(0.98) translateX(4px)' }
                 })}
                 style={isToday ? {
                     background: isOngoing
-                        ? 'linear-gradient(135deg,#EFF6FF 0%,#EFF6FF 100%)'
-                        : '#fafcff',
+                        ? 'linear-gradient(135deg, #F0F7FF 0%, #FFFFFF 100%)'
+                        : '#FCFDFF',
                 } : {}}
             >
                 {/* 진행 중 뱃지 */}
                 {isOngoing && (
                     <span style={{
-                        position: 'absolute', top: -11, left: 12,
-                        background: '#3B82F6', color: 'white', fontSize: 11, fontWeight: 800,
-                        padding: '3px 10px', borderRadius: 20,
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        boxShadow: '0 2px 8px rgba(66,133,244,0.5)',
+                        position: 'absolute', top: -10, right: 20,
+                        background: '#3B82F6', color: 'white', fontSize: 10, fontWeight: 900,
+                        padding: '2px 8px', borderRadius: 20,
+                        display: 'flex', alignItems: 'center', gap: 4,
+                        boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
                     }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'rgba(255,255,255,0.9)', display: 'inline-block' }} />
-                        진행 중
+                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
+                        ON
                     </span>
                 )}
 
-                {/* 상단: 일정명 */}
+                {/* 일정명 */}
                 <h4 className={css({
-                    fontWeight: '700',
-                    fontSize: { base: '14px', sm: '15px' },
-                    color: isOngoing ? '#1a56db' : '#111',
-                    lineHeight: 1.3,
+                    fontWeight: '800',
+                    fontSize: { base: '15px', sm: '16px' },
+                    color: isOngoing ? '#1a56db' : '#222',
+                    lineHeight: 1.4,
                 })}>
                     {plan.title}
                 </h4>
 
-                {/* 하단: 장소 / 시간 / 금액 */}
-                <div className={css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '6px' })}>
-
+                {/* 하단: 장소 / 금액 */}
+                <div className={css({ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' })}>
                     {/* 장소 */}
                     {plan.location && (
                         <span className={css({
-                            display: 'inline-flex', alignItems: 'center', gap: '3px',
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
                             fontSize: '12px',
                             color: isOngoing ? '#1a56db' : '#666',
                             bg: isOngoing ? 'white' : '#f5f5f5',
-                            px: '7px', py: '3px', borderRadius: '6px',
-                            maxW: '160px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            px: '8px', py: '4px', borderRadius: '8px',
+                            maxW: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                             boxShadow: isOngoing ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
+                            fontWeight: '600'
                         })}>
-                            <MapPin size={11} color={isOngoing ? '#3B82F6' : '#F4511E'} />
+                            <MapPin size={12} color={isOngoing ? '#3B82F6' : '#F4511E'} />
                             {plan.location}
                         </span>
                     )}
 
-                    {/* 시간 */}
-                    <span className={css({
-                        display: 'inline-flex', alignItems: 'center', gap: '3px',
-                        fontSize: '12px',
-                        color: isOngoing ? '#1a56db' : '#555',
-                        bg: isOngoing ? 'rgba(66,133,244,0.12)' : '#f1f3f4',
-                        px: '7px', py: '3px', borderRadius: '6px', whiteSpace: 'nowrap',
-                        fontWeight: '600',
-                    })}>
-                        <Clock size={11} color={isOngoing ? '#3B82F6' : '#666'} />
-                        {primaryTime}
-                        {timeDisplayMode === 'both' && (
-                            <small style={{ fontSize: 10, opacity: 0.65, fontWeight: 'normal' }}>({timeLabel})</small>
-                        )}
-                    </span>
-
-                    {/* KST 시간 (both 모드일 때 추가) */}
-                    {timeDisplayMode === 'both' && (
+                    {/* 참고자료 개수 */}
+                    {plan.plan_urls && Array.isArray(plan.plan_urls) && plan.plan_urls.length > 0 && (
                         <span className={css({
-                            display: 'inline-flex', alignItems: 'center', gap: '3px',
-                            fontSize: '12px', color: '#3B82F6',
-                            bg: '#EFF6FF', px: '7px', py: '3px', borderRadius: '6px',
-                            whiteSpace: 'nowrap', fontWeight: '600',
+                            display: 'inline-flex', alignItems: 'center', gap: '4px',
+                            fontSize: '12px',
+                            color: isOngoing ? '#1a56db' : '#666',
+                            bg: isOngoing ? 'white' : '#f5f5f5',
+                            px: '8px', py: '4px', borderRadius: '8px',
+                            boxShadow: isOngoing ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
+                            fontWeight: '600'
                         })}>
-                            <Clock size={11} color="#3B82F6" />
-                            {formatKstTime(plan.start_datetime_local, plan.timezone_string || 'Asia/Seoul')}
-                            <small style={{ fontSize: 10, opacity: 0.8, fontWeight: 'normal' }}>(한국)</small>
+                            <BookOpen size={12} color={isOngoing ? '#3B82F6' : '#5E35B1'} />
+                            참고자료 {plan.plan_urls.length}건
                         </span>
                     )}
 
@@ -158,13 +210,13 @@ function PlanCard({
                     {localAmount && (
                         <span className={css({
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
-                            fontSize: '12px', fontWeight: '700', color: '#2563EB',
+                            fontSize: '13px', fontWeight: '800', color: '#2563EB',
                             ml: 'auto',
                         })}>
-                            <Wallet size={11} />
+                            <Wallet size={12} />
                             {localAmount}
                             {currency.code !== 'KRW' && krwAmount !== null && (
-                                <span className={css({ fontSize: '11px', color: '#999', fontWeight: '400' })}>
+                                <span className={css({ fontSize: '11px', color: '#999', fontWeight: '500' })}>
                                     ≈{formatKRW(krwAmount)}
                                 </span>
                             )}
@@ -187,7 +239,7 @@ function PlanCard({
                     onDelete={onDelete}
                 />
             )}
-        </>
+        </div>
     )
 }
 
@@ -251,13 +303,19 @@ export default function PlanList({
 
     const renderDayGroup = (day: typeof sortedDays[0]) => {
         const isToday = day.rawDate === todayStr
+        // 중심축 계산: 시간 영역(80/95) + 간격(12/20) + 도트 컬럼 절반(10) = 102px / 125px
+        const timelineCenter = { base: '102px', sm: '125px' } 
+        // 헤더 패딩: 중심축 - 헤더 도트 절반(3.5) = 98.5px / 121.5px
+        const headerPadding = { base: '98.5px', sm: '121.5px' }
+
         return (
             <div key={day.rawDate} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
                 <h3 className={css({
                     fontSize: { base: '14px', sm: '16px' }, fontWeight: '700',
                     color: isToday ? '#1a56db' : '#444',
                     pb: '8px', borderBottom: isToday ? '2px solid #3B82F6' : '1px solid #eee',
-                    display: 'flex', alignItems: 'center', gap: '8px'
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    pl: headerPadding
                 })}>
                     <span className={css({ w: '7px', h: '7px', borderRadius: '50%', bg: isToday ? '#3B82F6' : '#ccc', flexShrink: 0 })} />
                     {day.label}
@@ -267,7 +325,24 @@ export default function PlanList({
                         </span>
                     )}
                 </h3>
-                <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px' })}>
+                <div className={css({ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '12px',
+                    position: 'relative'
+                })}>
+                    {/* 타임라인 세로선 */}
+                    <div className={css({ 
+                        position: 'absolute', 
+                        left: timelineCenter, 
+                        top: '0', 
+                        bottom: '0', 
+                        w: '2px', 
+                        bg: isToday ? '#E0EFFF' : '#F0F0F0',
+                        zIndex: 1,
+                        ml: '-1px' // 중앙 정렬 보정
+                    })} />
+
                     {day.plans.map((plan: any) => (
                         <PlanCard key={plan.id} plan={plan} isToday={isToday} {...commonProps} />
                     ))}
