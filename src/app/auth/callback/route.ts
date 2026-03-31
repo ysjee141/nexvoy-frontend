@@ -39,7 +39,7 @@ export async function GET(request: Request) {
 
         // If this is a signup verification flow, the email is likely verified even if exchange failed (e.g. cross-device PKCE)
         // Redirect to success page instead of error page to avoid confusing the user.
-        if (next.includes('success')) {
+        if (next === '/auth/success' || next.includes('success')) {
             return NextResponse.redirect(`${origin}/auth/success?verified=true`)
         }
     }
