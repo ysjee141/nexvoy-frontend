@@ -4,7 +4,86 @@ import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Globe, Lock, Calendar, MapPin, Clock, BadgeCheck } from 'lucide-react'
+import { Globe, Lock, Calendar, MapPin, Clock, BadgeCheck, ChevronDown, ChevronUp } from 'lucide-react'
+import LocationTooltip from '@/components/common/LocationTooltip'
+import UrlPreviewCard from '@/components/common/UrlPreviewCard'
+
+function SharePlanCard({ plan, formatLocalTime, formatDate }: any) {
+    const [isRefsOpen, setIsRefsOpen] = useState(false)
+    const hasRefs = plan.plan_urls && Array.isArray(plan.plan_urls) && plan.plan_urls.length > 0
+
+    return (
+        <div className={css({ 
+            py: '20px', 
+            borderBottom: '1px solid #EEEEEE',
+            display: 'flex',
+            flexDirection: { base: 'column', sm: 'row' },
+            gap: { base: '12px', sm: '24px' }
+        })}>
+            <div className={css({ minW: '100px', pt: '4px' })}>
+                <span className={css({ 
+                    fontSize: '15px', fontWeight: '800', color: '#222', bg: '#F7F7F7', 
+                    px: '10px', py: '4px', borderRadius: '6px',
+                    display: 'inline-flex', alignItems: 'center', gap: '6px'
+                })}>
+                    <Clock size={16} /> {formatLocalTime(plan.start_datetime_local)}
+                </span>
+            </div>
+            
+            <div className={css({ flex: 1, minW: 0 })}>
+                <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '8px', color: '#222' })}>{plan.title}</h3>
+                <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '12px', mb: '12px' })}>
+                    <span className={css({ fontSize: '14px', color: '#717171', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                        <Calendar size={14} /> {formatDate(plan.start_datetime_local)}
+                    </span>
+                    {plan.location && (
+                        <LocationTooltip 
+                            locationName={plan.location} 
+                            lat={plan.location_lat} 
+                            lng={plan.location_lng} 
+                        />
+                    )}
+                </div>
+                {plan.memo && (
+                    <div className={css({ 
+                        fontSize: '15px', color: '#484848', lineHeight: 1.6, p: '16px', bg: '#F7F7F7',
+                        borderRadius: '12px', border: '1px solid #EEEEEE', whiteSpace: 'pre-wrap'
+                    })}>
+                        {plan.memo}
+                    </div>
+                )}
+                {hasRefs && (
+                    <div className={css({ mt: '12px', display: 'flex', flexDirection: 'column', gap: '8px' })}>
+                        <button
+                            onClick={() => setIsRefsOpen(!isRefsOpen)}
+                            className={css({
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                w: '100%', p: '12px 16px', bg: '#ffffff', border: '1px solid #E5E7EB',
+                                borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                                _hover: { bg: '#F9FAFB', borderColor: '#D1D5DB' }
+                            })}
+                        >
+                            <span className={css({ fontSize: '14px', fontWeight: '700', color: '#4B5563', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                                <Globe size={16} color="#3B82F6" /> 참고자료 {plan.plan_urls.length}건 확인하기
+                            </span>
+                            {isRefsOpen ? <ChevronUp size={16} color="#9CA3AF" /> : <ChevronDown size={16} color="#9CA3AF" />}
+                        </button>
+                        
+                        {isRefsOpen && (
+                            <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px', mt: '4px', minW: 0 })}>
+                                {plan.plan_urls.map((pu: any, i: number) => {
+                                    const url = typeof pu === 'string' ? pu : pu.url
+                                    if (!url) return null
+                                    return <UrlPreviewCard key={i} url={url} />
+                                })}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
 
 export default function SharePage() {
     const searchParams = useSearchParams()
@@ -54,7 +133,7 @@ export default function SharePage() {
     const fetchPlans = async (tripId: string) => {
         const { data } = await supabase
             .from('plans')
-            .select('*')
+            .select('*, plan_urls(*)')
             .eq('trip_id', tripId)
             .order('start_datetime_local', { ascending: true })
 
@@ -120,6 +199,16 @@ export default function SharePage() {
         )
     }
 
+    const groupedPlans: Record<string, { label: string; dateStr: string; plans: any[] }> = {}
+    plans.forEach(plan => {
+        const rawDate = plan.start_datetime_local.replace(' ', 'T').split('T')[0]
+        const [y, m, d] = rawDate.split('-')
+        const label = `${y}년 ${parseInt(m, 10)}월 ${parseInt(d, 10)}일`
+        if (!groupedPlans[rawDate]) groupedPlans[rawDate] = { label, dateStr: rawDate, plans: [] }
+        groupedPlans[rawDate].plans.push(plan)
+    })
+    const sortedDays = Object.values(groupedPlans).sort((a, b) => a.dateStr.localeCompare(b.dateStr))
+
     return (
         <div className={css({ maxW: '800px', mx: 'auto', p: { base: '24px 20px', sm: '40px 24px' }, bg: 'white', minH: '100vh' })}>
             <div className={css({ mb: '48px', textAlign: 'left', borderBottom: '1px solid #EEEEEE', pb: '32px' })}>
@@ -153,62 +242,25 @@ export default function SharePage() {
                 </div>
             </div>
 
-            <div className={css({ display: 'flex', flexDirection: 'column' })}>
+            <div className={css({ display: 'flex', flexDirection: 'column', gap: '32px' })}>
                 {plans.length === 0 ? (
                     <div className={css({ textAlign: 'center', py: '60px', color: '#717171' })}>등록된 일정이 없습니다.</div>
                 ) : (
-                    plans.map((plan) => (
-                        <div key={plan.id} className={css({ 
-                            py: '24px', 
-                            borderBottom: '1px solid #EEEEEE',
-                            display: 'flex',
-                            flexDirection: { base: 'column', sm: 'row' },
-                            gap: { base: '12px', sm: '24px' }
-                        })}>
-                            <div className={css({ minW: '100px', pt: '4px' })}>
-                                <span className={css({ 
-                                    fontSize: '15px', 
-                                    fontWeight: '800', 
-                                    color: '#222', 
-                                    bg: '#F7F7F7', 
-                                    px: '10px', 
-                                    py: '4px', 
-                                    borderRadius: '6px',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: '6px'
-                                })}>
-                                    <Clock size={16} /> {formatLocalTime(plan.start_datetime_local)}
-                                </span>
+                    sortedDays.map(dayGroup => (
+                        <div key={dayGroup.dateStr} className={css({ display: 'flex', flexDirection: 'column' })}>
+                            <div className={css({
+                                display: 'flex', alignItems: 'center', gap: '8px', 
+                                pb: '12px', mb: '4px', 
+                                borderBottom: '2px solid #3B82F6',
+                                color: '#1a56db', fontWeight: '800', fontSize: '18px'
+                            })}>
+                                <Calendar size={20} />
+                                {dayGroup.label}
                             </div>
                             
-                            <div className={css({ flex: 1 })}>
-                                <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '8px', color: '#222' })}>{plan.title}</h3>
-                                <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '12px', mb: '12px' })}>
-                                    <span className={css({ fontSize: '14px', color: '#717171', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                        <Calendar size={14} /> {formatDate(plan.start_datetime_local)}
-                                    </span>
-                                    {plan.location && (
-                                        <span className={css({ fontSize: '14px', color: '#717171', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                            <MapPin size={14} /> {plan.location}
-                                        </span>
-                                    )}
-                                </div>
-                                {plan.memo && (
-                                    <div className={css({ 
-                                        fontSize: '15px', 
-                                        color: '#484848', 
-                                        lineHeight: 1.6,
-                                        p: '16px',
-                                        bg: '#F7F7F7',
-                                        borderRadius: '12px',
-                                        border: '1px solid #EEEEEE',
-                                        whiteSpace: 'pre-wrap'
-                                    })}>
-                                        {plan.memo}
-                                    </div>
-                                )}
-                            </div>
+                            {dayGroup.plans.map((plan) => (
+                                <SharePlanCard key={plan.id} plan={plan} formatLocalTime={formatLocalTime} formatDate={formatDate} />
+                            ))}
                         </div>
                     ))
                 )}
