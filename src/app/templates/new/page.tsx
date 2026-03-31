@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, X, ArrowLeft, Save, ChevronDown } from 'lucide-react'
+import { Plus, X, ArrowLeft, Save, ChevronDown, Trash2 } from 'lucide-react'
 import Link from 'next/link'
+import { CATEGORIES } from '@/constants/checklist'
 
 interface TemplateItemInput {
     id: string; // 로컬 고유키
@@ -13,7 +14,7 @@ interface TemplateItemInput {
     category: string;
 }
 
-const CATEGORIES = ['의류', '전자기기', '세면도구', '상비약', '서류', '음식', '기타']
+
 
 export default function NewTemplatePage() {
     const router = useRouter()
@@ -149,40 +150,53 @@ export default function NewTemplatePage() {
 
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         {items.map((item, index) => (
-                            <div key={item.id} className={css({ display: 'flex', gap: '12px', alignItems: 'center' })}>
-                                <div className={css({ position: 'relative', w: '120px', flexShrink: 0 })}>
+                            <div key={item.id} className={css({
+                                display: 'flex',
+                                flexDirection: { base: 'column', sm: 'row' },
+                                alignItems: { base: 'stretch', sm: 'center' },
+                                bg: 'white',
+                                borderRadius: '12px',
+                                border: '1px solid #eaeaea',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                                overflow: 'hidden',
+                                transition: 'all 0.2s',
+                                _focusWithin: { borderColor: '#3B82F6', boxShadow: '0 4px 12px rgba(16,185,129,0.1)' }
+                            })}>
+                                <div className={css({ position: 'relative', borderRight: { base: 'none', sm: '1px solid #eaeaea' }, borderBottom: { base: '1px solid #eaeaea', sm: 'none' }, w: { base: '100%', sm: '140px' }, flexShrink: 0 })}>
                                     <select
                                         value={item.category}
                                         onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                        className={css({ w: '100%', p: '12px 30px 12px 12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: '#f9f9f9', fontSize: '14px', fontWeight: '500', color: '#1E3A8A', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6', bg: 'white' } })}
+                                        className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#1E3A8A', cursor: 'pointer', appearance: 'none' })}
                                     >
                                         {CATEGORIES.map((cat: any) => (
                                             <option key={cat} value={cat}>{cat}</option>
                                         ))}
                                     </select>
-                                    <div className={css({ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
-                                        <ChevronDown size={14} />
+                                    <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
+                                        <ChevronDown size={16} />
                                     </div>
                                 </div>
 
-                                <input
-                                    type="text"
-                                    value={item.item_name}
-                                    onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
-                                    placeholder={`${index + 1}번째 준비물`}
-                                    className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
-                                    required
-                                />
+                                <div className={css({ display: 'flex', flex: 1, alignItems: 'center' })}>
+                                    <input
+                                        type="text"
+                                        value={item.item_name}
+                                        onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
+                                        placeholder={`${index + 1}번째 준비물`}
+                                        className={css({ flex: 1, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', bg: 'transparent', color: '#222' })}
+                                        required
+                                    />
 
-                                {items.length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => handleRemoveItem(item.id)}
-                                        className={css({ p: '10px', color: '#dc2626', bg: '#fee2e2', borderRadius: '8px', border: 'none', cursor: 'pointer', _hover: { bg: '#fecaca' } })}
-                                    >
-                                        <X size={18} />
-                                    </button>
-                                )}
+                                    {items.length > 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleRemoveItem(item.id)}
+                                            className={css({ p: '14px', color: '#ff4d4f', bg: 'transparent', border: 'none', cursor: 'pointer', _hover: { color: '#dc2626', bg: '#fff1f0' }, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' })}
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
