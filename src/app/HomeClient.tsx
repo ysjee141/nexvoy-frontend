@@ -250,7 +250,13 @@ export default function HomeClient() {
 
       if (localUser) {
         setUser(localUser)
-        setNickname(localUser.email?.split('@')[0] || '여행자')
+        // 1. 프로필 캐시 확인 (닉네임 깜빡임 방지)
+        const cachedProfile = await CacheUtil.getProfile()
+        if (cachedProfile?.nickname) {
+            setNickname(cachedProfile.nickname)
+        } else {
+            setNickname(localUser.email?.split('@')[0] || '여행자')
+        }
         try {
           // 캐시된 목록 즉시 적용
           const cachedTrips = await CacheUtil.get<any[]>('offline_home_all_trips')
@@ -281,6 +287,9 @@ export default function HomeClient() {
         .single()
 
       setNickname(profile?.nickname || networkUser.email?.split('@')[0] || '여행자')
+      if (profile) {
+        await CacheUtil.setProfile(profile)
+      }
       setShowNicknamePrompt(!profile?.nickname)
 
       // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
