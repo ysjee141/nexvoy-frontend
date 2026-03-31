@@ -39,5 +39,14 @@ export const CacheUtil = {
     
     async getAuthUser() {
         return await this.get<any>('auth_last_user')
+    },
+
+    // 유저 프로필 정보 (닉네임 등)
+    async setProfile(profile: any) {
+        await this.set('auth_last_profile', profile)
+    },
+
+    async getProfile() {
+        return await this.get<any>('auth_last_profile')
     }
 }
