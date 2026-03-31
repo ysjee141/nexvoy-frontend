@@ -7,6 +7,7 @@ import { Plus, MapPin, CalendarDays, Luggage, User } from 'lucide-react'
 import InvitationBanner from '@/components/trips/InvitationBanner'
 import TripSection from '@/components/trips/TripSection'
 import { useState, useEffect } from 'react'
+import { CacheUtil } from '@/utils/cache'
 import {
   Map, CheckSquare, Globe, Wallet,
   Link2, ChevronDown, ChevronUp, ArrowRight,
@@ -206,52 +207,11 @@ export default function HomeClient() {
   const [completed, setCompleted] = useState<any[]>([])
   const [hasAnyTrip, setHasAnyTrip] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [isFirstCheck, setIsFirstCheck] = useState(true) // 최초 세션/캐시 확인용
   const [showNicknamePrompt, setShowNicknamePrompt] = useState(false)
 
   useEffect(() => {
-    async function fetchData() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        setLoading(false)
-        return
-      }
-      setUser(user)
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('nickname')
-        .eq('id', user.id)
-        .single()
-
-      setNickname(profile?.nickname || user?.email?.split('@')[0] || '여행자')
-      // 닉네임이 null이거나 없으면 배너 노출 예비
-      setShowNicknamePrompt(!profile?.nickname)
-
-      // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
-      const { data: memberTripData } = await supabase
-        .from('trip_members')
-        .select('trip_id')
-        .eq('user_id', user.id)
-        .eq('status', 'accepted')
-
-      const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
-
-      // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
-      let query = supabase
-        .from('trips')
-        .select('*, checklists(id, checklist_items(id, is_checked))')
-
-      if (memberTripIds.length > 0) {
-        query = query.or(`user_id.eq.${user.id},id.in.(${memberTripIds.join(',')})`)
-      } else {
-        query = query.eq('user_id', user.id)
-      }
-
-      const { data: trips } = await query.order('start_date', { ascending: true })
-
-      const allTrips = trips || []
-
-      // 3. 오늘 날짜 기준으로 상태별 분류
+    const processTrips = (allTrips: any[]) => {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
 
@@ -276,14 +236,97 @@ export default function HomeClient() {
       }))
 
       setHasAnyTrip(allTrips.length > 0)
+    }
+
+    async function loadCacheFirst() {
+      // 1. 빠른 로컬 세션 확인 (네트워크 지연 없음)
+      const { data: { session } } = await supabase.auth.getSession()
+      let localUser = session?.user
+
+      // 2. 만약 세션이 즉시 확인되지 않는다면 오프라인 캐시에서 확인
+      if (!localUser) {
+        localUser = await CacheUtil.getAuthUser()
+      }
+
+      if (localUser) {
+        setUser(localUser)
+        setNickname(localUser.email?.split('@')[0] || '여행자')
+        try {
+          // 캐시된 목록 즉시 적용
+          const cachedTrips = await CacheUtil.get<any[]>('offline_home_all_trips')
+          if (cachedTrips) {
+            processTrips(cachedTrips)
+          }
+        } catch (e) {
+          console.warn('Cache load failed', e)
+        }
+      }
+      // 세션을 확인했든 못 했든 초기 로딩 해제 (화면 진입)
       setLoading(false)
     }
 
-    fetchData()
+    async function fetchNetworkBackground() {
+      const { data: { user: networkUser } } = await supabase.auth.getUser()
+      if (!networkUser) {
+        setUser(null)
+        setLoading(false)
+        return
+      }
+      setUser(networkUser)
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nickname')
+        .eq('id', networkUser.id)
+        .single()
+
+      setNickname(profile?.nickname || networkUser.email?.split('@')[0] || '여행자')
+      setShowNicknamePrompt(!profile?.nickname)
+
+      // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
+      const { data: memberTripData } = await supabase
+        .from('trip_members')
+        .select('trip_id')
+        .eq('user_id', networkUser.id)
+        .eq('status', 'accepted')
+
+      const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
+
+      // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
+      let query = supabase
+        .from('trips')
+        .select('*, checklists(id, checklist_items(id, is_checked))')
+
+      if (memberTripIds.length > 0) {
+        query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
+      } else {
+        query = query.eq('user_id', networkUser.id)
+      }
+
+      const { data: trips } = await query.order('start_date', { ascending: true })
+
+      const allTrips = trips || []
+      processTrips(allTrips)
+      
+      try {
+        await CacheUtil.set('offline_home_all_trips', allTrips)
+      } catch (e) {
+        console.warn('Cache save failed', e)
+      }
+    }
+
+    // 두 가지를 실행: 먼저 캐시 & 세션으로 화면을 채우고, 뒤이어 네트워크 통신으로 동기화 (SWR)
+    loadCacheFirst().then(() => {
+        setIsFirstCheck(false)
+        fetchNetworkBackground()
+    })
   }, [supabase])
 
-  if (loading) {
-    return <div className={css({ w: '100%', py: '80px', textAlign: 'center', color: '#888' })}>여정 정보를 열심히 가져오고 있어요...✈️</div>
+  // 최초 체크(세션/캐시 로드) 전까지는 아무것도 그리지 않거나 아주 가벼운 상태 유지
+  if (isFirstCheck && ongoing.length === 0 && upcoming.length === 0) {
+    return (
+        <div className={css({ w: '100%', minH: '100vh', bg: 'white' })} />
+    )
   }
 
   if (!user) {
@@ -520,17 +563,25 @@ export default function HomeClient() {
         </header>
 
         {!hasAnyTrip ? (
-          /* 여행이 하나도 없을 때 */
-          <div className={css({
-            bg: 'white', borderRadius: '16px', p: { base: '40px 20px', sm: '60px' },
-            textAlign: 'center', border: '2px dashed #ddd',
-          })}>
-            <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: '#ccc' })} />
-            <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: '#555' })}>
-              아직 계획된 여행이 없네요.
-            </p>
-            <p className={css({ fontSize: '14px', color: '#999' })}>새로운 설렘을 위해 첫 여정을 만들어 볼까요? 🗺️</p>
-          </div>
+          /* 여행이 하나도 없을 때 또는 로딩 중일 때 */
+          loading && ongoing.length === 0 ? (
+            <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: '16px' })}>
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className={css({ h: '180px', bg: '#f5f5f5', borderRadius: '16px', animation: 'pulse 1.5s infinite' })} />
+              ))}
+            </div>
+          ) : (
+            <div className={css({
+              bg: 'white', borderRadius: '16px', p: { base: '40px 20px', sm: '60px' },
+              textAlign: 'center', border: '2px dashed #ddd',
+            })}>
+              <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: '#ccc' })} />
+              <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: '#555' })}>
+                아직 계획된 여행이 없네요.
+              </p>
+              <p className={css({ fontSize: '14px', color: '#999' })}>새로운 설렘을 위해 첫 여정을 만들어 볼까요? 🗺️</p>
+            </div>
+          )
         ) : (
           <div>
             {/* ①  여행 중 */}

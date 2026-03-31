@@ -8,6 +8,8 @@ import { css } from 'styled-system/css'
 import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X } from 'lucide-react'
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
+import { CacheUtil } from '@/utils/cache'
+import { useNetworkStore } from '@/stores/useNetworkStore'
 
 const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -67,7 +69,9 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const searchParams = useSearchParams()
     const tripId = searchParams.get('id')
     const supabase = createClient()
+    const { isOnline } = useNetworkStore()
 
+    const [isLoading, setIsLoading] = useState(true)
     const [checklistId, setChecklistId] = useState<string | null>(null)
     const [items, setItems] = useState<any[]>([])
     const [newItemName, setNewItemName] = useState('')
@@ -89,69 +93,90 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const fetchChecklist = useCallback(async () => {
         if (!tripId) return
 
-        // 1. 해당 trip의 checklist 조회
-        let { data: checklists } = await supabase
-            .from('checklists')
-            .select('id, title')
-            .eq('trip_id', tripId)
-            .limit(1)
+        try {
+            // 1. 캐시에서 로드 (깜빡임 방지)
+            const cachedItems = await CacheUtil.get<any[]>(`offline_checklist_items_${tripId}`)
+            if (cachedItems) {
+                setItems(cachedItems)
+                setIsLoading(false)
+            }
+            const cachedChecks = await CacheUtil.get<any[]>(`offline_checklist_checks_${tripId}`)
+            if (cachedChecks) setUserChecks(cachedChecks)
 
-        let currentChecklistId = checklists?.[0]?.id
+            // 2. 네트워크 확인
+            if (!isOnline) {
+                setIsLoading(false)
+                return
+            }
 
-        // 없다면 생성
-        if (!currentChecklistId) {
-            const { data: newChecklist } = await supabase
+            let { data: checklists } = await supabase
                 .from('checklists')
-                .insert({ trip_id: tripId, title: '기본 준비물' })
-                .select()
-                .single()
+                .select('id, title')
+                .eq('trip_id', tripId)
+                .limit(1)
 
-            if (newChecklist) {
-                currentChecklistId = newChecklist.id
-            }
-        }
+            let currentChecklistId = checklists?.[0]?.id
 
-        if (currentChecklistId) {
-            setChecklistId(currentChecklistId)
+            if (!currentChecklistId) {
+                const { data: newChecklist } = await supabase
+                    .from('checklists')
+                    .insert({ trip_id: tripId, title: '기본 준비물' })
+                    .select()
+                    .single()
 
-            // 2. 여행 정보, 항목, 멤버, 개별 체크 내역 병렬 조회
-            const [tripRes, itemsRes, membersRes] = await Promise.all([
-                supabase.from('trips').select('*, profiles(nickname, email)').eq('id', tripId).single(),
-                supabase.from('checklist_items').select('*').eq('checklist_id', currentChecklistId).order('created_at', { ascending: true }),
-                supabase.from('trip_members').select('user_id, invited_email, role, status, profiles(nickname, email)').eq('trip_id', tripId).eq('status', 'accepted'),
-            ])
-
-            if (tripRes.data) {
-                setTripInfo(tripRes.data)
-                setTripOwner({ id: tripRes.data.user_id, profiles: tripRes.data.profiles, email: tripRes.data.profiles?.email })
-            }
-            
-            if (itemsRes.data) {
-                setItems(itemsRes.data)
-                
-                // 항목이 로드된 후 개별 체크 내역 다시 조회 (ID 리스트 필요)
-                const itemIds = itemsRes.data.map((i: any) => i.id)
-                if (itemIds.length > 0) {
-                    const { data: checks } = await supabase
-                        .from('checklist_item_user_checks')
-                        .select('*')
-                        .in('item_id', itemIds)
-                    if (checks) setUserChecks(checks)
+                if (newChecklist) {
+                    currentChecklistId = newChecklist.id
                 }
+            }
+
+            if (currentChecklistId) {
+                setChecklistId(currentChecklistId)
+
+                const [tripRes, itemsRes, membersRes] = await Promise.all([
+                    supabase.from('trips').select('*, profiles(nickname, email)').eq('id', tripId).single(),
+                    supabase.from('checklist_items').select('*').eq('checklist_id', currentChecklistId).order('created_at', { ascending: true }),
+                    supabase.from('trip_members').select('user_id, invited_email, role, status, profiles(nickname, email)').eq('trip_id', tripId).eq('status', 'accepted'),
+                ])
 
                 if (tripRes.data) {
-                    const pendingCount = itemsRes.data.filter((i: any) => !i.is_checked).length
-                    import('@/services/NotificationService').then(({ NotificationService }) => {
-                        NotificationService.scheduleChecklistReminder(tripId!, tripRes.data.destination, tripRes.data.start_date, pendingCount)
-                    })
+                    setTripInfo(tripRes.data)
+                    setTripOwner({ id: tripRes.data.user_id, profiles: tripRes.data.profiles, email: tripRes.data.profiles?.email })
+                }
+                
+                if (itemsRes.data) {
+                    setItems(itemsRes.data)
+                    await CacheUtil.set(`offline_checklist_items_${tripId}`, itemsRes.data)
+                    
+                    const itemIds = itemsRes.data.map((i: any) => i.id)
+                    if (itemIds.length > 0) {
+                        const { data: checks } = await supabase
+                            .from('checklist_item_user_checks')
+                            .select('*')
+                            .in('item_id', itemIds)
+                        if (checks) {
+                            setUserChecks(checks)
+                            await CacheUtil.set(`offline_checklist_checks_${tripId}`, checks)
+                        }
+                    }
+
+                    if (tripRes.data) {
+                        const pendingCount = itemsRes.data.filter((i: any) => !i.is_checked).length
+                        import('@/services/NotificationService').then(({ NotificationService }) => {
+                            NotificationService.scheduleChecklistReminder(tripId!, tripRes.data.destination, tripRes.data.start_date, pendingCount)
+                        })
+                    }
+                }
+
+                if (membersRes.data) {
+                    setMembers(membersRes.data)
                 }
             }
-
-            if (membersRes.data) {
-                setMembers(membersRes.data)
-            }
+        } catch (error) {
+            console.error('fetchChecklist error:', error)
+        } finally {
+            setIsLoading(false)
         }
-    }, [tripId, supabase])
+    }, [tripId, supabase, isOnline])
 
     useEffect(() => {
         if (isActive) {
@@ -323,7 +348,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const ChecklistItem = ({ item }: { item: any }) => {
         const status = getItemStatus(item)
         const isAssignedToMe = item.assignment_type === 'specific' ? item.assigned_user_id === currentUser?.id : true
-        const canCheck = item.assignment_type === 'specific' ? isAssignedToMe : true
+        // 오프라인 상태이면 무조건 체크 토글 방지
+        const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline
 
         const getAssignedUserLabel = () => {
             if (item.assigned_user_id === currentUser?.id) return '나'
@@ -423,20 +449,22 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     </div>
                 </div>
 
-                <div className={`action-btns ${css({ display: 'flex', gap: '4px', opacity: { base: 1, sm: 0 }, transition: 'all 0.2s' })}`}>
-                    <button
-                        onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
-                        className={css({ bg: 'transparent', border: 'none', color: '#888', cursor: 'pointer', p: '8px', borderRadius: '4px', _hover: { color: '#222', bg: '#f1f3f4' } })}
-                    >
-                        <Settings size={16} />
-                    </button>
-                    <button
-                        onClick={(e) => deleteItem(e, item.id)}
-                        className={css({ bg: 'transparent', border: 'none', color: { base: '#ff4d4f', sm: '#ccc' }, cursor: 'pointer', p: '8px', borderRadius: '4px', _hover: { color: '#dc2626', bg: '#ffeeee' } })}
-                    >
-                        <Trash2 size={16} />
-                    </button>
-                </div>
+                {isOnline && (
+                    <div className={`action-btns ${css({ display: 'flex', gap: '4px', opacity: { base: 1, sm: 0 }, transition: 'all 0.2s' })}`}>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
+                            className={css({ bg: 'transparent', border: 'none', color: '#888', cursor: 'pointer', p: '8px', borderRadius: '4px', _hover: { color: '#222', bg: '#f1f3f4' } })}
+                        >
+                            <Settings size={16} />
+                        </button>
+                        <button
+                            onClick={(e) => deleteItem(e, item.id)}
+                            className={css({ bg: 'transparent', border: 'none', color: { base: '#ff4d4f', sm: '#ccc' }, cursor: 'pointer', p: '8px', borderRadius: '4px', _hover: { color: '#dc2626', bg: '#ffeeee' } })}
+                        >
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                )}
             </li>
         )
     }
@@ -606,38 +634,40 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     {totalItems === 0 && <div className={css({ display: { base: 'none', sm: 'block' } })}></div>}
 
                     {/* 모바일/PC 액션 버튼 */}
-                    <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'nowrap' })}>
-                        {/* 항목 추가 버튼 (PC에서만 보임, 모바일은 하단 Sticky) */}
-                        <button
-                            onClick={() => setIsAdding(!isAdding)}
-                            className={css({
-                                display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: '#222', color: 'white', px: '16px', py: '10px',
-                                borderRadius: '8px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', border: 'none',
-                                _hover: { bg: '#000' }, whiteSpace: 'nowrap'
-                            })}
-                        >
-                            <Plus size={16} /> 항목 추가
-                        </button>
+                    {isOnline && (
+                        <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'nowrap' })}>
+                            {/* 항목 추가 버튼 (PC에서만 보임, 모바일은 하단 Sticky) */}
+                            <button
+                                onClick={() => setIsAdding(!isAdding)}
+                                className={css({
+                                    display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                    bg: '#222', color: 'white', px: '16px', py: '10px',
+                                    borderRadius: '8px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', border: 'none',
+                                    _hover: { bg: '#000' }, whiteSpace: 'nowrap'
+                                })}
+                            >
+                                <Plus size={16} /> 항목 추가
+                            </button>
 
-                        <button
-                            onClick={() => setIsTemplateModalOpen(true)}
-                            className={css({
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                px: '16px', py: { base: '10px', sm: '10px' },
-                                bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px',
-                                fontSize: '13px', fontWeight: '800', cursor: 'pointer',
-                                w: { base: '100%', sm: 'auto' }, flex: { base: 1, sm: 'none' },
-                                flexShrink: 0,
-                                whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                _hover: { bg: '#F7F7F7', borderColor: '#222' },
-                                _active: { transform: 'scale(0.98)' }
-                            })}
-                        >
-                            <ListTodo size={15} />
-                            <span>템플릿 불러오기</span>
-                        </button>
-                    </div>
+                            <button
+                                onClick={() => setIsTemplateModalOpen(true)}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                    px: '16px', py: { base: '10px', sm: '10px' },
+                                    bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px',
+                                    fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                                    w: { base: '100%', sm: 'auto' }, flex: { base: 1, sm: 'none' },
+                                    flexShrink: 0,
+                                    whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                    _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                                    _active: { transform: 'scale(0.98)' }
+                                })}
+                            >
+                                <ListTodo size={15} />
+                                <span>템플릿 불러오기</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -743,12 +773,19 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 </form>
             )}
 
-            {totalItems === 0 && !isAdding ? (
+            {isLoading ? (
+                <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
+                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', animation: 'pulse 1.5s infinite' })}></div>
+                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', mt: '12px', animation: 'pulse 1.5s infinite' })}></div>
+                </div>
+            ) : totalItems === 0 && !isAdding ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
                         <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>
                             아직 등록된 준비물이 없어요. 🧳
                         </p>
-                        <p className={css({ fontSize: '15px', color: '#666', lineHeight: '1.6' })}>항목을 추가하거나 템플릿을 불러와서 짐 싸기를 시작해 보세요!</p>
+                        {isOnline && (
+                            <p className={css({ fontSize: '15px', color: '#666', lineHeight: '1.6' })}>항목을 추가하거나 템플릿을 불러와서 짐 싸기를 시작해 보세요!</p>
+                        )}
                 </div>
             ) : (
                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '24px' })}>
@@ -788,7 +825,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 </div>
             )}
 
-            {isActive && !isAdding && !isTemplateModalOpen && (
+            {isActive && !isAdding && !isTemplateModalOpen && isOnline && (
                 <button
                     onClick={() => setIsAdding(true)}
                     className={css({
@@ -809,7 +846,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         _active: { transform: 'scale(0.88)' },
                         _hover: { bg: '#000' }
                     })}
-                    aria-label="준비물 추가"
+                    aria-label="준비물 항목 추가"
                 >
                     <Plus size={28} />
                 </button>

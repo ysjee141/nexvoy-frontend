@@ -8,6 +8,7 @@ import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
 import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
+import { CacheUtil } from '@/utils/cache'
 
 const PAGE_TITLES: Record<string, string> = {
     '/': '온여정',
@@ -39,14 +40,32 @@ export default function Navbar() {
 
     useEffect(() => {
         const fetchUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            setUser(user)
+            // 1. 캐시에서 먼저 로드 (오프라인/즉각 응답)
+            const cachedUser = await CacheUtil.getAuthUser()
+            if (cachedUser) {
+                setUser(cachedUser)
+            }
+
+            // 2. 서버에서 최신 정보 세션 동기화 (SWR)
+            const { data: { user: networkUser } } = await supabase.auth.getUser()
+            setUser(networkUser)
+            if (networkUser) {
+                await CacheUtil.setAuthUser(networkUser)
+            } else {
+                await CacheUtil.remove('auth_last_user')
+            }
             setLoading(false)
         }
         fetchUser()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-            setUser(session?.user ?? null)
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
+            const currentUser = session?.user ?? null
+            setUser(currentUser)
+            if (currentUser) {
+                await CacheUtil.setAuthUser(currentUser)
+            } else {
+                await CacheUtil.remove('auth_last_user')
+            }
         })
 
         return () => subscription.unsubscribe()
@@ -54,6 +73,7 @@ export default function Navbar() {
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
+        await CacheUtil.remove('auth_last_user')
         router.push('/')
         router.refresh()
     }
