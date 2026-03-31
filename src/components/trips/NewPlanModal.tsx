@@ -54,7 +54,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
             setLocationLng(editData.location_lng ?? null)
             setGooglePlaceId(editData.google_place_id ?? null)
             setTimezoneString(editData.timezone_string || 'Asia/Seoul')
-            setCost(editData.cost || '')
+            setCost(editData.cost || 0)
             setMemo(editData.memo || '')
 
             // YYYY-MM-DDTHH:mm:ss 포맷에서 날짜/시간 분리 (문자열 파싱)

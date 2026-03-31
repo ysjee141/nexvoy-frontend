@@ -88,7 +88,10 @@ export default function TripLayoutClient() {
                 borderBottom: '1px solid #eaeaea'
             })}>
                 {/* 제목, 날짜·인원 표시 + 수정/삭제 아이콘 (통합 레이아웃) */}
-                <TripHeaderActions trip={trip} />
+                <TripHeaderActions
+                    trip={trip}
+                    onUpdate={(updated) => setTrip((prev: any) => ({ ...prev, ...updated }))}
+                />
             </div>
 
             {/* Tab Navigation (Instant React State Switch) */}

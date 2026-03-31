@@ -793,7 +793,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     onClick={() => setIsAdding(true)}
                     className={css({
                         position: 'fixed',
-                        bottom: '90px',
+                        bottom: 'calc(90px + env(safe-area-inset-bottom))',
                         right: '20px',
                         w: '56px',
                         h: '56px',

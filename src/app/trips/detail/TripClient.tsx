@@ -375,7 +375,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                     className={css({
                         position: 'fixed',
-                        bottom: '90px', // BNB(64px) + 여점(26px)
+                        bottom: 'calc(90px + env(safe-area-inset-bottom))', // BNB(64px) + 여점(26px) + Safe Area
                         right: '20px',
                         w: '56px',
                         h: '56px',
