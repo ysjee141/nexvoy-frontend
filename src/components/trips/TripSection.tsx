@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import { MapPin, CalendarDays, User, ChevronDown, ChevronUp } from 'lucide-react'
+import { useUIStore } from '@/stores/useUIStore'
 
 interface Trip {
     id: string
@@ -34,6 +35,7 @@ export default function TripSection({
     trips, currentUserId, defaultOpen = true
 }: TripSectionProps) {
     const [isOpen, setIsOpen] = useState(defaultOpen)
+    const { setMobileTitle } = useUIStore()
 
     if (trips.length === 0) return null
 
@@ -90,6 +92,7 @@ export default function TripSection({
                             <Link
                                 key={trip.id}
                                 href={`/trips/detail?id=${trip.id}`}
+                                onClick={() => setMobileTitle(trip.destination)}
                                 className={css({
                                     display: 'block', 
                                     bg: 'white',

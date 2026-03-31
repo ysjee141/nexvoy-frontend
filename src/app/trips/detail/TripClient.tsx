@@ -11,7 +11,7 @@ import ShareModal from '@/components/trips/ShareModal'
 import { collaboration } from '@/utils/collaboration'
 import PlanList from '@/components/trips/PlanList'
 import { useNetworkStore } from '@/stores/useNetworkStore'
-import { Preferences } from '@capacitor/preferences'
+import { CacheUtil } from '@/utils/cache'
 import { NotificationService } from '@/services/NotificationService'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -75,6 +75,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
     // Supabase client instance (stable across renders if used carefully, but better kept inside useCallback or useMemo if it's deeply depending on renders, though createClient maps to same client mostly)
     const supabase = createClient()
     const [plans, setPlans] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(true)
     const [trip, setTrip] = useState<any>(null)
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isCollaboratorModalOpen, setIsCollaboratorModalOpen] = useState(false)
@@ -150,6 +151,19 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
         if (!tripId) return
 
         try {
+            // 1. Load from cache first
+            const cachedPlans = await CacheUtil.get<any[]>(`offline_plans_${tripId}`)
+            if (cachedPlans) {
+                setPlans(cachedPlans)
+                setIsLoading(false)
+            }
+
+            // 2. Network check
+            if (!isOnline) {
+                setIsLoading(false)
+                return
+            }
+
             const { data, error } = await supabase
                 .from('plans')
                 .select('*, plan_urls(*)')
@@ -158,20 +172,17 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
 
             if (data && !error) {
                 setPlans(data)
-                // 성공적으로 받아왔다면 캐싱 및 알림 스케줄러 동기화
-                await Preferences.set({ key: `offline_plans_${tripId}`, value: JSON.stringify(data) })
+                await CacheUtil.set(`offline_plans_${tripId}`, data)
                 NotificationService.scheduleOfflineReminders(data)
             } else {
                 throw new Error("Failed to fetch")
             }
-        } catch {
-            // 오프라인이거나 에러 시 로컬 캐시에서 불러오기
-            const { value } = await Preferences.get({ key: `offline_plans_${tripId}` })
-            if (value) {
-                setPlans(JSON.parse(value))
-            }
+        } catch (err) {
+            console.error('fetchPlans Error:', err)
+        } finally {
+            setIsLoading(false)
         }
-    }, [tripId, supabase])
+    }, [tripId, supabase, isOnline])
 
     const fetchUserRole = useCallback(async () => {
         if (!tripId) return
@@ -302,7 +313,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                         )}
                     </div>
                     {/* PC 전용 일정 추가 버튼 (모바일에서는 Sticky CTA로 대체됨) */}
-                    {(userRole === 'owner' || userRole === 'editor') && (
+                    {(userRole === 'owner' || userRole === 'editor') && isOnline && (
                         <button
                             onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                             className={css({
@@ -322,10 +333,15 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                 </div>
             </div>
 
-            {(!plans || plans.length === 0) ? (
+            {isLoading ? (
+                <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
+                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', animation: 'pulse 1.5s infinite' })}></div>
+                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', mt: '12px', animation: 'pulse 1.5s infinite' })}></div>
+                </div>
+            ) : (!plans || plans.length === 0) ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
                     <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>아직 등록된 여정이 없어요. 🗺️</p>
-                    {(userRole === 'owner' || userRole === 'editor') && (
+                    {(userRole === 'owner' || userRole === 'editor') && isOnline && (
                         <p className={css({ fontSize: '15px', color: '#666', lineHeight: '1.6' })}>새로운 일정을 추가해서 설레는 여정을 완성해 볼까요?</p>
                     )}
                 </div>
@@ -370,7 +386,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                 />
             )}
             {/* 모바일 전용 Sticky CTA (편집 권한 있을 때만) */}
-            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && (
+            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && isOnline && (
                 <button
                     onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                     className={css({

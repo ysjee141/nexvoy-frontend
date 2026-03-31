@@ -11,6 +11,7 @@ import { analytics } from '@/services/AnalyticsService'
 import TripClient from './TripClient'
 import ChecklistClient from '../checklist/ChecklistClient'
 import { useUIStore } from '@/stores/useUIStore'
+import { CacheUtil } from '@/utils/cache'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -50,24 +51,49 @@ export default function TripLayoutClient() {
 
     useEffect(() => {
         async function fetchTrip() {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
-                router.push('/login')
-                return
-            }
             if (!id) return;
-            const { data } = await supabase
-                .from('trips')
-                .select('*')
-                .eq('id', id)
-                .single()
+            
+            try {
+                // 1. 캐시에서 먼저 로드 (화면 깜빡임 방지용)
+                const cachedTrip = await CacheUtil.get<any>(`trip_${id}`)
+                if (cachedTrip) {
+                    setTrip(cachedTrip)
+                    setLoading(false)
+                }
 
-            if (!data) {
-                router.replace('/404')
-            } else {
-                setTrip(data)
+                // 2. 인증 세션 확인 (오프라인 대응)
+                const { data: { session } } = await supabase.auth.getSession()
+                let currentUser = session?.user
+
+                if (!currentUser) {
+                    currentUser = await CacheUtil.getAuthUser()
+                }
+
+                if (!currentUser) {
+                    router.push('/login')
+                    return
+                }
+                
+                // 3. 서버에서 최신 데이터 가져오기
+                const { data, error } = await supabase
+                    .from('trips')
+                    .select('*')
+                    .eq('id', id)
+                    .single()
+
+                if (error) throw error
+
+                if (!data) {
+                    router.replace('/404')
+                } else {
+                    setTrip(data)
+                    await CacheUtil.set(`trip_${id}`, data) // 캐시 업데이트
+                }
+            } catch (err) {
+                console.error('Failed to fetch trip:', err)
+            } finally {
+                setLoading(false)
             }
-            setLoading(false)
         }
         fetchTrip()
     }, [id, supabase, router])
