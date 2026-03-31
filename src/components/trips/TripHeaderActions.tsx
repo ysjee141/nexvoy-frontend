@@ -21,9 +21,10 @@ interface TripHeaderActionsProps {
         children_count: number
         user_id: string
     }
+    onUpdate?: (updatedFields: Partial<TripHeaderActionsProps['trip']>) => void
 }
 
-export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
+export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsProps) {
     const router = useRouter()
     const supabase = createClient()
 
@@ -171,6 +172,15 @@ export default function TripHeaderActions({ trip }: TripHeaderActionsProps) {
             setErrorMsg(error.message)
         } else {
             setShowEditModal(false)
+            if (onUpdate) {
+                onUpdate({
+                    destination,
+                    start_date: startDate,
+                    end_date: endDate,
+                    adults_count: adults,
+                    children_count: children,
+                })
+            }
             router.refresh()
         }
     }
