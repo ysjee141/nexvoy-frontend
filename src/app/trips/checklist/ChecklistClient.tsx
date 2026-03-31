@@ -10,6 +10,7 @@ import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
 import { useNetworkStore } from '@/stores/useNetworkStore'
+import { CATEGORIES } from '@/constants/checklist'
 
 const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -88,7 +89,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const [newItemAssignedUserId, setNewItemAssignedUserId] = useState<string>('')
     const [editingItem, setEditingItem] = useState<any | null>(null)
 
-    const CATEGORIES = ['필수', '의류', '세면도구', '전자기기', '상비약', '음식', '기타']
+
 
     const fetchChecklist = useCallback(async () => {
         if (!tripId) return

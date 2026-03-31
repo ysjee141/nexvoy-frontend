@@ -7,6 +7,7 @@ import { css } from 'styled-system/css'
 import { Plus, X, ArrowLeft, Save, Trash2, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useUIStore } from '@/stores/useUIStore'
+import { CATEGORIES } from '@/constants/checklist'
 
 interface TemplateItemInput {
     id: string; // db id 혹은 로컬 임시 id
@@ -15,7 +16,7 @@ interface TemplateItemInput {
     isNew?: boolean; // 신규 추가된 항목 식별용
 }
 
-const CATEGORIES = ['의류', '전자기기', '세면도구', '상비약', '서류', '음식', '기타']
+
 
 export default function EditTemplatePage() {
     const searchParams = useSearchParams()

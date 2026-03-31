@@ -154,7 +154,7 @@ export default function TripSection({
                                         <CalendarDays size={14} color="#888" /> {start} ~ {end}
                                     </p>
                                     <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' })}>
-                                        <User size={14} color="#888" /> 성인 {trip.adults_count}분
+                                        <User size={14} color="#888" /> 성인 {trip.adults_count}명
                                         {trip.children_count > 0 && `, 아이 ${trip.children_count}명`}
                                     </p>
                                 </div>
