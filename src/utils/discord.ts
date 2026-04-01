@@ -58,16 +58,22 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
         let responseData: any;
 
         if (isNative) {
-            // [네이티브 환경] CapacitorHttp 브릿지 이슈 방지를 위해 JSON(Base64) 방식을 사용합니다.
+            console.log('Native 전용 JSON/Base64 데이터 구성 중...');
+            
             const base64Files = [];
             if (data.files && data.files.length > 0) {
                 for (const file of data.files) {
-                    const base64String = await toBase64(file);
-                    base64Files.push({
-                        name: file.name,
-                        type: file.type,
-                        data: base64String
-                    });
+                    try {
+                        const base64String = await toBase64(file);
+                        base64Files.push({
+                            name: file.name,
+                            type: file.type,
+                            data: base64String
+                        });
+                        console.log(`파일 변환 완료: ${file.name} (${base64String.length} bytes)`);
+                    } catch (fileError) {
+                        console.error(`파일 변환 실패 (${file.name}):`, fileError);
+                    }
                 }
             }
 
@@ -76,15 +82,20 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
                 files: base64Files
             };
 
+            console.log('CapacitorHttp.post 호출 직전...');
             const response = await CapacitorHttp.post({
                 url: apiUrl,
                 data: requestBody,
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                connectTimeout: 10000, // 타임아웃 명시
+                readTimeout: 10000
             });
+            
             status = response.status;
             responseData = response.data;
+            console.log(`Native 응답 수신: ${status}`);
         } else {
-            // [웹 환경] 표준 FormData 방계를 사용하여 브라우저 최적화 전송을 수행합니다.
+            // [웹 환경] 표준 FormData 사용
             const formData = new FormData();
             formData.append('payload_json', JSON.stringify(payload));
             if (data.files && data.files.length > 0) {
@@ -102,24 +113,38 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
         }
 
         if (status >= 200 && status < 300) {
-            console.log('피드백 전송 성공!');
+            console.log('피드백 전송 최종 성공!');
             return { success: true };
         } else {
             console.error('피드백 전송 실패 (API 에러):', status, JSON.stringify(responseData));
             return { 
                 success: false, 
                 error: '전송 실패', 
-                detail: `Status: ${status}, Msg: ${responseData.error || 'Unknown'}` 
+                detail: `Status: ${status}, Msg: ${typeof responseData === 'string' ? responseData : (responseData.error || 'Unknown')}` 
             };
         }
     } catch (error: any) {
         console.error('피드백 전송 중 예외 발생:', error);
         
+        // 상세 에러 추출 (ProgressEvent 등 대응)
         let detail = 'Unknown Error';
         if (error instanceof Error) {
-            detail = error.message;
+            detail = `Error: ${error.message}`;
         } else if (error && typeof error === 'object') {
-            try { detail = JSON.stringify(error); } catch (e) { detail = String(error); }
+            try {
+                // native bridge에서 오는 상세 정보가 있을 수 있음
+                const keys = Object.keys(error);
+                if (keys.length > 0) {
+                    detail = keys.map(k => `${k}: ${error[k]}`).join(', ');
+                } else {
+                    detail = JSON.stringify(error);
+                    if (detail === '{}') detail = `Object(${error.toString()})`;
+                }
+            } catch (e) {
+                detail = String(error);
+            }
+        } else {
+            detail = String(error);
         }
 
         return { success: false, error: '시스템 오류', detail };
