@@ -28,7 +28,12 @@ function ProfileContent() {
     const [passwordError, setPasswordError] = useState('')
     const [passwordSuccess, setPasswordSuccess] = useState('')
 
-    const [stats, setStats] = useState({ totalTrips: 0, totalPlans: 0, totalTemplates: 0, totalChecked: 0, totalItems: 0 })
+    const [stats, setStats] = useState({ 
+        completedTrips: 0, 
+        upcomingTrips: 0, 
+        totalDays: 0, 
+        totalPlans: 0 
+    })
     const [showTerms, setShowTerms] = useState(false)
     const searchParams = useSearchParams()
 
@@ -56,10 +61,11 @@ function ProfileContent() {
             // 통계 가져오기
             const { data: trips } = await supabase
                 .from('trips')
-                .select('id')
+                .select('id, start_date, end_date')
                 .eq('user_id', user.id)
 
-            const tripIds = trips?.map((t: any) => t.id) || []
+            const allTrips = trips || []
+            const tripIds = allTrips.map((t: any) => t.id)
 
             let totalPlans = 0
             let totalChecked = 0
@@ -89,17 +95,36 @@ function ProfileContent() {
                 }
             }
 
-            const { count: templateCount } = await supabase
-                .from('checklist_templates')
-                .select('id', { count: 'exact', head: true })
-                .eq('user_id', user.id)
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+
+            let completedCount = 0
+            let upcomingCount = 0
+            let totalDaysResult = 0
+
+            allTrips.forEach((t: any) => {
+                const start = new Date(t.start_date)
+                const end = new Date(t.end_date)
+                start.setHours(0, 0, 0, 0)
+                end.setHours(23, 59, 59, 999)
+
+                if (end < today) {
+                    completedCount++
+                } else {
+                    upcomingCount++
+                }
+
+                // 여행 일수 계산 (시작/종료일 포함)
+                const diffTime = end.getTime() - start.getTime()
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
+                totalDaysResult += diffDays
+            })
 
             setStats({
-                totalTrips: tripIds.length,
+                completedTrips: completedCount,
+                upcomingTrips: upcomingCount,
+                totalDays: totalDaysResult,
                 totalPlans,
-                totalTemplates: templateCount || 0,
-                totalChecked,
-                totalItems,
             })
         }
 
@@ -189,7 +214,6 @@ function ProfileContent() {
     }
 
     const displayName = nickname || user.email?.split('@')[0] || '여행자'
-    const packingRate = stats.totalItems > 0 ? Math.round((stats.totalChecked / stats.totalItems) * 100) : 0
 
     return (
         <div className={css({ maxW: '720px', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '0', sm: '0' }, display: 'flex', flexDirection: 'column', gap: '16px' })}>
@@ -265,16 +289,34 @@ function ProfileContent() {
                 {/* 모바일: 2x2 grid / 데스크탑: 4열 */}
                 <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '12px', textAlign: 'center' })}>
                     {[
-                        { label: '기록한 여행', value: stats.totalTrips, icon: '✈️' },
-                        { label: '채워진 일정', value: stats.totalPlans, icon: '📅' },
-                        { label: '나만의 템플릿', value: stats.totalTemplates, icon: '📦' },
-                        { label: '짐 챙기기 달성률', value: `${packingRate}%`, icon: '🧳' },
+                        { label: '다녀온 여행', value: stats.completedTrips, icon: '📸', href: '/?tab=completed' },
+                        { label: '다가올 여행', value: stats.upcomingTrips, icon: '✈️', href: '/?tab=upcoming' },
+                        { label: '함께한 날들', value: `${stats.totalDays}일`, icon: '📅', href: '/profile/travel-log' },
+                        { label: '기록한 장소들', value: stats.totalPlans, icon: '📍', href: '/profile/places-visited' },
                     ].map(item => (
-                        <div key={item.label} className={css({ p: { base: '16px 8px', sm: '20px' }, bg: '#F7F7F7', borderRadius: '16px', border: '1px solid #EEEEEE' })}>
+                        <Link 
+                            key={item.label} 
+                            href={item.href}
+                            className={css({ 
+                                p: { base: '16px 8px', sm: '20px' }, 
+                                bg: '#F7F7F7', 
+                                borderRadius: '16px', 
+                                border: '1px solid #EEEEEE',
+                                textDecoration: 'none',
+                                transition: 'all 0.2s',
+                                _hover: { 
+                                    bg: 'white', 
+                                    transform: 'translateY(-2px)', 
+                                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                                    borderColor: '#ddd'
+                                },
+                                _active: { transform: 'scale(0.98)' }
+                            })}
+                        >
                             <div className={css({ fontSize: '24px', mb: '8px' })}>{item.icon}</div>
                             <div className={css({ fontSize: { base: '22px', sm: '26px' }, fontWeight: '900', color: '#222', letterSpacing: '-0.5px' })}>{item.value}</div>
                             <div className={css({ fontSize: '13px', color: '#717171', mt: '4px', whiteSpace: 'nowrap', fontWeight: '600' })}>{item.label}</div>
-                        </div>
+                        </Link>
                     ))}
                 </div>
             </section>
