@@ -6,9 +6,10 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
-import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft } from 'lucide-react'
+import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft, ChevronDown } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/utils/cache'
+import TripSwitcherModal from '@/components/trips/TripSwitcherModal'
 
 const PAGE_TITLES: Record<string, string> = {
     '/': '온여정',
@@ -31,9 +32,9 @@ export default function Navbar() {
     const pathname = usePathname() || '/'
     const normalizedPath = pathname.replace(/\/$/, '') || '/'
     const supabase = createClient()
-    const { mobileTitle } = useUIStore()
-
+    const { mobileTitle, setIsTripSwitcherOpen } = useUIStore()
     const isRootPage = normalizedPath === '/'
+    const isTripDetailPage = normalizedPath === '/trips/detail'
     const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || PAGE_TITLES[pathname] || '온여정'
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
@@ -183,10 +184,36 @@ export default function Navbar() {
                 )}
 
                 {/* 중앙: 페이지 타이틀 */}
-                <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
-                    {pageTitle}
-                </h1>
+                {isTripDetailPage ? (
+                    <button
+                        onClick={() => setIsTripSwitcherOpen(true)}
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            bg: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            p: '8px',
+                            borderRadius: '8px',
+                            transition: 'background 0.2s',
+                            _active: { bg: '#f5f5f5' }
+                        })}
+                    >
+                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
+                            {pageTitle}
+                        </h1>
+                        <ChevronDown size={18} color="#172554" />
+                    </button>
+                ) : (
+                    <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
+                        {pageTitle}
+                    </h1>
+                )}
             </div>
+            
+            {/* 여행 전환 모달 */}
+            <TripSwitcherModal />
         </nav>
     )
 }
