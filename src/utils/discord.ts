@@ -55,52 +55,35 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
 
         console.log(`피드백 전송 시작 (${isNative ? 'Native' : 'Web'}): ${apiUrl}`);
 
-        let response;
-        if (isNative) {
-            // 네이티브 환경에서는 CapacitorHttp를 직접 사용하여 CORS 및 브릿지 이슈를 방지합니다.
-            response = await CapacitorHttp.post({
-                url: apiUrl,
-                data: formData,
-                headers: {
-                    // CapacitorHttp는 FormData를 보낼 때 Content-Type을 자동으로 설정합니다.
-                }
-            });
-        } else {
-            // 웹 환경에서는 표준 fetch 사용
-            const fetchRes = await fetch(apiUrl, {
-                method: 'POST',
-                body: formData,
-            });
-            
-            response = {
-                status: fetchRes.status,
-                data: await fetchRes.json().catch(() => ({})),
-            };
-        }
+        // 리다이렉트와 CORS 문제가 해결되었으므로, 
+        // FormData를 가장 표준적으로 처리하는 fetch를 다시 사용합니다.
+        const res = await fetch(apiUrl, {
+            method: 'POST',
+            body: formData,
+        });
 
-        if (response.status >= 200 && response.status < 300) {
+        const status = res.status;
+        const responseData = await res.json().catch(() => ({}));
+
+        if (status >= 200 && status < 300) {
+            console.log('피드백 전송 성공!');
             return { success: true };
         } else {
-            console.error('피드백 전송 실패 (API 에러):', response.status, response.data);
+            console.error('피드백 전송 실패 (API 에러):', status, JSON.stringify(responseData));
             return { 
                 success: false, 
                 error: '전송 실패', 
-                detail: `Status: ${response.status}` 
+                detail: `Status: ${status}, Msg: ${responseData.error || 'Unknown'}` 
             };
         }
     } catch (error: any) {
-        // 상세 에러 로깅 (ProgressEvent 등인 경우에도 속성을 노출)
         console.error('피드백 전송 중 예외 발생:', error);
         
         let detail = 'Unknown Error';
         if (error instanceof Error) {
             detail = error.message;
         } else if (error && typeof error === 'object') {
-            try {
-                detail = JSON.stringify(error);
-            } catch (e) {
-                detail = 'Object (non-serializable)';
-            }
+            try { detail = JSON.stringify(error); } catch (e) { detail = 'Non-serializable object'; }
         }
 
         return { success: false, error: '시스템 오류', detail };
