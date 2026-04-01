@@ -6,6 +6,7 @@ import { css } from 'styled-system/css'
 import { ChevronLeft, CalendarDays, MapPin, Sparkles, TrendingUp, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useUIStore } from '@/stores/useUIStore'
 
 interface Trip {
     id: string
@@ -17,6 +18,7 @@ interface Trip {
 export default function TravelLogPage() {
     const supabase = createClient()
     const router = useRouter()
+    const { setMobileTitle } = useUIStore()
     const [loading, setLoading] = useState(true)
     const [stats, setStats] = useState({
         totalDays: 0,
@@ -25,6 +27,10 @@ export default function TravelLogPage() {
         uniqueDestinations: 0,
         trips: [] as Trip[]
     })
+
+    useEffect(() => {
+        setMobileTitle('나의 여정 기록')
+    }, [setMobileTitle])
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -81,19 +87,8 @@ export default function TravelLogPage() {
     )
 
     return (
-        <div className={css({ maxW: '720px', mx: 'auto', minH: '100vh', bg: '#F9FAFB', pb: '60px' })}>
-            {/* Header */}
-            <header className={css({ 
-                position: 'sticky', top: 0, bg: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)', 
-                zIndex: 10, px: '20px', py: '16px', display: 'flex', alignItems: 'center', gap: '12px'
-            })}>
-                <button onClick={() => router.back()} className={css({ p: '8px', ml: '-8px', borderRadius: '50%', _active: { bg: '#eee' } })}>
-                    <ChevronLeft size={24} />
-                </button>
-                <h1 className={css({ fontSize: '18px', fontWeight: '700' })}>나의 여정 기록</h1>
-            </header>
-
-            <main className={css({ px: '20px', mt: '24px' })}>
+        <div className={css({ maxW: '720px', mx: 'auto', minH: 'calc(100vh - 60px)', bg: '#F9FAFB', pb: '60px' })}>
+            <main className={css({ px: '20px', pt: '24px' })}>
                 {/* Intro Section */}
                 <div className={css({ mb: '32px', textAlign: 'center' })}>
                     <div className={css({ 
