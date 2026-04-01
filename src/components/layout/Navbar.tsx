@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
@@ -213,7 +213,9 @@ export default function Navbar() {
             </div>
             
             {/* 여행 전환 모달 */}
-            <TripSwitcherModal />
+            <Suspense fallback={null}>
+                <TripSwitcherModal />
+            </Suspense>
         </nav>
     )
 }
