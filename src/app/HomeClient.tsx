@@ -6,7 +6,8 @@ import Link from 'next/link'
 import { Plus, MapPin, CalendarDays, Luggage, User } from 'lucide-react'
 import InvitationBanner from '@/components/trips/InvitationBanner'
 import TripSection from '@/components/trips/TripSection'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { CacheUtil } from '@/utils/cache'
 import {
   Map, CheckSquare, Globe, Wallet,
@@ -211,6 +212,13 @@ export default function HomeClient() {
   const [loading, setLoading] = useState(true)
   const [isFirstCheck, setIsFirstCheck] = useState(true) // 최초 세션/캐시 확인용
   const [showNicknamePrompt, setShowNicknamePrompt] = useState(false)
+  const searchParams = useSearchParams()
+  const activeTab = searchParams.get('tab')
+
+  // 섹션 참조 (스크롤용)
+  const ongoingRef = useRef<HTMLDivElement>(null)
+  const upcomingRef = useRef<HTMLDivElement>(null)
+  const completedRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const processTrips = (allTrips: any[]) => {
@@ -332,6 +340,23 @@ export default function HomeClient() {
         fetchNetworkBackground()
     })
   }, [supabase])
+
+  // 탭 파라미터에 따른 스크롤 처리
+  useEffect(() => {
+    if (!loading && activeTab) {
+        const timer = setTimeout(() => {
+            let targetRef = null
+            if (activeTab === 'ongoing') targetRef = ongoingRef
+            else if (activeTab === 'upcoming') targetRef = upcomingRef
+            else if (activeTab === 'completed') targetRef = completedRef
+
+            if (targetRef?.current) {
+                targetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+            }
+        }, 300) // 데이터 렌더링 대기 시간
+        return () => clearTimeout(timer)
+    }
+  }, [loading, activeTab])
 
   // 최초 체크(세션/캐시 로드) 전까지는 아무것도 그리지 않거나 아주 가벼운 상태 유지
   if (isFirstCheck && ongoing.length === 0 && upcoming.length === 0) {
@@ -597,46 +622,52 @@ export default function HomeClient() {
         ) : (
           <div>
             {/* ①  여행 중 */}
-            <TripSection
-              title="여행 중이에요! 🎉"
-              subtitle="현재 진행 중인 여행"
-              emoji="✈️"
-              accentColor="#3B82F6"
-              badgeBg="#EFF6FF"
-              badgeColor="#3B82F6"
-              badgeLabel="여행 중"
-              trips={ongoing}
-              currentUserId={user.id}
-              defaultOpen={true}
-            />
+            <div ref={ongoingRef}>
+                <TripSection
+                    title="여행 중이에요! 🎉"
+                    subtitle="현재 진행 중인 여행"
+                    emoji="✈️"
+                    accentColor="#3B82F6"
+                    badgeBg="#EFF6FF"
+                    badgeColor="#3B82F6"
+                    badgeLabel="여행 중"
+                    trips={ongoing}
+                    currentUserId={user.id}
+                    defaultOpen={activeTab === 'ongoing' || (!activeTab && ongoing.length > 0)}
+                />
+            </div>
 
             {/* ②  다가오는 여행 */}
-            <TripSection
-              title="다가오는 여행"
-              subtitle="출발 전 설레는 여행"
-              emoji="🗺️"
-              accentColor="#2563EB"
-              badgeBg="#EFF6FF"
-              badgeColor="#2563EB"
-              badgeLabel="예정"
-              trips={upcoming}
-              currentUserId={user.id}
-              defaultOpen={true}
-            />
+            <div ref={upcomingRef}>
+                <TripSection
+                    title="다가오는 여행"
+                    subtitle="출발 전 설레는 여행"
+                    emoji="🗺️"
+                    accentColor="#2563EB"
+                    badgeBg="#EFF6FF"
+                    badgeColor="#2563EB"
+                    badgeLabel="예정"
+                    trips={upcoming}
+                    currentUserId={user.id}
+                    defaultOpen={activeTab === 'upcoming' || (!activeTab && upcoming.length > 0)}
+                />
+            </div>
 
             {/* ③  다녀온 여행 */}
-            <TripSection
-              title="다녀온 여행"
-              subtitle="소중한 추억이 된 여행"
-              emoji="📸"
-              accentColor="#9e9e9e"
-              badgeBg="#f5f5f5"
-              badgeColor="#666"
-              badgeLabel="완료"
-              trips={completed}
-              currentUserId={user.id}
-              defaultOpen={false}
-            />
+            <div ref={completedRef}>
+                <TripSection
+                    title="다녀온 여행"
+                    subtitle="소중한 추억이 된 여행"
+                    emoji="📸"
+                    accentColor="#9e9e9e"
+                    badgeBg="#f5f5f5"
+                    badgeColor="#666"
+                    badgeLabel="완료"
+                    trips={completed}
+                    currentUserId={user.id}
+                    defaultOpen={activeTab === 'completed'}
+                />
+            </div>
           </div>
         )}
       </div>
