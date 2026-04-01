@@ -51,7 +51,7 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
             ? (process.env.NEXT_PUBLIC_APP_URL || 'https://app.nexvoy.xyz') 
             : '';
         // 엔드포인트에서 슬래시(/)를 제거하여 리다이렉트 가능성을 방지합니다.
-        const apiUrl = `${baseUrl}/api/feedback`;
+        const apiUrl = `${baseUrl}/api/feedback/`;
 
         console.log(`피드백 전송 시작 (${isNative ? 'Native' : 'Web'}): ${apiUrl}`);
 
