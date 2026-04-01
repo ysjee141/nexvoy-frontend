@@ -33,15 +33,27 @@ export default function TripSwitcherModal() {
     const [startY, setStartY] = useState(0)
     const [isDragging, setIsDragging] = useState(false)
     const [mounted, setMounted] = useState(false)
+    const [closing, setClosing] = useState(false)
+    const [scrollTop, setScrollTop] = useState(0)
+
+    const handleClose = () => {
+        setClosing(true)
+        // 애니메이션 완료 후 스토어 상태 변경 (200ms 후)
+        setTimeout(() => {
+            setIsTripSwitcherOpen(false)
+            setClosing(false)
+            setDragY(0)
+        }, 200)
+    }
 
     useEffect(() => {
         if (isTripSwitcherOpen) {
-            // 마운트 직후 애니메이션 1회 실행 후 고정
+            setClosing(false)
+            setDragY(0)
             const timer = setTimeout(() => setMounted(true), 10)
             return () => clearTimeout(timer)
         } else {
             setMounted(false)
-            setDragY(0)
         }
     }, [isTripSwitcherOpen])
 
@@ -134,8 +146,6 @@ export default function TripSwitcherModal() {
 
     if (!isTripSwitcherOpen) return null
 
-    const handleClose = () => setIsTripSwitcherOpen(false)
-
     const tabs = [
         { id: 'ongoing', label: '진행 중', count: ongoing.length },
         { id: 'upcoming', label: '예정된', count: upcoming.length },
@@ -145,6 +155,7 @@ export default function TripSwitcherModal() {
     const currentList = activeTab === 'ongoing' ? ongoing : activeTab === 'upcoming' ? upcoming : completed
 
     const handleTouchStart = (e: React.TouchEvent) => {
+        // 드래그 시작 시점 기록
         setStartY(e.touches[0].clientY)
         setIsDragging(true)
     }
@@ -152,8 +163,13 @@ export default function TripSwitcherModal() {
     const handleTouchMove = (e: React.TouchEvent) => {
         if (!isDragging) return
         const deltaY = e.touches[0].clientY - startY
-        // 아래로만 드래그 가능하게 제한 (deltaY > 0)
+        
+        // 스크롤 가드: 리스트가 맨 위가 아니거나, 위로 드래그하는 경우 무시
+        if (scrollTop > 5 && deltaY > 0) return
+        
         if (deltaY > 0) {
+            // 드래그 중인 경우 기본 스크롤 방지
+            if (e.cancelable) e.preventDefault()
             setDragY(deltaY)
         }
     }
@@ -161,28 +177,36 @@ export default function TripSwitcherModal() {
     const handleTouchEnd = () => {
         if (!isDragging) return
         setIsDragging(false)
-        // 100px 이상 내려가면 닫기
+        
         if (dragY > 100) {
             handleClose()
         } else {
-            // 원위치 스냅
             setDragY(0)
         }
+    }
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        setScrollTop(e.currentTarget.scrollTop)
     }
 
     return (
         <div className={css({
             position: 'fixed',
-            inset: 0,
-            zIndex: 1100, // Navbar(1000)보다 높게
-            bg: 'rgba(0,0,0,0.4)',
-            backdropFilter: 'blur(4px)',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            top: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 1001,
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
-            animation: 'fadeIn 0.2s ease-out',
+            animation: closing ? 'fadeOut 0.2s ease-in forwards' : 'fadeIn 0.2s ease-out',
         })}>
             <div 
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
                 className={css({
                     bg: 'white',
                     w: '100%',
@@ -192,25 +216,22 @@ export default function TripSwitcherModal() {
                     display: 'flex',
                     flexDirection: 'column',
                     boxShadow: '0 -10px 40px rgba(0,0,0,0.1)',
-                    // mounted 이후에는 slideUp을 제거하여 리렌더시 재시작 방지
-                    animation: !mounted ? 'slideUp 0.3s cubic-bezier(0.2, 0, 0, 1)' : 'none',
+                    position: 'relative',
+                    // 진입/퇴장/드래그 상태에 따른 애니메이션 처리
+                    animation: closing ? 'slideDown 0.2s cubic-bezier(0.2, 0, 0, 1) forwards' : 
+                              !mounted ? 'slideUp 0.3s cubic-bezier(0.2, 0, 0, 1)' : 'none',
                     overflow: 'hidden',
                     pb: 'calc(20px + env(safe-area-inset-bottom))',
                     transform: `translateY(${dragY}px)`,
                     transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
                 })}
             >
-                {/* 상단 드래그 핸들 영역 - 여기에만 터치 이벤트 바인딩 */}
-                <div 
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    className={css({ 
-                        w: '100%', py: '14px', display: 'flex', justifyContent: 'center', 
-                        cursor: 'ns-resize',
-                        touchAction: 'none' // 핸들바 영역만 기본 스크롤 방지
-                    })}
-                >
+                {/* 상단 드래그 핸들 영역 */}
+                <div className={css({ 
+                    w: '100%', py: '14px', display: 'flex', justifyContent: 'center', 
+                    cursor: 'ns-resize',
+                    touchAction: 'none' // 핸들바는 즉시 반응하도록
+                })}>
                     <div className={css({ 
                         w: '40px', h: '5px', bg: '#ddd', borderRadius: '5px'
                     })} />
@@ -284,7 +305,17 @@ export default function TripSwitcherModal() {
                 </div>
 
                 {/* 리스트 영역 */}
-                <div className={css({ flex: 1, overflowY: 'auto', p: '12px' })}>
+                <div 
+                    onScroll={handleScroll}
+                    className={css({ 
+                        flex: 1, 
+                        overflowY: 'auto', 
+                        px: '20px', 
+                        py: '10px',
+                        // 스크롤 최상단일 때만 터치 이벤트 전파 방지
+                        touchAction: scrollTop === 0 ? 'pan-x' : 'auto'
+                    })}
+                >
                     {loading ? (
                         <div className={css({ py: '40px', textAlign: 'center', color: '#999' })}>
                             여정을 불러오는 중이에요... ✈️
@@ -412,3 +443,34 @@ export default function TripSwitcherModal() {
         </div>
     )
 }
+
+// 애니메이션 스타일 정의
+const injectStyles = () => {
+    if (typeof document === 'undefined') return
+    const styleId = 'trip-switcher-animations'
+    if (document.getElementById(styleId)) return
+
+    const style = document.createElement('style')
+    style.id = styleId
+    style.innerHTML = `
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(0); }
+            to { transform: translateY(100%); }
+        }
+    `
+    document.head.appendChild(style)
+}
+
+injectStyles()
