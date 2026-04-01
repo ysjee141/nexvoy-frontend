@@ -53,3 +53,6 @@ styled-system-studio
 */.idea/
 # Sentry Config File
 .env.sentry-build-plugin
+
+.agents
+.github_config

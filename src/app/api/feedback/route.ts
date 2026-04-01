@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
         const files: { name: string, buffer: Buffer, type: string }[] = []
 
         if (contentType.includes('application/json')) {
+            console.log('피드백 수신 (JSON 형식)');
             const body = await req.json()
             payloadValue = body.payload_json
             
@@ -44,12 +45,15 @@ export async function POST(req: NextRequest) {
                 }
             }
         } else {
+            console.log('피드백 수신 (FormData 형식)');
             const formData = await req.formData()
             payloadValue = formData.get('payload_json') as string
             
-            // 기존 FormData 파일 추출
-            for (const [key, value] of formData.entries()) {
-                if (key.startsWith('file') && value instanceof File) {
+            // FormData에서 파일 추출
+            const entries = Array.from(formData.entries());
+            for (const [key, value] of entries) {
+                if (value instanceof File) {
+                    console.log(`파일 추출 시도: ${value.name} (${value.size} bytes)`);
                     const arrayBuffer = await value.arrayBuffer()
                     files.push({
                         name: value.name,
