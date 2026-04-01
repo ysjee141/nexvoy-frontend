@@ -27,6 +27,11 @@ export default function TripSwitcherModal() {
     const [completed, setCompleted] = useState<Trip[]>([])
     const [activeTab, setActiveTab] = useState<'ongoing' | 'upcoming' | 'completed'>('ongoing')
     const [loading, setLoading] = useState(true)
+    
+    // 드래그 제스처 상태
+    const [dragY, setDragY] = useState(0)
+    const [startY, setStartY] = useState(0)
+    const [isDragging, setIsDragging] = useState(false)
 
     useEffect(() => {
         if (!isTripSwitcherOpen) return
@@ -127,6 +132,32 @@ export default function TripSwitcherModal() {
 
     const currentList = activeTab === 'ongoing' ? ongoing : activeTab === 'upcoming' ? upcoming : completed
 
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setStartY(e.touches[0].clientY)
+        setIsDragging(true)
+    }
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging) return
+        const deltaY = e.touches[0].clientY - startY
+        // 아래로만 드래그 가능하게 제한 (deltaY > 0)
+        if (deltaY > 0) {
+            setDragY(deltaY)
+        }
+    }
+
+    const handleTouchEnd = () => {
+        if (!isDragging) return
+        setIsDragging(false)
+        // 100px 이상 내려가면 닫기
+        if (dragY > 100) {
+            handleClose()
+        } else {
+            // 원위치 스냅
+            setDragY(0)
+        }
+    }
+
     return (
         <div className={css({
             position: 'fixed',
@@ -139,19 +170,35 @@ export default function TripSwitcherModal() {
             justifyContent: 'center',
             animation: 'fadeIn 0.2s ease-out',
         })}>
-            <div className={css({
-                bg: 'white',
-                w: '100%',
-                maxW: '500px',
-                h: '85vh',
-                borderTopRadius: '24px',
-                display: 'flex',
-                flexDirection: 'column',
-                boxShadow: '0 -10px 40px rgba(0,0,0,0.1)',
-                animation: 'slideUp 0.3s cubic-bezier(0.2, 0, 0, 1)',
-                overflow: 'hidden',
-                pb: 'env(safe-area-inset-bottom)',
-            })}>
+            <div 
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                className={css({
+                    bg: 'white',
+                    w: '100%',
+                    maxW: '500px',
+                    h: '85vh',
+                    borderTopRadius: '24px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 -10px 40px rgba(0,0,0,0.1)',
+                    animation: isDragging ? 'none' : 'slideUp 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                    overflow: 'hidden',
+                    pb: 'calc(20px + env(safe-area-inset-bottom))',
+                    transform: `translateY(${dragY}px)`,
+                    transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                    touchAction: 'none' // 시스템 기본 스크롤 방해 금지
+                })}
+            >
+                {/* 상단 핸들 바 */}
+                <div className={css({ 
+                    w: '100%', py: '10px', display: 'flex', justifyContent: 'center', pointerEvents: 'none' 
+                })}>
+                    <div className={css({ 
+                        w: '40px', h: '5px', bg: '#ddd', borderRadius: '5px'
+                    })} />
+                </div>
                 {/* 헤더 */}
                 <div className={css({ 
                     p: '20px', 
@@ -307,7 +354,12 @@ export default function TripSwitcherModal() {
                 </div>
 
                 {/* 하단 버튼 */}
-                <div className={css({ p: '20px', borderTop: '1px solid #f0f0f0', bg: 'white' })}>
+                <div className={css({ 
+                    p: '20px', 
+                    pb: 'calc(24px + env(safe-area-inset-bottom))',
+                    borderTop: '1px solid #f0f0f0', 
+                    bg: 'white' 
+                })}>
                     <Link
                         href="/trips/new"
                         onClick={handleClose}
