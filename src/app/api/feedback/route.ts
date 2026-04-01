@@ -82,6 +82,7 @@ export async function POST(req: NextRequest) {
 
         let response
         if (files.length === 0) {
+            console.log('디코 전송 시작 (내용만)');
             // 파일이 없으면 JSON 형식으로 디스크로드에 전송
             response = await fetch(webhookUrl, {
                 method: 'POST',
@@ -89,14 +90,24 @@ export async function POST(req: NextRequest) {
                 body: payloadValue,
             })
         } else {
+            console.log(`디코 전송 시작 (파일 ${files.length}개 포함)`);
             // 파일이 있으면 multipart/form-data 형식으로 전송
             const discordFormData = new FormData()
+            
+            // JSON 데이터 추가
             discordFormData.append('payload_json', payloadValue)
             
+            // 파일 데이터 추가 (규격: file[0], file[1]...)
             files.forEach((f, i) => {
-                const uint8Array = new Uint8Array(f.buffer)
-                const blob = new Blob([uint8Array], { type: f.type })
-                discordFormData.append(`file${i}`, blob, f.name)
+                try {
+                    // Buffer -> Blob 변환 과정 안정화 (Uint8Array 사용으로 타입 호환성 확보)
+                    const blob = new Blob([new Uint8Array(f.buffer)], { type: f.type })
+                    // 디스코드 공식 권장 필드명인 file[n] 사용
+                    discordFormData.append(`file[${i}]`, blob, f.name)
+                    console.log(`디코 페이로드에 파일 추가 완료: ${f.name} (as file[${i}])`);
+                } catch (blobErr) {
+                    console.error(`Blob 생성 오류 (${f.name}):`, blobErr);
+                }
             })
             
             response = await fetch(webhookUrl, {
@@ -106,13 +117,17 @@ export async function POST(req: NextRequest) {
         }
 
         if (response.ok) {
+            console.log('디스코드 최종 배달 성공!');
             return NextResponse.json({ success: true }, { headers: corsHeaders })
         } else {
             const errorText = await response.text()
-            console.error('Discord Webhook 호출 실패:', errorText)
+            const errorStatus = response.status;
+            console.error(`디스크로드 Webhook 배달 실패 (${errorStatus}):`, errorText)
+            
+            // 디스코드에서 상세 에러를 줄 수도 있으므로 전달
             return NextResponse.json(
-                { error: 'Discord delivery failed', detail: errorText }, 
-                { status: response.status, headers: corsHeaders }
+                { error: 'Discord delivery failed', status: errorStatus, detail: errorText }, 
+                { status: errorStatus, headers: corsHeaders }
             )
         }
     } catch (err: any) {
