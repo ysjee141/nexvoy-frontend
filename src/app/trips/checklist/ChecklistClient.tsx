@@ -833,8 +833,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         position: 'fixed',
                         bottom: 'calc(90px + env(safe-area-inset-bottom))',
                         right: '20px',
-                        w: '56px',
-                        h: '56px',
+                        w: '48px',
+                        h: '48px',
                         bg: '#222',
                         color: 'white',
                         borderRadius: '50%',
@@ -849,7 +849,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     })}
                     aria-label="준비물 항목 추가"
                 >
-                    <Plus size={28} />
+                    <Plus size={24} />
                 </button>
             )}
 

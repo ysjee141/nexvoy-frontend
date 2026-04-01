@@ -14,6 +14,8 @@ import {
   Clock, Share2, Star, Zap, Sparkles, X
 } from 'lucide-react'
 import NicknamePrompt from '@/components/profile/NicknamePrompt'
+import { isBetaTester } from '@/constants/testers'
+import TesterNoticeModal from '@/components/layout/TesterNoticeModal'
 
 // ── 주요 기능 카드 (Guide에서 이식) ──
 const FEATURES = [
@@ -540,6 +542,7 @@ export default function HomeClient() {
   return (
     <div className={css({ w: '100%' })}>
       <InvitationBanner />
+      {user && isBetaTester(user.id) && <TesterNoticeModal userId={user.id} />}
       <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
         {showNicknamePrompt && <NicknamePrompt onClose={() => setShowNicknamePrompt(false)} />}
         <header className={css({ mb: { base: '28px', sm: '40px' }, display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>

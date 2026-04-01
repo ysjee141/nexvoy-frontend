@@ -8,6 +8,7 @@ import { css } from 'styled-system/css'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import NativeAnalytics from '@/components/common/NativeAnalytics'
 import { SpeedInsights } from "@vercel/speed-insights/next"
+import BugReportFAB from '@/components/layout/BugReportFAB'
 
 export const metadata: Metadata = {
   title: '온여정 - 당신의 따뜻한 여행 동반자',
@@ -61,6 +62,7 @@ export default function RootLayout({
           {children}
         </main>
         <BottomNavbar />
+        <BugReportFAB />
         {process.env.NEXT_PUBLIC_GA_ID && (
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}

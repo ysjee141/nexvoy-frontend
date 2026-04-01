@@ -393,8 +393,8 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                         position: 'fixed',
                         bottom: 'calc(90px + env(safe-area-inset-bottom))', // BNB(64px) + 여점(26px) + Safe Area
                         right: '20px',
-                        w: '56px',
-                        h: '56px',
+                        w: '48px',
+                        h: '48px',
                         bg: '#222',
                         color: 'white',
                         borderRadius: '50%',
@@ -409,7 +409,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     })}
                     aria-label="일정 추가"
                 >
-                    <Plus size={28} />
+                    <Plus size={24} />
                 </button>
             )}
         </div>
