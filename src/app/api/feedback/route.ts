@@ -22,47 +22,59 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        const formData = await req.formData()
-        const receivedKeys = Array.from(formData.keys())
-        console.log('Feedback API 수신 데이터 키:', receivedKeys)
+        const contentType = req.headers.get('content-type') || ''
+        let payloadValue: string | null = null
+        const files: { key: string, value: File }[] = []
+
+        if (contentType.includes('application/json')) {
+            const body = await req.json()
+            payloadValue = body.payload_json
+        } else {
+            const formData = await req.formData()
+            payloadValue = formData.get('payload_json') as string
+            
+            // 파일 필드 추출
+            for (const [key, value] of formData.entries()) {
+                if (key.startsWith('file') && value instanceof File) {
+                    files.push({ key, value })
+                }
+            }
+        }
 
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL
-
         if (!webhookUrl) {
-            console.error('Discord Webhook URL이 설정되어 있지 않습니다.')
             return NextResponse.json(
-                { error: 'Server configuration error', detail: 'Discord Webhook URL is missing in server environment' }, 
+                { error: 'Server configuration error', detail: 'Discord Webhook URL is missing' }, 
                 { status: 500, headers: corsHeaders }
             )
         }
 
-        // 디스크로드로 보낼 새로운 FormData 구성 (Discord API 호환)
-        const discordFormData = new FormData()
-        
-        // payload_json 전달
-        const payloadValue = formData.get('payload_json')
-        if (payloadValue && typeof payloadValue === 'string') {
-            discordFormData.append('payload_json', payloadValue)
-        } else {
-            console.error('payload_json 필드가 없거나 문자열이 아닙니다.', receivedKeys)
+        if (!payloadValue || typeof payloadValue !== 'string') {
             return NextResponse.json(
-                { error: 'Invalid request data', detail: 'Missing or invalid payload_json field', keys: receivedKeys }, 
+                { error: 'Invalid request data', detail: 'payload_json is missing or invalid' }, 
                 { status: 400, headers: corsHeaders }
             )
         }
 
-        // 모든 파일 필드 찾아서 전달 (file0, file1, ...)
-        for (const [key, value] of formData.entries()) {
-            if (key.startsWith('file') && value instanceof File) {
-                discordFormData.append(key, value)
-            }
+        let response
+        if (files.length === 0) {
+            // 파일이 없으면 JSON 형식으로 디스크로드에 전송 (가장 안정적)
+            response = await fetch(webhookUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: payloadValue,
+            })
+        } else {
+            // 파일이 있으면 multipart/form-data 형식으로 전송
+            const discordFormData = new FormData()
+            discordFormData.append('payload_json', payloadValue)
+            files.forEach(f => discordFormData.append(f.key, f.value))
+            
+            response = await fetch(webhookUrl, {
+                method: 'POST',
+                body: discordFormData,
+            })
         }
-
-        // 디스크로드 Webhook 호출
-        const response = await fetch(webhookUrl, {
-            method: 'POST',
-            body: discordFormData,
-        })
 
         if (response.ok) {
             return NextResponse.json({ success: true }, { headers: corsHeaders })

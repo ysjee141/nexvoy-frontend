@@ -55,15 +55,29 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
 
         console.log(`피드백 전송 시작 (${isNative ? 'Native' : 'Web'}): ${apiUrl}`);
 
-        // 리다이렉트와 CORS 문제가 해결되었으므로, 
-        // FormData를 가장 표준적으로 처리하는 fetch를 다시 사용합니다.
-        const res = await fetch(apiUrl, {
-            method: 'POST',
-            body: formData,
-        });
+        let status: number;
+        let responseData: any;
 
-        const status = res.status;
-        const responseData = await res.json().catch(() => ({}));
+        if (isNative) {
+            // 네이티브 환경에서는 CapacitorHttp를 사용하여 CORS를 우회하고 
+            // JSON 데이터를 직접 전송하여 FormData 직렬화 문제를 방지합니다.
+            const response = await CapacitorHttp.post({
+                url: apiUrl,
+                data: { payload_json: JSON.stringify(payload) },
+                headers: { 'Content-Type': 'application/json' }
+            });
+            status = response.status;
+            responseData = response.data;
+        } else {
+            // 웹 환경에서는 표준 fetch 사용
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ payload_json: JSON.stringify(payload) }),
+            });
+            status = res.status;
+            responseData = await res.json().catch(() => ({}));
+        }
 
         if (status >= 200 && status < 300) {
             console.log('피드백 전송 성공!');
