@@ -274,7 +274,7 @@ export default function PlanList({
         uniqueNonKrw.forEach(async (code) => {
             try {
                 const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-                const res = await fetch(`${apiUrl}/api/exchange?from=${code}`)
+                const res = await fetch(`${apiUrl}/api/exchange/?from=${code}`)
                 if (res.ok) {
                     const json = await res.json()
                     setExchangeRates(prev => ({ ...prev, [code]: json.rate }))

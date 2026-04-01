@@ -108,7 +108,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                 Array.from(uniqueNonKrw).map(async (code) => {
                     try {
                         const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-                        const res = await fetch(`${apiUrl}/api/exchange?from=${code}`)
+                        const res = await fetch(`${apiUrl}/api/exchange/?from=${code}`)
                         if (res.ok) {
                             const json = await res.json()
                             rates[code] = json.rate
