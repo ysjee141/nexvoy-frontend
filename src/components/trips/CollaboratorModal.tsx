@@ -79,7 +79,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                 const isNative = Capacitor.isNativePlatform();
                 const apiUrl = isNative ? (process.env.NEXT_PUBLIC_APP_URL || '') : '';
                 
-                await fetch(`${apiUrl}/api/invite`, {
+                await fetch(`${apiUrl}/api/invite/`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, tripTitle, tripId })

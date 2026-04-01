@@ -11,7 +11,7 @@ interface BugReportData {
     files?: File[];
 }
 
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
 export const sendBugReportToDiscord = async (data: BugReportData) => {
     try {
@@ -46,25 +46,63 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
             });
         }
 
-        // 3. 서버 API 호출 (CORS 회피 및 보안을 위해 서버 사이드 API 사용)
+        // 3. 서버 API 호출
         const isNative = Capacitor.isNativePlatform();
-        const baseUrl = isNative ? (process.env.NEXT_PUBLIC_APP_URL || '') : '';
-        const apiUrl = `${baseUrl}/api/feedback`;
+        const baseUrl = isNative 
+            ? (process.env.NEXT_PUBLIC_APP_URL || 'https://app.nexvoy.xyz') 
+            : '';
+        const apiUrl = `${baseUrl}/api/feedback/`;
 
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            body: formData,
-        });
+        console.log(`피드백 전송 시작 (${isNative ? 'Native' : 'Web'}): ${apiUrl}`);
 
-        if (response.ok) {
+        let response;
+        if (isNative) {
+            // 네이티브 환경에서는 CapacitorHttp를 직접 사용하여 CORS 및 브릿지 이슈를 방지합니다.
+            response = await CapacitorHttp.post({
+                url: apiUrl,
+                data: formData,
+                headers: {
+                    // CapacitorHttp는 FormData를 보낼 때 Content-Type을 자동으로 설정합니다.
+                }
+            });
+        } else {
+            // 웹 환경에서는 표준 fetch 사용
+            const fetchRes = await fetch(apiUrl, {
+                method: 'POST',
+                body: formData,
+            });
+            
+            response = {
+                status: fetchRes.status,
+                data: await fetchRes.json().catch(() => ({})),
+            };
+        }
+
+        if (response.status >= 200 && response.status < 300) {
             return { success: true };
         } else {
-            const errorData = await response.json().catch(() => ({}));
-            console.error('피드백 전송 실패 (API 에러):', errorData);
-            return { success: false, error: '전송 실패' };
+            console.error('피드백 전송 실패 (API 에러):', response.status, response.data);
+            return { 
+                success: false, 
+                error: '전송 실패', 
+                detail: `Status: ${response.status}` 
+            };
         }
-    } catch (error) {
-        console.error('피드백 전송 중 오류 발생:', error);
-        return { success: false, error: '시스템 오류' };
+    } catch (error: any) {
+        // 상세 에러 로깅 (ProgressEvent 등인 경우에도 속성을 노출)
+        console.error('피드백 전송 중 예외 발생:', error);
+        
+        let detail = 'Unknown Error';
+        if (error instanceof Error) {
+            detail = error.message;
+        } else if (error && typeof error === 'object') {
+            try {
+                detail = JSON.stringify(error);
+            } catch (e) {
+                detail = 'Object (non-serializable)';
+            }
+        }
+
+        return { success: false, error: '시스템 오류', detail };
     }
 };

@@ -145,7 +145,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                 setGooglePlaceId(place.place_id || null)
 
                 try {
-                    const res = await fetch(`/api/timezone?lat=${lat}&lng=${lng}`)
+                    const res = await fetch(`/api/timezone/?lat=${lat}&lng=${lng}`)
                     const data = await res.json()
                     if (data.timeZoneId) {
                         setTimezoneString(data.timeZoneId)
