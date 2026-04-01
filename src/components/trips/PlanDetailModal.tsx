@@ -32,13 +32,18 @@ export default function PlanDetailModal({
     const [mapLoaded, setMapLoaded] = useState(false)
     const { isOnline } = useNetworkStore()
 
-    useModalBackButton(true, onClose, `planDetail_${plan.id}`)
+    const handleClose = useCallback(() => {
+        setTab('info')
+        onClose()
+    }, [onClose])
+
+    useModalBackButton(true, handleClose, `planDetail_${plan.id}`)
 
     useEffect(() => {
-        const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+        const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') handleClose() }
         document.addEventListener('keydown', handleKey)
         return () => document.removeEventListener('keydown', handleKey)
-    }, [onClose])
+    }, [handleClose])
 
     useEffect(() => {
         document.body.style.overflow = 'hidden'
@@ -94,7 +99,7 @@ export default function PlanDetailModal({
                 justifyContent: 'center',
                 p: { base: '0', sm: '20px' },
             })}
-            onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
+            onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
         >
             <div
                 className={css({
@@ -121,7 +126,7 @@ export default function PlanDetailModal({
                     flexShrink: 0, bg: 'white', zIndex: 10,
                 })}>
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className={css({
                             display: { base: 'flex', sm: 'none' },
                             alignItems: 'center', gap: '4px',
@@ -143,7 +148,7 @@ export default function PlanDetailModal({
                     </h2>
 
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className={css({
                             display: { base: 'none', sm: 'flex' },
                             alignItems: 'center', justifyContent: 'center',
@@ -159,11 +164,11 @@ export default function PlanDetailModal({
                     <div className={css({ display: { base: 'flex', sm: 'none' }, gap: '8px', ml: 'auto' })}>
                         {(userRole === 'owner' || userRole === 'editor') && (
                             <>
-                                <button onClick={() => { onEdit(plan); onClose() }} disabled={!isOnline}
+                                <button onClick={() => { onEdit(plan); handleClose() }} disabled={!isOnline}
                                     className={css({ bg: 'transparent', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', color: '#3B82F6', p: '6px', opacity: isOnline ? 1 : 0.5 })}>
                                     <Pencil size={18} />
                                 </button>
-                                <button onClick={() => { onDelete(plan.id); onClose() }} disabled={!isOnline}
+                                <button onClick={() => { onDelete(plan.id); handleClose() }} disabled={!isOnline}
                                     className={css({ bg: 'transparent', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', color: '#dc2626', p: '6px', opacity: isOnline ? 1 : 0.5 })}>
                                     <Trash2 size={18} />
                                 </button>
@@ -397,11 +402,11 @@ export default function PlanDetailModal({
                         gap: '10px', p: '14px 24px',
                         borderTop: '1px solid #f0f0f0', flexShrink: 0,
                     })}>
-                        <button onClick={() => { onEdit(plan); onClose() }} disabled={!isOnline}
+                        <button onClick={() => { onEdit(plan); handleClose() }} disabled={!isOnline}
                             className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#EFF6FF', color: '#3B82F6', border: '1px solid #BFDBFE', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#EFF6FF' : '#EFF6FF' } })}>
                             <Pencil size={15} /> 수정
                         </button>
-                        <button onClick={() => { onDelete(plan.id); onClose() }} disabled={!isOnline}
+                        <button onClick={() => { onDelete(plan.id); handleClose() }} disabled={!isOnline}
                             className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#fff5f5', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#fee2e2' : '#fff5f5' } })}>
                             <Trash2 size={15} /> 삭제
                         </button>

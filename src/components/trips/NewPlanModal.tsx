@@ -44,51 +44,95 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
     const [memo, setMemo] = useState('')
     const [urls, setUrls] = useState<string[]>([''])
     const [alarmMinutesBefore, setAlarmMinutesBefore] = useState<number | null>(null)
+    const [initialSnapshot, setInitialSnapshot] = useState<string>('')
+
+    // 데이터 스냅샷 생성 (변경 감지용)
+    const getCurrentDataString = () => {
+        return JSON.stringify({
+            title, localDate, localTime, locationName, 
+            locationLat, locationLng, cost, memo, 
+            urls: urls.filter(u => u.trim() !== ''), 
+            alarmMinutesBefore
+        })
+    }
 
     // 수정 모드 데이터 초기화
     useEffect(() => {
-        if (isOpen && editData) {
-            setTitle(editData.title || '')
-            setLocationName(editData.location || '')
-            setLocationLat(editData.location_lat ?? null)
-            setLocationLng(editData.location_lng ?? null)
-            setGooglePlaceId(editData.google_place_id ?? null)
-            setTimezoneString(editData.timezone_string || 'Asia/Seoul')
-            setCost(editData.cost || 0)
-            setMemo(editData.memo || '')
+        if (isOpen) {
+            if (editData) {
+                setTitle(editData.title || '')
+                setLocationName(editData.location || '')
+                setLocationLat(editData.location_lat ?? null)
+                setLocationLng(editData.location_lng ?? null)
+                setGooglePlaceId(editData.google_place_id ?? null)
+                setTimezoneString(editData.timezone_string || 'Asia/Seoul')
+                setCost(editData.cost || 0)
+                setMemo(editData.memo || '')
 
-            // YYYY-MM-DDTHH:mm:ss 포맷에서 날짜/시간 분리 (문자열 파싱)
-            if (editData.start_datetime_local) {
-                const parts = editData.start_datetime_local.split('T')
-                if (parts.length === 2) {
-                    setLocalDate(parts[0])
-                    setLocalTime(parts[1].substring(0, 5)) // HH:mm
+                let lDate = ''
+                let lTime = ''
+                if (editData.start_datetime_local) {
+                    const parts = editData.start_datetime_local.split('T')
+                    if (parts.length === 2) {
+                        lDate = parts[0]
+                        lTime = parts[1].substring(0, 5)
+                    }
                 }
-            }
+                setLocalDate(lDate)
+                setLocalTime(lTime)
+                setAlarmMinutesBefore(editData.alarm_minutes_before ?? null)
 
-            setAlarmMinutesBefore(editData.alarm_minutes_before ?? null)
+                const initialUrls = (editData.plan_urls && Array.isArray(editData.plan_urls) && editData.plan_urls.length > 0)
+                    ? editData.plan_urls.map((pu: any) => pu.url)
+                    : ['']
+                setUrls(initialUrls)
 
-            // editData.plan_urls (URL 목록)이 있다면 세팅
-            if (editData.plan_urls && Array.isArray(editData.plan_urls) && editData.plan_urls.length > 0) {
-                setUrls(editData.plan_urls.map((pu: any) => pu.url))
+                // 초기 스냅샷 저장
+                setInitialSnapshot(JSON.stringify({
+                    title: editData.title || '',
+                    localDate: lDate,
+                    localTime: lTime,
+                    locationName: editData.location || '',
+                    locationLat: editData.location_lat ?? null,
+                    locationLng: editData.location_lng ?? null,
+                    cost: editData.cost || 0,
+                    memo: editData.memo || '',
+                    urls: initialUrls.filter((u: string) => u.trim() !== ''),
+                    alarmMinutesBefore: editData.alarm_minutes_before ?? null
+                }))
             } else {
+                // 초기화
+                setTitle('')
+                setLocalDate('')
+                setLocalTime('')
+                setLocationName('')
+                setLocationLat(null)
+                setLocationLng(null)
+                setGooglePlaceId(null)
+                setTimezoneString('Asia/Seoul')
+                setCost(0)
+                setMemo('')
                 setUrls([''])
+                setAlarmMinutesBefore(null)
+                
+                // 빈 스냅샷 저장
+                setInitialSnapshot(JSON.stringify({
+                    title: '', localDate: '', localTime: '', locationName: '',
+                    locationLat: null, locationLng: null, cost: 0, memo: '',
+                    urls: [], alarmMinutesBefore: null
+                }))
             }
-        } else if (isOpen && !editData) {
-            // 초기화
-            setTitle('')
-            setLocalDate('')
-            setLocalTime('')
-            setLocationName('')
-            setLocationLat(null)
-            setLocationLng(null)
-            setGooglePlaceId(null)
-            setTimezoneString('Asia/Seoul')
-            setCost(0)
-            setUrls([''])
-            setAlarmMinutesBefore(null)
         }
     }, [isOpen, editData])
+
+    const handleClose = () => {
+        const isDirty = getCurrentDataString() !== initialSnapshot
+        if (isDirty) {
+            const confirmClose = window.confirm('작성 중인 내용이 있어요! 정말 나가시겠어요?')
+            if (!confirmClose) return
+        }
+        onClose()
+    }
 
     // 통화별 퀵 버튼 설정
     const getQuickAddButtons = (currencyCode: string) => {
@@ -269,7 +313,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                 <div className={css({ p: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10 })}>
                     {/* 모바일: 뒤로가기 버튼 위치 */}
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className={css({
                             display: { base: 'flex', sm: 'none' },
                             alignItems: 'center',
@@ -298,7 +342,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                     </h2>
                     {/* 데스크탑: X 닫기 버튼 */}
                     <button
-                        onClick={onClose}
+                        onClick={handleClose}
                         className={css({
                             display: { base: 'none', sm: 'flex' },
                             bg: 'transparent',
@@ -590,7 +634,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                     <div className={css({ display: 'flex', justifyContent: 'flex-end', gap: '12px', mt: '8px', pt: '20px', borderTop: '1px solid #eee', flexDirection: { base: 'column-reverse', sm: 'row' } })}>
                         <button
                             type="button"
-                            onClick={onClose}
+                            onClick={handleClose}
                             className={css({ px: '16px', py: '12px', color: '#555', bg: 'white', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' })}
                         >
                             취소

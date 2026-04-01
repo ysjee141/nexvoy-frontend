@@ -19,6 +19,21 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
     const [success, setSuccess] = useState(false)
     const fileRef = useRef<HTMLInputElement>(null)
 
+    const handleClose = () => {
+        const isDirty = content.trim() !== '' || files.length > 0
+        if (isDirty && !success) {
+            const confirmClose = window.confirm('작성 중인 내용이 있어요! 정말 나가시겠어요?')
+            if (!confirmClose) return
+        }
+        
+        // 상태 초기화 후 닫기
+        setContent('')
+        setFiles([])
+        setError('')
+        setSuccess(false)
+        onClose()
+    }
+
     if (!isOpen) return null
 
     // 전체 파일 용량계산 (bytes)
@@ -99,7 +114,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                     <h2 className={css({ fontSize: '18px', fontWeight: '800', color: '#222', display: 'flex', alignItems: 'center', gap: '8px' })}>
                         <MessageSquare size={20} /> 테스터 피드백 보내기
                     </h2>
-                    <button onClick={onClose} className={css({ p: '4px', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#717171' })}>
+                    <button onClick={handleClose} className={css({ p: '4px', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#717171' })}>
                         <X size={24} />
                     </button>
                 </div>
