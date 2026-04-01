@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { ChevronLeft, MapPin, Footprints, Heart, Search } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useUIStore } from '@/stores/useUIStore'
 
 interface Plan {
     id: string
@@ -19,23 +20,39 @@ interface Plan {
 export default function PlacesVisitedPage() {
     const supabase = createClient()
     const router = useRouter()
+    const { setMobileTitle } = useUIStore()
     const [loading, setLoading] = useState(true)
     const [places, setPlaces] = useState<Plan[]>([])
     const [searchTerm, setSearchTerm] = useState('')
+
+    useEffect(() => {
+        setMobileTitle('내가 머문 발자취')
+    }, [setMobileTitle])
 
     useEffect(() => {
         const fetchPlaces = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            const { data: plans } = await supabase
-                .from('plans')
-                .select('id, location, trip_id, trips(destination, start_date)')
+            // 1. 사용자의 모든 여행 ID 가져오기
+            const { data: trips } = await supabase
+                .from('trips')
+                .select('id')
                 .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
+            
+            const tripIds = trips?.map((t: any) => t.id) || []
 
-            if (plans) {
-                setPlaces(plans as any[])
+            if (tripIds.length > 0) {
+                // 2. 해당 여행들에 속한 장소들 가져오기
+                const { data: plans } = await supabase
+                    .from('plans')
+                    .select('id, location, trip_id, trips(destination, start_date)')
+                    .in('trip_id', tripIds)
+                    .order('created_at', { ascending: false })
+
+                if (plans) {
+                    setPlaces(plans as any[])
+                }
             }
             setLoading(false)
         }
@@ -55,19 +72,8 @@ export default function PlacesVisitedPage() {
     )
 
     return (
-        <div className={css({ maxW: '720px', mx: 'auto', minH: '100vh', bg: '#F8FAFC', pb: '60px' })}>
-            {/* Header */}
-            <header className={css({ 
-                position: 'sticky', top: 0, bg: 'rgba(255,255,255,0.8)', backdropFilter: 'blur(10px)', 
-                zIndex: 10, px: '20px', py: '16px', display: 'flex', alignItems: 'center', gap: '12px'
-            })}>
-                <button onClick={() => router.back()} className={css({ p: '8px', ml: '-8px', borderRadius: '50%', _active: { bg: '#eee' } })}>
-                    <ChevronLeft size={24} />
-                </button>
-                <h1 className={css({ fontSize: '18px', fontWeight: '700' })}>내가 머문 발자취</h1>
-            </header>
-
-            <main className={css({ px: '20px', mt: '24px' })}>
+        <div className={css({ maxW: '720px', mx: 'auto', minH: 'calc(100vh - 60px)', bg: '#F8FAFC', pb: '60px' })}>
+            <main className={css({ px: '20px', pt: '24px' })}>
                 {/* Visual Intro */}
                 <div className={css({ 
                     bg: 'brand.primary', p: '32px 24px', borderRadius: '24px', 
