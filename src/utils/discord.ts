@@ -13,6 +13,17 @@ interface BugReportData {
 
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
+// 파일을 Base64로 변환하는 헬퍼 함수 (Native 전용)
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+});
+
 export const sendBugReportToDiscord = async (data: BugReportData) => {
     try {
         // 1. 디스코드 페이로드 구성
@@ -34,43 +45,54 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
             ]
         };
 
-        // 2. FormData 구성
-        const formData = new FormData();
-        formData.append('payload_json', JSON.stringify(payload));
-
-        if (data.files && data.files.length > 0) {
-            data.files.forEach((file, index) => {
-                // 키 이름은 서버(route.ts)에서 인식하는 'file' 프리픽스를 사용합니다.
-                formData.append(`file${index}`, file);
-            });
-        }
-
-        // 3. 서버 API 호출
         const isNative = Capacitor.isNativePlatform();
         const baseUrl = isNative 
             ? (process.env.NEXT_PUBLIC_APP_URL || 'https://app.nexvoy.xyz') 
             : '';
-        // 엔드포인트에서 슬래시(/)를 제거하여 리다이렉트 가능성을 방지합니다.
+        // 중요: next.config.ts의 trailingSlash: true 설정에 맞춰 반드시 슬래시를 포함합니다.
         const apiUrl = `${baseUrl}/api/feedback/`;
 
         console.log(`피드백 전송 시작 (${isNative ? 'Native' : 'Web'}): ${apiUrl}`);
-
 
         let status: number;
         let responseData: any;
 
         if (isNative) {
-            // 네이티브 환경에서는 CapacitorHttp를 사용하여 CORS를 우회합니다.
-            // 중요: FormData 사용 시 'Content-Type' 헤더를 명시하지 않아야 바운더리가 자동 생성됩니다.
+            // [네이티브 환경] CapacitorHttp 브릿지 이슈 방지를 위해 JSON(Base64) 방식을 사용합니다.
+            const base64Files = [];
+            if (data.files && data.files.length > 0) {
+                for (const file of data.files) {
+                    const base64String = await toBase64(file);
+                    base64Files.push({
+                        name: file.name,
+                        type: file.type,
+                        data: base64String
+                    });
+                }
+            }
+
+            const requestBody = {
+                payload_json: JSON.stringify(payload),
+                files: base64Files
+            };
+
             const response = await CapacitorHttp.post({
                 url: apiUrl,
-                data: formData,
-                // headers: { 'Content-Type': 'multipart/form-data' } // 절대 수동 지정 금지
+                data: requestBody,
+                headers: { 'Content-Type': 'application/json' }
             });
             status = response.status;
             responseData = response.data;
         } else {
-            // 웹 환경 (fetch 사용 시에도 Content-Type은 브라우저에 맡김)
+            // [웹 환경] 표준 FormData 방계를 사용하여 브라우저 최적화 전송을 수행합니다.
+            const formData = new FormData();
+            formData.append('payload_json', JSON.stringify(payload));
+            if (data.files && data.files.length > 0) {
+                data.files.forEach((file, index) => {
+                    formData.append(`file${index}`, file);
+                });
+            }
+
             const res = await fetch(apiUrl, {
                 method: 'POST',
                 body: formData,
@@ -97,12 +119,7 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
         if (error instanceof Error) {
             detail = error.message;
         } else if (error && typeof error === 'object') {
-            try { 
-                // CapacitorHttp 에러 객체의 경우 more info가 있을 수 있음
-                detail = JSON.stringify(error); 
-            } catch (e) { 
-                detail = String(error); 
-            }
+            try { detail = JSON.stringify(error); } catch (e) { detail = String(error); }
         }
 
         return { success: false, error: '시스템 오류', detail };

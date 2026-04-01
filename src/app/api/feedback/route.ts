@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         const files: { name: string, buffer: Buffer, type: string }[] = []
 
         if (contentType.includes('application/json')) {
-            console.log('피드백 수신 (JSON 형식)');
+            console.log('피드백 수신 (JSON/Base64 - Native App)');
             const body = await req.json()
             payloadValue = body.payload_json
             
@@ -35,6 +35,7 @@ export async function POST(req: NextRequest) {
             if (body.files && Array.isArray(body.files)) {
                 for (const file of body.files) {
                     if (file.data && file.name) {
+                        console.log(`Base64 파일 추출: ${file.name} (${file.type})`);
                         const buffer = Buffer.from(file.data, 'base64')
                         files.push({
                             name: file.name,
@@ -45,7 +46,7 @@ export async function POST(req: NextRequest) {
                 }
             }
         } else {
-            console.log('피드백 수신 (FormData 형식)');
+            console.log('피드백 수신 (FormData/Multipart - Web)');
             const formData = await req.formData()
             payloadValue = formData.get('payload_json') as string
             
@@ -53,7 +54,7 @@ export async function POST(req: NextRequest) {
             const entries = Array.from(formData.entries());
             for (const [key, value] of entries) {
                 if (value instanceof File) {
-                    console.log(`파일 추출 시도: ${value.name} (${value.size} bytes)`);
+                    console.log(`Multipart 파일 추출: ${value.name} (${value.size} bytes)`);
                     const arrayBuffer = await value.arrayBuffer()
                     files.push({
                         name: value.name,
