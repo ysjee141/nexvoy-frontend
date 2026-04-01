@@ -55,6 +55,7 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
 
         console.log(`피드백 전송 시작 (${isNative ? 'Native' : 'Web'}): ${apiUrl}`);
 
+
         let status: number;
         let responseData: any;
 
