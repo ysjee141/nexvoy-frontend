@@ -4,6 +4,15 @@
  */
 export const BETA_TESTERS = [
     '3812153a-12a9-4849-8907-d1a5d80004ff', // 홍길동 (예시)
+    'f3e197e5-62e7-4248-a4d1-4728cf02d6b2',
+    '448d2f7e-502c-4756-ace6-06e82a7274ea',
+    'd8cd7e05-e634-4d5f-8700-81f475abfe78',
+    'c4a52732-4834-4bfa-ab37-a5d28b15bc13',
+    '5b3248c2-ac22-40a4-860a-93bb07ad302d',
+    'ce9ea01f-248c-44b2-ad58-04e3895d2c6a',
+    '5a8f556f-d6d0-4d78-9b6c-ec4de692e121',
+    '2531585c-acdf-435c-993e-fc43bac328ac',
+    '4fb40d1a-200b-4a80-9f03-c4dbe6f3f391'
     // 추가 테스터의 UUID를 여기에 등록하세요.
 ]
 
