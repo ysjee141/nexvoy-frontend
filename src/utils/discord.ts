@@ -13,10 +13,19 @@ interface BugReportData {
 
 import { Capacitor, CapacitorHttp } from '@capacitor/core';
 
+// 파일을 Base64로 변환하는 헬퍼 함수
+const toBase64 = (file: File): Promise<string> => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+    };
+    reader.onerror = error => reject(error);
+});
+
 export const sendBugReportToDiscord = async (data: BugReportData) => {
     try {
-        const formData = new FormData();
-        
         // 1. 기본 메시지 내용 구성
         const payload = {
             content: `📢 **신규 버그 제보가 도착했습니다!** (v${process.env.NEXT_PUBLIC_VERSION || '1.0.0'})`,
@@ -36,14 +45,17 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
             ]
         };
 
-        // 클라이언트에서 payload_json을 문자열로 추가
-        formData.append('payload_json', JSON.stringify(payload));
-
-        // 2. 파일 첨부 (있을 경우)
+        // 2. 파일 데이터를 Base64 배열로 변환
+        const base64Files = [];
         if (data.files && data.files.length > 0) {
-            data.files.forEach((file, index) => {
-                formData.append(`file${index}`, file);
-            });
+            for (const file of data.files) {
+                const base64String = await toBase64(file);
+                base64Files.push({
+                    name: file.name,
+                    type: file.type,
+                    data: base64String
+                });
+            }
         }
 
         // 3. 서버 API 호출
@@ -55,25 +67,30 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
 
         console.log(`피드백 전송 시작 (${isNative ? 'Native' : 'Web'}): ${apiUrl}`);
 
+        const requestBody = {
+            payload_json: JSON.stringify(payload),
+            files: base64Files
+        };
+
         let status: number;
         let responseData: any;
 
         if (isNative) {
             // 네이티브 환경에서는 CapacitorHttp를 사용하여 CORS를 우회하고 
-            // JSON 데이터를 직접 전송하여 FormData 직렬화 문제를 방지합니다.
+            // 모든 데이터를 JSON으로 전송하여 전송 안정성을 최대화합니다.
             const response = await CapacitorHttp.post({
                 url: apiUrl,
-                data: { payload_json: JSON.stringify(payload) },
+                data: requestBody,
                 headers: { 'Content-Type': 'application/json' }
             });
             status = response.status;
             responseData = response.data;
         } else {
-            // 웹 환경에서는 표준 fetch 사용
+            // 웹 환경에서도 동일한 JSON 구조 사용
             const res = await fetch(apiUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ payload_json: JSON.stringify(payload) }),
+                body: JSON.stringify(requestBody),
             });
             status = res.status;
             responseData = await res.json().catch(() => ({}));

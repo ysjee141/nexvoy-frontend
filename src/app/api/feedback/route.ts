@@ -24,19 +24,38 @@ export async function POST(req: NextRequest) {
     try {
         const contentType = req.headers.get('content-type') || ''
         let payloadValue: string | null = null
-        const files: { key: string, value: File }[] = []
+        const files: { name: string, buffer: Buffer, type: string }[] = []
 
         if (contentType.includes('application/json')) {
             const body = await req.json()
             payloadValue = body.payload_json
+            
+            // Base64 파일 처리
+            if (body.files && Array.isArray(body.files)) {
+                for (const file of body.files) {
+                    if (file.data && file.name) {
+                        const buffer = Buffer.from(file.data, 'base64')
+                        files.push({
+                            name: file.name,
+                            buffer: buffer,
+                            type: file.type || 'application/octet-stream'
+                        })
+                    }
+                }
+            }
         } else {
             const formData = await req.formData()
             payloadValue = formData.get('payload_json') as string
             
-            // 파일 필드 추출
+            // 기존 FormData 파일 추출
             for (const [key, value] of formData.entries()) {
                 if (key.startsWith('file') && value instanceof File) {
-                    files.push({ key, value })
+                    const arrayBuffer = await value.arrayBuffer()
+                    files.push({
+                        name: value.name,
+                        buffer: Buffer.from(arrayBuffer),
+                        type: value.type
+                    })
                 }
             }
         }
@@ -58,7 +77,7 @@ export async function POST(req: NextRequest) {
 
         let response
         if (files.length === 0) {
-            // 파일이 없으면 JSON 형식으로 디스크로드에 전송 (가장 안정적)
+            // 파일이 없으면 JSON 형식으로 디스크로드에 전송
             response = await fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -68,7 +87,12 @@ export async function POST(req: NextRequest) {
             // 파일이 있으면 multipart/form-data 형식으로 전송
             const discordFormData = new FormData()
             discordFormData.append('payload_json', payloadValue)
-            files.forEach(f => discordFormData.append(f.key, f.value))
+            
+            files.forEach((f, i) => {
+                const uint8Array = new Uint8Array(f.buffer)
+                const blob = new Blob([uint8Array], { type: f.type })
+                discordFormData.append(`file${i}`, blob, f.name)
+            })
             
             response = await fetch(webhookUrl, {
                 method: 'POST',
