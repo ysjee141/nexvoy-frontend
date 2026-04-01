@@ -32,6 +32,18 @@ export default function TripSwitcherModal() {
     const [dragY, setDragY] = useState(0)
     const [startY, setStartY] = useState(0)
     const [isDragging, setIsDragging] = useState(false)
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => {
+        if (isTripSwitcherOpen) {
+            // 마운트 직후 애니메이션 1회 실행 후 고정
+            const timer = setTimeout(() => setMounted(true), 10)
+            return () => clearTimeout(timer)
+        } else {
+            setMounted(false)
+            setDragY(0)
+        }
+    }, [isTripSwitcherOpen])
 
     useEffect(() => {
         if (!isTripSwitcherOpen) return
@@ -171,9 +183,6 @@ export default function TripSwitcherModal() {
             animation: 'fadeIn 0.2s ease-out',
         })}>
             <div 
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
                 className={css({
                     bg: 'white',
                     w: '100%',
@@ -183,18 +192,25 @@ export default function TripSwitcherModal() {
                     display: 'flex',
                     flexDirection: 'column',
                     boxShadow: '0 -10px 40px rgba(0,0,0,0.1)',
-                    animation: isDragging ? 'none' : 'slideUp 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                    // mounted 이후에는 slideUp을 제거하여 리렌더시 재시작 방지
+                    animation: !mounted ? 'slideUp 0.3s cubic-bezier(0.2, 0, 0, 1)' : 'none',
                     overflow: 'hidden',
                     pb: 'calc(20px + env(safe-area-inset-bottom))',
                     transform: `translateY(${dragY}px)`,
                     transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                    touchAction: 'none' // 시스템 기본 스크롤 방해 금지
                 })}
             >
-                {/* 상단 핸들 바 */}
-                <div className={css({ 
-                    w: '100%', py: '10px', display: 'flex', justifyContent: 'center', pointerEvents: 'none' 
-                })}>
+                {/* 상단 드래그 핸들 영역 - 여기에만 터치 이벤트 바인딩 */}
+                <div 
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    className={css({ 
+                        w: '100%', py: '14px', display: 'flex', justifyContent: 'center', 
+                        cursor: 'ns-resize',
+                        touchAction: 'none' // 핸들바 영역만 기본 스크롤 방지
+                    })}
+                >
                     <div className={css({ 
                         w: '40px', h: '5px', bg: '#ddd', borderRadius: '5px'
                     })} />
