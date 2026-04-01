@@ -11,14 +11,9 @@ interface BugReportData {
     files?: File[];
 }
 
+import { Capacitor } from '@capacitor/core';
+
 export const sendBugReportToDiscord = async (data: BugReportData) => {
-    const webhookUrl = process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL;
-
-    if (!webhookUrl) {
-        console.error('Discord Webhook URL이 설정되어 있지 않습니다.');
-        return { success: false, error: '설정 오류' };
-    }
-
     try {
         const formData = new FormData();
         
@@ -41,6 +36,7 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
             ]
         };
 
+        // 클라이언트에서 payload_json을 문자열로 추가
         formData.append('payload_json', JSON.stringify(payload));
 
         // 2. 파일 첨부 (있을 경우)
@@ -50,7 +46,12 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
             });
         }
 
-        const response = await fetch(webhookUrl, {
+        // 3. 서버 API 호출 (CORS 회피 및 보안을 위해 서버 사이드 API 사용)
+        const isNative = Capacitor.isNativePlatform();
+        const baseUrl = isNative ? (process.env.NEXT_PUBLIC_APP_URL || '') : '';
+        const apiUrl = `${baseUrl}/api/feedback`;
+
+        const response = await fetch(apiUrl, {
             method: 'POST',
             body: formData,
         });
@@ -58,12 +59,12 @@ export const sendBugReportToDiscord = async (data: BugReportData) => {
         if (response.ok) {
             return { success: true };
         } else {
-            const errorText = await response.text();
-            console.error('Discord 전송 실패:', errorText);
+            const errorData = await response.json().catch(() => ({}));
+            console.error('피드백 전송 실패 (API 에러):', errorData);
             return { success: false, error: '전송 실패' };
         }
     } catch (error) {
-        console.error('Discord 전송 중 오류 발생:', error);
+        console.error('피드백 전송 중 오류 발생:', error);
         return { success: false, error: '시스템 오류' };
     }
 };
