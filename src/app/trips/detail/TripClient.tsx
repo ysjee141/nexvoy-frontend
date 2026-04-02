@@ -1,10 +1,10 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Plus, UserPlus, Share2, ChevronDown, Check } from 'lucide-react'
+import { Plus, UserPlus, Share2, ChevronDown, Check, Clock } from 'lucide-react'
 import NewPlanModal from '@/components/trips/NewPlanModal'
 import CollaboratorModal from '@/components/trips/CollaboratorModal'
 import ShareModal from '@/components/trips/ShareModal'
@@ -24,26 +24,27 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const currentLabel = options.find(o => o.value === timeDisplayMode)?.label || '현지 시간';
 
     return (
-        <div className={css({ position: 'relative', display: { base: 'block', sm: 'none' } })}>
+        <div className={css({ position: 'relative' })}>
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid #3B82F6', borderRadius: '16px',
-                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#3B82F6', cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px',
+                    px: '12px', h: '42px', fontSize: '13px', fontWeight: '800', color: '#222', cursor: 'pointer',
+                    transition: 'all 0.2s', _active: { transform: 'scale(0.95)' }
                 })}
             >
-                {currentLabel}
-                <ChevronDown size={14} />
+                <Clock size={14} className={css({ color: '#888' })} />
+                <span className={css({ whiteSpace: 'nowrap' })}>{currentLabel}</span>
+                <ChevronDown size={14} className={css({ color: '#888' })} />
             </button>
             {isOpen && (
                 <>
                     <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
                     <div className={css({
-                        position: 'absolute', top: '100%', right: 0, mt: '4px',
+                        position: 'absolute', top: '100%', left: 0, mt: '4px',
                         bg: 'white', border: '1px solid #eee', borderRadius: '12px',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '110px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '120px',
                         overflow: 'hidden'
                     })}>
                         {options.map(opt => (
@@ -234,64 +235,96 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
         fetchPlans()
     }
 
+    // 24시간 이내 가장 가까운 일정 계산
+    const nextPlanInfo = useMemo(() => {
+        const now = new Date()
+        const upcoming = plans
+            .map(p => ({ ...p, startTime: new Date(p.start_datetime_local) }))
+            .filter(p => p.startTime > now)
+            .sort((a, b) => a.startTime.getTime() - b.startTime.getTime())
+
+        if (upcoming.length > 0) {
+            const diffMs = upcoming[0].startTime.getTime() - now.getTime()
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+            const diffMinutes = Math.floor(diffMs / (1000 * 60))
+
+            if (diffHours < 24) {
+                if (diffHours >= 1) return `다음 일정까지 ${diffHours}시간 전`
+                return `다음 일정까지 ${diffMinutes}분 전`
+            }
+        }
+        return null
+    }, [plans])
+
     return (
         <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, pb: { base: '80px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
             <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, mb: { base: '16px', sm: '24px' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
-                {/* 1. 타이틀 & 시간 필터 */}
-                <div className={css({ display: 'flex', w: { base: '100%', sm: 'auto' }, justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, flexDirection: { base: 'row', sm: 'column' } })}>
-                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', mb: { base: 0, sm: '12px' } })}>여정 채워가기</h2>
+                {/* 1. 요약 정보 영역 (PC/모바일 공통) */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
+                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', color: '#222' })}>
+                        {nextPlanInfo ? (
+                            <>
+                                <span className={css({ color: '#FF4D4F' })}>●</span> {nextPlanInfo}
+                            </>
+                        ) : (
+                            <>
+                                전체 일정 <span className={css({ color: '#666', fontWeight: 'normal', ml: '4px' })}>{plans.length}개</span>
+                            </>
+                        )}
+                    </h2>
+                </div>
 
+                {/* 2. 컨트롤 영역 (PC 시간 토글 & 모바일 액션 버튼 그룹) */}
+                <div className={css({ 
+                    display: 'flex', flexDirection: { base: 'column', sm: 'row' }, alignItems: { base: 'flex-start', sm: 'center' },
+                    gap: '12px', w: { base: '100%', sm: 'auto' } 
+                })}>
                     {/* PC 전용 시간 표시 옵션 토글 */}
-                    <div className={css({ display: { base: 'none', sm: 'inline-flex' }, bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: 'auto' })}>
+                    <div className={css({ display: { base: 'none', sm: 'inline-flex' }, bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: 'auto', h: '42px', alignItems: 'center' })}>
                         <button
                             onClick={() => setTimeDisplayMode('local')}
-                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'local' ? 'bold' : 'normal', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#172554', whiteSpace: 'nowrap' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'local' ? '800' : '500', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#222', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             현지 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('kst')}
-                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'kst' ? 'bold' : 'normal', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#172554', whiteSpace: 'nowrap' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'kst' ? '800' : '500', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#222', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             한국 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('both')}
-                            className={css({ flex: 'none', px: '12px', py: '6px', fontSize: '12px', fontWeight: timeDisplayMode === 'both' ? 'bold' : 'normal', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#172554', whiteSpace: 'nowrap' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'both' ? '800' : '500', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#222', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             동시 표기
                         </button>
                     </div>
 
-                    {/* 모바일 전용 시간 표시 드롭다운 */}
-                    <CustomTimeDropdown timeDisplayMode={timeDisplayMode} setTimeDisplayMode={setTimeDisplayMode} />
-                </div>
-
-                {/* 2. 버튼 영역: 모바일 1줄(flex/order), PC 다단구조 */}
-                <div className={css({ 
-                    display: 'flex', flexDirection: { base: 'row', sm: 'column' }, alignItems: { base: 'center', sm: 'flex-start' },
-                    gap: '8px', w: { base: '100%', sm: 'auto' } 
-                })}>
                     <div className={css({ 
-                        display: 'flex', gap: '8px', flexShrink: 0, w: { base: 'auto', sm: '100%' },
-                        order: { base: 1, sm: -1 } 
+                        display: 'flex', gap: '8px', w: '100%', alignItems: 'center'
                     })}>
+                        {/* 모바일 전용 시간 드롭다운 (고정 너비) */}
+                        <div className={css({ display: { base: 'block', sm: 'none' }, flexShrink: 0, w: '115px' })}>
+                            <CustomTimeDropdown timeDisplayMode={timeDisplayMode} setTimeDisplayMode={setTimeDisplayMode} />
+                        </div>
+
                         <button
                             onClick={() => setIsCollaboratorModalOpen(true)}
                             className={css({
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                                 bg: 'white', color: '#222',
-                                px: { base: '0', sm: '12px' }, w: { base: '44px', sm: 'auto' }, h: '44px',
+                                px: '12px', h: '42px',
                                 borderRadius: '8px', fontWeight: '800', fontSize: '13px',
                                 border: '1px solid #DDDDDD', whiteSpace: 'nowrap',
                                 transition: 'all 0.2s',
                                 _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' },
                                 opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
-                                flex: { base: 'none', sm: 1 }
+                                flex: 1
                             })}
                             disabled={!isOnline}
                         >
-                            <UserPlus size={16} /> <span className={css({ display: { base: 'none', sm: 'inline' } })}>동행자</span>
+                            <UserPlus size={16} /> <span>동행자</span>
                         </button>
                         {userRole === 'owner' && (
                             <button
@@ -299,28 +332,29 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                                     bg: 'white', color: '#222',
-                                    px: { base: '0', sm: '12px' }, w: { base: '44px', sm: 'auto' }, h: '44px',
+                                    px: '12px', h: '42px',
                                     borderRadius: '8px', fontWeight: '800', fontSize: '13px',
                                     border: '1px solid #DDDDDD', whiteSpace: 'nowrap',
                                     transition: 'all 0.2s',
                                     _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' },
                                     opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
-                                    flex: { base: 'none', sm: 1 }
+                                    flex: 1
                                 })}
                                 disabled={!isOnline}
                             >
-                                <Share2 size={16} /> <span className={css({ display: { base: 'none', sm: 'inline' } })}>공유</span>
+                                <Share2 size={16} /> <span>공유</span>
                             </button>
                         )}
+
                     </div>
-                    {/* PC 전용 일정 추가 버튼 (모바일에서는 Sticky CTA로 대체됨) */}
+                    
+                    {/* PC 전용 일정 추가 버튼 */}
                     {(userRole === 'owner' || userRole === 'editor') && isOnline && (
                         <button
                             onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                             className={css({
                                 display: { base: 'none', sm: 'flex' },
-                                order: { base: -1, sm: 1 },
-                                flex: { base: 1, sm: 'none' }, w: { base: 'auto', sm: '100%' }, h: '44px',
+                                w: '100%', h: '42px',
                                 alignItems: 'center', justifyContent: 'center', gap: '6px',
                                 bg: '#222', color: 'white', px: '16px', borderRadius: '8px',
                                 fontWeight: '800', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { analytics } from '@/services/AnalyticsService'
 import { css } from 'styled-system/css'
-import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle } from 'lucide-react'
+import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle, LayoutGrid, List } from 'lucide-react'
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
@@ -27,21 +27,22 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '16px',
-                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#555', cursor: 'pointer',
-                    transition: 'all 0.2s', _hover: { borderColor: '#999' }
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px',
+                    px: '16px', h: '42px', fontSize: '13px', fontWeight: '800', color: '#222', cursor: 'pointer',
+                    transition: 'all 0.2s', _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                    _active: { transform: 'scale(0.98)' }
                 })}
             >
                 {selected.icon}
                 <span className={css({ display: { base: 'none', sm: 'inline' } })}>{selected.label}</span>
-                <ChevronDown size={14} />
+                <ChevronDown size={14} className={css({ ml: '2px', color: '#888' })} />
             </button>
             {isOpen && (
                 <>
                     <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
                     <div className={css({
-                        position: 'absolute', top: '100%', right: 0, mt: '4px',
+                        position: 'absolute', top: '100%', left: 0, mt: '4px',
                         bg: 'white', border: '1px solid #eee', borderRadius: '12px',
                         boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '130px',
                         overflow: 'hidden'
@@ -73,32 +74,36 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
 const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const options = [
-        { value: 'category', label: '카테고리별 보기' },
-        { value: 'template', label: '템플릿별 보기' }
+        { value: 'category', label: '카테고리별 보기', icon: <LayoutGrid size={14} /> },
+        { value: 'template', label: '템플릿별 보기', icon: <List size={14} /> }
     ];
-    const currentLabel = options.find(o => o.value === groupBy)?.label || '카테고리별 보기';
+    const selected = options.find(o => o.value === groupBy) || options[0];
 
     return (
         <div className={css({ position: 'relative' })}>
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid #3B82F6', borderRadius: '16px',
-                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#3B82F6', cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px',
+                    px: { base: '12px', sm: '16px' }, 
+                    h: '42px', 
+                    fontSize: '13px', fontWeight: '800', color: '#222', cursor: 'pointer',
+                    transition: 'all 0.2s', _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                    _active: { transform: 'scale(0.98)' }
                 })}
             >
-                {currentLabel}
-                <ChevronDown size={14} />
+                {selected.icon}
+                <span className={css({ display: { base: 'none', sm: 'inline' } })}>{selected.label}</span>
+                <ChevronDown size={14} className={css({ ml: '2px', color: '#888' })} />
             </button>
             {isOpen && (
                 <>
                     <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
                     <div className={css({
-                        position: 'absolute', top: '100%', right: 0, mt: '4px',
+                        position: 'absolute', top: '100%', left: 0, mt: '4px',
                         bg: 'white', border: '1px solid #eee', borderRadius: '12px',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '130px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '140px',
                         overflow: 'hidden'
                     })}>
                         {options.map(opt => (
@@ -106,14 +111,15 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
                                 key={opt.value}
                                 onClick={() => { setGroupBy(opt.value); setIsOpen(false); }}
                                 className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
+                                    display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
                                     bg: groupBy === opt.value ? '#EFF6FF' : 'transparent',
                                     color: groupBy === opt.value ? '#3B82F6' : '#555',
                                     fontWeight: groupBy === opt.value ? '700' : '500',
                                     border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
                                 })}
                             >
-                                {opt.label}
+                                {opt.icon}
+                                <span className={css({ flex: 1, whiteSpace: 'nowrap' })}>{opt.label}</span>
                                 {groupBy === opt.value && <Check size={14} />}
                             </button>
                         ))}
@@ -836,67 +842,101 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>
                         )}
                     </h2>
-                    
-                    <div className={css({ display: 'flex', gap: '8px' })}>
-                        {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
-                        {totalItems > 0 && <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />}
-                    </div>
                 </div>
 
                 {/* PC/모바일 분기 액션 버튼 및 필터 라인 */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
                     
-                    {/* PC 좌측: 보기 옵션 토글 */}
-                    <div className={css({ display: { base: 'none', sm: totalItems > 0 ? 'inline-flex' : 'none' }, bg: '#f1f3f4', p: '4px', borderRadius: '8px' })}>
-                        <button
-                            onClick={() => setGroupBy('category')}
-                            className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? 'bold' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
-                        >
-                            카테고리별 보기
-                        </button>
-                        <button
-                            onClick={() => setGroupBy('template')}
-                            className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? 'bold' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
-                        >
-                            템플릿별 보기
-                        </button>
+                    {/* PC 좌측: 그룹핑 + 정렬 컨트롤 그룹 */}
+                    <div className={css({ display: { base: 'none', sm: 'flex' }, alignItems: 'center', gap: '12px' })}>
+                        <div className={css({ display: totalItems > 0 ? 'inline-flex' : 'none', bg: '#f1f3f4', p: '4px', borderRadius: '8px' })}>
+                            <button
+                                onClick={() => setGroupBy('category')}
+                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? 'bold' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                            >
+                                카테고리별 보기
+                            </button>
+                            <button
+                                onClick={() => setGroupBy('template')}
+                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? 'bold' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                            >
+                                템플릿별 보기
+                            </button>
+                        </div>
+
+                        {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
                     </div>
+
                     {/* PC에서 totalItems === 0 일 때 우측 버튼들을 오른쪽으로 밀기 위한 빈 공간용 div */}
                     {totalItems === 0 && <div className={css({ display: { base: 'none', sm: 'block' } })}></div>}
 
-                    {/* 모바일/PC 액션 버튼 */}
+                    {/* 액션 및 필터 컨트롤 그룹 (주로 모바일/PC 액션) */}
                     {isOnline && (
-                        <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'nowrap' })}>
-                            {/* 항목 추가 버튼 (PC에서만 보임, 모바일은 하단 Sticky) */}
-                            <button
-                                onClick={() => setIsAdding(!isAdding)}
-                                className={css({
-                                    display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    bg: '#222', color: 'white', px: '16px', py: '10px',
-                                    borderRadius: '8px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', border: 'none',
-                                    _hover: { bg: '#000' }, whiteSpace: 'nowrap'
-                                })}
-                            >
-                                <Plus size={16} /> 항목 추가
-                            </button>
+                        <div className={css({ 
+                            display: 'flex', 
+                            flexDirection: { base: 'column', sm: 'row' },
+                            gap: '8px', 
+                            w: { base: '100%', sm: 'auto' },
+                            alignItems: { base: 'stretch', sm: 'center' }
+                        })}>
+                            {/* 모바일 전용 필터 및 액션 통합 행 (그룹핑 | 정렬 | 템플릿) */}
+                            <div className={css({ 
+                                display: { base: 'flex', sm: 'none' }, 
+                                gap: '8px',
+                                w: '100%',
+                                mb: '4px'
+                            })}>
+                                {totalItems > 0 && <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />}
+                                {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
+                                
+                                <button
+                                    onClick={() => setIsTemplateModalOpen(true)}
+                                    className={css({
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                        px: '12px', h: '42px',
+                                        bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px',
+                                        fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                                        flex: '1',
+                                        whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                        _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                                        _active: { transform: 'scale(0.98)' }
+                                    })}
+                                >
+                                    <ListTodo size={14} /> 템플릿
+                                </button>
+                            </div>
 
-                            <button
-                                onClick={() => setIsTemplateModalOpen(true)}
-                                className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                    px: '16px', py: { base: '10px', sm: '10px' },
-                                    bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px',
-                                    fontSize: '13px', fontWeight: '800', cursor: 'pointer',
-                                    w: { base: '100%', sm: 'auto' }, flex: { base: 1, sm: 'none' },
-                                    flexShrink: 0,
-                                    whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                    _hover: { bg: '#F7F7F7', borderColor: '#222' },
-                                    _active: { transform: 'scale(0.98)' }
-                                })}
-                            >
-                                <ListTodo size={15} />
-                                <span>템플릿 불러오기</span>
-                            </button>
+                            <div className={css({ display: { base: 'none', sm: 'flex' }, gap: '8px', w: { base: '100%', sm: 'auto' } })}>
+                                {/* 항목 추가 버튼 (PC에서만 보임, 모바일은 하단 Sticky) */}
+                                <button
+                                    onClick={() => setIsAdding(!isAdding)}
+                                    className={css({
+                                        display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        bg: '#222', color: 'white', px: '16px', h: '42px',
+                                        borderRadius: '8px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', border: 'none',
+                                        _hover: { bg: '#000' }, whiteSpace: 'nowrap'
+                                    })}
+                                >
+                                    <Plus size={16} /> 항목 추가
+                                </button>
+
+                                <button
+                                    onClick={() => setIsTemplateModalOpen(true)}
+                                    className={css({
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                        px: '16px', h: '42px',
+                                        bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px',
+                                        fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                                        w: { base: '100%', sm: 'auto' }, flex: { base: '1', sm: 'none' },
+                                        flexShrink: '0',
+                                        whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                        _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                                        _active: { transform: 'scale(0.98)' }
+                                    })}
+                                >
+                                    <ListTodo size={14} /> 템플릿 불러오기
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
