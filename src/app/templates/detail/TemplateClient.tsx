@@ -18,7 +18,7 @@ interface TemplateItemInput {
 
 
 
-export default function EditTemplatePage() {
+export default function EditTemplatePage({ initialData }: { initialData: any }) {
     const searchParams = useSearchParams()
     const templateId = searchParams.get('id')
 
@@ -26,10 +26,17 @@ export default function EditTemplatePage() {
     const supabase = createClient()
 
     const [loading, setLoading] = useState(false)
-    const [initialLoading, setInitialLoading] = useState(true)
+    const [initialLoading, setInitialLoading] = useState(!initialData)
 
-    const [title, setTitle] = useState('')
-    const [items, setItems] = useState<TemplateItemInput[]>([])
+    const [title, setTitle] = useState(initialData?.title || '')
+    const [items, setItems] = useState<TemplateItemInput[]>(
+        initialData?.checklist_template_items?.map((item: any) => ({
+            id: item.id,
+            item_name: item.item_name,
+            category: item.category || '기타',
+            isNew: false
+        })) || []
+    )
     const [deletedItemIds, setDeletedItemIds] = useState<string[]>([]) // 기존 항목 중 삭제된 DB ID 추적
     const { setMobileTitle } = useUIStore()
 
@@ -41,6 +48,8 @@ export default function EditTemplatePage() {
     }, [title, setMobileTitle])
 
     useEffect(() => {
+        if (initialData) return // 이미 데이터가 있으면 페칭 스킵
+
         const fetchTemplate = async () => {
             const { data, error } = await supabase
                 .from('checklist_templates')
@@ -73,7 +82,7 @@ export default function EditTemplatePage() {
         }
 
         fetchTemplate()
-    }, [templateId, supabase, router])
+    }, [templateId, supabase, router, initialData])
 
     const handleAddItem = () => {
         setItems([
