@@ -8,6 +8,7 @@ import { Plus, X, ArrowLeft, Save, Trash2, ChevronDown } from 'lucide-react'
 import Link from 'next/link'
 import { useUIStore } from '@/stores/useUIStore'
 import { CATEGORIES } from '@/constants/checklist'
+import { TemplateFormSkeleton } from '@/components/template/TemplateFormSkeleton'
 
 interface TemplateItemInput {
     id: string; // db id 혹은 로컬 임시 id
@@ -200,7 +201,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
     }
 
     if (initialLoading) {
-        return <div className={css({ p: '40px', textAlign: 'center', color: '#888' })}>템플릿 정보를 불러오고 있어요... ✈️</div>
+        return <TemplateFormSkeleton />
     }
 
     return (

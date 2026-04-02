@@ -11,7 +11,6 @@ import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
-import ChecklistSkeleton from './ChecklistSkeleton'
 
 const SortDropdown = ({ sortBy, setSortBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -123,6 +122,231 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
         </div>
     )
 }
+
+interface FilterBarProps {
+    totalItems: number;
+    isLoading: boolean;
+    participants: any[];
+    currentUser: any;
+    filterMode: string;
+    setFilterMode: (mode: string) => void;
+}
+
+const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMode, setFilterMode }: FilterBarProps) => {
+    if (!isLoading && totalItems === 0) return null;
+    
+    const [isOthersOpen, setIsOthersOpen] = useState(false);
+    const [dragY, setDragY] = useState(0);
+    const [startY, setStartY] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Scroll Lock
+    useEffect(() => {
+        if (isOthersOpen) {
+            document.body.style.overflow = 'hidden';
+            document.body.style.position = 'fixed';
+            document.body.style.width = '100%';
+        } else {
+            document.body.style.overflow = 'unset';
+            document.body.style.position = 'unset';
+            document.body.style.width = 'unset';
+        }
+        return () => {
+            document.body.style.overflow = 'unset';
+            document.body.style.position = 'unset';
+            document.body.style.width = 'unset';
+        };
+    }, [isOthersOpen]);
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        setStartY(e.touches[0].clientY);
+        setIsDragging(true);
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!isDragging) return;
+        const currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+        if (deltaY > 0) {
+            setDragY(deltaY);
+        }
+    };
+
+    const handleTouchEnd = () => {
+        if (dragY > 100) {
+            setIsOthersOpen(false);
+        }
+        setIsDragging(false);
+        setDragY(0);
+    };
+
+    const otherParticipants = participants.filter(p => p.user_id !== currentUser?.id);
+    const selectedOther = otherParticipants.find(p => p.user_id === filterMode);
+
+    return (
+        <div className={css({ 
+            display: 'flex', gap: '8px', alignItems: 'center', mb: '16px', px: { base: '20px', sm: 0 },
+            position: 'relative',
+            overflowX: { base: 'auto', sm: 'visible' },
+            scrollbarWidth: 'none',
+            WebkitOverflowScrolling: 'touch',
+            '&::-webkit-scrollbar': { display: 'none' }
+        })}>
+            {/* 1. 전체 */}
+            <button
+                onClick={() => { setFilterMode('all'); setIsOthersOpen(false); }}
+                className={css({
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    px: '14px', py: '8px', borderRadius: '20px',
+                    fontSize: '13px', fontWeight: '800',
+                    flexShrink: 0,
+                    bg: filterMode === 'all' ? '#222' : '#F1F3F4',
+                    color: filterMode === 'all' ? 'white' : '#666',
+                    border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                })}
+            >
+                <ListTodo size={14} /> 전체
+            </button>
+
+            {/* 2. 나 */}
+            <button
+                onClick={() => { setFilterMode('me'); setIsOthersOpen(false); }}
+                className={css({
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    px: '14px', py: '8px', borderRadius: '20px',
+                    fontSize: '13px', fontWeight: '800',
+                    flexShrink: 0,
+                    bg: filterMode === 'me' ? '#3B82F6' : '#F1F3F4',
+                    color: filterMode === 'me' ? 'white' : '#666',
+                    border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                })}
+            >
+                <User size={14} /> 나
+            </button>
+
+            {/* 3. 다른 사람들 (드롭다운/바텀시트) */}
+            {otherParticipants.length > 0 && (
+                <div className={css({ position: { base: 'static', sm: 'relative' }, flexShrink: 0 })}>
+                    <button
+                        onClick={() => setIsOthersOpen(!isOthersOpen)}
+                        className={css({
+                            display: 'flex', alignItems: 'center', gap: '4px',
+                            px: '14px', py: '8px', borderRadius: '20px',
+                            fontSize: '13px', fontWeight: '800',
+                            bg: selectedOther ? '#3B82F6' : '#F1F3F4',
+                            color: selectedOther ? 'white' : '#666',
+                            border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                        })}
+                    >
+                        <Users size={14} />
+                        <span className={css({ whiteSpace: 'nowrap' })}>
+                            {selectedOther ? (selectedOther.profiles?.nickname || selectedOther.email?.split('@')[0] || '동행자') : '동행자'}
+                        </span>
+                        <ChevronDown size={14} className={css({ transform: isOthersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' })} />
+                    </button>
+
+                    {isOthersOpen && (
+                        <>
+                            {/* Backdrop */}
+                            <div 
+                                className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' })} 
+                                onClick={() => setIsOthersOpen(false)} 
+                            />
+                            
+                            {/* Content Container */}
+                            <div 
+                                onTouchStart={handleTouchStart}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
+                                className={css({
+                                    position: 'fixed', 
+                                    bottom: { base: 0, sm: 'auto' }, 
+                                    top: { base: 'auto', sm: '50%' },
+                                    left: { base: 0, sm: '50%' },
+                                    right: { base: 0, sm: 'auto' },
+                                    transform: { 
+                                        base: `translateY(${dragY}px)`, 
+                                        sm: 'translate(-50%, -50%)' 
+                                    },
+                                    transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                                    
+                                    w: { base: '100%', sm: '320px' },
+                                    bg: 'white', 
+                                    borderRadius: { base: '24px 24px 0 0', sm: '16px' },
+                                    boxShadow: '0 -4px 30px rgba(0,0,0,0.2)', 
+                                    zIndex: 101,
+                                    overflow: 'hidden',
+                                    animation: { base: 'slideUp 0.3s ease-out', sm: 'fadeIn 0.2s ease-out' }
+                                })}
+                            >
+                                {/* Handle Area */}
+                                <div className={css({ 
+                                    display: { base: 'flex', sm: 'none' }, 
+                                    flexDirection: 'column', 
+                                    alignItems: 'center', 
+                                    pt: '12px', pb: '8px', 
+                                    cursor: 'ns-resize',
+                                    touchAction: 'none' 
+                                })}>
+                                    <div className={css({ w: '40px', h: '5px', bg: '#E0E0E0', borderRadius: '10px' })} />
+                                </div>
+
+                                <div className={css({ px: '24px', py: '18px', borderBottom: '1px solid #F0F0F0' })}>
+                                    <h3 className={css({ fontSize: '17px', fontWeight: '800', color: '#222' })}>동행자 선택</h3>
+                                </div>
+                                
+                                <div className={css({ maxHeight: { base: '60vh', sm: '400px' }, overflowY: 'auto' })}>
+                                    {otherParticipants.map(p => {
+                                        const label = p.profiles?.nickname || p.email?.split('@')[0] || '동행자';
+                                        return (
+                                            <button
+                                                key={p.user_id}
+                                                onClick={() => { setFilterMode(p.user_id); setIsOthersOpen(false); }}
+                                                className={css({
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', 
+                                                    px: '24px', py: { base: '18px', sm: '14px' }, fontSize: '15px',
+                                                    bg: filterMode === p.user_id ? '#F0F7FF' : 'transparent',
+                                                    color: filterMode === p.user_id ? '#3B82F6' : '#444',
+                                                    fontWeight: filterMode === p.user_id ? '700' : '500',
+                                                    border: 'none', cursor: 'pointer', _hover: { bg: '#F8F9FA' },
+                                                    transition: 'all 0.15s'
+                                                })}
+                                            >
+                                                <span className={css({ display: 'flex', alignItems: 'center', gap: '10px' })}>
+                                                    <div className={css({ w: '8px', h: '8px', borderRadius: '50%', bg: filterMode === p.user_id ? '#3B82F6' : 'transparent', border: filterMode === p.user_id ? 'none' : '1px solid #DDD' })} />
+                                                    {label}
+                                                </span>
+                                                {filterMode === p.user_id && <Check size={18} />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                
+                                <div className={css({ 
+                                    p: '16px', 
+                                    pb: { base: 'calc(16px + env(safe-area-inset-bottom))', sm: '16px' },
+                                    bg: '#F8F9FA' 
+                                })}>
+                                    <button 
+                                        onClick={() => setIsOthersOpen(false)}
+                                        className={css({ 
+                                            w: '100%', py: '14px', borderRadius: '12px',
+                                            fontSize: '15px', color: '#666', fontWeight: '700', 
+                                            bg: 'white', border: '1px solid #DDD',
+                                            _active: { transform: 'scale(0.98)', bg: '#F0F0F0' } 
+                                        })}
+                                    >
+                                        닫기
+                                    </button>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default function ChecklistPage({ isActive = true }: { isActive?: boolean }) {
     const searchParams = useSearchParams()
@@ -721,103 +945,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         return acc
     }, {})
 
-    const FilterBar = () => {
-        if (totalItems === 0) return null;
-        const [isOthersOpen, setIsOthersOpen] = useState(false);
 
-        const otherParticipants = participants.filter(p => p.user_id !== currentUser?.id);
-        const selectedOther = otherParticipants.find(p => p.user_id === filterMode);
-
-        return (
-            <div className={css({ 
-                display: 'flex', gap: '8px', alignItems: 'center', mb: '16px', px: { base: '20px', sm: 0 },
-                position: 'relative'
-            })}>
-                {/* 1. 전체 */}
-                <button
-                    onClick={() => { setFilterMode('all'); setIsOthersOpen(false); }}
-                    className={css({
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        px: '16px', py: '8px', borderRadius: '20px',
-                        fontSize: '14px', fontWeight: '800',
-                        bg: filterMode === 'all' ? '#222' : '#F1F3F4',
-                        color: filterMode === 'all' ? 'white' : '#666',
-                        border: 'none', cursor: 'pointer', transition: 'all 0.2s'
-                    })}
-                >
-                    <ListTodo size={14} /> 전체
-                </button>
-
-                {/* 2. 나 */}
-                <button
-                    onClick={() => { setFilterMode('me'); setIsOthersOpen(false); }}
-                    className={css({
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        px: '16px', py: '8px', borderRadius: '20px',
-                        fontSize: '14px', fontWeight: '800',
-                        bg: filterMode === 'me' ? '#3B82F6' : '#F1F3F4',
-                        color: filterMode === 'me' ? 'white' : '#666',
-                        border: 'none', cursor: 'pointer', transition: 'all 0.2s'
-                    })}
-                >
-                    <User size={14} /> 나
-                </button>
-
-                {/* 3. 다른 사람들 (드롭다운) */}
-                {otherParticipants.length > 0 && (
-                    <div className={css({ position: 'relative' })}>
-                        <button
-                            onClick={() => setIsOthersOpen(!isOthersOpen)}
-                            className={css({
-                                display: 'flex', alignItems: 'center', gap: '6px',
-                                px: '16px', py: '8px', borderRadius: '20px',
-                                fontSize: '14px', fontWeight: '800',
-                                bg: selectedOther ? '#3B82F6' : '#F1F3F4',
-                                color: selectedOther ? 'white' : '#666',
-                                border: 'none', cursor: 'pointer', transition: 'all 0.2s'
-                            })}
-                        >
-                            <Users size={14} />
-                            {selectedOther ? (selectedOther.profiles?.nickname || selectedOther.email?.split('@')[0] || '동행자') : '동행자'}
-                            <ChevronDown size={14} className={css({ transform: isOthersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' })} />
-                        </button>
-
-                        {isOthersOpen && (
-                            <>
-                                <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOthersOpen(false)} />
-                                <div className={css({
-                                    position: 'absolute', top: '100%', left: 0, mt: '4px',
-                                    bg: 'white', border: '1px solid #eee', borderRadius: '12px',
-                                    boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '140px',
-                                    overflow: 'hidden'
-                                })}>
-                                    {otherParticipants.map(p => {
-                                        const label = p.profiles?.nickname || p.email?.split('@')[0] || '동행자';
-                                        return (
-                                            <button
-                                                key={p.user_id}
-                                                onClick={() => { setFilterMode(p.user_id); setIsOthersOpen(false); }}
-                                                className={css({
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
-                                                    bg: filterMode === p.user_id ? '#EFF6FF' : 'transparent',
-                                                    color: filterMode === p.user_id ? '#3B82F6' : '#555',
-                                                    fontWeight: filterMode === p.user_id ? '700' : '500',
-                                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
-                                                })}
-                                            >
-                                                {label}
-                                                {filterMode === p.user_id && <Check size={14} />}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </>
-                        )}
-                    </div>
-                )}
-            </div>
-        );
-    };
 
     return (
         <div className={css({ bg: 'white', p: { base: '0', sm: '24px' }, borderRadius: { base: 0, sm: '16px' }, boxShadow: { base: 'none', sm: '0 4px 12px rgba(0,0,0,0.03)' }, pb: { base: '80px', sm: '24px' } })}>
@@ -911,7 +1039,14 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 </div>
             )}
 
-            <FilterBar />
+            <FilterBar 
+                totalItems={totalItems}
+                isLoading={isLoading}
+                participants={members}
+                currentUser={currentUser}
+                filterMode={filterMode}
+                setFilterMode={setFilterMode}
+            />
 
             {isAdding && (
                 <form onSubmit={addItem} className={css({ mb: '24px', px: { base: '20px', sm: 0 } })}>
@@ -1007,7 +1142,10 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             )}
 
             {isLoading ? (
-                <ChecklistSkeleton />
+                <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
+                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', animation: 'pulse 1.5s infinite' })}></div>
+                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', mt: '12px', animation: 'pulse 1.5s infinite' })}></div>
+                </div>
             ) : totalItems === 0 && !isAdding ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
                         <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>
