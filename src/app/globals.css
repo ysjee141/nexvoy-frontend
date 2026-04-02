@@ -212,3 +212,9 @@ button:disabled {
         background-position: -200% 50%;
     }
 }
+
+/* Google Maps Autocomplete dropdown (Places API) 
+   모달(2000)보다 위에 오도록 z-index 3000 지정 */
+.pac-container {
+    z-index: 3000 !important;
+}

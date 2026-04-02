@@ -98,7 +98,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
 
     return (
         <div className={css({
-            position: 'fixed', inset: 0, bg: 'rgba(0,0,0,0.6)', zIndex: 100,
+            position: 'fixed', inset: 0, bg: 'rgba(0,0,0,0.6)', zIndex: 2000,
             display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px',
             backdropFilter: 'blur(4px)'
         })}>

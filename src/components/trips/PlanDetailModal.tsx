@@ -92,7 +92,7 @@ export default function PlanDetailModal({
     return (
         <div
             className={css({
-                position: 'fixed', inset: 0, zIndex: 300,
+                position: 'fixed', inset: 0, zIndex: 2000,
                 bg: 'rgba(0,0,0,0.45)',
                 display: 'flex',
                 alignItems: { base: 'flex-end', sm: 'center' },

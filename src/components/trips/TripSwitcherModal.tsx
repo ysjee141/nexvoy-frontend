@@ -197,7 +197,7 @@ export default function TripSwitcherModal() {
             right: 0,
             top: 0,
             backgroundColor: 'rgba(0,0,0,0.5)',
-            zIndex: 1001,
+            zIndex: 2000,
             display: 'flex',
             alignItems: 'flex-end',
             justifyContent: 'center',
