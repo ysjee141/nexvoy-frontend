@@ -5,12 +5,69 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { analytics } from '@/services/AnalyticsService'
 import { css } from 'styled-system/css'
-import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X } from 'lucide-react'
+import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle } from 'lucide-react'
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
+
+const SortDropdown = ({ sortBy, setSortBy }: any) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const options = [
+        { value: 'status', label: '상태순', icon: <CheckCircle size={14} /> },
+        { value: 'alphabetical', label: '가나다순', icon: <SortAsc size={14} /> },
+        { value: 'latest', label: '최신순', icon: <Clock size={14} /> }
+    ];
+    const selected = options.find(o => o.value === sortBy) || options[0];
+
+    return (
+        <div className={css({ position: 'relative' })}>
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                className={css({
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '16px',
+                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#555', cursor: 'pointer',
+                    transition: 'all 0.2s', _hover: { borderColor: '#999' }
+                })}
+            >
+                {selected.icon}
+                <span className={css({ display: { base: 'none', sm: 'inline' } })}>{selected.label}</span>
+                <ChevronDown size={14} />
+            </button>
+            {isOpen && (
+                <>
+                    <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
+                    <div className={css({
+                        position: 'absolute', top: '100%', right: 0, mt: '4px',
+                        bg: 'white', border: '1px solid #eee', borderRadius: '12px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '130px',
+                        overflow: 'hidden'
+                    })}>
+                        {options.map(opt => (
+                            <button
+                                key={opt.value}
+                                onClick={() => { setSortBy(opt.value); setIsOpen(false); }}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
+                                    bg: sortBy === opt.value ? '#EFF6FF' : 'transparent',
+                                    color: sortBy === opt.value ? '#3B82F6' : '#555',
+                                    fontWeight: sortBy === opt.value ? '700' : '500',
+                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
+                                })}
+                            >
+                                {opt.icon}
+                                <span className={css({ flex: 1, whiteSpace: 'nowrap' })}>{opt.label}</span>
+                                {sortBy === opt.value && <Check size={14} />}
+                            </button>
+                        ))}
+                    </div>
+                </>
+            )}
+        </div>
+    )
+}
 
 const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -21,7 +78,7 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
     const currentLabel = options.find(o => o.value === groupBy)?.label || '카테고리별 보기';
 
     return (
-        <div className={css({ position: 'relative', display: { base: 'block', sm: 'none' } })}>
+        <div className={css({ position: 'relative' })}>
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
@@ -88,6 +145,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const [newItemAssignmentType, setNewItemAssignmentType] = useState<'anyone' | 'specific' | 'everyone'>('anyone')
     const [newItemAssignedUserId, setNewItemAssignedUserId] = useState<string>('')
     const [editingItem, setEditingItem] = useState<any | null>(null)
+    const [filterMode, setFilterMode] = useState<'all' | 'me' | string>('all')
+    const [sortBy, setSortBy] = useState<'status' | 'alphabetical' | 'latest'>('status')
 
 
 
@@ -588,12 +647,176 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const checkedItems = items.filter((item: any) => getItemStatus(item).is_checked).length
     const progressPercent = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0
 
-    const templateGroups = items.reduce((acc: Record<string, any[]>, item) => {
+    // 필링 로직 적용
+    const filteredItems = items.filter(item => {
+        if (filterMode === 'all') return true;
+        
+        const targetUserId = filterMode === 'me' ? currentUser?.id : filterMode;
+        
+        // 1. 담당자가 지정된 경우 (specific)
+        if (item.assignment_type === 'specific') {
+            return item.assigned_user_id === targetUserId;
+        }
+        
+        // 2. 공통 준비물 (anyone) - '전체' 보기가 아닐 때는 제외 (사용자 요청)
+        if (item.assignment_type === 'anyone') {
+            return false;
+        }
+        
+        if (item.assignment_type === 'everyone') {
+            return true;
+        }
+        
+        return true;
+    });
+
+    // 필터링된 항목 정렬
+    const sortedFilteredItems = [...filteredItems].sort((a, b) => {
+        // 1. 최신순 처리 (가장 뒤에 추가된 항목이 위로)
+        if (sortBy === 'latest') {
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        }
+
+        const getStatus = (item: any) => {
+            const s = getItemStatus(item);
+            if (filterMode === 'all') return s.is_checked;
+            const targetUserId = filterMode === 'me' ? currentUser?.id : filterMode;
+            if (item.assignment_type === 'everyone') {
+                return userChecks.some(c => c.item_id === item.id && c.user_id === targetUserId);
+            }
+            return item.is_checked;
+        };
+
+        const isDoneA = getStatus(a);
+        const isDoneB = getStatus(b);
+
+        // 2. 상태순 정렬 (미완료 항목 우선)
+        if (sortBy === 'status') {
+            if (isDoneA !== isDoneB) return isDoneA ? 1 : -1;
+        }
+
+        // 3. 공통: 가나다순 정렬 (상태순일 때도 2차 정렬로 사용)
+        return (a.item_name || '').localeCompare(b.item_name || '', 'ko');
+    });
+
+    const filteredTotalItems = sortedFilteredItems.length
+    const filteredCheckedItems = sortedFilteredItems.filter((item: any) => {
+        const status = getItemStatus(item);
+        if (filterMode === 'all') return status.is_checked;
+        
+        // 개인/멤버 필터에서는 해당 인원의 체크 여부를 기준으로 진척도 계산
+        const targetUserId = filterMode === 'me' ? currentUser?.id : filterMode;
+        if (item.assignment_type === 'everyone') {
+            return userChecks.some(c => c.item_id === item.id && c.user_id === targetUserId);
+        }
+        return item.is_checked;
+    }).length
+    const filteredProgressPercent = filteredTotalItems > 0 ? Math.round((filteredCheckedItems / filteredTotalItems) * 100) : 0
+
+    const templateGroups = sortedFilteredItems.reduce((acc: Record<string, any[]>, item) => {
         const grp = item.source_template_name || '직접 추가함'
         if (!acc[grp]) acc[grp] = []
         acc[grp].push(item)
         return acc
     }, {})
+
+    const FilterBar = () => {
+        if (totalItems === 0) return null;
+        const [isOthersOpen, setIsOthersOpen] = useState(false);
+
+        const otherParticipants = participants.filter(p => p.user_id !== currentUser?.id);
+        const selectedOther = otherParticipants.find(p => p.user_id === filterMode);
+
+        return (
+            <div className={css({ 
+                display: 'flex', gap: '8px', alignItems: 'center', mb: '16px', px: { base: '20px', sm: 0 },
+                position: 'relative'
+            })}>
+                {/* 1. 전체 */}
+                <button
+                    onClick={() => { setFilterMode('all'); setIsOthersOpen(false); }}
+                    className={css({
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        px: '16px', py: '8px', borderRadius: '20px',
+                        fontSize: '14px', fontWeight: '800',
+                        bg: filterMode === 'all' ? '#222' : '#F1F3F4',
+                        color: filterMode === 'all' ? 'white' : '#666',
+                        border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                    })}
+                >
+                    <ListTodo size={14} /> 전체
+                </button>
+
+                {/* 2. 나 */}
+                <button
+                    onClick={() => { setFilterMode('me'); setIsOthersOpen(false); }}
+                    className={css({
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        px: '16px', py: '8px', borderRadius: '20px',
+                        fontSize: '14px', fontWeight: '800',
+                        bg: filterMode === 'me' ? '#3B82F6' : '#F1F3F4',
+                        color: filterMode === 'me' ? 'white' : '#666',
+                        border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                    })}
+                >
+                    <User size={14} /> 나
+                </button>
+
+                {/* 3. 다른 사람들 (드롭다운) */}
+                {otherParticipants.length > 0 && (
+                    <div className={css({ position: 'relative' })}>
+                        <button
+                            onClick={() => setIsOthersOpen(!isOthersOpen)}
+                            className={css({
+                                display: 'flex', alignItems: 'center', gap: '6px',
+                                px: '16px', py: '8px', borderRadius: '20px',
+                                fontSize: '14px', fontWeight: '800',
+                                bg: selectedOther ? '#3B82F6' : '#F1F3F4',
+                                color: selectedOther ? 'white' : '#666',
+                                border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                            })}
+                        >
+                            <Users size={14} />
+                            {selectedOther ? (selectedOther.profiles?.nickname || selectedOther.email?.split('@')[0] || '동행자') : '동행자'}
+                            <ChevronDown size={14} className={css({ transform: isOthersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' })} />
+                        </button>
+
+                        {isOthersOpen && (
+                            <>
+                                <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOthersOpen(false)} />
+                                <div className={css({
+                                    position: 'absolute', top: '100%', left: 0, mt: '4px',
+                                    bg: 'white', border: '1px solid #eee', borderRadius: '12px',
+                                    boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '140px',
+                                    overflow: 'hidden'
+                                })}>
+                                    {otherParticipants.map(p => {
+                                        const label = p.profiles?.nickname || p.email?.split('@')[0] || '동행자';
+                                        return (
+                                            <button
+                                                key={p.user_id}
+                                                onClick={() => { setFilterMode(p.user_id); setIsOthersOpen(false); }}
+                                                className={css({
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
+                                                    bg: filterMode === p.user_id ? '#EFF6FF' : 'transparent',
+                                                    color: filterMode === p.user_id ? '#3B82F6' : '#555',
+                                                    fontWeight: filterMode === p.user_id ? '700' : '500',
+                                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
+                                                })}
+                                            >
+                                                {label}
+                                                {filterMode === p.user_id && <Check size={14} />}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </>
+                        )}
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className={css({ bg: 'white', p: { base: '0', sm: '24px' }, borderRadius: { base: 0, sm: '16px' }, boxShadow: { base: 'none', sm: '0 4px 12px rgba(0,0,0,0.03)' }, pb: { base: '80px', sm: '24px' } })}>
@@ -604,13 +827,19 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 {/* 상단 라인: 타이틀 + 모바일 필터(드롭다운) */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                     <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', color: '#222' })}>
-                        준비물 챙기기 {totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>}
+                        {filterMode === 'all' ? '전체' : (filterMode === 'me' ? '내' : (participants.find(p => p.user_id === filterMode)?.profiles?.nickname || participants.find(p => p.user_id === filterMode)?.email?.split('@')[0] || '동행자'))} 준비물 {filterMode !== 'all' ? (
+                            <span className={css({ color: '#3B82F6', ml: '8px' })}>
+                                {filteredProgressPercent}% <span className={css({ fontSize: '11px', fontWeight: 'normal', color: '#888' })}>(전체 {progressPercent}%)</span>
+                            </span>
+                        ) : (
+                            totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>
+                        )}
                     </h2>
                     
-                    {/* 모바일 전용 뷰 드롭다운 */}
-                    {totalItems > 0 && (
-                        <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />
-                    )}
+                    <div className={css({ display: 'flex', gap: '8px' })}>
+                        {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
+                        {totalItems > 0 && <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />}
+                    </div>
                 </div>
 
                 {/* PC/모바일 분기 액션 버튼 및 필터 라인 */}
@@ -675,11 +904,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             {totalItems > 0 && (
                 <div className={css({ w: '100%', bg: '#F7F7F7', h: '6px', borderRadius: '3px', mb: '24px', overflow: 'hidden', px: { base: '20px', sm: 0 } })}>
                     <div
-                        className={css({ h: '100%', bg: '#222', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
-                        style={{ width: `${progressPercent}%` }}
+                        className={css({ h: '100%', bg: filterMode !== 'all' ? '#3B82F6' : '#222', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                        style={{ width: `${filterMode !== 'all' ? filteredProgressPercent : progressPercent}%` }}
                     />
                 </div>
             )}
+
+            <FilterBar />
 
             {isAdding && (
                 <form onSubmit={addItem} className={css({ mb: '24px', px: { base: '20px', sm: 0 } })}>
@@ -788,11 +1019,26 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             <p className={css({ fontSize: '15px', color: '#666', lineHeight: '1.6' })}>항목을 추가하거나 템플릿을 불러와서 짐 싸기를 시작해 보세요!</p>
                         )}
                 </div>
+            ) : totalItems > 0 && sortedFilteredItems.length === 0 ? (
+                <div className={css({ textAlign: 'center', py: '60px', color: '#666' })}>
+                        <p className={css({ fontSize: '16px', fontWeight: '800', mb: '8px', color: '#222' })}>
+                            해당하는 준비물이 없어요 🕵️‍♂️
+                        </p>
+                        <p className={css({ fontSize: '14px', color: '#888' })}>
+                            {filterMode === 'me' ? '내가 챙길 짐이 없습니다.' : '다른 필터를 선택해 보세요.'}
+                        </p>
+                        <button 
+                            onClick={() => setFilterMode('all')}
+                            className={css({ mt: '20px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '12px', px: '20px', py: '10px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', _hover: { bg: '#F7F7F7' }, transition: 'all 0.2s' })}
+                        >
+                            전체 준비물 보기
+                        </button>
+                </div>
             ) : (
                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '24px' })}>
                     {groupBy === 'category' ? (
                         CATEGORIES.map((cat: any) => {
-                            const categoryItems = items.filter((item: any) => item.category === cat || (!item.category && cat === '기타'))
+                            const categoryItems = sortedFilteredItems.filter((item: any) => item.category === cat || (!item.category && cat === '기타'))
                             if (categoryItems.length === 0) return null
 
                             return (
