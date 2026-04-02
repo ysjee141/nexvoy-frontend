@@ -17,6 +17,7 @@ import {
 import NicknamePrompt from '@/components/profile/NicknamePrompt'
 import { isBetaTester } from '@/constants/testers'
 import TesterNoticeModal from '@/components/layout/TesterNoticeModal'
+import Skeleton from '@/components/ui/Skeleton'
 
 // ── 주요 기능 카드 (Guide에서 이식) ──
 const FEATURES = [
@@ -604,7 +605,7 @@ export default function HomeClient() {
           loading && ongoing.length === 0 ? (
             <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: '16px' })}>
               {[1, 2, 3, 4].map(i => (
-                <div key={i} className={css({ h: '180px', bg: '#f5f5f5', borderRadius: '16px', animation: 'pulse 1.5s infinite' })} />
+                <Skeleton key={i} height="180px" borderRadius="16px" />
               ))}
             </div>
           ) : (

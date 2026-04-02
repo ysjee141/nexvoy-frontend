@@ -6,6 +6,8 @@ import { css } from 'styled-system/css'
 import { ChevronLeft, CalendarDays, MapPin, Sparkles, TrendingUp, Clock } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import Skeleton from '@/components/ui/Skeleton'
+import CommonListSkeleton from '@/components/common/CommonListSkeleton'
 
 interface Trip {
     id: string
@@ -51,11 +53,9 @@ export default function TravelLogPage() {
                     const start = new Date(t.start_date)
                     const end = new Date(t.end_date)
                     
-                    // 일수 계산 (시작/종료일 포함)
                     const diffTime = end.getTime() - start.getTime()
                     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
                     
-                    // 완료된 여행 기준 통계
                     if (end < today) {
                         totalDays += diffDays
                         completedCount++
@@ -84,8 +84,14 @@ export default function TravelLogPage() {
     }, [supabase])
 
     if (loading) return (
-        <div className={css({ minH: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
-            <div className={css({ animation: 'pulse 1.5s infinite', fontSize: '14px', color: '#888' })}>추억을 불러오는 중...</div>
+        <div className={css({ maxW: '800px', mx: 'auto', p: '24px' })}>
+            <Skeleton width="150px" height="24px" className={css({ mb: '32px' })} />
+            <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', mb: '40px' })}>
+                <Skeleton height="100px" borderRadius="20px" />
+                <Skeleton height="100px" borderRadius="20px" />
+            </div>
+            <Skeleton width="120px" height="20px" className={css({ mb: '16px' })} />
+            <CommonListSkeleton count={3} height="80px" gap="12px" />
         </div>
     )
 

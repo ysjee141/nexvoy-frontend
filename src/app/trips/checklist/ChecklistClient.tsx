@@ -11,6 +11,7 @@ import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
+import ChecklistSkeleton from './ChecklistSkeleton'
 
 const SortDropdown = ({ sortBy, setSortBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -1006,10 +1007,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             )}
 
             {isLoading ? (
-                <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
-                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', animation: 'pulse 1.5s infinite' })}></div>
-                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', mt: '12px', animation: 'pulse 1.5s infinite' })}></div>
-                </div>
+                <ChecklistSkeleton />
             ) : totalItems === 0 && !isAdding ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
                         <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>
