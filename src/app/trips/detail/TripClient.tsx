@@ -13,6 +13,7 @@ import PlanList from '@/components/trips/PlanList'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CacheUtil } from '@/utils/cache'
 import { NotificationService } from '@/services/NotificationService'
+import TripDetailSkeleton from './TripDetailSkeleton'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const options = [
@@ -334,10 +335,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
             </div>
 
             {isLoading ? (
-                <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
-                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', animation: 'pulse 1.5s infinite' })}></div>
-                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', mt: '12px', animation: 'pulse 1.5s infinite' })}></div>
-                </div>
+                <TripDetailSkeleton />
             ) : (!plans || plans.length === 0) ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
                     <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>아직 등록된 여정이 없어요. 🗺️</p>

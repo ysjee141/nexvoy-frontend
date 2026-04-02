@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { Plus, ListTodo } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Skeleton from '@/components/ui/Skeleton'
+import CommonListSkeleton from '@/components/common/CommonListSkeleton'
 
 export default function TemplatesPage() {
     const supabase = createClient()
@@ -39,7 +41,13 @@ export default function TemplatesPage() {
     }, [supabase, router])
 
     if (loading) {
-        return <div className={css({ w: '100%', py: '80px', textAlign: 'center', color: '#888' })}>템플릿 불러오는 중...</div>
+        return (
+            <div className={css({ w: '100%', py: '40px' })}>
+                <Skeleton width="250px" height="32px" className={css({ mb: '12px' })} />
+                <Skeleton width="350px" height="18px" className={css({ mb: '48px' })} />
+                <CommonListSkeleton count={3} height="120px" gap="16px" />
+            </div>
+        )
     }
 
     return (

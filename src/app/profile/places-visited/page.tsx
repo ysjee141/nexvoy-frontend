@@ -5,6 +5,8 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { ChevronLeft, MapPin, Footprints, Heart, Search, Sparkles } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Skeleton from '@/components/ui/Skeleton'
+import CommonListSkeleton from '@/components/common/CommonListSkeleton'
 
 interface TripInfo {
     id: string
@@ -143,8 +145,11 @@ export default function PlacesVisitedPage() {
     )
 
     if (loading) return (
-        <div className={css({ minH: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
-            <div className={css({ animation: 'pulse 1.5s infinite', fontSize: '14px', color: '#888' })}>발자취를 정리하는 중...</div>
+        <div className={css({ maxW: '800px', mx: 'auto', p: '24px' })}>
+            <Skeleton width="180px" height="28px" className={css({ mb: '16px' })} />
+            <Skeleton width="100%" height="50px" borderRadius="12px" className={css({ mb: '40px' })} />
+            <Skeleton width="120px" height="20px" className={css({ mb: '16px' })} />
+            <CommonListSkeleton count={4} height="70px" gap="12px" />
         </div>
     )
 
