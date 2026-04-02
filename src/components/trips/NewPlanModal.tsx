@@ -286,7 +286,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
             className={css({
                 position: 'fixed',
                 inset: 0,
-                zIndex: 100,
+                zIndex: 2000,
                 backgroundColor: { base: 'white', sm: 'rgba(0,0,0,0.4)' },
                 display: 'flex',
                 alignItems: { base: 'flex-start', sm: 'center' },

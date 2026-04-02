@@ -114,7 +114,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
     return (
         <div className={css({
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            bg: 'rgba(0,0,0,0.5)', zIndex: 1000,
+            bg: 'rgba(0,0,0,0.5)', zIndex: 2000,
             display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px'
         })}>
             <div className={css({

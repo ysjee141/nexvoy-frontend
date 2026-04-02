@@ -23,6 +23,8 @@ const PAGE_TITLES: Record<string, string> = {
     '/trips/checklist': '준비물 체크리스트',
     '/login': '로그인',
     '/signup': '회원가입',
+    '/profile/travel-log': '나의 여정 기록',
+    '/profile/places-visited': '내가 머문 발자취',
     '/profile/withdrawal': '회원 탈퇴',
     '/profile/licenses': '오픈 소스 라이선스'
 }
@@ -32,7 +34,7 @@ export default function Navbar() {
     const pathname = usePathname() || '/'
     const normalizedPath = pathname.replace(/\/$/, '') || '/'
     const supabase = createClient()
-    const { mobileTitle, setIsTripSwitcherOpen } = useUIStore()
+    const { mobileTitle, setMobileTitle, setIsTripSwitcherOpen } = useUIStore()
     const isRootPage = normalizedPath === '/'
     const isTripDetailPage = normalizedPath === '/trips/detail'
     const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || PAGE_TITLES[pathname] || '온여정'
@@ -71,6 +73,11 @@ export default function Navbar() {
 
         return () => subscription.unsubscribe()
     }, [supabase])
+
+    // 페이지 이동 시 모바일 타이틀 리셋
+    useEffect(() => {
+        setMobileTitle(null)
+    }, [pathname, setMobileTitle])
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
