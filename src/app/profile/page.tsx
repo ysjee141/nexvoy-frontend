@@ -7,9 +7,11 @@ import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircl
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import TermsModal from '../signup/TermsModal'
+import ProfileSkeleton from './ProfileSkeleton'
 
 function ProfileContent() {
     const supabase = createClient()
+    const router = useRouter()
 
     const [user, setUser] = useState<any>(null)
     const [profile, setProfile] = useState<any>(null)
@@ -17,6 +19,7 @@ function ProfileContent() {
     const [isEditingNickname, setIsEditingNickname] = useState(false)
     const [isSavingNickname, setIsSavingNickname] = useState(false)
     const [nicknameError, setNicknameError] = useState('')
+    const [loading, setLoading] = useState(true)
 
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -126,6 +129,7 @@ function ProfileContent() {
                 totalDays: totalDaysResult,
                 totalPlans,
             })
+            setLoading(false)
         }
 
         fetchData()
@@ -133,7 +137,7 @@ function ProfileContent() {
         if (searchParams.get('edit') === 'nickname') {
             setIsEditingNickname(true)
         }
-    }, [supabase, searchParams])
+    }, [supabase, searchParams, router])
 
     const saveNickname = async () => {
         if (!nickname.trim() || !user) return
@@ -196,7 +200,6 @@ function ProfileContent() {
         setIsChangingPassword(false)
     }
     
-    const router = useRouter()
     const handleLogout = async () => {
         const { error } = await supabase.auth.signOut()
         if (!error) {
@@ -204,13 +207,9 @@ function ProfileContent() {
             router.refresh()
         }
     }
-
-    if (!user) {
-        return (
-            <div className={css({ textAlign: 'center', py: '80px', color: '#888' })}>
-                여정 정보를 열심히 가져오고 있어요, 잠시만 기다려 주세요! ✈️
-            </div>
-        )
+    
+    if (loading) {
+        return <ProfileSkeleton />
     }
 
     const displayName = nickname || user.email?.split('@')[0] || '여행자'
@@ -531,11 +530,7 @@ function ProfileContent() {
 
 export default function ProfilePage() {
     return (
-        <Suspense fallback={
-            <div className={css({ textAlign: 'center', py: '80px', color: '#888' })}>
-                정보를 열심히 가져오고 있어요, 잠시만 기다려 주세요! ✈️
-            </div>
-        }>
+        <Suspense fallback={<ProfileSkeleton />}>
             <ProfileContent />
         </Suspense>
     )
