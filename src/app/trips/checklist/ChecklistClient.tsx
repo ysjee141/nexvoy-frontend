@@ -13,6 +13,14 @@ import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
 
+const getMemberDisplayName = (p: any, isMe: boolean = false) => {
+    if (!p) return isMe ? '나' : '동행자'
+    const nickname = p.profiles?.nickname
+    const email = p.email || p.profiles?.email
+    const idPart = email?.split('@')[0]
+    return nickname || idPart || email || (isMe ? '나' : '동행자')
+}
+
 const SortDropdown = ({ sortBy, setSortBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const options = [
@@ -247,7 +255,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                     >
                         <Users size={14} />
                         <span className={css({ whiteSpace: 'nowrap' })}>
-                            {selectedOther ? (selectedOther.profiles?.nickname || selectedOther.email?.split('@')[0] || '동행자') : '동행자'}
+                            {getMemberDisplayName(selectedOther)}
                         </span>
                         <ChevronDown size={14} className={css({ transform: isOthersOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' })} />
                     </button>
@@ -304,7 +312,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                 
                                 <div className={css({ maxHeight: { base: '60vh', sm: '400px' }, overflowY: 'auto' })}>
                                     {otherParticipants.map(p => {
-                                        const label = p.profiles?.nickname || p.email?.split('@')[0] || '동행자';
+                                        const label = getMemberDisplayName(p);
                                         return (
                                             <button
                                                 key={p.user_id}
@@ -690,8 +698,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         const getAssignedUserLabel = () => {
             if (item.assigned_user_id === currentUser?.id) return '나'
             const p = participants.find(p => p.user_id === item.assigned_user_id)
-            if (!p) return '담당자'
-            return p.profiles?.nickname || p.email?.split('@')[0] || '동행자'
+            return getMemberDisplayName(p, item.assigned_user_id === currentUser?.id)
         }
 
         const assignedUser = item.assignment_type === 'specific' ? getAssignedUserLabel() : null
@@ -869,12 +876,10 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         </div>
                         <ul className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                             {participants.map(p => {
-                                const isMe = p.user_id === currentUser?.id
-                                const name = p.profiles?.nickname || p.email || '동행자'
                                 return (
                                     <li key={p.user_id} className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
                                         <span className={css({ fontSize: '15px', fontWeight: '500', color: '#2C3A47' })}>
-                                            {isMe ? `나 (${name})` : name}
+                                            {getMemberDisplayName(p, p.user_id === currentUser?.id)}
                                         </span>
                                         {checkedUserIds.includes(p.user_id) ? <Check size={18} color="#2EC4B6" strokeWidth={3} /> : <div className={css({ w: '18px' })} />}
                                     </li>
@@ -936,7 +941,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mt: '8px', outline: 'none', _focus: { borderColor: '#2EC4B6' } })}>
                                     {participants.map(p => {
                                         const isMe = p.user_id === currentUser?.id
-                                        const label = p.profiles?.nickname || p.email || (isMe ? '나' : '동행자')
+                                        const label = getMemberDisplayName(p, isMe)
                                         return (
                                             <option key={p.user_id} value={p.user_id}>
                                                 {isMe ? `${label} (나)` : label}
@@ -1051,7 +1056,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 {/* 상단 라인: 타이틀 + 모바일 필터(드롭다운) */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                     <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '700', color: '#222' })}>
-                        {filterMode === 'all' ? '전체' : (filterMode === 'me' ? '내' : (participants.find(p => p.user_id === filterMode)?.profiles?.nickname || participants.find(p => p.user_id === filterMode)?.email?.split('@')[0] || '동행자'))} 준비물 {filterMode !== 'all' ? (
+                        {filterMode === 'all' ? '전체' : (filterMode === 'me' ? '내' : (getMemberDisplayName(participants.find(p => p.user_id === filterMode), filterMode === currentUser?.id)))} 준비물 {filterMode !== 'all' ? (
                             <span className={css({ color: '#2EC4B6', ml: '8px', fontWeight: '700' })}>
                                 {filteredProgressPercent}% <span className={css({ fontSize: '12px', fontWeight: '700', color: '#828D99' })}>(전체 {progressPercent}%)</span>
                             </span>
@@ -1226,7 +1231,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                     >
                                         {participants.map(p => {
                                             const isMe = p.user_id === currentUser?.id
-                                            const label = p.profiles?.nickname || p.email || (isMe ? '나' : '동행자')
+                                            const label = getMemberDisplayName(p, isMe)
                                             return (
                                                 <option key={p.user_id} value={p.user_id}>
                                                     {isMe ? `${label} (나)` : label}
