@@ -68,7 +68,7 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                         <ChevronLeft size={24} strokeWidth={2.5} />
                     </button>
                     <h2 className={css({ 
-                        fontSize: '18px', fontWeight: '900', color: '#2C3A47', flex: 1, 
+                        fontSize: '18px', fontWeight: '700', color: '#2C3A47', flex: 1, 
                         textAlign: { base: 'center', sm: 'left' }, letterSpacing: '-0.02em' 
                     })}>
                         이용약관 및 개인정보 처리방침
@@ -98,11 +98,11 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                         color: '#4B5563',
                         lineHeight: 1.7,
                         wordBreak: 'keep-all',
-                        '& h3': { fontSize: '16px', fontWeight: '900', mt: '32px', mb: '12px', color: '#2EC4B6', display: 'flex', alignItems: 'center', gap: '8px' },
+                        '& h3': { fontSize: '16px', fontWeight: '700', mt: '32px', mb: '12px', color: '#2EC4B6', display: 'flex', alignItems: 'center', gap: '8px' },
                         '& p': { mb: '14px', fontWeight: '500' },
                         '& ul': { pl: '20px', mb: '14px', listStyleType: 'none', position: 'relative' },
                         '& li': { mb: '8px', position: 'relative', pl: '12px', _before: { content: '"•"', position: 'absolute', left: 0, color: '#2EC4B6', fontWeight: 'bold' } },
-                        '& strong': { color: '#2C3A47', fontWeight: '800' }
+                        '& strong': { color: '#2C3A47', fontWeight: '700' }
                     })}>
                         <p className={css({ fontSize: '15px' })}>본 서비스는 이용자의 개인정보를 소중히 다루며, 관련 법령을 준수합니다.</p>
 

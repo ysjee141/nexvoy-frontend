@@ -29,7 +29,7 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '6px',
                     bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px',
-                    px: '16px', h: '42px', fontSize: '13px', fontWeight: '800', color: '#222', cursor: 'pointer',
+                    px: '16px', h: '42px', fontSize: '13px', fontWeight: '700', color: '#222', cursor: 'pointer',
                     transition: 'all 0.2s', _hover: { bg: '#F7F7F7', borderColor: '#222' },
                     _active: { transform: 'scale(0.98)' }
                 })}
@@ -88,7 +88,7 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
                     bg: 'white', border: '1px solid #DDDDDD', borderRadius: '12px',
                     px: { base: '12px', sm: '16px' }, 
                     h: '42px', 
-                    fontSize: '13px', fontWeight: '800', color: '#222', cursor: 'pointer',
+                    fontSize: '13px', fontWeight: '700', color: '#222', cursor: 'pointer',
                     transition: 'all 0.2s', _hover: { bg: '#F7F7F7', borderColor: '#222' },
                     _active: { transform: 'scale(0.98)' }
                 })}
@@ -205,7 +205,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '4px',
                     px: '14px', py: '8px', borderRadius: '20px',
-                    fontSize: '13px', fontWeight: '800',
+                    fontSize: '13px', fontWeight: '700',
                     flexShrink: 0,
                     bg: filterMode === 'all' ? '#222' : '#F1F3F4',
                     color: filterMode === 'all' ? 'white' : '#666',
@@ -221,7 +221,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '4px',
                     px: '14px', py: '8px', borderRadius: '20px',
-                    fontSize: '13px', fontWeight: '800',
+                    fontSize: '13px', fontWeight: '700',
                     flexShrink: 0,
                     bg: filterMode === 'me' ? '#2EC4B6' : '#F1F3F4',
                     color: filterMode === 'me' ? 'white' : '#666',
@@ -239,7 +239,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                         className={css({
                             display: 'flex', alignItems: 'center', gap: '4px',
                             px: '14px', py: '8px', borderRadius: '20px',
-                            fontSize: '13px', fontWeight: '800',
+                            fontSize: '13px', fontWeight: '700',
                             bg: selectedOther ? '#2EC4B6' : '#F1F3F4',
                             color: selectedOther ? 'white' : '#666',
                             border: 'none', cursor: 'pointer', transition: 'all 0.2s'
@@ -299,7 +299,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                 </div>
 
                                 <div className={css({ px: '24px', py: '18px', borderBottom: '1px solid #F0F0F0' })}>
-                                    <h3 className={css({ fontSize: '17px', fontWeight: '800', color: '#222' })}>동행자 선택</h3>
+                                    <h3 className={css({ fontSize: '17px', fontWeight: '700', color: '#222' })}>동행자 선택</h3>
                                 </div>
                                 
                                 <div className={css({ maxHeight: { base: '60vh', sm: '400px' }, overflowY: 'auto' })}>
@@ -784,7 +784,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
                                         bg: isAssignedToMe ? '#EAF9F7' : '#F1F3F4',
                                         color: isAssignedToMe ? '#2EC4B6' : '#828D99',
-                                        fontWeight: '800',
+                                        fontWeight: '700',
                                         display: 'flex', alignItems: 'center', gap: '4px'
                                     })}>
                                         <User size={10} /> {assignedUser}
@@ -801,7 +801,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                             fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
                                             bg: status.is_checked ? '#F1F3F4' : '#EAF9F7',
                                             color: status.is_checked ? '#828D99' : '#2EC4B6',
-                                            fontWeight: '800', border: 'none', cursor: 'pointer',
+                                            fontWeight: '700', border: 'none', cursor: 'pointer',
                                             display: 'flex', alignItems: 'center', gap: '4px',
                                             transition: 'transform 0.2s',
                                             _active: { transform: 'scale(0.92)' }
@@ -860,7 +860,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setShowChecksModal(null)}>
                 <div className={css({ bg: 'white', w: '100%', maxW: '400px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' })} onClick={e => e.stopPropagation()}>
                     <div className={css({ p: '20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                        <h3 className={css({ fontSize: '18px', fontWeight: '800', color: '#2C3A47' })}>체크 현황</h3>
+                        <h3 className={css({ fontSize: '18px', fontWeight: '700', color: '#2C3A47' })}>체크 현황</h3>
                         <button onClick={() => setShowChecksModal(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer', color: '#666' })}><X size={20} /></button>
                     </div>
                     <div className={css({ p: '20px', maxHeight: '300px', overflowY: 'auto' })}>
@@ -899,7 +899,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setEditingItem(null)}>
                 <div className={css({ bg: 'white', w: '100%', maxW: '450px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' })} onClick={e => e.stopPropagation()}>
                     <div className={css({ p: '24px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                        <h3 className={css({ fontSize: '20px', fontWeight: '800' })}>항목 수정</h3>
+                        <h3 className={css({ fontSize: '20px', fontWeight: '700' })}>항목 수정</h3>
                         <button onClick={() => setEditingItem(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer', color: '#666' })}><X size={24} /></button>
                     </div>
                     <div className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '20px' })}>
@@ -950,11 +950,11 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     <div className={css({ p: '24px', bg: '#F9F9F9', display: 'flex', gap: '12px' })}>
                         <button 
                             onClick={() => updateItem({ item_name: name, category, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null })}
-                            className={css({ flex: 1, py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '800', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)', _hover: { bg: '#28B0A3', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
+                            className={css({ flex: 1, py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)', _hover: { bg: '#28B0A3', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
                         >
                             저장하기
                         </button>
-                        <button onClick={() => setEditingItem(null)} className={css({ flex: 1, py: '14px', bg: 'white', color: '#555', border: '1px solid #DDDDDD', borderRadius: '16px', fontWeight: '800', cursor: 'pointer', _hover: { bg: '#f9f9f9', borderColor: '#828D99' } })}>
+                        <button onClick={() => setEditingItem(null)} className={css({ flex: 1, py: '14px', bg: 'white', color: '#555', border: '1px solid #DDDDDD', borderRadius: '16px', fontWeight: '700', cursor: 'pointer', _hover: { bg: '#f9f9f9', borderColor: '#828D99' } })}>
                             취소
                         </button>
                     </div>
@@ -1050,9 +1050,9 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 
                 {/* 상단 라인: 타이틀 + 모바일 필터(드롭다운) */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                    <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', color: '#222' })}>
+                    <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '700', color: '#222' })}>
                         {filterMode === 'all' ? '전체' : (filterMode === 'me' ? '내' : (participants.find(p => p.user_id === filterMode)?.profiles?.nickname || participants.find(p => p.user_id === filterMode)?.email?.split('@')[0] || '동행자'))} 준비물 {filterMode !== 'all' ? (
-                            <span className={css({ color: '#2EC4B6', ml: '8px', fontWeight: '900' })}>
+                            <span className={css({ color: '#2EC4B6', ml: '8px', fontWeight: '700' })}>
                                 {filteredProgressPercent}% <span className={css({ fontSize: '12px', fontWeight: '700', color: '#828D99' })}>(전체 {progressPercent}%)</span>
                             </span>
                         ) : (
@@ -1073,13 +1073,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         <div className={css({ display: totalItems > 0 ? 'inline-flex' : 'none', bg: '#f1f3f4', p: '4px', borderRadius: '8px' })}>
                             <button
                                 onClick={() => setGroupBy('category')}
-                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? 'bold' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? '700' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
                             >
                                 카테고리별 보기
                             </button>
                             <button
                                 onClick={() => setGroupBy('template')}
-                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? 'bold' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? '700' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
                             >
                                 템플릿별 보기
                             </button>
@@ -1116,7 +1116,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                                         px: '12px', h: '42px',
                                         bg: 'white', color: '#2C3A47', border: '1px solid #DDDDDD', borderRadius: '12px',
-                                        fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                                        fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                         flex: '1',
                                         whiteSpace: 'nowrap', transition: 'all 0.2s',
                                         _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' },
@@ -1134,7 +1134,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                     className={css({
                                         display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
                                         bg: '#2C3A47', color: 'white', px: '16px', h: '42px',
-                                        borderRadius: '12px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', border: 'none',
+                                        borderRadius: '12px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', border: 'none',
                                         _hover: { bg: '#1a252f' }, whiteSpace: 'nowrap'
                                     })}
                                 >
@@ -1147,7 +1147,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                                         px: '16px', h: '42px',
                                         bg: 'white', color: '#2C3A47', border: '1px solid #DDDDDD', borderRadius: '12px',
-                                        fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                                        fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                         w: { base: '100%', sm: 'auto' }, flex: { base: '1', sm: 'none' },
                                         flexShrink: '0',
                                         whiteSpace: 'nowrap', transition: 'all 0.2s',
@@ -1211,7 +1211,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                             setNewItemAssignedUserId(currentUser?.id || '')
                                         }
                                     }}
-                                    className={css({ p: '8px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '13px', fontWeight: '600' })}
+                                    className={css({ p: '8px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '13px', fontWeight: '700' })}
                                 >
                                     <option value="anyone">함께 준비해요</option>
                                     <option value="specific">담당자를 정해요</option>
@@ -1258,14 +1258,14 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             <button
                                 type="submit"
                                 disabled={!newItemName.trim()}
-                                className={css({ py: '10px', px: '20px', bg: '#2EC4B6', color: 'white', fontWeight: '800', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(46, 196, 182, 0.2)' })}
+                                className={css({ py: '10px', px: '20px', bg: '#2EC4B6', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(46, 196, 182, 0.2)' })}
                             >
                                 추가
                             </button>
                             <button
                                 type="button"
                                 onClick={() => { setIsAdding(false); setNewItemName(''); }}
-                                className={css({ py: '10px', px: '16px', bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px', fontWeight: '800' })}
+                                className={css({ py: '10px', px: '16px', bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px', fontWeight: '700' })}
                             >
                                 취소
                             </button>
@@ -1278,7 +1278,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 <ChecklistSkeleton />
             ) : totalItems === 0 && !isAdding ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: '#666', px: '20px' })}>
-                        <p className={css({ fontSize: '19px', fontWeight: '800', mb: '12px', color: '#333', letterSpacing: '-0.5px' })}>
+                        <p className={css({ fontSize: '19px', fontWeight: '700', mb: '12px', color: '#333', letterSpacing: '-0.5px' })}>
                             여행을 완벽하게 해줄 준비물을 등록해 보세요! ✨
                         </p>
                         {isOnline && (
@@ -1289,7 +1289,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 </div>
             ) : totalItems > 0 && sortedFilteredItems.length === 0 ? (
                 <div className={css({ textAlign: 'center', py: '60px', color: '#666' })}>
-                        <p className={css({ fontSize: '16px', fontWeight: '800', mb: '8px', color: '#222' })}>
+                        <p className={css({ fontSize: '16px', fontWeight: '700', mb: '8px', color: '#222' })}>
                             해당하는 준비물이 없어요 🕵️‍♂️
                         </p>
                         <p className={css({ fontSize: '14px', color: '#888' })}>
@@ -1297,7 +1297,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         </p>
                         <button 
                             onClick={() => setFilterMode('all')}
-                            className={css({ mt: '20px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '12px', px: '20px', py: '10px', fontSize: '13px', fontWeight: '800', cursor: 'pointer', _hover: { bg: '#F7F7F7' }, transition: 'all 0.2s' })}
+                            className={css({ mt: '20px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '12px', px: '20px', py: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', _hover: { bg: '#F7F7F7' }, transition: 'all 0.2s' })}
                         >
                             전체 준비물 보기
                         </button>
@@ -1311,7 +1311,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
 
                             return (
                                 <div key={cat} className={css({ display: 'flex', flexDirection: 'column' })}>
-                                    <h3 className={css({ px: '20px', fontSize: '14px', fontWeight: '800', color: '#222', bg: '#F7F7F7', py: '10px', borderBottom: '1px solid #EEEEEE' })}>
+                                    <h3 className={css({ px: '20px', fontSize: '14px', fontWeight: '700', color: '#222', bg: '#F7F7F7', py: '10px', borderBottom: '1px solid #EEEEEE' })}>
                                         {cat} <span className={css({ color: '#717171', fontWeight: 'normal', fontSize: '12px', ml: '4px' })}>{categoryItems.length}</span>
                                     </h3>
                                     <ul className={css({ display: 'flex', flexDirection: 'column' })}>
@@ -1325,7 +1325,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     ) : (
                         Object.entries(templateGroups).map(([grpName, grpItems]) => (
                             <div key={grpName} className={css({ display: 'flex', flexDirection: 'column' })}>
-                                <h3 className={css({ px: '20px', fontSize: '14px', fontWeight: '800', color: '#222', bg: '#F7F7F7', py: '10px', borderBottom: '1px solid #EEEEEE', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                                <h3 className={css({ px: '20px', fontSize: '14px', fontWeight: '700', color: '#222', bg: '#F7F7F7', py: '10px', borderBottom: '1px solid #EEEEEE', display: 'flex', alignItems: 'center', gap: '6px' })}>
                                     {grpName === '직접 추가함' ? '✍️ 직접 추가함' : `📦 ${grpName}`}
                                     <span className={css({ color: '#717171', fontWeight: 'normal', fontSize: '12px', ml: '4px' })}>{grpItems.length}</span>
                                 </h3>

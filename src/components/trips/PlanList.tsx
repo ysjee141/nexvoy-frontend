@@ -68,7 +68,7 @@ function PlanCard({
                 {(timeDisplayMode === 'both' || timeDisplayMode === 'local') && (
                     <span className={css({ 
                         fontSize: { base: '13px', sm: '14px' }, 
-                        fontWeight: '800', 
+                        fontWeight: '700', 
                         color: isOngoing ? '#2EC4B6' : '#222',
                         lineHeight: 1
                     })}>
@@ -163,7 +163,7 @@ function PlanCard({
 
                 {/* 일정명 */}
                 <h4 className={css({
-                    fontWeight: '800',
+                    fontWeight: '700',
                     fontSize: { base: '15px', sm: '16px' },
                     color: isOngoing ? '#249E93' : '#222',
                     lineHeight: 1.4,
@@ -210,7 +210,7 @@ function PlanCard({
                     {localAmount && (
                         <span className={css({
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
-                            fontSize: '13px', fontWeight: '800', color: '#2563EB',
+                            fontSize: '13px', fontWeight: '700', color: '#2563EB',
                             ml: 'auto',
                         })}>
                             <Wallet size={12} />
@@ -361,7 +361,7 @@ export default function PlanList({
                 <section>
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '16px', pb: '10px', borderBottom: '2px solid #EAF9F7' })}>
                         <span className={css({ fontSize: '18px' })}>🗺️</span>
-                        <h2 className={css({ fontSize: { base: '15px', sm: '17px' }, fontWeight: '800', color: '#2EC4B6' })}>다가올 여정</h2>
+                        <h2 className={css({ fontSize: { base: '15px', sm: '17px' }, fontWeight: '700', color: '#2EC4B6' })}>다가올 여정</h2>
                         <span className={css({ fontSize: '12px', color: '#888', bg: '#f1f3f4', px: '8px', py: '2px', borderRadius: '10px' })}>
                             {remainingDays.reduce((s, d) => s + d.plans.length, 0)}개
                         </span>

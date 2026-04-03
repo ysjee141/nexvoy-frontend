@@ -113,7 +113,7 @@ export default function NewTemplatePage() {
     return (
         <div className={css({ w: '100%', maxW: '800px', mx: 'auto', py: '40px' })}>
             <div className={css({ mb: '40px' })}>
-                <h1 className={css({ fontSize: { base: '24px', sm: '32px' }, fontWeight: '800', color: '#2C3A47', lineHeight: '1.2' })}>
+                <h1 className={css({ fontSize: { base: '24px', sm: '32px' }, fontWeight: '700', color: '#2C3A47', lineHeight: '1.2' })}>
                     나만의 새 템플릿 만들기
                 </h1>
                 <p className={css({ color: '#717171', mt: '8px', fontSize: '16px', fontWeight: '500' })}>
@@ -166,7 +166,7 @@ export default function NewTemplatePage() {
                                     <select
                                         value={item.category}
                                         onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                        className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer', appearance: 'none' })}
+                                        className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '700', color: '#2C3A47', cursor: 'pointer', appearance: 'none' })}
                                     >
                                         {CATEGORIES.map((cat: any) => (
                                             <option key={cat} value={cat}>{cat}</option>

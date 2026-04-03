@@ -30,7 +30,7 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '4px',
                     bg: 'white', border: '1px solid #EEEEEE', borderRadius: '12px',
-                    px: '12px', h: '42px', fontSize: '13px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer',
+                    px: '12px', h: '42px', fontSize: '13px', fontWeight: '700', color: '#2C3A47', cursor: 'pointer',
                     transition: 'all 0.2s', _active: { transform: 'scale(0.95)' },
                     _hover: { borderColor: '#2EC4B6', bg: '#EAF9F7' }
                 })}
@@ -317,7 +317,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                                 bg: 'white', color: '#2C3A47',
                                 px: '12px', h: '42px',
-                                borderRadius: '16px', fontWeight: '800', fontSize: '13px',
+                                borderRadius: '16px', fontWeight: '700', fontSize: '13px',
                                 border: '1px solid #DDDDDD', whiteSpace: 'nowrap',
                                 transition: 'all 0.2s',
                                 _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' }, _active: { transform: 'scale(0.92)' },
@@ -335,7 +335,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                                     bg: 'white', color: '#2C3A47',
                                     px: '12px', h: '42px',
-                                    borderRadius: '16px', fontWeight: '800', fontSize: '13px',
+                                    borderRadius: '16px', fontWeight: '700', fontSize: '13px',
                                     border: '1px solid #DDDDDD', whiteSpace: 'nowrap',
                                     transition: 'all 0.2s',
                                     _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' }, _active: { transform: 'scale(0.92)' },
@@ -359,7 +359,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 w: '100%', h: '42px',
                                 alignItems: 'center', justifyContent: 'center', gap: '6px',
                                 bg: '#2EC4B6', color: 'white', px: '16px', borderRadius: '16px',
-                                fontWeight: '800', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
+                                fontWeight: '700', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
                                 transition: 'all 0.2s',
                                 _hover: { bg: '#249E93', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' }, _active: { transform: 'scale(0.96)' }
                             })}

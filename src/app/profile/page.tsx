@@ -222,7 +222,7 @@ function ProfileContent() {
                     w: { base: '64px', sm: '72px' }, h: { base: '64px', sm: '72px' }, borderRadius: '50%',
                     bg: '#222',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontSize: { base: '26px', sm: '30px' }, fontWeight: '800', flexShrink: 0
+                    color: 'white', fontSize: { base: '26px', sm: '30px' }, fontWeight: '700', flexShrink: 0
                 })}>
                     {displayName.charAt(0).toUpperCase()}
                 </div>
@@ -268,7 +268,7 @@ function ProfileContent() {
                     ) : (
                         <>
                             <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '900', color: '#2C3A47', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', letterSpacing: '-0.5px' })}>
+                                <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '700', color: '#2C3A47', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', letterSpacing: '-0.5px' })}>
                                     {displayName}
                                 </h1>
                                 <button
@@ -287,7 +287,7 @@ function ProfileContent() {
 
             {/* 활동 통계 */}
             <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '18px', fontWeight: '800', mb: '24px', color: '#2C3A47' })}>나의 여정 기록</h2>
+                <h2 className={css({ fontSize: '18px', fontWeight: '700', mb: '24px', color: '#2C3A47' })}>나의 여정 기록</h2>
                 {/* 모바일: 2x2 grid / 데스크탑: 4열 */}
                 <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '12px', textAlign: 'center' })}>
                     {[
@@ -316,7 +316,7 @@ function ProfileContent() {
                             })}
                         >
                             <div className={css({ fontSize: '24px', mb: '8px' })}>{item.icon}</div>
-                            <div className={css({ fontSize: { base: '22px', sm: '26px' }, fontWeight: '900', color: '#222', letterSpacing: '-0.5px' })}>{item.value}</div>
+                            <div className={css({ fontSize: { base: '22px', sm: '26px' }, fontWeight: '700', color: '#222', letterSpacing: '-0.5px' })}>{item.value}</div>
                             <div className={css({ fontSize: '13px', color: '#717171', mt: '4px', whiteSpace: 'nowrap', fontWeight: '600' })}>{item.label}</div>
                         </Link>
                     ))}
@@ -327,7 +327,7 @@ function ProfileContent() {
 
             {/* 비밀번호 변경 */}
             <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '17px', fontWeight: '800', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                <h2 className={css({ fontSize: '17px', fontWeight: '700', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px' })}>
                     <Lock size={18} />비밀번호 변경
                 </h2>
                 <form onSubmit={changePassword} className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
@@ -415,7 +415,7 @@ function ProfileContent() {
                     <button
                         type="submit"
                         disabled={isChangingPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6}
-                        className={css({ mt: '8px', py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', border: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '15px', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(46,196,182,0.2)', _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none' }, _hover: { bg: '#249E93', transform: 'translateY(-1px)' } })}
+                        className={css({ mt: '8px', py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '15px', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(46,196,182,0.2)', _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none' }, _hover: { bg: '#249E93', transform: 'translateY(-1px)' } })}
                     >
                         {isChangingPassword ? '안전하게 바꾸는 중...' : '비밀번호 변경할게요'}
                     </button>
@@ -424,7 +424,7 @@ function ProfileContent() {
 
             {/* 바로가기 링크 */}
             <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '18px', fontWeight: '800', p: '24px 24px 16px', color: '#2C3A47' })}>바로가기</h2>
+                <h2 className={css({ fontSize: '18px', fontWeight: '700', p: '24px 24px 16px', color: '#2C3A47' })}>바로가기</h2>
                 {[
                     { href: '/templates', icon: '📦', label: '나만의 템플릿', desc: '자주 쓰는 준비물을 미리 만들어 보세요' },
                     { href: '/', icon: '✈️', label: '내 여행 목록', desc: '지금까지의 모든 여행을 확인해 보세요' },

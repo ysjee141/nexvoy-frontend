@@ -244,7 +244,7 @@ export default function TripSwitcherModal() {
                     alignItems: 'center',
                     borderBottom: '1px solid #F5F5F5'
                 })}>
-                    <h3 className={css({ fontSize: '19px', fontWeight: '900', color: '#2C3A47', letterSpacing: '-0.02em' })}>여정 전환하기</h3>
+                    <h3 className={css({ fontSize: '19px', fontWeight: '700', color: '#2C3A47', letterSpacing: '-0.02em' })}>여정 전환하기</h3>
                     <button 
                         onClick={handleClose}
                         className={css({ 
@@ -299,7 +299,7 @@ export default function TripSwitcherModal() {
                                     fontSize: '11px', 
                                     bg: activeTab === tab.id ? 'rgba(46, 196, 182, 0.12)' : '#F3F4F6',
                                     color: activeTab === tab.id ? '#2EC4B6' : '#9BA3AF',
-                                    px: '6px', py: '1.5px', borderRadius: '8px', fontWeight: '900'
+                                    px: '6px', py: '1.5px', borderRadius: '8px', fontWeight: '700'
                                 })}>
                                     {tab.count}
                                 </span>
@@ -384,7 +384,7 @@ export default function TripSwitcherModal() {
                                         <div className={css({ flex: 1, minW: 0 })}>
                                             <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', mb: '4px' })}>
                                                 <h4 className={css({ 
-                                                    fontSize: '17px', fontWeight: '800', color: '#2C3A47',
+                                                    fontSize: '17px', fontWeight: '700', color: '#2C3A47',
                                                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                                                 })}>
                                                     {trip.destination}
@@ -392,7 +392,7 @@ export default function TripSwitcherModal() {
                                                 {isActive && (
                                                     <span className={css({ 
                                                         bg: '#2EC4B6', color: 'white', fontSize: '10px', 
-                                                        px: '7px', py: '2.5px', borderRadius: '7px', fontWeight: '900'
+                                                        px: '7px', py: '2.5px', borderRadius: '7px', fontWeight: '700'
                                                     })}>현재</span>
                                                 )}
                                             </div>
@@ -432,7 +432,7 @@ export default function TripSwitcherModal() {
                             bg: '#2EC4B6',
                             color: 'white',
                             borderRadius: '20px',
-                            fontWeight: '900',
+                            fontWeight: '700',
                             fontSize: '17px',
                             textDecoration: 'none',
                             boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)',

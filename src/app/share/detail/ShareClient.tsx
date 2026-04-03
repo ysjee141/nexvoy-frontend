@@ -22,7 +22,7 @@ function SharePlanCard({ plan, formatLocalTime, formatDate }: any) {
         })}>
             <div className={css({ minW: '100px', pt: '4px' })}>
                 <span className={css({ 
-                    fontSize: '15px', fontWeight: '800', color: '#222', bg: '#F7F7F7', 
+                    fontSize: '15px', fontWeight: '700', color: '#222', bg: '#F7F7F7', 
                     px: '10px', py: '4px', borderRadius: '6px',
                     display: 'inline-flex', alignItems: 'center', gap: '6px'
                 })}>
@@ -31,7 +31,7 @@ function SharePlanCard({ plan, formatLocalTime, formatDate }: any) {
             </div>
             
             <div className={css({ flex: 1, minW: 0 })}>
-                <h3 className={css({ fontSize: '20px', fontWeight: '800', mb: '8px', color: '#222' })}>{plan.title}</h3>
+                <h3 className={css({ fontSize: '20px', fontWeight: '700', mb: '8px', color: '#222' })}>{plan.title}</h3>
                 <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '12px', mb: '12px' })}>
                     <span className={css({ fontSize: '14px', color: '#717171', display: 'flex', alignItems: 'center', gap: '4px' })}>
                         <Calendar size={14} /> {formatDate(plan.start_datetime_local)}
@@ -182,7 +182,7 @@ export default function SharePage() {
             <div className={css({ display: 'flex', h: '100vh', alignItems: 'center', justifyContent: 'center', bg: '#f8f9fa' })}>
                 <div className={css({ bg: 'white', p: '40px', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', w: '100%', maxW: '400px', textAlign: 'center' })}>
                     <Lock size={48} className={css({ mx: 'auto', mb: '20px', color: '#2EC4B6' })} />
-                    <h1 className={css({ fontSize: '20px', fontWeight: '800', mb: '8px' })}>비밀번호 보호됨</h1>
+                    <h1 className={css({ fontSize: '20px', fontWeight: '700', mb: '8px' })}>비밀번호 보호됨</h1>
                     <p className={css({ fontSize: '14px', color: '#666', mb: '24px' })}>이 일정을 보려면 비밀번호를 입력해주세요.</p>
                     <form onSubmit={handlePasswordSubmit}>
                         <input
@@ -213,13 +213,13 @@ export default function SharePage() {
         <div className={css({ maxW: '800px', mx: 'auto', p: { base: '24px 20px', sm: '40px 24px' }, bg: 'white', minH: '100vh' })}>
             <div className={css({ mb: '48px', textAlign: 'left', borderBottom: '1px solid #EEEEEE', pb: '32px' })}>
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '20px' })}>
-                    <div className={css({ w: '32px', h: '32px', bg: 'brand.primary', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '900', fontSize: '18px' })}>O</div>
-                    <span className={css({ fontSize: '16px', fontWeight: '800', color: '#222', letterSpacing: '-0.5px' })}>온여정</span>
+                    <div className={css({ w: '32px', h: '32px', bg: 'brand.primary', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '18px' })}>O</div>
+                    <span className={css({ fontSize: '16px', fontWeight: '700', color: '#222', letterSpacing: '-0.5px' })}>온여정</span>
                 </div>
                 
                 <h1 className={css({ 
                     fontSize: { base: '30px', sm: '40px' }, 
-                    fontWeight: '900', 
+                    fontWeight: '700', 
                     mb: '16px', 
                     color: '#222',
                     lineHeight: 1.1,
@@ -252,7 +252,7 @@ export default function SharePage() {
                                 display: 'flex', alignItems: 'center', gap: '8px', 
                                 pb: '12px', mb: '4px', 
                                 borderBottom: '2px solid #2EC4B6',
-                                color: '#2EC4B6', fontWeight: '800', fontSize: '18px'
+                                color: '#2EC4B6', fontWeight: '700', fontSize: '18px'
                             })}>
                                 <Calendar size={20} />
                                 {dayGroup.label}
@@ -270,7 +270,7 @@ export default function SharePage() {
                 <p className={css({ color: '#717171', fontSize: '15px', mb: '20px', fontWeight: '500' })}>나만의 멋진 여행 계획을 세우고 싶다면?</p>
                 <a href="/" className={css({ 
                     px: '32px', py: '16px', bg: 'brand.primary', color: 'white', borderRadius: '16px', 
-                    fontWeight: '800', textDecoration: 'none', display: 'inline-block',
+                    fontWeight: '700', textDecoration: 'none', display: 'inline-block',
                     boxShadow: '0 8px 16px rgba(46, 196, 182, 0.2)',
                     transition: 'all 0.2s',
                     _active: { transform: 'scale(0.96)' }

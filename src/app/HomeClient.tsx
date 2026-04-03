@@ -183,14 +183,14 @@ function SectionTitle({ badge, title, sub }: { badge: string; title: string; sub
   return (
       <div className={css({ textAlign: 'center', mb: '40px' })}>
           <span className={css({
-              display: 'inline-block', fontSize: '11px', fontWeight: '800',
+              display: 'inline-block', fontSize: '11px', fontWeight: '700',
               color: '#3B82F6', letterSpacing: '1.5px', textTransform: 'uppercase',
               bg: '#EFF6FF', px: '10px', py: '4px', borderRadius: '20px', mb: '12px',
           })}>
               {badge}
           </span>
           <h2 className={css({
-              fontSize: { base: '22px', md: '32px' }, fontWeight: '900',
+              fontSize: { base: '22px', md: '32px' }, fontWeight: '700',
               color: '#172554', letterSpacing: '-0.02em', mb: '10px',
           })}>
               {title}
@@ -395,7 +395,7 @@ export default function HomeClient() {
               </div>
 
               <h1 className={css({
-                  fontSize: { base: '30px', md: '48px' }, fontWeight: '900',
+                  fontSize: { base: '30px', md: '48px' }, fontWeight: '700',
                   color: '#2C3A47', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
               })}>
                   여행 계획, 가이드 없이도<br />
@@ -453,7 +453,7 @@ export default function HomeClient() {
                               </div>
                               <span style={{ fontSize: 11, fontWeight: 700, color: f.color, background: f.bg, padding: '3px 8px', borderRadius: 20 }}>{f.badge}</span>
                           </div>
-                          <h3 className={css({ fontWeight: '800', fontSize: '16px', color: '#172554', lineHeight: 1.3 })}>{f.title}</h3>
+                          <h3 className={css({ fontWeight: '700', fontSize: '16px', color: '#172554', lineHeight: 1.3 })}>{f.title}</h3>
                           <p className={css({ fontSize: '13px', color: '#666', lineHeight: 1.7 })}>{f.desc}</p>
                       </div>
                   ))}
@@ -480,8 +480,8 @@ export default function HomeClient() {
                           </div>
                           <div className={css({ flex: 1, pt: '4px' })}>
                               <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '5px', flexWrap: 'wrap' })}>
-                                  <span className={css({ fontSize: '11px', fontWeight: '800', color: '#ccc', letterSpacing: '1px' })}>{s.num}</span>
-                                  <h3 className={css({ fontWeight: '800', fontSize: '16px', color: '#172554' })}>{s.title}</h3>
+                                  <span className={css({ fontSize: '11px', fontWeight: '700', color: '#ccc', letterSpacing: '1px' })}>{s.num}</span>
+                                  <h3 className={css({ fontWeight: '700', fontSize: '16px', color: '#172554' })}>{s.title}</h3>
                                   <span style={{ fontSize: 11, fontWeight: 700, color: s.color, background: s.color + '12', padding: '2px 8px', borderRadius: 20 }}>
                                       ✓ {s.highlight}
                                   </span>
@@ -543,7 +543,7 @@ export default function HomeClient() {
               <div className={css({ display: 'inline-flex', alignItems: 'center', gap: '6px', bg: 'rgba(255,255,255,0.15)', color: 'white', fontSize: '12px', fontWeight: '700', px: '12px', py: '5px', borderRadius: '20px', mb: '16px' })}>
                   <Zap size={13} /> 지금 바로 시작하세요
               </div>
-              <h2 className={css({ fontSize: { base: '24px', md: '34px' }, fontWeight: '900', color: 'white', mb: '12px', letterSpacing: '-0.02em', lineHeight: 1.2 })}>
+              <h2 className={css({ fontSize: { base: '24px', md: '34px' }, fontWeight: '700', color: 'white', mb: '12px', letterSpacing: '-0.02em', lineHeight: 1.2 })}>
                   다음 여행, 온여정와<br />함께 계획하세요 ✈️
               </h2>
               <p className={css({ fontSize: '15px', color: 'rgba(255,255,255,0.83)', mb: '32px', lineHeight: 1.7, wordBreak: 'keep-all' })}>
@@ -552,7 +552,7 @@ export default function HomeClient() {
               </p>
               <Link href="/signup" className={css({
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  bg: 'white', color: '#1a56db', fontWeight: '800', fontSize: '16px',
+                  bg: 'white', color: '#1a56db', fontWeight: '700', fontSize: '16px',
                   px: '36px', py: '16px', borderRadius: '14px', textDecoration: 'none',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
                   transition: 'all 0.2s',
@@ -582,7 +582,7 @@ export default function HomeClient() {
           borderBottom: '1px solid #f0f0f0'
         })}>
           <div>
-            <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '900', color: '#222', letterSpacing: '-1px' })}>
+            <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '700', color: '#222', letterSpacing: '-1px' })}>
                 안녕하세요, {nickname}님! 👋
             </h1>
             <p className={css({ color: '#666', mt: '12px', fontSize: { base: '16px', sm: '20px' }, fontWeight: '500', letterSpacing: '-0.4px' })}>
@@ -598,7 +598,7 @@ export default function HomeClient() {
             className={css({
               display: 'flex', alignItems: 'center', gap: '8px',
               bg: '#2EC4B6', color: 'white', px: '24px', py: '14px',
-              borderRadius: '16px', fontWeight: '800', transition: 'all 0.2s',
+              borderRadius: '16px', fontWeight: '700', transition: 'all 0.2s',
               boxShadow: '0 4px 12px rgba(46, 196, 182, 0.2)',
               w: { base: '100%', sm: 'auto' }, justifyContent: 'center',
               _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.3)' },

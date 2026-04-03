@@ -155,7 +155,7 @@ export default function TravelLogPage() {
                     {/* Memories Section */}
                     <section className={css({ mb: '48px' })}>
                         <h3 className={css({ 
-                            fontSize: '19px', fontWeight: '800', mb: '20px', color: '#1A1A1A', 
+                            fontSize: '19px', fontWeight: '700', mb: '20px', color: '#1A1A1A', 
                             display: 'flex', alignItems: 'center', gap: '10px' 
                         })}>
                             <CalendarDays size={22} color="#4B5563" /> 추억의 조각들
@@ -214,7 +214,7 @@ export default function TravelLogPage() {
                     {/* Upcoming Section */}
                     <section>
                         <h3 className={css({ 
-                            fontSize: '19px', fontWeight: '800', mb: '20px', color: '#1A1A1A', 
+                            fontSize: '19px', fontWeight: '700', mb: '20px', color: '#1A1A1A', 
                             display: 'flex', alignItems: 'center', gap: '10px' 
                         })}>
                             <Sparkles size={22} color="#F59E0B" /> 아직 두근거리는 여행이 기다리고 있어요
@@ -280,7 +280,7 @@ export default function TravelLogPage() {
                                                         {isOngoing && (
                                                             <span className={css({ 
                                                                 px: '8px', py: '2px', bg: '#D97706', color: 'white', 
-                                                                fontSize: '11px', fontWeight: '800', borderRadius: '6px',
+                                                                fontSize: '11px', fontWeight: '700', borderRadius: '6px',
                                                                 animation: 'pulse 2s infinite'
                                                             })}>
                                                                 여행 중
