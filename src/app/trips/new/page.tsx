@@ -264,12 +264,13 @@ export default function NewTripPage() {
                                         onClick={() => setAdults(adults - 1)}
                                         className={css({
                                             w: '40px', h: '40px', flexShrink: 0,
-                                            bg: '#F2F4F5', border: 'none', borderRadius: '14px',
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: '#2C3A47', transition: 'all 0.2s cubic-bezier(0.2, 0, 0.4, 1)',
-                                            _active: { transform: 'scale(0.9)', bg: '#EEEEEE' },
-                                            _hover: { bg: '#EEEEEE' },
-                                            _disabled: { bg: '#F9F9F9', color: '#CCC', cursor: 'not-allowed', opacity: 0.5 }
+                                            bg: adults <= 1 ? '#F5F5F5' : '#EAF9F7', color: adults <= 1 ? '#CCC' : '#2EC4B6',
+                                            border: 'none', borderRadius: '14px',
+                                            cursor: adults <= 1 ? 'not-allowed' : 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                                            _hover: { bg: adults <= 1 ? '#F5F5F5' : '#D1F2ED' },
+                                            _active: { transform: adults <= 1 ? 'none' : 'scale(0.92)' }
                                         })}
                                     >
                                         <Minus size={18} strokeWidth={3} />
@@ -282,9 +283,9 @@ export default function NewTripPage() {
                                             w: '40px', h: '40px', flexShrink: 0,
                                             bg: '#2EC4B6', border: 'none', borderRadius: '14px',
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: 'white', transition: 'all 0.2s cubic-bezier(0.2, 0, 0.4, 1)',
-                                            _active: { transform: 'scale(0.9)', bg: '#249E93' },
-                                            _hover: { bg: '#28B0A3', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' }
+                                            color: 'white', transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                                            _hover: { bg: '#249E93', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' },
+                                            _active: { transform: 'scale(0.92)' }
                                         })}
                                     >
                                         <Plus size={18} strokeWidth={3} />
@@ -311,12 +312,13 @@ export default function NewTripPage() {
                                         onClick={() => setChildren(childrenCount - 1)}
                                         className={css({
                                             w: '40px', h: '40px', flexShrink: 0,
-                                            bg: '#F2F4F5', border: 'none', borderRadius: '14px',
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: '#2C3A47', transition: 'all 0.2s cubic-bezier(0.2, 0, 0.4, 1)',
-                                            _active: { transform: 'scale(0.9)', bg: '#EEEEEE' },
-                                            _hover: { bg: '#EEEEEE' },
-                                            _disabled: { bg: '#F9F9F9', color: '#CCC', cursor: 'not-allowed', opacity: 0.5 }
+                                            bg: childrenCount <= 0 ? '#F5F5F5' : '#EAF9F7', color: childrenCount <= 0 ? '#CCC' : '#2EC4B6',
+                                            border: 'none', borderRadius: '14px',
+                                            cursor: childrenCount <= 0 ? 'not-allowed' : 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                                            _hover: { bg: childrenCount <= 0 ? '#F5F5F5' : '#D1F2ED' },
+                                            _active: { transform: childrenCount <= 0 ? 'none' : 'scale(0.92)' }
                                         })}
                                     >
                                         <Minus size={18} strokeWidth={3} />
@@ -329,9 +331,9 @@ export default function NewTripPage() {
                                             w: '40px', h: '40px', flexShrink: 0,
                                             bg: '#2EC4B6', border: 'none', borderRadius: '14px',
                                             cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: 'white', transition: 'all 0.2s cubic-bezier(0.2, 0, 0.4, 1)',
-                                            _active: { transform: 'scale(0.9)', bg: '#249E93' },
-                                            _hover: { bg: '#28B0A3', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' }
+                                            color: 'white', transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                                            _hover: { bg: '#249E93', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' },
+                                            _active: { transform: 'scale(0.92)' }
                                         })}
                                     >
                                         <Plus size={18} strokeWidth={3} />
