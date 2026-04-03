@@ -177,7 +177,7 @@ export default function PlacesVisitedPage() {
                             })}>
                                 <Footprints size={28} color="white" />
                             </div>
-                            <h2 className={css({ fontSize: '24px', fontWeight: '900', mb: '12px', letterSpacing: '-0.03em' })}>
+                            <h2 className={css({ fontSize: '24px', fontWeight: '700', mb: '12px', letterSpacing: '-0.03em' })}>
                                 {places.length}곳에서 남긴 소중한 흔적들
                             </h2>
                             <p className={css({ fontSize: '15px', opacity: 0.9, lineHeight: '1.6', fontWeight: '500' })}>
@@ -249,7 +249,7 @@ export default function PlacesVisitedPage() {
                                                 )}
                                             </div>
                                             <div className={css({ flex: 1 })}>
-                                                <div className={css({ fontSize: '20px', fontWeight: '900', color: '#1A202C', mb: '8px', letterSpacing: '-0.03em' })}>
+                                                <div className={css({ fontSize: '20px', fontWeight: '700', color: '#1A202C', mb: '8px', letterSpacing: '-0.03em' })}>
                                                     {place.location}
                                                 </div>
                                                 <div className={css({ 
@@ -275,7 +275,7 @@ export default function PlacesVisitedPage() {
                                         })}>
                                             <div className={css({ p: '36px 28px' })}>
                                                 <div className={css({ 
-                                                    fontSize: '12px', color: '#94A3B8', fontWeight: '900', 
+                                                    fontSize: '12px', color: '#94A3B8', fontWeight: '700', 
                                                     mb: '28px', textTransform: 'uppercase', letterSpacing: '0.2em',
                                                     display: 'flex', alignItems: 'center', gap: '12px'
                                                 })}>
@@ -325,7 +325,7 @@ export default function PlacesVisitedPage() {
                                                                 })}
                                                             >
                                                                 <div className={css({ w: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
-                                                                    <div className={css({ fontSize: '18px', fontWeight: '900', color: '#1E293B', letterSpacing: '-0.02em' })}>
+                                                                    <div className={css({ fontSize: '18px', fontWeight: '700', color: '#1E293B', letterSpacing: '-0.02em' })}>
                                                                         {trip.destination}
                                                                     </div>
                                                                     <ChevronLeft size={18} className={css({ color: '#CBD5E1', transform: 'rotate(180deg)' })} />

@@ -334,7 +334,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                     {/* 타이틀: 모바일에서 absolute로 완전 중앙 고정 */}
                     <h2 className={css({
                         fontSize: '18px',
-                        fontWeight: '900',
+                        fontWeight: '700',
                         position: { base: 'absolute', sm: 'static' },
                         left: { base: '50%', sm: 'auto' },
                         transform: { base: 'translateX(-50%)', sm: 'none' },
@@ -444,10 +444,10 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
 
                     <div className={css({ bg: '#F8F9FA', p: '18px', borderRadius: '20px', border: '1.5px solid #F1F3F5' })}>
                         <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '8px' })}>
-                            <span className={css({ fontSize: '13px', fontWeight: '800', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                            <span className={css({ fontSize: '13px', fontWeight: '700', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '6px' })}>
                                  <div className={css({ w: '4px', h: '12px', bg: '#2EC4B6', borderRadius: '2px' })} /> 지금 이 일정의 시간 기준
                             </span>
-                            <span className={css({ fontSize: '12px', bg: 'rgba(46, 196, 182, 0.1)', color: '#2EC4B6', px: '10px', py: '4px', borderRadius: '10px', fontWeight: '900', letterSpacing: '0.02em' })}>
+                            <span className={css({ fontSize: '12px', bg: 'rgba(46, 196, 182, 0.1)', color: '#2EC4B6', px: '10px', py: '4px', borderRadius: '10px', fontWeight: '700', letterSpacing: '0.02em' })}>
                                 {timezoneString}
                             </span>
                         </div>
@@ -646,7 +646,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         <button
                             type="button"
                             onClick={handleClose}
-                            className={css({ px: '24px', py: '16px', color: '#6B7280', bg: '#F3F4F6', border: 'none', borderRadius: '18px', cursor: 'pointer', fontWeight: '800', fontSize: '16px', transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)', _active: { transform: 'scale(0.96)' }, _hover: { bg: '#E5E7EB', color: '#2C3A47' } })}
+                            className={css({ px: '24px', py: '16px', color: '#6B7280', bg: '#F3F4F6', border: 'none', borderRadius: '18px', cursor: 'pointer', fontWeight: '700', fontSize: '16px', transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)', _active: { transform: 'scale(0.96)' }, _hover: { bg: '#E5E7EB', color: '#2C3A47' } })}
                         >
                             취소
                         </button>
@@ -654,7 +654,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             type="submit"
                             disabled={loading}
                             className={css({ 
-                                px: '32px', py: '16px', bg: '#2EC4B6', color: 'white', borderRadius: '18px', fontWeight: '900', border: 'none', 
+                                px: '32px', py: '16px', bg: '#2EC4B6', color: 'white', borderRadius: '18px', fontWeight: '700', border: 'none', 
                                 cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontSize: '16px', 
                                 boxShadow: '0 8px 25px rgba(46, 196, 182, 0.25)', 
                                 transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',

@@ -207,7 +207,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' })}>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
-                        fontWeight: '800',
+                        fontWeight: '700',
                         color: '#222',
                         wordBreak: 'keep-all',
                         lineHeight: 1.2,
@@ -319,7 +319,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                             >
                                 <ChevronLeft size={26} />
                             </button>
-                            <h2 className={css({ fontSize: '18px', fontWeight: '900', position: { base: 'absolute', sm: 'static' }, left: { base: '50%', sm: 'auto' }, transform: { base: 'translateX(-50%)', sm: 'none' }, whiteSpace: 'nowrap', color: '#2C3A47', letterSpacing: '-0.02em' })}>
+                            <h2 className={css({ fontSize: '18px', fontWeight: '700', position: { base: 'absolute', sm: 'static' }, left: { base: '50%', sm: 'auto' }, transform: { base: 'translateX(-50%)', sm: 'none' }, whiteSpace: 'nowrap', color: '#2C3A47', letterSpacing: '-0.02em' })}>
                                 여행 정보 수정
                             </h2>
                             <button
@@ -422,7 +422,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                         >
                                             <Minus size={18} strokeWidth={3} />
                                         </button>
-                                        <span className={css({ fontSize: '18px', fontWeight: '800', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{adults}</span>
+                                        <span className={css({ fontSize: '18px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{adults}</span>
                                         <button 
                                             type="button" 
                                             onClick={() => setAdults(adults + 1)}
@@ -469,7 +469,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                         >
                                             <Minus size={18} strokeWidth={3} />
                                         </button>
-                                        <span className={css({ fontSize: '18px', fontWeight: '800', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{children}</span>
+                                        <span className={css({ fontSize: '18px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{children}</span>
                                         <button 
                                             type="button" 
                                             onClick={() => setChildren(children + 1)}
@@ -500,7 +500,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                     w: '100%', mt: '8px', py: '18px', bg: '#2EC4B6', color: 'white',
-                                    fontSize: '17px', fontWeight: '900', borderRadius: '20px',
+                                    fontSize: '17px', fontWeight: '700', borderRadius: '20px',
                                     cursor: saving ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                     boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)',
@@ -544,7 +544,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                 onClick={() => setShowDeleteConfirm(false)}
                                 className={css({
                                     flex: 1, py: '14px', bg: '#F8F9FA', color: '#6B7280',
-                                    border: 'none', borderRadius: '16px', fontWeight: '800',
+                                    border: 'none', borderRadius: '16px', fontWeight: '700',
                                     fontSize: '15px', cursor: 'pointer', transition: 'all 0.2s',
                                     _hover: { bg: '#F1F3F5', color: '#2C3A47' },
                                     _active: { transform: 'scale(0.96)' }
@@ -557,7 +557,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                 disabled={deleting}
                                 className={css({
                                     flex: 1, py: '14px', bg: '#FF4D4D', color: 'white',
-                                    border: 'none', borderRadius: '16px', fontWeight: '800',
+                                    border: 'none', borderRadius: '16px', fontWeight: '700',
                                     fontSize: '15px', cursor: deleting ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                     boxShadow: '0 8px 20px rgba(255, 77, 77, 0.25)',

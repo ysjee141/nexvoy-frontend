@@ -143,7 +143,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                     <X size={20} strokeWidth={2.5} />
                 </button>
 
-                <h2 className={css({ fontSize: { base: '22px', sm: '26px' }, fontWeight: '900', mb: { base: '24px', sm: '32px' }, display: 'flex', alignItems: 'center', gap: '12px', color: '#2C3A47', letterSpacing: '-0.03em' })}>
+                <h2 className={css({ fontSize: { base: '22px', sm: '26px' }, fontWeight: '700', mb: { base: '24px', sm: '32px' }, display: 'flex', alignItems: 'center', gap: '12px', color: '#2C3A47', letterSpacing: '-0.03em' })}>
                     <div className={css({ p: '10px', bg: 'rgba(46, 196, 182, 0.1)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
                         <UserPlus size={24} color="#2EC4B6" strokeWidth={2.5} />
                     </div>
@@ -192,7 +192,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                  disabled={inviting}
                                  className={css({
                                      flex: 1, py: '16px', bg: '#2EC4B6', color: 'white',
-                                     fontSize: '16.5px', fontWeight: '900', cursor: 'pointer', borderRadius: '20px',
+                                     fontSize: '16.5px', fontWeight: '700', cursor: 'pointer', borderRadius: '20px',
                                      transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                      boxShadow: '0 10px 25px rgba(46,196,182,0.25)',
                                      _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 15px 35px rgba(46,196,182,0.35)' }, 
@@ -218,7 +218,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                 )}
 
                 <div className={css({ borderTop: '1px solid #F5F5F5', pt: '28px' })}>
-                    <h3 className={css({ fontSize: '16px', fontWeight: '800', mb: '18px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                    <h3 className={css({ fontSize: '16px', fontWeight: '700', mb: '18px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '6px' })}>
                         함께하는 분들
                         <span className={css({ fontSize: '13px', color: '#2EC4B6', bg: 'rgba(46, 196, 182, 0.1)', px: '8px', py: '2px', borderRadius: '20px' })}>{members.length + (ownerProfile && !members.some(m => m.user_id === ownerId) ? 1 : 0)}</span>
                     </h3>
@@ -261,7 +261,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                 <div className={css({
                                                     w: '36px', h: '36px', bg: m.status === 'accepted' ? '#2EC4B6' : '#EEE',
                                                     borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    color: m.status === 'accepted' ? 'white' : '#888', fontSize: '13px', fontWeight: '800', flexShrink: 0,
+                                                    color: m.status === 'accepted' ? 'white' : '#888', fontSize: '13px', fontWeight: '700', flexShrink: 0,
                                                     boxShadow: m.status === 'accepted' ? '0 4px 10px rgba(46,196,182,0.2)' : 'none'
                                                 })}>
                                                     {(m.profiles?.nickname || m.invited_email || '?').charAt(0).toUpperCase()}
@@ -271,8 +271,8 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                         <span className={css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
                                                             {m.profiles?.nickname || m.invited_email?.split('@')[0] || 'Unknown'}
                                                         </span>
-                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#2EC4B6', bg: 'rgba(46, 196, 182, 0.1)', px: '7px', py: '2.5px', borderRadius: '7px', fontWeight: '900' })}>나</span>}
-                                                        {m.status === 'pending' && <span className={css({ fontSize: '10px', color: '#F2994A', bg: 'rgba(242, 153, 74, 0.1)', px: '7px', py: '2.5px', borderRadius: '7px', fontWeight: '900' })}>대기중</span>}
+                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#2EC4B6', bg: 'rgba(46, 196, 182, 0.1)', px: '7px', py: '2.5px', borderRadius: '7px', fontWeight: '700' })}>나</span>}
+                                                        {m.status === 'pending' && <span className={css({ fontSize: '10px', color: '#F2994A', bg: 'rgba(242, 153, 74, 0.1)', px: '7px', py: '2.5px', borderRadius: '7px', fontWeight: '700' })}>대기중</span>}
                                                     </p>
                                                     <p className={css({ fontSize: '12px', color: '#9BA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' })}>{m.invited_email}</p>
                                                 </div>
@@ -314,7 +314,7 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                 ) : (
                                                     <span className={css({
                                                         fontSize: '11px', px: '9px', py: '5px', bg: isMemberOwner ? '#2C3A47' : '#F3F4F6',
-                                                        color: isMemberOwner ? 'white' : '#6B7280', borderRadius: '8px', fontWeight: '800', letterSpacing: '0.02em'
+                                                        color: isMemberOwner ? 'white' : '#6B7280', borderRadius: '8px', fontWeight: '700', letterSpacing: '0.02em'
                                                     })}>
                                                         {isMemberOwner ? '관리자' : m.role === 'editor' ? '편집자' : '뷰어'}
                                                     </span>

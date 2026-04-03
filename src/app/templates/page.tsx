@@ -54,7 +54,7 @@ export default function TemplatesPage() {
         <div className={css({ w: '100%', py: '40px' })}>
             <header className={css({ mb: { base: '24px', sm: '40px' }, display: 'flex', flexDirection: { base: 'column', sm: 'row' }, gap: '16px', justifyContent: 'space-between', alignItems: { base: 'stretch', sm: 'center' } })}>
                 <div>
-                        <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '800', color: '#2C3A47' })}>
+                        <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '700', color: '#2C3A47' })}>
                             내 체크리스트 템플릿
                         </h1>
                         <p className={css({ color: '#666', mt: { base: '4px', sm: '8px' }, fontSize: { base: '14px', sm: '16px' }, wordBreak: 'keep-all', fontWeight: '500' })}>
@@ -100,7 +100,7 @@ export default function TemplatesPage() {
                         })}
                     >
                         <ListTodo size={48} className={css({ mx: 'auto', mb: '16px', color: '#ccc' })} />
-                        <p className={css({ fontSize: '18px', fontWeight: '800', mb: '8px', color: '#2C3A47' })}>
+                        <p className={css({ fontSize: '18px', fontWeight: '700', mb: '8px', color: '#2C3A47' })}>
                             등록된 템플릿이 없습니다.
                         </p>
                         <p className={css({ fontSize: '15px', color: '#717171', fontWeight: '500' })}>나만의 준비물 목록을 템플릿으로 만들어 보세요!</p>
@@ -156,7 +156,7 @@ export default function TemplatesPage() {
                                     <h3
                                         className={css({
                                             fontSize: '18px',
-                                            fontWeight: '800',
+                                            fontWeight: '700',
                                             mb: '8px',
                                             color: '#2C3A47',
                                         })}
@@ -166,7 +166,7 @@ export default function TemplatesPage() {
                                     <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#717171', fontWeight: '600', mb: '16px' })}>
                                         저장된 항목: {itemCount}개
                                     </p>
-                                    <div className={css({ mt: 'auto', pt: '16px', borderTop: '1px solid #EEEEEE', color: '#2EC4B6', fontSize: '13px', fontWeight: '800' })}>
+                                    <div className={css({ mt: 'auto', pt: '16px', borderTop: '1px solid #EEEEEE', color: '#2EC4B6', fontSize: '13px', fontWeight: '700' })}>
                                         템플릿 관리하기 →
                                     </div>
                                 </Link>

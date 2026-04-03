@@ -103,7 +103,7 @@ export default function WithdrawalPage() {
                 {step === 1 ? (
                     <div className={css({ bg: 'white', borderRadius: '24px', p: { base: '32px 24px', sm: '48px' }, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.04)' })}>
                         <div className={css({ fontSize: '48px', mb: '16px' })}>🥺</div>
-                        <h2 className={css({ fontSize: '24px', fontWeight: '800', color: '#172554', mb: '12px' })}>
+                        <h2 className={css({ fontSize: '24px', fontWeight: '700', color: '#172554', mb: '12px' })}>
                             정말 온여정을 떠나시겠어요?
                         </h2>
                         

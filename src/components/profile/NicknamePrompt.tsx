@@ -71,7 +71,7 @@ export default function NicknamePrompt({ onClose }: NicknamePromptProps) {
                 </div>
 
                 <div className={css({ flex: 1 })}>
-                    <h3 className={css({ fontSize: '16px', fontWeight: '800', color: '#1E3A8A', mb: '2px' })}>
+                    <h3 className={css({ fontSize: '16px', fontWeight: '700', color: '#1E3A8A', mb: '2px' })}>
                         닉네임을 설정해 주세요!
                     </h3>
                     <p className={css({ fontSize: '13px', color: '#3B82F6', fontWeight: '500' })}>
@@ -82,7 +82,7 @@ export default function NicknamePrompt({ onClose }: NicknamePromptProps) {
                 <div className={css({ 
                     display: 'flex', alignItems: 'center', gap: '6px', 
                     bg: 'white', color: '#1E40AF', px: '14px', py: '8px', 
-                    borderRadius: '10px', fontSize: '13px', fontWeight: '800',
+                    borderRadius: '10px', fontSize: '13px', fontWeight: '700',
                     mt: { base: '12px', sm: 0 }
                 })}>
                     설정하러 가기 <ArrowRight size={14} />

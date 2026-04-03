@@ -56,7 +56,7 @@ export default function TesterNoticeModal({ userId }: TesterNoticeModalProps) {
 
                 <div className={css({ p: '32px' })}>
                     <div className={css({ textAlign: 'center', mb: '28px' })}>
-                        <h2 className={css({ fontSize: '24px', fontWeight: '900', color: '#2C3A47', mb: '10px', letterSpacing: '-0.02em' })}>
+                        <h2 className={css({ fontSize: '24px', fontWeight: '700', color: '#2C3A47', mb: '10px', letterSpacing: '-0.02em' })}>
                             테스터님, 환영합니다! 👋
                         </h2>
                         <p className={css({ fontSize: '15px', color: '#6B7280', lineHeight: '1.65', wordBreak: 'keep-all', fontWeight: '500' })}>
@@ -77,9 +77,9 @@ export default function TesterNoticeModal({ userId }: TesterNoticeModalProps) {
                                 <Megaphone size={22} color="white" strokeWidth={2.5} />
                             </div>
                             <div>
-                                <h4 className={css({ fontWeight: '900', fontSize: '15px', color: '#2C3A47', mb: '6px' })}>피드백 방법 안내</h4>
+                                <h4 className={css({ fontWeight: '700', fontSize: '15px', color: '#2C3A47', mb: '6px' })}>피드백 방법 안내</h4>
                                 <p className={css({ fontSize: '14px', color: '#6B7280', lineHeight: '1.55', fontWeight: '500' })}>
-                                    화면 오른쪽 하단 <strong style={{ color: '#2EC4B6', fontWeight: '900' }}>피드백 버튼</strong>을 눌러주세요. 결함 제보부터 작은 아이디어까지 언제나 환영합니다! ✨
+                                    화면 오른쪽 하단 <strong style={{ color: '#2EC4B6', fontWeight: '700' }}>피드백 버튼</strong>을 눌러주세요. 결함 제보부터 작은 아이디어까지 언제나 환영합니다! ✨
                                 </p>
                             </div>
                         </div>
@@ -90,7 +90,7 @@ export default function TesterNoticeModal({ userId }: TesterNoticeModalProps) {
                             onClick={handleClose}
                             className={css({
                                 w: '100%', py: '18px', bg: '#2EC4B6', color: 'white', borderRadius: '20px',
-                                fontWeight: '900', fontSize: '17px', border: 'none', cursor: 'pointer',
+                                fontWeight: '700', fontSize: '17px', border: 'none', cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
                                 boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)',
                                 transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 

@@ -56,7 +56,7 @@ function ErrorContent() {
                 </div>
                 <h1 className={css({
                     fontSize: '24px',
-                    fontWeight: '800',
+                    fontWeight: '700',
                     color: '#172554',
                     mb: '12px'
                 })}>

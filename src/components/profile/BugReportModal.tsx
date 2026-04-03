@@ -113,7 +113,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                     p: '20px 24px', borderBottom: '1px solid #F5F5F5', display: 'flex',
                     alignItems: 'center', justifyContent: 'space-between', bg: 'white'
                 })}>
-                    <h2 className={css({ fontSize: '18px', fontWeight: '900', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.02em' })}>
+                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.02em' })}>
                         <MessageSquare size={20} color="#2EC4B6" strokeWidth={2.5} /> 테스터 피드백 보내기
                     </h2>
                     <button onClick={handleClose} className={css({ 
@@ -132,7 +132,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                 })}>
                     <div className={css({ fontSize: '20px', mt: '2px' })}>✨</div>
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '4px' })}>
-                        <h3 className={css({ fontSize: '14px', fontWeight: '900', color: '#2EC4B6' })}>테스트에 참여해주셔서 고맙습니다!</h3>
+                        <h3 className={css({ fontSize: '14px', fontWeight: '700', color: '#2EC4B6' })}>테스트에 참여해주셔서 고맙습니다!</h3>
                         <p className={css({ fontSize: '13px', color: '#6B7280', fontWeight: '600', lineHeight: '1.55', wordBreak: 'keep-all' })}>
                             테스터님의 소중한 의견과 발견된 결함들이 모여 더 완벽한 온여정이 만들어집니다. 어떤 의견이라도 편하게 들려주세요!
                         </p>
@@ -146,13 +146,13 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                             display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 24px',
                             fontSize: '40px'
                         })}>✨</div>
-                        <h3 className={css({ fontSize: '22px', fontWeight: '900', mb: '12px', color: '#2C3A47', letterSpacing: '-0.02em' })}>소중한 피드백 감사합니다!</h3>
+                        <h3 className={css({ fontSize: '22px', fontWeight: '700', mb: '12px', color: '#2C3A47', letterSpacing: '-0.02em' })}>소중한 피드백 감사합니다!</h3>
                         <p className={css({ color: '#6B7280', fontSize: '16px', fontWeight: '500' })}>보내주신 의견을 바탕으로 더 멋진 온여정을 만들게요.</p>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '20px' })}>
                         <div>
-                            <label className={css({ display: 'block', fontSize: '14px', fontWeight: '900', mb: '10px', color: '#2C3A47' })}>어떤 의견이나 결함이 있나요?</label>
+                            <label className={css({ display: 'block', fontSize: '14px', fontWeight: '700', mb: '10px', color: '#2C3A47' })}>어떤 의견이나 결함이 있나요?</label>
                             <textarea
                                 value={content}
                                 onChange={(e) => setContent(e.target.value)}
@@ -168,7 +168,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
 
                         <div>
                             <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '10px' })}>
-                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '900', color: '#2C3A47' })}>이미지/영상 첨부 (선택)</label>
+                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: '700', color: '#2C3A47' })}>이미지/영상 첨부 (선택)</label>
                                 <span className={css({ 
                                     fontSize: '12px', 
                                     fontWeight: '700',
@@ -243,7 +243,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                             disabled={isSubmitting || !content.trim() || isOverSize}
                             className={css({
                                 w: '100%', py: '18px', bg: '#2EC4B6', color: 'white', borderRadius: '20px',
-                                fontWeight: '900', fontSize: '17px', border: 'none', cursor: 'pointer',
+                                fontWeight: '700', fontSize: '17px', border: 'none', cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
                                 boxShadow: '0 8px 25px rgba(46, 196, 182, 0.25)',
                                 transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',

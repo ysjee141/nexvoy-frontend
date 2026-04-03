@@ -130,7 +130,7 @@ export default function TripLayoutClient() {
                     mb: '16px',
                     position: 'sticky',
                     top: { 
-                        base: '56px', // Standard GNB Height
+                        base: 'calc(56px + env(safe-area-inset-top))', // Accounting for safe area on Android/iOS
                         sm: '64px' 
                     },
                     bg: '#FBFBF9', // Perfectly unified with page background
@@ -157,7 +157,7 @@ export default function TripLayoutClient() {
                             bg: activeTab === 'plans' ? 'white' : 'transparent',
                             cursor: 'pointer', border: 'none',
                             color: activeTab === 'plans' ? '#2EC4B6' : '#717171',
-                            fontWeight: '800',
+                            fontWeight: '700',
                             fontSize: '14px',
                             borderRadius: '16px',
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -175,7 +175,7 @@ export default function TripLayoutClient() {
                             bg: activeTab === 'checklist' ? 'white' : 'transparent',
                             cursor: 'pointer', border: 'none',
                             color: activeTab === 'checklist' ? '#2EC4B6' : '#717171',
-                            fontWeight: '800',
+                            fontWeight: '700',
                             fontSize: '14px',
                             borderRadius: '16px',
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',

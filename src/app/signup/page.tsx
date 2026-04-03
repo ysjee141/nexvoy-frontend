@@ -80,11 +80,11 @@ export default function SignUpPage() {
                     <div className={css({ w: '80px', h: '80px', bg: '#F7F7F7', color: '#222', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: '24px' })}>
                         <Mail size={40} />
                     </div>
-                    <h2 className={css({ fontSize: '26px', fontWeight: '800', color: '#222', mb: '12px', letterSpacing: '-0.02em' })}>메일함을 확인해 주세요! 💌</h2>
+                    <h2 className={css({ fontSize: '26px', fontWeight: '700', color: '#222', mb: '12px', letterSpacing: '-0.02em' })}>메일함을 확인해 주세요! 💌</h2>
                     <p className={css({ fontSize: '15px', color: '#666', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
                         <strong>{email}</strong> 주소로 소중한 인증 메일을 보냈어요.<br />메일함에서 확인 버튼만 누르면, 우리는 이제 소중한 인연이에요!
                     </p>
-                    <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#222', fontWeight: '800', fontSize: '15px', textDecoration: 'underline' })}>
+                    <Link href="/login" className={css({ display: 'inline-flex', alignItems: 'center', gap: '8px', color: '#222', fontWeight: '700', fontSize: '15px', textDecoration: 'underline' })}>
                         로그인 페이지로 돌아가기 <ArrowRight size={16} />
                     </Link>
                 </div>
@@ -121,11 +121,11 @@ export default function SignUpPage() {
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
                         <Image src="/logo.png" alt="온여정 로고" width={32} height={32} priority />
-                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#172554', letterSpacing: '-0.02em' })}>온여정</span>
+                        <span className={css({ fontSize: '20px', fontWeight: '700', color: '#172554', letterSpacing: '-0.02em' })}>온여정</span>
                     </div>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
-                        fontWeight: '800',
+                        fontWeight: '700',
                         color: '#222',
                         mb: '12px',
                         letterSpacing: '-0.03em',
@@ -163,7 +163,7 @@ export default function SignUpPage() {
                                 '.nick-group:focus-within &': { opacity: 1 } 
                             })} />
                             <div className="nick-group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
                                     닉네임 <span className={css({ fontWeight: '400', color: '#717171', ml: '4px' })}>(선택 사항)</span>
                                 </label>
                                 <input
@@ -198,7 +198,7 @@ export default function SignUpPage() {
                                 '.email-group:focus-within &': { opacity: 1 } 
                             })} />
                             <div className="email-group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: touched.email && !isEmailValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.email && !isEmailValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
                                     이메일
                                 </label>
                                 <input
@@ -238,7 +238,7 @@ export default function SignUpPage() {
                                 '.pw-group:focus-within &': { opacity: 1 } 
                             })} />
                             <div className="pw-group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: touched.password && !isPasswordValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.password && !isPasswordValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
                                     비밀번호
                                 </label>
                                 <input
@@ -278,7 +278,7 @@ export default function SignUpPage() {
                                 '.cpw-group:focus-within &': { opacity: 1 } 
                             })} />
                             <div className="cpw-group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: touched.confirmPassword && !isConfirmPasswordValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.confirmPassword && !isConfirmPasswordValid ? '#ff4d4f' : '#222', mb: '2px', textTransform: 'uppercase' })}>
                                     비밀번호 확인
                                 </label>
                                 <input
@@ -331,7 +331,7 @@ export default function SignUpPage() {
                             className={css({ w: '20px', h: '20px', cursor: 'pointer', accentColor: '#222', flexShrink: 0 })}
                         />
                         <div className={css({ fontSize: '14px', color: '#484848', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' })}>
-                            <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: '#222', fontWeight: '800', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
+                            <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: '#222', fontWeight: '700', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
                                 이용약관 및 개인정보 처리방침
                             </button>
                             <label htmlFor="terms" className={css({ cursor: 'pointer', userSelect: 'none' })}>
@@ -348,7 +348,7 @@ export default function SignUpPage() {
                             py: '14px',
                             bg: 'brand.primary',
                             color: 'white',
-                            fontWeight: '800',
+                            fontWeight: '700',
                             fontSize: '16px',
                             borderRadius: '10px',
                             cursor: 'pointer',
@@ -382,7 +382,7 @@ export default function SignUpPage() {
                         href="/login"
                         className={css({
                             color: '#222',
-                            fontWeight: '800',
+                            fontWeight: '700',
                             textDecoration: 'underline',
                             _hover: { color: '#000' },
                         })}

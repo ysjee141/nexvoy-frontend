@@ -232,7 +232,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                     >
                         <ArrowLeft size={18} /> 목록으로 돌아가기
                     </Link>
-                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '800', color: '#2C3A47', lineHeight: '1.2' })}>
+                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '700', color: '#2C3A47', lineHeight: '1.2' })}>
                         {title} 수정하기
                     </h1>
                 </div>
@@ -308,7 +308,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                                         <select
                                             value={item.category}
                                             onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer', appearance: 'none' })}
+                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '700', color: '#2C3A47', cursor: 'pointer', appearance: 'none' })}
                                         >
                                             {CATEGORIES.map((cat: any) => (
                                                 <option key={cat} value={cat}>{cat}</option>
