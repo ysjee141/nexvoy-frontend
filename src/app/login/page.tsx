@@ -79,11 +79,11 @@ export default function LoginPage() {
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
                         <Image src="/logo.png" alt="온여정 로고" width={32} height={32} priority />
-                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#2C3A47', letterSpacing: '-0.02em' })}>온여정</span>
+                        <span className={css({ fontSize: '20px', fontWeight: '700', color: '#2C3A47', letterSpacing: '-0.02em' })}>온여정</span>
                     </div>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
-                        fontWeight: '800',
+                        fontWeight: '700',
                         color: '#222',
                         mb: '12px',
                         letterSpacing: '-0.03em',
@@ -119,7 +119,7 @@ export default function LoginPage() {
                                 '.group:focus-within &': { opacity: 1 } 
                             })} />
                             <div className="group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
                                     이메일
                                 </label>
                                 <input
@@ -152,7 +152,7 @@ export default function LoginPage() {
                                 '.group:focus-within &': { opacity: 1 } 
                             })} />
                             <div className="group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '800', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
                                     비밀번호
                                 </label>
                                 <input
@@ -236,7 +236,7 @@ export default function LoginPage() {
                             py: '14px',
                             bg: 'brand.primary',
                             color: 'white',
-                            fontWeight: '800',
+                            fontWeight: '700',
                             fontSize: '16px',
                             borderRadius: '16px',
                             cursor: loading ? 'not-allowed' : 'pointer',
@@ -270,7 +270,7 @@ export default function LoginPage() {
                         href="/signup"
                         className={css({
                             color: '#222',
-                            fontWeight: '800',
+                            fontWeight: '700',
                             textDecoration: 'underline',
                             _hover: { color: '#000' },
                         })}

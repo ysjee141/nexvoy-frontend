@@ -133,14 +133,14 @@ export default function PlanDetailModal({
                             display: { base: 'flex', sm: 'none' },
                             alignItems: 'center', gap: '4px',
                             bg: 'transparent', border: 'none', cursor: 'pointer',
-                            color: '#2C3A47', fontWeight: '800', fontSize: '16px', p: '4px',
+                            color: '#2C3A47', fontWeight: '700', fontSize: '16px', p: '4px',
                         })}
                     >
                         <ChevronLeft size={24} strokeWidth={2.5} /> 뒤로
                     </button>
 
                     <h2 className={css({
-                        fontSize: '18px', fontWeight: '900', color: '#2C3A47',
+                        fontSize: '18px', fontWeight: '700', color: '#2C3A47',
                         position: { base: 'absolute', sm: 'static' },
                         left: { base: '50%', sm: 'auto' },
                         transform: { base: 'translateX(-50%)', sm: 'none' },
@@ -224,7 +224,7 @@ export default function PlanDetailModal({
                                     <span className={css({
                                         bg: '#2EC4B6',
                                         color: isActive ? 'white' : '#6B7280',
-                                        fontSize: '10px', fontWeight: '900',
+                                        fontSize: '10px', fontWeight: '700',
                                         px: '6px', py: '1.5px', borderRadius: '8px',
                                         ml: '2px',
                                     })}>
@@ -305,7 +305,7 @@ export default function PlanDetailModal({
 
                             <div className={css({ p: { base: '20px', sm: '24px' }, display: 'flex', flexDirection: 'column', gap: '20px' })}>
                                 {/* 일정명 */}
-                                <h3 className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: '800', color: '#2C3A47', lineHeight: 1.3, wordBreak: 'break-word', m: '0' })}>
+                                <h3 className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: '700', color: '#2C3A47', lineHeight: 1.3, wordBreak: 'break-word', m: '0' })}>
                                     {plan.title}
                                 </h3>
 
@@ -423,7 +423,7 @@ export default function PlanDetailModal({
                         <button onClick={() => { onEdit(plan); handleClose() }} disabled={!isOnline}
                             className={css({ 
                                 flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', py: '14px', 
-                                bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '900', fontSize: '15px', 
+                                bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '700', fontSize: '15px', 
                                 border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', 
                                 opacity: isOnline ? 1 : 0.5, boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)',
                                 transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
@@ -435,7 +435,7 @@ export default function PlanDetailModal({
                             className={css({ 
                                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', py: '14px', 
                                 bg: '#FFF5F5', color: '#FF5A5F', border: '1.5px solid #FFEBEB', borderRadius: '16px', 
-                                fontWeight: '800', fontSize: '15px', cursor: isOnline ? 'pointer' : 'not-allowed', 
+                                fontWeight: '700', fontSize: '15px', cursor: isOnline ? 'pointer' : 'not-allowed', 
                                 opacity: isOnline ? 1 : 0.5,
                                 transition: 'all 0.2s',
                                 _hover: { bg: '#FFEBEB', color: '#FF4D52' } 
@@ -475,7 +475,7 @@ function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string;
                 {icon}
             </div>
             <div className={css({ flex: 1, minW: 0 })}>
-                <p className={css({ fontSize: '11px', fontWeight: '800', color: '#A0AEC0', textTransform: 'uppercase', letterSpacing: '0.05em', m: '0 0 2px 0' })}>{label}</p>
+                <p className={css({ fontSize: '11px', fontWeight: '700', color: '#A0AEC0', textTransform: 'uppercase', letterSpacing: '0.05em', m: '0 0 2px 0' })}>{label}</p>
                 <div className={css({ display: 'flex', alignItems: 'center' })}>{typeof value === 'string'
                     ? <span className={css({ fontSize: '15.5px', color: '#2C3A47', fontWeight: '600', wordBreak: 'break-word', lineHeight: 1.4 })}>{value}</span>
                     : value}

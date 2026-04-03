@@ -116,7 +116,7 @@ export default function NewTripPage() {
                 >
                     <ChevronLeft size={24} color="#222" />
                 </button>
-                <h1 className={css({ flex: 1, textAlign: 'center', fontSize: '16px', fontWeight: '800', mr: '24px', color: '#2C3A47' })}>새로운 여행 계획</h1>
+                <h1 className={css({ flex: 1, textAlign: 'center', fontSize: '16px', fontWeight: '700', mr: '24px', color: '#2C3A47' })}>새로운 여행 계획</h1>
             </header>
 
             <main className={css({
@@ -135,7 +135,7 @@ export default function NewTripPage() {
                 })}>
                     <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '24px', overflowX: 'hidden' })}>
                         <div>
-                            <label className={css({ display: 'block', fontSize: '15px', fontWeight: '800', mb: '12px', color: '#2C3A47' })}>
+                            <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '12px', color: '#2C3A47' })}>
                                 여행지 (국가/도시) *
                             </label>
                             {isLoaded ? (
@@ -184,7 +184,7 @@ export default function NewTripPage() {
 
                         <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '15px', fontWeight: '800', mb: '12px', color: '#2C3A47' })}>
+                                <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '12px', color: '#2C3A47' })}>
                                     가는 날 (시작일) *
                                 </label>
                                 <div style={{ overflow: 'hidden', width: '100%' }}>
@@ -213,7 +213,7 @@ export default function NewTripPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '15px', fontWeight: '800', mb: '12px', color: '#2C3A47' })}>
+                                <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '12px', color: '#2C3A47' })}>
                                     오는 날 (종료일) *
                                 </label>
                                 <div style={{ overflow: 'hidden', width: '100%' }}>
@@ -245,7 +245,7 @@ export default function NewTripPage() {
 
                         <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '15px', fontWeight: '800', mb: '12px', color: '#2C3A47' })}>
+                                <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '12px', color: '#2C3A47' })}>
                                     성인 인원
                                 </label>
                                 <div className={css({
@@ -275,7 +275,7 @@ export default function NewTripPage() {
                                     >
                                         <Minus size={18} strokeWidth={3} />
                                     </button>
-                                    <span className={css({ fontSize: '18px', fontWeight: '800', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{adults}</span>
+                                    <span className={css({ fontSize: '18px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{adults}</span>
                                     <button
                                         type="button"
                                         onClick={() => setAdults(adults + 1)}
@@ -293,7 +293,7 @@ export default function NewTripPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '15px', fontWeight: '800', mb: '12px', color: '#2C3A47' })}>
+                                <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '12px', color: '#2C3A47' })}>
                                     아이 인원
                                 </label>
                                 <div className={css({
@@ -323,7 +323,7 @@ export default function NewTripPage() {
                                     >
                                         <Minus size={18} strokeWidth={3} />
                                     </button>
-                                    <span className={css({ fontSize: '18px', fontWeight: '800', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{childrenCount}</span>
+                                    <span className={css({ fontSize: '18px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{childrenCount}</span>
                                     <button
                                         type="button"
                                         onClick={() => setChildren(childrenCount + 1)}
@@ -362,7 +362,7 @@ export default function NewTripPage() {
                                      bg: '#2EC4B6',
                                      color: 'white',
                                      fontSize: '17px',
-                                     fontWeight: '800',
+                                     fontWeight: '700',
                                      borderRadius: '16px',
                                      cursor: loading ? 'not-allowed' : 'pointer',
                                      opacity: loading ? 0.7 : 1,

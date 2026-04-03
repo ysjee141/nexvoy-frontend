@@ -137,7 +137,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                     <X size={20} strokeWidth={2.5} />
                 </button>
 
-                <h3 className={css({ fontSize: '22px', fontWeight: '900', mb: '24px', color: '#2C3A47', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
+                <h3 className={css({ fontSize: '22px', fontWeight: '700', mb: '24px', color: '#2C3A47', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
 
                 {loading ? (
                     <div className={css({ textAlign: 'center', py: '40px', color: '#888' })}>템플릿을 열심히 불러오고 있어요... ✈️</div>
@@ -159,7 +159,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                                     className={css({ 
                                         display: 'flex', alignItems: 'center', gap: '8px', px: '18px', py: '11px', 
                                         bg: '#2EC4B6', color: 'white', borderRadius: '14px', border: 'none', 
-                                        cursor: 'pointer', fontSize: '14px', fontWeight: '900', whiteSpace: 'nowrap', 
+                                        cursor: 'pointer', fontSize: '14px', fontWeight: '700', whiteSpace: 'nowrap', 
                                         transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
                                         boxShadow: '0 6px 15px rgba(46,196,182,0.25)', 
                                         _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 10px 20px rgba(46,196,182,0.35)' }, 

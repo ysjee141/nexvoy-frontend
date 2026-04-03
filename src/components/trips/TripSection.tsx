@@ -123,7 +123,7 @@ export default function TripSection({
 
                                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '10px' })}>
                                     <span className={css({
-                                        fontSize: '11px', fontWeight: '800', px: '8px', py: '4px',
+                                        fontSize: '11px', fontWeight: '700', px: '8px', py: '4px',
                                         borderRadius: '6px', 
                                         bg: isOwner ? '#EAF9F7' : '#F7F7F7',
                                         color: isOwner ? '#2EC4B6' : '#2C3A47',
@@ -164,7 +164,7 @@ export default function TripSection({
                                 <div className={css({ borderTop: '1px solid #f0f0f0', pt: '12px' })}>
                                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '6px' })}>
                                         <span className={css({ fontSize: '12px', fontWeight: '600', color: '#666' })}>준비물</span>
-                                        <span className={css({ fontSize: '12px', fontWeight: '800', color: progressPercent === 100 ? '#222' : 'brand.primary' })}>
+                                        <span className={css({ fontSize: '12px', fontWeight: '700', color: progressPercent === 100 ? '#222' : 'brand.primary' })}>
                                             {progressPercent}%
                                         </span>
                                     </div>

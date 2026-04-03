@@ -91,7 +91,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                     <X size={20} strokeWidth={2.5} />
                 </button>
 
-                <h2 className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: '900', mb: { base: '24px', sm: '32px' }, display: 'flex', alignItems: 'center', gap: '12px', color: '#2C3A47', letterSpacing: '-0.02em' })}>
+                <h2 className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: '700', mb: { base: '24px', sm: '32px' }, display: 'flex', alignItems: 'center', gap: '12px', color: '#2C3A47', letterSpacing: '-0.02em' })}>
                     <div className={css({ p: '10px', bg: 'rgba(46, 196, 182, 0.1)', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
                         <Share2 size={22} color="#2EC4B6" strokeWidth={2.5} />
                     </div>
@@ -107,7 +107,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                         <button
                             onClick={() => { setShareType('public'); setShareToken(''); }}
                             className={css({
-                                flex: 1, py: '12px', fontSize: '14px', fontWeight: '800',
+                                flex: 1, py: '12px', fontSize: '14px', fontWeight: '700',
                                 borderRadius: '14px', border: 'none', cursor: 'pointer',
                                 bg: shareType === 'public' ? 'white' : 'transparent',
                                 boxShadow: shareType === 'public' ? '0 4px 15px rgba(0,0,0,0.06)' : 'none',
@@ -122,7 +122,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                         <button
                             onClick={() => { setShareType('password'); setShareToken(''); }}
                             className={css({
-                                flex: 1, py: '12px', fontSize: '14px', fontWeight: '800',
+                                flex: 1, py: '12px', fontSize: '14px', fontWeight: '700',
                                 borderRadius: '14px', border: 'none', cursor: 'pointer',
                                 bg: shareType === 'password' ? 'white' : 'transparent',
                                 boxShadow: shareType === 'password' ? '0 4px 15px rgba(0,0,0,0.06)' : 'none',
@@ -138,7 +138,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
 
                     {shareType === 'password' && !shareToken && (
                         <div className={css({ mb: '16px', animation: 'fadeIn 0.3s ease-out' })}>
-                            <label className={css({ display: 'block', fontSize: '13px', mb: '10px', color: '#2C3A47', fontWeight: '800' })}>접속 비밀번호 설정</label>
+                            <label className={css({ display: 'block', fontSize: '13px', mb: '10px', color: '#2C3A47', fontWeight: '700' })}>접속 비밀번호 설정</label>
                             <div className={css({ display: 'flex', gap: '10px' })}>
                                 <input
                                     type="password"
@@ -156,7 +156,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                                     onClick={handleCreateLink}
                                     className={css({
                                         px: '24px', bg: '#2EC4B6', color: 'white', borderRadius: '20px',
-                                        fontWeight: '900', cursor: 'pointer', border: 'none',
+                                        fontWeight: '700', cursor: 'pointer', border: 'none',
                                         transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                         boxShadow: '0 8px 20px rgba(46,196,182,0.25)',
                                         _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 12px 25px rgba(46,196,182,0.35)' },
@@ -177,7 +177,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                     </div>
                 ) : shareUrl ? (
                     <div className={css({ bg: '#F8F9FA', p: '24px', borderRadius: '24px', border: '1.5px solid #F1F3F5', animation: 'fadeIn 0.4s ease-out' })}>
-                        <h3 className={css({ fontSize: '13px', fontWeight: '800', color: '#2C3A47', mb: '14px', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                        <h3 className={css({ fontSize: '13px', fontWeight: '700', color: '#2C3A47', mb: '14px', display: 'flex', alignItems: 'center', gap: '8px' })}>
                             <div className={css({ w: '4px', h: '12px', bg: '#2EC4B6', borderRadius: '2px' })} /> 공유 링크 URL
                         </h3>
                         <div className={css({
@@ -194,7 +194,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                                 className={css({
                                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                     py: '15px', bg: 'white', border: '1.5px solid #EEEEEE', borderRadius: '16px',
-                                    fontSize: '14px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer', 
+                                    fontSize: '14px', fontWeight: '700', color: '#2C3A47', cursor: 'pointer', 
                                     transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)', 
                                     _hover: { bg: '#F8F9FA', borderColor: '#2EC4B6', color: '#2EC4B6', transform: 'translateY(-1px)' },
                                     _active: { transform: 'scale(0.96)' }
@@ -207,7 +207,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                                 className={css({
                                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                                     py: '15px', bg: 'white', border: '1.5px solid #EEEEEE', borderRadius: '16px',
-                                    fontSize: '14px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer',
+                                    fontSize: '14px', fontWeight: '700', color: '#2C3A47', cursor: 'pointer',
                                     transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)', 
                                     _hover: { bg: '#F8F9FA', borderColor: '#2EC4B6', color: '#2EC4B6', transform: 'translateY(-1px)' },
                                     _active: { transform: 'scale(0.96)' }
@@ -216,7 +216,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                                 <Mail size={16} strokeWidth={2.5} /> 메일 공유
                             </button>
                         </div>
-                        {copied && <p className={css({ mt: '14px', textAlign: 'center', fontSize: '13px', color: '#2EC4B6', fontWeight: '900', animation: 'fadeIn 0.2s' })}>✨ 링크가 복사되었습니다!</p>}
+                        {copied && <p className={css({ mt: '14px', textAlign: 'center', fontSize: '13px', color: '#2EC4B6', fontWeight: '700', animation: 'fadeIn 0.2s' })}>✨ 링크가 복사되었습니다!</p>}
                     </div>
                 ) : null}
 
