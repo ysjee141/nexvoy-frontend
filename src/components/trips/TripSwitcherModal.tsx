@@ -222,7 +222,6 @@ export default function TripSwitcherModal() {
                     animation: closing ? 'slideDown 0.2s cubic-bezier(0.2, 0, 0, 1) forwards' : 
                               !mounted ? 'slideUp 0.3s cubic-bezier(0.2, 0, 0, 1)' : 'none',
                     overflow: 'hidden',
-                    pb: 'calc(20px + env(safe-area-inset-bottom))',
                     transform: `translateY(${dragY}px)`,
                     transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
                 })}

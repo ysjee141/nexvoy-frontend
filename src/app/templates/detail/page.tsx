@@ -1,3 +1,5 @@
+'use client'
+
 import { Suspense } from 'react'
 import ClientPage from './TemplateClient'
 import { TemplateFormSkeleton } from '@/components/template/TemplateFormSkeleton'
