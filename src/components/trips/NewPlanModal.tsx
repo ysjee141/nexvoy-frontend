@@ -287,30 +287,34 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                 position: 'fixed',
                 inset: 0,
                 zIndex: 2000,
-                backgroundColor: { base: 'white', sm: 'rgba(0,0,0,0.4)' },
+                backgroundColor: { base: 'white', sm: 'rgba(0,0,0,0.5)' },
                 display: 'flex',
                 alignItems: { base: 'flex-start', sm: 'center' },
                 justifyContent: 'center',
                 p: { base: '0', sm: '20px' },
+                backdropFilter: { base: 'none', sm: 'blur(10px)' },
+                animation: 'fadeIn 0.3s ease-out',
             })}
         >
             <div
                 className={css({
                     bg: 'white',
                     w: '100%',
-                    maxW: { base: '100%', sm: '500px' },
+                    maxW: { base: '100%', sm: '540px' },
                     h: { base: '100%', sm: 'auto' },
                     maxH: { base: '100dvh', sm: '90vh' },
                     overflowY: 'auto',
-                    borderRadius: { base: '0', sm: '16px' },
-                    boxShadow: { base: 'none', sm: '0 10px 40px rgba(0,0,0,0.1)' },
+                    borderRadius: { base: '0', sm: '24px' },
+                    boxShadow: { base: 'none', sm: '0 20px 60px rgba(0,0,0,0.15)' },
                     display: 'flex',
                     flexDirection: 'column',
                     pt: { base: 'env(safe-area-inset-top)', sm: '0' },
+                    animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)',
+                    position: 'relative'
                 })}
             >
                 {/* 헤더: 모바일은 iOS 스타일 ← 뒤로가기, 데스크탑은 X 닫기 */}
-                <div className={css({ p: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10 })}>
+                <div className={css({ p: '20px 24px', borderBottom: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'rgba(255, 255, 255, 0.95)', backdropFilter: 'blur(10px)', zIndex: 10 })}>
                     {/* 모바일: 뒤로가기 버튼 위치 */}
                     <button
                         onClick={handleClose}
@@ -321,22 +325,24 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             border: 'none',
                             cursor: 'pointer',
                             color: '#2EC4B6',
-                            p: '0',
+                            p: '4px',
                             zIndex: 1,
                         })}
                     >
-                        <ChevronLeft size={26} />
+                        <ChevronLeft size={28} strokeWidth={2.5} />
                     </button>
                     {/* 타이틀: 모바일에서 absolute로 완전 중앙 고정 */}
                     <h2 className={css({
-                        fontSize: '17px',
-                        fontWeight: 'bold',
+                        fontSize: '18px',
+                        fontWeight: '900',
                         position: { base: 'absolute', sm: 'static' },
                         left: { base: '50%', sm: 'auto' },
                         transform: { base: 'translateX(-50%)', sm: 'none' },
                         textAlign: { base: 'center', sm: 'left' },
                         flex: { base: 'none', sm: 1 },
                         whiteSpace: 'nowrap',
+                        color: '#2C3A47',
+                        letterSpacing: '-0.02em'
                     })}>
                         {editData ? '일정 수정하기' : '새 일정 추가하기'}
                     </h2>
@@ -345,14 +351,17 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         onClick={handleClose}
                         className={css({
                             display: { base: 'none', sm: 'flex' },
-                            bg: 'transparent',
+                            bg: '#F8F9FA',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#666',
-                            _hover: { color: '#172554' }
+                            color: '#9CA3AF',
+                            p: '8px',
+                            borderRadius: '50%',
+                            transition: 'all 0.2s',
+                            _hover: { bg: '#F3F4F6', color: '#2C3A47', transform: 'rotate(90deg)' }
                         })}
                     >
-                        <X size={24} />
+                        <X size={22} strokeWidth={2.5} />
                     </button>
                 </div>
 
@@ -433,14 +442,16 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         </div>
                     </div>
 
-                    <div className={css({ bg: '#f8f9fa', p: '12px', borderRadius: '8px', border: '1px solid #eee' })}>
-                        <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '4px' })}>
-                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#2C3A47' })}>✈️ 지금 이 일정의 시간 기준</span>
-                            <span className={css({ fontSize: '12px', bg: '#EAF9F7', color: '#2EC4B6', px: '8px', py: '2px', borderRadius: '4px', fontWeight: 'bold' })}>
+                    <div className={css({ bg: '#F8F9FA', p: '18px', borderRadius: '20px', border: '1.5px solid #F1F3F5' })}>
+                        <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '8px' })}>
+                            <span className={css({ fontSize: '13px', fontWeight: '800', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                                 <div className={css({ w: '4px', h: '12px', bg: '#2EC4B6', borderRadius: '2px' })} /> 지금 이 일정의 시간 기준
+                            </span>
+                            <span className={css({ fontSize: '12px', bg: 'rgba(46, 196, 182, 0.1)', color: '#2EC4B6', px: '10px', py: '4px', borderRadius: '10px', fontWeight: '900', letterSpacing: '0.02em' })}>
                                 {timezoneString}
                             </span>
                         </div>
-                        <p className={css({ fontSize: '12px', color: '#666', lineHeight: 1.4 })}>
+                        <p className={css({ fontSize: '12px', color: '#6B7280', lineHeight: 1.6, fontWeight: '500', wordBreak: 'keep-all' })}>
                             입력하신 시간은 현지 타임존을 기준으로 표시돼요. 장소를 검색하시면 그곳의 시간에 맞춰 자동으로 변경해 드릴게요! ✨
                         </p>
                     </div>
@@ -631,24 +642,41 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         />
                     </div>
 
-                    <div className={css({ display: 'flex', justifyContent: 'flex-end', gap: '12px', mt: '8px', pt: '20px', borderTop: '1px solid #eee', flexDirection: { base: 'column-reverse', sm: 'row' } })}>
+                    <div className={css({ display: 'flex', justifyContent: 'flex-end', gap: '12px', mt: '12px', pt: '24px', borderTop: '1px solid #F5F5F5', flexDirection: { base: 'column-reverse', sm: 'row' } })}>
                         <button
                             type="button"
                             onClick={handleClose}
-                            className={css({ px: '20px', py: '14px', color: '#717171', bg: '#F5F5F5', border: 'none', borderRadius: '14px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', transition: 'all 0.2s', _active: { transform: 'scale(0.96)' }, _hover: { bg: '#EEEEEE' } })}
+                            className={css({ px: '24px', py: '16px', color: '#6B7280', bg: '#F3F4F6', border: 'none', borderRadius: '18px', cursor: 'pointer', fontWeight: '800', fontSize: '16px', transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)', _active: { transform: 'scale(0.96)' }, _hover: { bg: '#E5E7EB', color: '#2C3A47' } })}
                         >
                             취소
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className={css({ px: '24px', py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '800', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontSize: '16px', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)', _hover: { bg: '#28B0A3', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
+                            className={css({ 
+                                px: '32px', py: '16px', bg: '#2EC4B6', color: 'white', borderRadius: '18px', fontWeight: '900', border: 'none', 
+                                cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontSize: '16px', 
+                                boxShadow: '0 8px 25px rgba(46, 196, 182, 0.25)', 
+                                transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                                _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 12px 30px rgba(46, 196, 182, 0.35)' }, 
+                                _active: { transform: 'translateY(0) scale(0.97)' } 
+                            })}
                         >
                             {loading ? '저장 중...' : editData ? '수정할게요' : '일정 추가하기'}
                         </button>
                     </div>
                 </form>
             </div>
+            <style jsx global>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `}</style>
         </div>
     )
 }

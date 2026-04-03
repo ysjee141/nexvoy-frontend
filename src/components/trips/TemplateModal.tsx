@@ -113,20 +113,28 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
 
     return (
         <div className={css({
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            position: 'fixed', inset: 0,
             bg: 'rgba(0,0,0,0.5)', zIndex: 2000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px'
+            display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px',
+            backdropFilter: 'blur(10px)',
+            animation: 'fadeIn 0.3s ease-out'
         })}>
             <div className={css({
-                bg: 'white', borderRadius: '24px', w: '100%', maxW: '420px', p: '32px', position: 'relative',
+                bg: 'white', borderRadius: '24px', w: '100%', maxW: '440px', p: '32px', position: 'relative',
                 maxH: '85vh', display: 'flex', flexDirection: 'column',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
+                boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
+                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
             })}>
                 <button
                     onClick={onClose}
-                    className={css({ position: 'absolute', top: '20px', right: '20px', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#666' })}
+                    className={css({ 
+                        position: 'absolute', top: '22px', right: '22px', 
+                        bg: '#F8F9FA', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+                        p: '6px', borderRadius: '50%', transition: 'all 0.2s',
+                        _hover: { bg: '#F1F3F5', color: '#2C3A47', transform: 'rotate(90deg)' }
+                    })}
                 >
-                    <X size={24} />
+                    <X size={20} strokeWidth={2.5} />
                 </button>
 
                 <h3 className={css({ fontSize: '22px', fontWeight: '900', mb: '24px', color: '#2C3A47', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
@@ -148,11 +156,20 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                                 <button
                                     onClick={() => handleApplyTemplate(template.id)}
                                     disabled={loadingTemplateId === template.id}
-                                    className={css({ display: 'flex', alignItems: 'center', gap: '6px', px: '16px', py: '10px', bg: '#2EC4B6', color: 'white', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: '0 4px 10px rgba(46,196,182,0.2)', _hover: { bg: '#249E93', transform: 'translateY(-1px)' }, _active: { transform: 'scale(0.95)' }, _disabled: { opacity: 0.5, cursor: 'not-allowed' } })}
+                                    className={css({ 
+                                        display: 'flex', alignItems: 'center', gap: '8px', px: '18px', py: '11px', 
+                                        bg: '#2EC4B6', color: 'white', borderRadius: '14px', border: 'none', 
+                                        cursor: 'pointer', fontSize: '14px', fontWeight: '900', whiteSpace: 'nowrap', 
+                                        transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
+                                        boxShadow: '0 6px 15px rgba(46,196,182,0.25)', 
+                                        _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 10px 20px rgba(46,196,182,0.35)' }, 
+                                        _active: { transform: 'scale(0.96)' }, 
+                                        _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none', transform: 'none' } 
+                                    })}
                                 >
                                     {loadingTemplateId === template.id ? '...' : (
                                         <>
-                                            <Copy size={15} /> 적용
+                                            <Copy size={16} strokeWidth={2.5} /> 적용하기
                                         </>
                                     )}
                                 </button>
@@ -161,6 +178,16 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                     </div>
                 )}
             </div>
+            <style jsx global>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `}</style>
         </div>
     )
 }

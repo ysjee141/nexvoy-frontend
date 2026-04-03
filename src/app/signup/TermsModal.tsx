@@ -32,20 +32,22 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
             alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center',
             bg: { base: 'white', sm: 'rgba(0, 0, 0, 0.4)' },
-            backdropFilter: { base: 'none', sm: 'blur(4px)' },
-            p: { base: 0, sm: '20px' }
+            p: { base: 0, sm: '20px' },
+            backdropFilter: { base: 'none', sm: 'blur(10px)' },
+            animation: 'fadeIn 0.3s ease-out'
         })}>
             <div className={css({
                 bg: 'white',
                 w: '100%',
-                maxW: { base: 'none', sm: '600px' },
+                maxW: { base: 'none', sm: '640px' },
                 h: { base: '100vh', sm: 'auto' },
                 maxH: { base: 'none', sm: '85vh' },
                 borderRadius: { base: '0', sm: '24px' },
                 display: 'flex',
                 flexDirection: 'column',
-                boxShadow: { base: 'none', sm: '0 20px 40px rgba(0,0,0,0.15)' },
-                overflow: 'hidden'
+                boxShadow: { base: 'none', sm: '0 30px 80px rgba(0,0,0,0.2)' },
+                overflow: 'hidden',
+                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
             })}>
                 {/* Header */}
                 <div className={css({
@@ -53,18 +55,31 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     p: '16px 20px',
-                    borderBottom: '1px solid #eee',
+                    borderBottom: '1px solid #F5F5F5',
                     pt: { base: 'calc(16px + env(safe-area-inset-top))', sm: '24px' },
-                    px: { base: '20px', sm: '24px' }
+                    px: { base: '20px', sm: '24px' },
+                    bg: 'white'
                 })}>
-                    <button onClick={onClose} className={css({ display: { base: 'flex', sm: 'none' }, alignItems: 'center', bg: 'none', border: 'none', p: 0, color: '#1E3A8A' })}>
-                        <ChevronLeft size={24} />
+                    <button onClick={onClose} className={css({ 
+                        display: { base: 'flex', sm: 'none' }, 
+                        alignItems: 'center', bg: 'none', border: 'none', p: 0, 
+                        color: '#2EC4B6', cursor: 'pointer' 
+                    })}>
+                        <ChevronLeft size={24} strokeWidth={2.5} />
                     </button>
-                    <h2 className={css({ fontSize: '18px', fontWeight: 'bold', color: '#172554', flex: 1, textAlign: { base: 'center', sm: 'left' } })}>
+                    <h2 className={css({ 
+                        fontSize: '18px', fontWeight: '900', color: '#2C3A47', flex: 1, 
+                        textAlign: { base: 'center', sm: 'left' }, letterSpacing: '-0.02em' 
+                    })}>
                         이용약관 및 개인정보 처리방침
                     </h2>
-                    <button onClick={onClose} className={css({ display: { base: 'none', sm: 'flex' }, p: '4px', bg: '#f5f5f5', borderRadius: '50%', color: '#666', cursor: 'pointer', _hover: { bg: '#eee' }, border: 'none' })}>
-                        <X size={20} />
+                    <button onClick={onClose} className={css({ 
+                        display: { base: 'none', sm: 'flex' }, 
+                        p: '6px', bg: '#F8F9FA', borderRadius: '50%', color: '#9CA3AF', 
+                        cursor: 'pointer', border: 'none', transition: 'all 0.2s',
+                        _hover: { bg: '#F1F3F5', color: '#2C3A47', transform: 'rotate(90deg)' }
+                    })}>
+                        <X size={20} strokeWidth={2.5} />
                     </button>
                 </div>
 
@@ -72,20 +87,24 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                 <div className={css({
                     flex: 1,
                     overflowY: 'auto',
-                    p: { base: '24px 20px', sm: '24px' },
-                    pb: 'env(safe-area-inset-bottom)'
+                    p: { base: '24px 20px', sm: '32px' },
+                    pb: 'calc(env(safe-area-inset-bottom) + 40px)',
+                    scrollbarWidth: 'thin',
+                    '&::-webkit-scrollbar': { w: '6px' },
+                    '&::-webkit-scrollbar-thumb': { bg: '#E5E7EB', borderRadius: '10px' }
                 })}>
                     <div className={css({
-                        fontSize: '14px',
-                        color: '#444',
-                        lineHeight: 1.6,
+                        fontSize: '14.5px',
+                        color: '#4B5563',
+                        lineHeight: 1.7,
                         wordBreak: 'keep-all',
-                        '& h3': { fontSize: '16px', fontWeight: '700', mt: '24px', mb: '8px', color: '#172554' },
-                        '& p': { mb: '12px' },
-                        '& ul': { pl: '20px', mb: '12px', listStyleType: 'disc' },
-                        '& li': { mb: '6px' }
+                        '& h3': { fontSize: '16px', fontWeight: '900', mt: '32px', mb: '12px', color: '#2EC4B6', display: 'flex', alignItems: 'center', gap: '8px' },
+                        '& p': { mb: '14px', fontWeight: '500' },
+                        '& ul': { pl: '20px', mb: '14px', listStyleType: 'none', position: 'relative' },
+                        '& li': { mb: '8px', position: 'relative', pl: '12px', _before: { content: '"•"', position: 'absolute', left: 0, color: '#2EC4B6', fontWeight: 'bold' } },
+                        '& strong': { color: '#2C3A47', fontWeight: '800' }
                     })}>
-                        <p>본 서비스는 이용자의 개인정보를 소중히 다루며, 관련 법령을 준수합니다.</p>
+                        <p className={css({ fontSize: '15px' })}>본 서비스는 이용자의 개인정보를 소중히 다루며, 관련 법령을 준수합니다.</p>
 
                         <h3>1. 수집하는 개인정보 항목</h3>
                         <p>서비스 이용 및 회원가입을 위해 아래와 같은 최소한의 정보를 수집합니다.</p>
@@ -124,11 +143,27 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                         <p>본 서비스는 개인이 운영하며, 개인정보 관련 문의는 아래 연락처로 해주시기 바랍니다.</p>
                         <ul>
                             <li><strong>담당자</strong>: 지윤성</li>
-                            <li><strong>문의처</strong>: <a href="mailto:ysjee141@gmail.com" className={css({ color: '#2563EB', textDecoration: 'underline' })}>ysjee141@gmail.com</a></li>
+                            <li><strong>문의처</strong>: <a href="mailto:ysjee141@gmail.com" className={css({ 
+                                color: '#2EC4B6', 
+                                textDecoration: 'underline',
+                                fontWeight: '700',
+                                transition: 'color 0.2s',
+                                _hover: { color: '#249E93' }
+                            })}>ysjee141@gmail.com</a></li>
                         </ul>
                     </div>
                 </div>
             </div>
+            <style jsx global>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `}</style>
         </div>
     )
 }

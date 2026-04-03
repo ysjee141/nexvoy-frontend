@@ -1218,7 +1218,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         _active: { transform: 'scale(0.9)' }
                     })}
                 >
-                    <Plus size={28} />
+                    <Plus size={28} strokeWidth={2.5} />
                 </div>
             )}
 
