@@ -5,6 +5,7 @@ import { css } from 'styled-system/css'
 import Link from 'next/link'
 import { MapPin, CalendarDays, User, ChevronDown, ChevronUp } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
+import { formatDate } from '@/utils/date'
 
 interface Trip {
     id: string
@@ -40,7 +41,7 @@ export default function TripSection({
     if (trips.length === 0) return null
 
     return (
-        <section className={css({ mb: '32px' })}>
+        <section className={css({ mb: '48px' })}>
             {/* 섹션 헤더 (클릭 시 폴딩) */}
             <button
                 onClick={() => setIsOpen(prev => !prev)}
@@ -75,11 +76,11 @@ export default function TripSection({
                 <div className={css({
                     display: 'grid',
                     gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
-                    gap: '16px',
+                    gap: { base: '20px', lg: '32px' },
                 })}>
                     {trips.map((trip) => {
-                        const start = new Date(trip.start_date).toLocaleDateString()
-                        const end = new Date(trip.end_date).toLocaleDateString()
+                        const start = formatDate(trip.start_date)
+                        const end = formatDate(trip.end_date)
 
                         const mainChecklist = trip.checklists?.[0]
                         const items = mainChecklist?.checklist_items || []
@@ -98,17 +99,17 @@ export default function TripSection({
                                     bg: 'white',
                                     p: { base: '16px', sm: '20px' },
                                     borderRadius: '16px',
-                                    boxShadow: '0 6px 16px rgba(0,0,0,0.06)',
-                                    border: '1px solid #DDDDDD',
-                                    transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                                    boxShadow: '0 6px 20px rgba(0,0,0,0.05)',
+                                    border: '1px solid #EAEAEA',
+                                    transition: 'all 0.4s cubic-bezier(0.2, 0, 0, 1)',
                                     position: 'relative', 
                                     overflow: 'hidden',
                                     _hover: {
-                                        transform: 'translateY(-4px)',
-                                        boxShadow: '0 12px 24px rgba(0,0,0,0.12)',
-                                        borderColor: '#CCCCCC',
+                                        transform: 'translateY(-6px)',
+                                        boxShadow: '0 15px 30px rgba(0,0,0,0.1)',
+                                        borderColor: '#DDDDDD',
                                     },
-                                    _active: { transform: 'scale(0.98)' }
+                                    _active: { transform: 'scale(0.97)' }
                                 })}
                             >
                                 {/* 상단 포인트 바 */}
@@ -116,18 +117,18 @@ export default function TripSection({
                                     position: 'absolute', top: 0, left: 0, right: 0,
                                     h: '4px',
                                     bg: isOwner
-                                        ? 'brand.primary'
-                                        : '#222',
+                                        ? '#2EC4B6'
+                                        : '#828D99',
                                 })} />
 
                                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '10px' })}>
                                     <span className={css({
                                         fontSize: '11px', fontWeight: '800', px: '8px', py: '4px',
                                         borderRadius: '6px', 
-                                        bg: isOwner ? '#EFF6FF' : '#F7F7F7',
-                                        color: isOwner ? 'brand.primary' : '#222',
+                                        bg: isOwner ? '#EAF9F7' : '#F7F7F7',
+                                        color: isOwner ? '#2EC4B6' : '#2C3A47',
                                         display: 'inline-flex', alignItems: 'center', gap: '4px',
-                                        border: isOwner ? '1px solid rgba(59, 130, 246, 0.1)' : '1px solid #EEEEEE'
+                                        border: isOwner ? '1px solid rgba(46, 196, 182, 0.1)' : '1px solid #EEEEEE'
                                     })}>
                                         {isOwner ? '내 소중한 여정' : '함께하고 있어요'}
                                     </span>
@@ -143,9 +144,9 @@ export default function TripSection({
                                 <h3 className={css({
                                     fontSize: { base: '17px', sm: '18px' }, fontWeight: '700',
                                     mb: '12px', display: 'flex', alignItems: 'center', gap: '6px',
-                                    color: '#222', wordBreak: 'break-all',
+                                    color: '#2C3A47', wordBreak: 'break-all',
                                 })}>
-                                    <MapPin size={18} color="#EA4335" />
+                                    <MapPin size={18} color="#FF9F87" />
                                     {trip.destination}
                                 </h3>
 
@@ -167,9 +168,9 @@ export default function TripSection({
                                             {progressPercent}%
                                         </span>
                                     </div>
-                                    <div className={css({ w: '100%', h: '6px', bg: '#F7F7F7', borderRadius: '3px', overflow: 'hidden', border: '1px solid #EEEEEE' })}>
+                                    <div className={css({ w: '100%', h: '8px', bg: '#EEEEEE', borderRadius: '10px', overflow: 'hidden', border: '1px solid #EEEEEE' })}>
                                         <div
-                                            className={css({ h: '100%', bg: progressPercent === 100 ? '#222' : 'brand.primary', transition: 'width 1s cubic-bezier(0.2, 0, 0, 1)' })}
+                                            className={css({ h: '100%', bg: progressPercent === 100 ? '#2EC4B6' : '#FF9F87', transition: 'width 1s cubic-bezier(0.2, 0, 0, 1)' })}
                                             style={{ width: `${progressPercent}%` }}
                                         />
                                     </div>

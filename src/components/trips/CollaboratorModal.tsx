@@ -134,13 +134,16 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
             })} onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className={css({
                     position: 'absolute', top: '24px', right: '24px', bg: 'transparent',
-                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#1E3A8A' }
+                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#2C3A47', transform: 'scale(1.1)' }, transition: 'all 0.2s'
                 })}>
                     <X size={24} />
                 </button>
 
-                <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', mb: { base: '16px', sm: '24px' }, display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <UserPlus size={20} color="#3B82F6" /> 동행자 초대하기
+                <h2 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: '900', mb: { base: '20px', sm: '28px' }, display: 'flex', alignItems: 'center', gap: '10px', color: '#2C3A47', letterSpacing: '-0.02em' })}>
+                    <div className={css({ p: '8px', bg: '#EAF9F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
+                        <UserPlus size={22} color="#2EC4B6" strokeWidth={2.5} />
+                    </div>
+                    동행자 초대하기
                 </h2>
 
                 {/* 초대 폼 (소유자나 편집자만 가능) */}
@@ -155,9 +158,10 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                 onChange={e => setEmail(e.target.value)}
                                 required
                                 className={css({
-                                    w: '100%', pl: '40px', pr: '12px', py: '14px', bg: '#f8f9fa',
-                                    borderRadius: '12px', border: '1px solid #eee', outline: 'none',
-                                    _focus: { borderColor: '#3B82F6', bg: 'white' }, fontSize: '14px'
+                                        flex: 1, px: '14px', py: '14px', pl: '40px', bg: '#F9F9F9', borderRadius: '16px',
+                                        border: '1px solid #EEEEEE', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#2C3A47', transition: 'all 0.2s',
+                                        _placeholder: { color: '#CCC', fontWeight: '400' },
+                                        _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46,196,182,0.1)' }
                                 })}
                             />
                         </div>
@@ -167,35 +171,38 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                     value={role}
                                     onChange={e => setRole(e.target.value as any)}
                                     className={css({
-                                        w: '100%', px: '16px', py: '14px', pr: '36px', bg: '#f8f9fa', borderRadius: '12px',
-                                        border: '1px solid #eee', outline: 'none', fontSize: '14px', fontWeight: '500', color: '#1E3A8A', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6', bg: 'white' }
+                                    w: '100%', px: '16px', py: '14px', pr: '40px', bg: '#F2F4F5', borderRadius: '16px',
+                                        border: '1px solid #EEEEEE', outline: 'none', fontSize: '14px', fontWeight: '700', color: '#2C3A47', cursor: 'pointer', appearance: 'none', transition: 'all 0.2s', _focus: { borderColor: '#2EC4B6', bg: 'white' }
                                     })}
                                 >
                                     <option value="editor">편집자 (수정 가능)</option>
                                     <option value="viewer">조회자 (읽기 전용)</option>
                                 </select>
-                                <div className={css({ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
-                                    <ChevronDown size={16} />
+                                <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#2EC4B6' })}>
+                                    <ChevronDown size={18} strokeWidth={3} />
                                 </div>
                             </div>
                             <button
                                 type="submit"
                                 disabled={inviting}
                                 className={css({
-                                    px: { base: '16px', sm: '24px' }, py: '12px', bg: '#111', color: 'white',
-                                    borderRadius: '12px', fontWeight: 'bold', border: 'none', cursor: inviting ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s', fontSize: '14px', flexShrink: 0,
-                                    _hover: { bg: '#333' }, _disabled: { opacity: 0.7 }
+                                    px: { base: '20px', sm: '32px' }, py: '14px', bg: '#2EC4B6', color: 'white',
+                                    fontSize: '15px', fontWeight: '800', cursor: 'pointer', borderRadius: '16px',
+                                    transition: 'all 0.2s',
+                                    boxShadow: '0 4px 12px rgba(46,196,182,0.2)',
+                                    _hover: { bg: '#249E93', transform: 'translateY(-1px)' }, 
+                                    _active: { transform: 'scale(0.95)' },
+                                    _disabled: { opacity: 0.7, cursor: 'not-allowed' }
                                 })}
                             >
-                                {inviting ? <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} /> : '초대'}
+                                {inviting ? <Loader2 size={20} className={css({ animation: 'spin 1s linear infinite' })} /> : '초대'}
                             </button>
                         </div>
                         {message && (
                             <p className={css({
-                                fontSize: '13px', px: '12px', py: '8px', borderRadius: '8px',
-                                bg: message.type === 'success' ? '#EFF6FF' : '#fce8e6',
-                                color: message.type === 'success' ? '#2563EB' : '#c5221f',
+                                fontSize: '13px', px: '12px', py: '8px', borderRadius: '12px',
+                                bg: message.type === 'success' ? '#EAF9F7' : '#fce8e6',
+                                color: message.type === 'success' ? '#2EC4B6' : '#c5221f',
                                 display: 'flex', alignItems: 'center', gap: '6px'
                             })}>
                                 {message.type === 'success' ? <Check size={14} /> : <X size={14} />} {message.text}
@@ -234,13 +241,13 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                     return (
                                         <div key={m.id} className={css({
                                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            p: '12px', borderRadius: '12px', border: '1px solid #f0f0f0', _hover: { bg: '#f9f9f9' }
+                                            p: '14px', borderRadius: '16px', border: '1px solid #EEEEEE', transition: 'all 0.2s', _hover: { bg: '#F9F9F9', borderColor: '#2EC4B6' }
                                         })}>
                                             <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minW: 0 })}>
                                                 <div className={css({
-                                                    w: '32px', h: '32px', bg: m.status === 'accepted' ? '#3B82F6' : '#eee',
+                                                    w: '32px', h: '32px', bg: m.status === 'accepted' ? '#2EC4B6' : '#F7F7F7',
                                                     borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    color: 'white', fontSize: '12px', fontWeight: 'bold', flexShrink: 0
+                                                    color: m.status === 'accepted' ? 'white' : '#888', fontSize: '12px', fontWeight: 'bold', flexShrink: 0
                                                 })}>
                                                     {(m.profiles?.nickname || m.invited_email || '?').charAt(0).toUpperCase()}
                                                 </div>
@@ -249,8 +256,8 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                         <span className={css({ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
                                                             {m.profiles?.nickname || m.invited_email?.split('@')[0] || 'Unknown'}
                                                         </span>
-                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#3B82F6', bg: '#EFF6FF', px: '4px', py: '1px', borderRadius: '4px' })}>나</span>}
-                                                        {m.status === 'pending' && <span className={css({ fontSize: '10px', color: '#f2994a', bg: '#fff4e5', px: '6px', py: '2px', borderRadius: '4px' })}>대기중</span>}
+                                                        {isSelf && <span className={css({ fontSize: '10px', color: '#2EC4B6', bg: '#EAF9F7', px: '6px', py: '2px', borderRadius: '6px', fontWeight: '800' })}>나</span>}
+                                                        {m.status === 'pending' && <span className={css({ fontSize: '10px', color: '#f2994a', bg: '#FFF3E8', px: '6px', py: '2px', borderRadius: '6px', fontWeight: '800' })}>대기중</span>}
                                                     </p>
                                                     <p className={css({ fontSize: '12px', color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{m.invited_email}</p>
                                                 </div>
@@ -265,8 +272,8 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                                 value={m.role}
                                                                 onChange={(e) => handleUpdateRole(m.id, e.target.value as any)}
                                                                 className={css({
-                                                                    fontSize: '11px', fontWeight: '500', px: '8px', py: '6px', pr: '22px', bg: 'white', border: '1px solid #ddd', color: '#1E3A8A',
-                                                                    borderRadius: '6px', outline: 'none', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6' }
+                                                                    fontSize: '11px', fontWeight: '600', px: '8px', py: '6px', pr: '22px', bg: 'white', border: '1px solid #eee', color: '#2C3A47',
+                                                                    borderRadius: '8px', outline: 'none', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#2EC4B6' }
                                                                 })}
                                                             >
                                                                 <option value="editor">편집자</option>
@@ -279,8 +286,10 @@ export default function CollaboratorModal({ tripId, isOpen, onClose, tripTitle, 
                                                         <button
                                                             onClick={() => handleRemoveMember(m.id, m.invited_email)}
                                                             className={css({
-                                                                p: '6px', color: '#999', bg: 'transparent', border: 'none', cursor: 'pointer',
-                                                                _hover: { color: '#dc2626', bg: '#fee2e2' }, borderRadius: '6px'
+                                                                p: '8px', color: '#999', bg: 'transparent', border: 'none', cursor: 'pointer',
+                                                                transition: 'all 0.2s', borderRadius: '10px',
+                                                                _hover: { color: '#dc2626', bg: '#fee2e2', transform: 'scale(1.05)' },
+                                                                _active: { transform: 'scale(0.95)' }
                                                             })}
                                                             title="동행자 제외"
                                                         >

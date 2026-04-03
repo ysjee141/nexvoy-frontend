@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/utils/cache'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { formatDate } from '@/utils/date'
 
 interface Trip {
     id: string
@@ -338,8 +339,8 @@ export default function TripSwitcherModal() {
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
                             {currentList.map((trip) => {
                                 const isActive = currentTripId === trip.id
-                                const start = new Date(trip.start_date).toLocaleDateString()
-                                const end = new Date(trip.end_date).toLocaleDateString()
+                                const start = formatDate(trip.start_date)
+                                const end = formatDate(trip.end_date)
 
                                 return (
                                     <Link
@@ -353,10 +354,10 @@ export default function TripSwitcherModal() {
                                             display: 'flex',
                                             alignItems: 'center',
                                             p: '16px',
-                                            bg: isActive ? '#f0f7ff' : 'white',
+                                            bg: isActive ? '#EAF9F7' : 'white',
                                             borderRadius: '16px',
                                             border: '1px solid',
-                                            borderColor: isActive ? '#3B82F6' : '#eee',
+                                            borderColor: isActive ? '#2EC4B6' : '#eee',
                                             transition: 'all 0.2s',
                                             _active: { transform: 'scale(0.98)' },
                                         })}
@@ -389,7 +390,7 @@ export default function TripSwitcherModal() {
                                             </p>
                                         </div>
                                         {isActive ? (
-                                            <Check size={20} color="#3B82F6" className={css({ ml: '12px' })} />
+                                            <Check size={20} color="#2EC4B6" className={css({ ml: '12px' })} />
                                         ) : (
                                             <ChevronRight size={20} color="#ccc" className={css({ ml: '12px' })} />
                                         )}
@@ -417,12 +418,14 @@ export default function TripSwitcherModal() {
                             gap: '8px',
                             w: '100%',
                             py: '16px',
-                            bg: '#111',
+                            bg: '#2EC4B6',
                             color: 'white',
                             borderRadius: '16px',
                             fontWeight: '800',
                             fontSize: '16px',
                             textDecoration: 'none',
+                            boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)',
+                            _active: { transform: 'scale(0.98)' },
                         })}
                     >
                         <Plus size={20} /> 새 여정 만들기

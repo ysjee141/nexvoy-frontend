@@ -131,14 +131,14 @@ export default function PlanDetailModal({
                             display: { base: 'flex', sm: 'none' },
                             alignItems: 'center', gap: '4px',
                             bg: 'transparent', border: 'none', cursor: 'pointer',
-                            color: '#3B82F6', fontWeight: '600', fontSize: '15px', p: '0',
+                            color: '#2EC4B6', fontWeight: '600', fontSize: '15px', p: '0',
                         })}
                     >
                         <ChevronLeft size={22} /> 뒤로
                     </button>
 
                     <h2 className={css({
-                        fontSize: '17px', fontWeight: '800', color: '#172554',
+                        fontSize: '17px', fontWeight: '800', color: '#2C3A47',
                         position: { base: 'absolute', sm: 'static' },
                         left: { base: '50%', sm: 'auto' },
                         transform: { base: 'translateX(-50%)', sm: 'none' },
@@ -165,7 +165,7 @@ export default function PlanDetailModal({
                         {(userRole === 'owner' || userRole === 'editor') && (
                             <>
                                 <button onClick={() => { onEdit(plan); handleClose() }} disabled={!isOnline}
-                                    className={css({ bg: 'transparent', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', color: '#3B82F6', p: '6px', opacity: isOnline ? 1 : 0.5 })}>
+                                    className={css({ bg: 'transparent', border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', color: '#2EC4B6', p: '6px', opacity: isOnline ? 1 : 0.5 })}>
                                     <Pencil size={18} />
                                 </button>
                                 <button onClick={() => { onDelete(plan.id); handleClose() }} disabled={!isOnline}
@@ -196,8 +196,8 @@ export default function PlanDetailModal({
                                     gap: '5px', py: '11px',
                                     bg: 'transparent', border: 'none', cursor: 'pointer',
                                     fontSize: '13px', fontWeight: isActive ? '700' : '500',
-                                    color: isActive ? '#3B82F6' : '#888',
-                                    borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent',
+                                    color: isActive ? '#2EC4B6' : '#888',
+                                    borderBottom: isActive ? '2px solid #2EC4B6' : '2px solid transparent',
                                     mb: '-1px',
                                     transition: 'color 0.15s',
                                 })}
@@ -206,7 +206,7 @@ export default function PlanDetailModal({
                                 {labels[t]}
                                 {t === 'refs' && hasRefs && (
                                     <span className={css({
-                                        bg: isActive ? '#3B82F6' : '#e0e0e0',
+                                        bg: isActive ? '#2EC4B6' : '#e0e0e0',
                                         color: isActive ? 'white' : '#666',
                                         fontSize: '10px', fontWeight: '700',
                                         px: '5px', py: '1px', borderRadius: '8px',
@@ -242,7 +242,7 @@ export default function PlanDetailModal({
                                                     <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, opacity: 0.3 }} aria-hidden>
                                                         <defs>
                                                             <pattern id="mapgrid" width="36" height="36" patternUnits="userSpaceOnUse">
-                                                                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#3B82F6" strokeWidth="0.7" />
+                                                                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#2EC4B6" strokeWidth="0.7" />
                                                             </pattern>
                                                         </defs>
                                                         <rect width="100%" height="100%" fill="url(#mapgrid)" />
@@ -251,13 +251,13 @@ export default function PlanDetailModal({
                                                     <div style={{ zIndex: 2, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
                                                         <div style={{
                                                             width: 44, height: 44, borderRadius: '50%',
-                                                            background: 'rgba(66,133,244,0.18)',
+                                                            background: 'rgba(46, 196, 182, 0.18)',
                                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                             animation: 'pulse 1.4s ease-in-out infinite',
                                                         }}>
-                                                            <MapPin size={24} color="#3B82F6" />
+                                                            <MapPin size={24} color="#2EC4B6" />
                                                         </div>
-                                                        <span style={{ fontSize: 12, color: '#3B82F6', fontWeight: 700, letterSpacing: 0.3 }}>지도 불러오는 중...</span>
+                                                        <span style={{ fontSize: 12, color: '#2EC4B6', fontWeight: 700, letterSpacing: 0.3 }}>지도 불러오는 중...</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -277,8 +277,8 @@ export default function PlanDetailModal({
                                             />
                                         </div>
                                     ) : (
-                                        <div className={css({ w: '100%', h: '140px', bg: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' })}>
-                                            <MapPin size={24} color="#3B82F6" />
+                                        <div className={css({ w: '100%', h: '140px', bg: '#EAF9F7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '8px' })}>
+                                            <MapPin size={24} color="#2EC4B6" />
                                             <span className={css({ fontSize: '13px', color: '#666' })}>{plan.location}</span>
                                         </div>
                                     )}
@@ -288,7 +288,7 @@ export default function PlanDetailModal({
 
                             <div className={css({ p: { base: '20px', sm: '24px' }, display: 'flex', flexDirection: 'column', gap: '20px' })}>
                                 {/* 일정명 */}
-                                <h3 className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: '800', color: '#172554', lineHeight: 1.3, wordBreak: 'break-word', m: '0' })}>
+                                <h3 className={css({ fontSize: { base: '20px', sm: '22px' }, fontWeight: '800', color: '#2C3A47', lineHeight: 1.3, wordBreak: 'break-word', m: '0' })}>
                                     {plan.title}
                                 </h3>
 
@@ -298,11 +298,11 @@ export default function PlanDetailModal({
 
                                     {/* 장소 */}
                                     {plan.location && (
-                                        <InfoRow icon={<MapPin size={18} color="#F4511E" />} label="장소"
+                                        <InfoRow icon={<MapPin size={18} color="#FF9F87" />} label="장소"
                                             value={
                                                 mapUrl ? (
                                                     <a href={mapUrl} target="_blank" rel="noopener noreferrer"
-                                                        className={css({ fontSize: '15px', color: '#3B82F6', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px', textDecoration: 'none', wordBreak: 'break-word', _hover: { textDecoration: 'underline' } })}>
+                                                        className={css({ fontSize: '15px', color: '#2EC4B6', fontWeight: '600', display: 'inline-flex', alignItems: 'center', gap: '5px', textDecoration: 'none', wordBreak: 'break-word', _hover: { textDecoration: 'underline' } })}>
                                                         {plan.location}<ExternalLink size={13} style={{ flexShrink: 0 }} />
                                                     </a>
                                                 ) : plan.location
@@ -311,17 +311,17 @@ export default function PlanDetailModal({
                                     )}
 
                                     {/* 시간 */}
-                                    <InfoRow icon={<Clock size={18} color="#3B82F6" />} label="시간"
+                                    <InfoRow icon={<Clock size={18} color="#2EC4B6" />} label="시간"
                                         value={
                                             <div className={css({ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
                                                 <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '5px' })}>
                                                     <span className={css({ fontSize: '12px', color: '#555', fontWeight: '600' })}>현지</span>
-                                                    <span className={css({ fontSize: '14px', fontWeight: '600', color: '#172554', bg: '#f1f3f4', px: '10px', py: '5px', borderRadius: '8px' })}>{localTime}</span>
+                                                    <span className={css({ fontSize: '14px', fontWeight: '600', color: '#2C3A47', bg: '#F7F7F7', px: '10px', py: '5px', borderRadius: '12px' })}>{localTime}</span>
                                                 </span>
                                                 <span className={css({ color: '#ccc', fontSize: '12px' })}>|</span>
                                                 <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '5px' })}>
                                                     <span className={css({ fontSize: '12px', color: '#555', fontWeight: '600' })}>한국</span>
-                                                    <span className={css({ fontSize: '14px', fontWeight: '600', color: '#3B82F6', bg: '#EFF6FF', px: '10px', py: '5px', borderRadius: '8px' })}>{kstTime}</span>
+                                                    <span className={css({ fontSize: '14px', fontWeight: '600', color: '#2EC4B6', bg: '#EAF9F7', px: '10px', py: '5px', borderRadius: '12px' })}>{kstTime}</span>
                                                 </span>
                                             </div>
                                         }
@@ -339,12 +339,12 @@ export default function PlanDetailModal({
 
                                     {/* 예상 금액 */}
                                     {localAmount && (
-                                        <InfoRow icon={<Wallet size={18} color="#FBBC05" />} label="예상 금액"
+                                        <InfoRow icon={<Wallet size={18} color="#FFD166" />} label="예상 금액"
                                             value={
                                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
-                                                    <span className={css({ fontSize: '18px', fontWeight: '800', color: '#2563EB' })}>{localAmount}</span>
+                                                    <span className={css({ fontSize: '18px', fontWeight: '800', color: '#2EC4B6' })}>{localAmount}</span>
                                                     {currency.code !== 'KRW' && krwAmount !== null && (
-                                                        <span className={css({ fontSize: '14px', color: '#888', bg: '#f1f3f4', px: '8px', py: '4px', borderRadius: '6px' })}>≈ {formatKRW(krwAmount)}</span>
+                                                        <span className={css({ fontSize: '14px', color: '#888', bg: '#F7F7F7', px: '8px', py: '4px', borderRadius: '10px' })}>≈ {formatKRW(krwAmount)}</span>
                                                     )}
                                                     {currency.code !== 'KRW' && !krwAmount && (
                                                         <span className={css({ fontSize: '13px', color: '#bbb' })}>환율 로딩 중...</span>
@@ -358,7 +358,7 @@ export default function PlanDetailModal({
                                     {plan.memo && (
                                         <InfoRow icon={<FileText size={18} color="#9E9E9E" />} label="메모"
                                             value={
-                                                <p className={css({ fontSize: '14px', color: '#555', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', bg: '#f9f9f9', p: '12px', borderRadius: '8px', m: '0' })}>
+                                                <p className={css({ fontSize: '14px', color: '#555', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', bg: '#f9f9f9', p: '12px', borderRadius: '12px', m: '0' })}>
                                                     {plan.memo}
                                                 </p>
                                             }
@@ -403,11 +403,11 @@ export default function PlanDetailModal({
                         borderTop: '1px solid #f0f0f0', flexShrink: 0,
                     })}>
                         <button onClick={() => { onEdit(plan); handleClose() }} disabled={!isOnline}
-                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#EFF6FF', color: '#3B82F6', border: '1px solid #BFDBFE', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#EFF6FF' : '#EFF6FF' } })}>
+                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#EAF9F7', color: '#2EC4B6', border: '1px solid #B2E7E2', borderRadius: '12px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#D5F2EF' : '#EAF9F7' } })}>
                             <Pencil size={15} /> 수정
                         </button>
                         <button onClick={() => { onDelete(plan.id); handleClose() }} disabled={!isOnline}
-                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#fff5f5', color: '#dc2626', border: '1px solid #fecaca', borderRadius: '10px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#fee2e2' : '#fff5f5' } })}>
+                            className={css({ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', py: '12px', bg: '#FFF5F5', color: '#FF9F87', border: '1px solid #FFD8CF', borderRadius: '12px', fontWeight: '700', fontSize: '14px', cursor: isOnline ? 'pointer' : 'not-allowed', opacity: isOnline ? 1 : 0.5, _hover: { bg: isOnline ? '#FFE9E4' : '#FFF5F5' } })}>
                             <Trash2 size={15} /> 삭제
                         </button>
                     </div>
@@ -421,13 +421,13 @@ export default function PlanDetailModal({
 function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
     return (
         <div className={css({ display: 'flex', gap: '14px', alignItems: 'flex-start' })}>
-            <div className={css({ w: '36px', h: '36px', borderRadius: '10px', bg: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: '2px' })}>
+            <div className={css({ w: '36px', h: '36px', borderRadius: '14px', bg: '#F7F7F7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: '2px' })}>
                 {icon}
             </div>
             <div className={css({ flex: 1, minW: 0 })}>
                 <p className={css({ fontSize: '11px', fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: '0.5px', mb: '4px', m: '0 0 4px 0' })}>{label}</p>
                 <div>{typeof value === 'string'
-                    ? <span className={css({ fontSize: '15px', color: '#222', fontWeight: '500', wordBreak: 'break-word' })}>{value}</span>
+                    ? <span className={css({ fontSize: '15px', color: '#2C3A47', fontWeight: '500', wordBreak: 'break-word' })}>{value}</span>
                     : value}
                 </div>
             </div>

@@ -69,7 +69,7 @@ function PlanCard({
                     <span className={css({ 
                         fontSize: { base: '13px', sm: '14px' }, 
                         fontWeight: '800', 
-                        color: isOngoing ? '#3B82F6' : '#222',
+                        color: isOngoing ? '#2EC4B6' : '#222',
                         lineHeight: 1
                     })}>
                         {formatLocalTime(plan.start_datetime_local)}
@@ -80,7 +80,7 @@ function PlanCard({
                     <span className={css({ 
                         fontSize: { base: '13px', sm: '14px' }, 
                         fontWeight: '700', 
-                        color: isOngoing ? '#93C5FD' : '#999',
+                        color: isOngoing ? '#249E93' : '#999',
                         mt: '6px',
                         lineHeight: 1,
                         opacity: timeDisplayMode === 'both' ? 0.8 : 1
@@ -104,9 +104,9 @@ function PlanCard({
                 <div className={css({ 
                     w: '12px', h: '12px', 
                     borderRadius: '50%', 
-                    bg: isOngoing ? '#3B82F6' : isToday ? '#BFDBFE' : '#DDD',
+                    bg: isOngoing ? '#2EC4B6' : isToday ? '#EAF9F7' : '#EEEEEE',
                     border: '2px solid white',
-                    boxShadow: isOngoing ? '0 0 0 3px rgba(59, 130, 246, 0.2)' : 'none',
+                    boxShadow: isOngoing ? '0 0 0 3px rgba(46, 196, 182, 0.2)' : 'none',
                     zIndex: 2,
                     mt: '17px',
                     transition: 'all 0.3s'
@@ -123,21 +123,21 @@ function PlanCard({
                     flex: 1,
                     p: { base: '14px', sm: '16px 20px' },
                     bg: 'white',
-                    border: isOngoing ? '2px solid #3B82F6' : isToday ? '1px solid #BFDBFE' : '1px solid #e8eaed',
-                    borderRadius: '16px',
+                    border: isOngoing ? '2px solid #2EC4B6' : isToday ? '1px solid #EAF9F7' : '1px solid #EEEEEE',
+                    borderRadius: '20px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '8px',
                     position: 'relative',
                     cursor: 'pointer',
                     boxShadow: isOngoing
-                        ? '0 8px 24px rgba(59,130,246,0.12)'
-                        : '0 2px 8px rgba(0,0,0,0.04)',
+                        ? '0 8px 24px rgba(46, 196, 182, 0.12)'
+                        : '0 2px 8px rgba(0,0,0,0.02)',
                     transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
                     _hover: {
                         transform: 'translateX(4px)',
-                        boxShadow: '0 12px 32px rgba(0,0,0,0.08)',
-                        borderColor: isOngoing ? '#3B82F6' : '#CCC',
+                        boxShadow: '0 12px 32px rgba(0,0,0,0.06)',
+                        borderColor: isOngoing ? '#2EC4B6' : '#CCC',
                     },
                     _active: { transform: 'scale(0.98) translateX(4px)' }
                 })}
@@ -151,10 +151,10 @@ function PlanCard({
                 {isOngoing && (
                     <span style={{
                         position: 'absolute', top: -10, right: 20,
-                        background: '#3B82F6', color: 'white', fontSize: 10, fontWeight: 900,
+                        background: '#2EC4B6', color: 'white', fontSize: 10, fontWeight: 900,
                         padding: '2px 8px', borderRadius: 20,
                         display: 'flex', alignItems: 'center', gap: 4,
-                        boxShadow: '0 4px 12px rgba(59,130,246,0.3)',
+                        boxShadow: '0 4px 12px rgba(46,196,182,0.3)',
                     }}>
                         <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'white', display: 'inline-block', animation: 'pulse 1.5s infinite' }} />
                         ON
@@ -165,7 +165,7 @@ function PlanCard({
                 <h4 className={css({
                     fontWeight: '800',
                     fontSize: { base: '15px', sm: '16px' },
-                    color: isOngoing ? '#1a56db' : '#222',
+                    color: isOngoing ? '#249E93' : '#222',
                     lineHeight: 1.4,
                 })}>
                     {plan.title}
@@ -178,14 +178,14 @@ function PlanCard({
                         <span className={css({
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
                             fontSize: '12px',
-                            color: isOngoing ? '#1a56db' : '#666',
-                            bg: isOngoing ? 'white' : '#f5f5f5',
-                            px: '8px', py: '4px', borderRadius: '8px',
+                            color: isOngoing ? '#249E93' : '#666',
+                            bg: isOngoing ? 'white' : '#FFF5F2', /* accent-peach light */
+                            px: '10px', py: '5px', borderRadius: '12px',
                             maxW: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                             boxShadow: isOngoing ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
                             fontWeight: '600'
                         })}>
-                            <MapPin size={12} color={isOngoing ? '#3B82F6' : '#F4511E'} />
+                            <MapPin size={12} color={isOngoing ? '#2EC4B6' : '#FF9F87'} />
                             {plan.location}
                         </span>
                     )}
@@ -195,13 +195,13 @@ function PlanCard({
                         <span className={css({
                             display: 'inline-flex', alignItems: 'center', gap: '4px',
                             fontSize: '12px',
-                            color: isOngoing ? '#1a56db' : '#666',
-                            bg: isOngoing ? 'white' : '#f5f5f5',
-                            px: '8px', py: '4px', borderRadius: '8px',
+                            color: isOngoing ? '#249E93' : '#666',
+                            bg: isOngoing ? 'white' : '#EAF9F7', /* primary-mint light */
+                            px: '10px', py: '5px', borderRadius: '12px',
                             boxShadow: isOngoing ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
                             fontWeight: '600'
                         })}>
-                            <BookOpen size={12} color={isOngoing ? '#3B82F6' : '#5E35B1'} />
+                            <BookOpen size={12} color={isOngoing ? '#2EC4B6' : '#828D99'} />
                             참고자료 {plan.plan_urls.length}건
                         </span>
                     )}
@@ -312,15 +312,15 @@ export default function PlanList({
             <div key={day.rawDate} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
                 <h3 className={css({
                     fontSize: { base: '14px', sm: '16px' }, fontWeight: '700',
-                    color: isToday ? '#1a56db' : '#444',
-                    pb: '8px', borderBottom: isToday ? '2px solid #3B82F6' : '1px solid #eee',
+                    color: isToday ? '#2EC4B6' : '#444',
+                    pb: '8px', borderBottom: isToday ? '2px solid #2EC4B6' : '1px solid #eee',
                     display: 'flex', alignItems: 'center', gap: '8px',
                     pl: headerPadding
                 })}>
-                    <span className={css({ w: '7px', h: '7px', borderRadius: '50%', bg: isToday ? '#3B82F6' : '#ccc', flexShrink: 0 })} />
+                    <span className={css({ w: '7px', h: '7px', borderRadius: '50%', bg: isToday ? '#2EC4B6' : '#ccc', flexShrink: 0 })} />
                     {day.label}
                     {isToday && (
-                        <span className={css({ fontSize: '11px', fontWeight: '700', bg: '#EFF6FF', color: '#1a56db', px: '7px', py: '2px', borderRadius: '6px' })}>
+                        <span className={css({ fontSize: '11px', fontWeight: '700', bg: '#EAF9F7', color: '#2EC4B6', px: '7px', py: '2px', borderRadius: '6px' })}>
                             오늘
                         </span>
                     )}
@@ -338,7 +338,7 @@ export default function PlanList({
                         top: '0', 
                         bottom: '0', 
                         w: '2px', 
-                        bg: isToday ? '#E0EFFF' : '#F0F0F0',
+                        bg: isToday ? '#EAF9F7' : '#EEEEEE',
                         zIndex: 1,
                         ml: '-1px' // 중앙 정렬 보정
                     })} />
@@ -359,9 +359,9 @@ export default function PlanList({
             {/* ① 남은 일정 (오늘 포함) — 기본 펼침 */}
             {remainingDays.length > 0 && (
                 <section>
-                    <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '16px', pb: '10px', borderBottom: '2px solid #EFF6FF' })}>
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '16px', pb: '10px', borderBottom: '2px solid #EAF9F7' })}>
                         <span className={css({ fontSize: '18px' })}>🗺️</span>
-                        <h2 className={css({ fontSize: { base: '15px', sm: '17px' }, fontWeight: '800', color: '#1a56db' })}>다가올 여정</h2>
+                        <h2 className={css({ fontSize: { base: '15px', sm: '17px' }, fontWeight: '800', color: '#2EC4B6' })}>다가올 여정</h2>
                         <span className={css({ fontSize: '12px', color: '#888', bg: '#f1f3f4', px: '8px', py: '2px', borderRadius: '10px' })}>
                             {remainingDays.reduce((s, d) => s + d.plans.length, 0)}개
                         </span>
