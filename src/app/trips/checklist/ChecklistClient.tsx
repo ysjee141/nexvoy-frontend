@@ -660,16 +660,14 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         const [swipeLock, setSwipeLock] = useState(false);
         const startX = useRef(0);
         const currentX = useRef(0);
-        const isDesktop = typeof window !== 'undefined' && window.innerWidth > 768;
-
         const handleTouchStart = (e: React.TouchEvent) => {
-            if (isDesktop) return;
+            if (typeof window !== 'undefined' && window.innerWidth > 768) return;
             startX.current = e.touches[0].clientX;
             setIsSwiping(true);
         };
 
         const handleTouchMove = (e: React.TouchEvent) => {
-            if (isDesktop || !isSwiping) return;
+            if (!isSwiping || (typeof window !== 'undefined' && window.innerWidth > 768)) return;
             currentX.current = e.touches[0].clientX;
             const diff = currentX.current - startX.current;
             
@@ -682,7 +680,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         };
 
         const handleTouchEnd = () => {
-            if (isDesktop) return;
+            if (typeof window !== 'undefined' && window.innerWidth > 768) return;
             setIsSwiping(false);
             const diff = currentX.current - startX.current;
 
@@ -706,12 +704,12 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         return (
             <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid #EEEEEE', bg: '#FBFBF9' })}>
                 {/* 배경 액션 버튼 (스와이프 시 보임) */}
-                {!isDesktop && (
-                    <div className={css({
-                        position: 'absolute', top: 0, right: 0, bottom: 0,
-                        display: 'flex', alignItems: 'center', gap: '0',
-                        zIndex: 1
-                    })}>
+                <div className={css({
+                    position: 'absolute', top: 0, right: 0, bottom: 0,
+                    display: { base: 'flex', sm: 'none' }, // 모바일 전용
+                    alignItems: 'center', gap: '0',
+                    zIndex: 1
+                })}>
                         <button
                             onClick={(e) => { e.stopPropagation(); setEditingItem(item); setTranslateX(0); }}
                             className={css({ 
@@ -730,8 +728,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         >
                             <Trash2 size={20} />
                         </button>
-                    </div>
-                )}
+                </div>
 
                 {/* 메인 콘텐츠 영역 */}
                 <div
@@ -835,8 +832,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     </div>
 
                     {/* PC에서만 보이는 우측 버튼 */}
-                    {isDesktop && isOnline && (
-                        <div className={css({ display: 'flex', gap: '8px' })}>
+                    {isOnline && (
+                        <div className={css({ display: { base: 'none', sm: 'flex' }, gap: '8px' })}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
                                 className={css({ bg: 'transparent', border: 'none', color: '#828D99', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: '#2EC4B6', bg: '#EAF9F7' } })}
@@ -1064,10 +1061,6 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>
                         )}
                     </h2>
-                    <div className={css({ display: 'flex', gap: '8px' })}>
-                        {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
-                        {totalItems > 0 && <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />}
-                    </div>
                 </div>
 
                 {/* PC/모바일 분기 액션 버튼 및 필터 라인 */}
