@@ -1,0 +1,24 @@
+# Antigravity AI Core Rules
+
+You MUST follow these rules at all times while working on this project.
+
+## 1. Mandatory Workflow Adherence
+- Before starting ANY task, run `view_file` on `.agents/workflows/standard-dev-flow.md` and internalize the steps.
+- Always follow the transition: Research -> Implementation Plan -> Task List -> Verification -> Walkthrough -> PR.
+
+## 2. Git Branching & Conflict Prevention
+- **NEVER** commit directly to `develop` or `main` branches.
+- **ALWAYS** create a feature branch (`feature/xxx`) based on a clean `develop` branch.
+- **MANDATORY Periodic Sync**: Run `git fetch origin develop && git merge origin/develop` frequently during development to minimize future conflicts.
+- **MANDATORY Pre-Merge Test**: Before creating ANY PR, perform a local merge (`git merge [base-branch]`) and resolve all conflicts locally.
+
+## 3. Mandatory Build Verification
+- Before submitting any PR or announcing task completion, you MUST run `pnpm build` and `pnpm build:mobile`.
+- Any build failures MUST be resolved before reporting completion.
+
+## 4. Documentation & Reporting
+- Every session MUST end with a clear `Walkthrough` of what was changed and verified.
+- Use `implementation_plan.md` for any complex changes or architectural decisions.
+
+> [!IMPORTANT]
+> If you violate these rules, the USER will consider the task FAILED. Stay disciplined.
