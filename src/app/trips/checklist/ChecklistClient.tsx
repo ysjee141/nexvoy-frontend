@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { analytics } from '@/services/AnalyticsService'
 import { css } from 'styled-system/css'
-import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle, LayoutGrid, List, Download } from 'lucide-react'
+import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle, LayoutGrid, List, Download, Lock } from 'lucide-react'
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
@@ -374,6 +374,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const [items, setItems] = useState<any[]>([])
     const [newItemName, setNewItemName] = useState('')
     const [newItemCategory, setNewItemCategory] = useState('기타')
+    const [newItemIsPrivate, setNewItemIsPrivate] = useState(false)
     const [isAdding, setIsAdding] = useState(false)
     const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false)
     const [groupBy, setGroupBy] = useState<'category' | 'template'>('category')
@@ -561,15 +562,20 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         e.preventDefault()
         if (!newItemName.trim() || !checklistId) return
 
+        // "나만 보기" 설정 시 담당자 강제 본인 지정
+        const finalIsPrivate = newItemIsPrivate
+        const finalAssignmentType = finalIsPrivate ? 'specific' : newItemAssignmentType
+        const finalAssignedUserId = finalIsPrivate ? (currentUser?.id || null) : (newItemAssignmentType === 'specific' ? newItemAssignedUserId : null)
+
         const { data, error } = await supabase
             .from('checklist_items')
             .insert({
                 checklist_id: checklistId,
                 item_name: newItemName.trim(),
                 category: newItemCategory,
-                is_checked: false,
-                assignment_type: newItemAssignmentType,
-                assigned_user_id: newItemAssignmentType === 'specific' ? newItemAssignedUserId : null
+                is_private: finalIsPrivate,
+                assignment_type: finalAssignmentType,
+                assigned_user_id: finalAssignedUserId
             })
             .select()
             .single()
@@ -578,7 +584,9 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             const updatedItems = [...items, data]
             setItems(updatedItems)
             setNewItemName('')
-            // 카테고리는 유지하여 연속 추가 편의성 제공
+            setNewItemIsPrivate(false)
+            setNewItemAssignmentType('anyone')
+            setNewItemAssignedUserId('')
             setIsAdding(false)
 
             // 리마인더 갱신
@@ -791,6 +799,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         fontWeight: '700',
                                         display: 'flex', alignItems: 'center', gap: '4px'
                                     })}>
+                                        {item.is_private && <Lock size={10} />}
                                         <User size={10} /> {assignedUser}
                                     </span>
                                 )}
@@ -894,6 +903,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
 
         const [name, setName] = useState(editingItem.item_name)
         const [category, setCategory] = useState(editingItem.category || '기타')
+        const [isPrivate, setIsPrivate] = useState(editingItem.is_private || false)
         const [type, setType] = useState(editingItem.assignment_type || 'anyone')
         const [assignedTo, setAssignedTo] = useState(editingItem.assigned_user_id || '')
 
@@ -920,38 +930,65 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 </select>
                             </div>
                         </div>
-                        <div>
-                            <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>완료 조건 유형</label>
-                            <select value={type} onChange={(e) => {
-                                const newType = e.target.value as any
-                                setType(newType)
-                                if (newType === 'specific' && !assignedTo) {
-                                    setAssignedTo(currentUser?.id || '')
-                                }
-                            }} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mb: '8px', outline: 'none', _focus: { borderColor: '#2EC4B6' } })}>
-                                <option value="anyone">함께 준비해요</option>
-                                {members.length > 0 && <option value="specific">담당자를 정해요</option>}
-                                {members.length > 0 && <option value="everyone">각자 꼭 챙겨요</option>}
+                        
+                        {/* 나만 보기 설정 */}
+                        <div className={css({ mb: '24px' })}>
+                            <label className={css({ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none' })}>
+                                <input
+                                    type="checkbox"
+                                    checked={isPrivate}
+                                    onChange={e => {
+                                        setIsPrivate(e.target.checked)
+                                        if (e.target.checked) {
+                                            setType('specific')
+                                            setAssignedTo(currentUser?.id || '')
+                                        }
+                                    }}
+                                    className={css({ accentColor: '#2EC4B6', w: '18px', h: '18px' })}
+                                />
+                                <div className={css({ display: 'flex', flexDirection: 'column' })}>
+                                    <span className={css({ fontSize: '15px', fontWeight: '700', color: '#2C3A47' })}>나만 보기</span>
+                                    <span className={css({ fontSize: '12px', color: '#717171' })}>담당자가 본인으로 고정되며, 다른 일행에게는 보이지 않아요.</span>
+                                </div>
+                            </label>
+                        </div>
+
+                        {/* 담당자 설정 */}
+                        <div className={css({ mb: '24px', opacity: isPrivate ? 0.6 : 1, pointerEvents: isPrivate ? 'none' : 'auto' })}>
+                            <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '12px', color: '#2C3A47' })}>누가 챙길까요?</label>
+                            <select
+                                value={type}
+                                onChange={e => {
+                                    setType(e.target.value as any)
+                                    if (e.target.value === 'specific' && !assignedTo) {
+                                        setAssignedTo(currentUser?.id || '')
+                                    }
+                                }}
+                                className={css({ w: '100%', p: '14px', bg: '#F9F9F9', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', fontSize: '15px', fontWeight: '600' })}
+                            >
+                                <option value="anyone">한 명이라도 챙기기 (함께 준비)</option>
+                                <option value="specific">담당자 지정하기</option>
+                                <option value="everyone">모두가 각자 챙기기</option>
                             </select>
-                            
+
                             {type === 'specific' && (
-                                <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mt: '8px', outline: 'none', _focus: { borderColor: '#2EC4B6' } })}>
-                                    {participants.map(p => {
-                                        const isMe = p.user_id === currentUser?.id
-                                        const label = getMemberDisplayName(p, isMe)
-                                        return (
-                                            <option key={p.user_id} value={p.user_id}>
-                                                {isMe ? `${label} (나)` : label}
-                                            </option>
-                                        )
-                                    })}
+                                <select
+                                    value={assignedTo}
+                                    onChange={e => setAssignedTo(e.target.value)}
+                                    className={css({ w: '100%', mt: '12px', p: '14px', bg: '#F9F9F9', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', fontSize: '15px' })}
+                                >
+                                    {participants.map(p => (
+                                        <option key={p.user_id} value={p.user_id}>
+                                            {p.user_id === currentUser?.id ? `${getMemberDisplayName(p, true)} (나)` : getMemberDisplayName(p, false)}
+                                        </option>
+                                    ))}
                                 </select>
                             )}
                         </div>
                     </div>
                     <div className={css({ p: '24px', bg: '#F9F9F9', display: 'flex', gap: '12px' })}>
                         <button 
-                            onClick={() => updateItem({ item_name: name, category, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null })}
+                            onClick={() => updateItem({ item_name: name, category, is_private: isPrivate, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null })}
                             className={css({ flex: 1, py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)', _hover: { bg: '#28B0A3', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
                         >
                             저장하기
@@ -970,7 +1007,12 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const progressPercent = totalItems > 0 ? Math.round((checkedItems / totalItems) * 100) : 0
 
     // 필링 로직 적용
-    const filteredItems = items.filter(item => {
+    const filteredItems = items.filter((item: any) => {
+        // "나만 보기" 항목 필터링: 본인이 담당자가 아닌 비공개 항목은 절대 표시하지 않음
+        if (item.is_private && item.assigned_user_id !== currentUser?.id) {
+            return false
+        }
+
         if (filterMode === 'all') return true;
         
         const targetUserId = filterMode === 'me' ? currentUser?.id : filterMode;
@@ -1190,17 +1232,41 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         border: '1px solid #DDDDDD'
                     })}>
                         <div className={css({ display: 'flex', gap: '8px', mb: '12px' })}>
-                            <input
-                                type="text"
-                                autoFocus
-                                value={newItemName}
-                                onChange={e => setNewItemName(e.target.value)}
-                                placeholder="어떤 준비물인가요?"
-                                className={css({ flex: 1, p: '12px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '15px' })}
-                            />
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    value={newItemName}
+                                    onChange={e => setNewItemName(e.target.value)}
+                                    placeholder="어떤 준비물인가요?"
+                                    className={css({ flex: 1, p: '12px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '15px' })}
+                                />
+                                <label className={css({ 
+                                    display: 'flex', alignItems: 'center', gap: '6px', 
+                                    px: '12px', bg: 'white', border: '1px solid #DDDDDD', 
+                                    borderRadius: '8px', cursor: 'pointer', userSelect: 'none',
+                                    _hover: { borderColor: '#2EC4B6' }
+                                })}>
+                                    <input
+                                        type="checkbox"
+                                        checked={newItemIsPrivate}
+                                        onChange={e => {
+                                            setNewItemIsPrivate(e.target.checked)
+                                            if (e.target.checked) {
+                                                setNewItemAssignmentType('specific')
+                                                setNewItemAssignedUserId(currentUser?.id || '')
+                                            }
+                                        }}
+                                        className={css({ accentColor: '#2EC4B6', w: '16px', h: '16px' })}
+                                    />
+                                    <span className={css({ fontSize: '13px', fontWeight: '700', color: '#2C3A47', whiteSpace: 'nowrap' })}>나만 보기</span>
+                                </label>
                         </div>
                         {members.length > 0 && (
-                            <div className={css({ display: 'flex', gap: '8px', mt: '12px', flexWrap: 'wrap' })}>
+                            <div className={css({ 
+                                display: 'flex', gap: '8px', mt: '12px', flexWrap: 'wrap',
+                                opacity: newItemIsPrivate ? 0.6 : 1,
+                                pointerEvents: newItemIsPrivate ? 'none' : 'auto'
+                            })}>
                                 <select
                                     value={newItemAssignmentType}
                                     onChange={e => {
@@ -1236,9 +1302,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 
                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', color: '#717171', fontSize: '12px' })}>
                                     <Info size={14} />
-                                    {newItemAssignmentType === 'anyone' && '한 명이라도 챙기면 완료된 것으로 표시돼요.'}
-                                    {newItemAssignmentType === 'specific' && '정해진 담당자만 체크할 수 있어요.'}
-                                    {newItemAssignmentType === 'everyone' && '참여자 모두가 각자 챙겨야 완료돼요.'}
+                                    {newItemIsPrivate ? '나만 보기 설정 중에는 담당자가 "나"로 고정돼요.' : (
+                                        <>
+                                            {newItemAssignmentType === 'anyone' && '한 명이라도 챙기면 완료된 것으로 표시돼요.'}
+                                            {newItemAssignmentType === 'specific' && '정해진 담당자만 체크할 수 있어요.'}
+                                            {newItemAssignmentType === 'everyone' && '참여자 모두가 각자 챙겨야 완료돼요.'}
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         )}
@@ -1365,6 +1435,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     isOpen={isTemplateModalOpen}
                     onClose={() => setIsTemplateModalOpen(false)}
                     checklistId={checklistId}
+                    currentUser={currentUser}
                     onSuccess={(newItems) => {
                         setItems(prev => [...prev, ...newItems])
                     }}
