@@ -1064,10 +1064,6 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>
                         )}
                     </h2>
-                    <div className={css({ display: 'flex', gap: '8px' })}>
-                        {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
-                        {totalItems > 0 && <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />}
-                    </div>
                 </div>
 
                 {/* PC/모바일 분기 액션 버튼 및 필터 라인 */}
