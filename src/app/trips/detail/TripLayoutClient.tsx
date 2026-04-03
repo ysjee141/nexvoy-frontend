@@ -35,6 +35,8 @@ export default function TripLayoutClient() {
     const handleTabChange = (tab: 'plans' | 'checklist') => {
         if (tab !== activeTab) {
             analytics.logTabSwitch(activeTab, tab)
+            // 탭 전환 시 페이지 최상단으로 부드럽게 스크롤
+            window.scrollTo({ top: 0, behavior: 'smooth' })
         }
         setActiveTab(tab)
         const params = new URLSearchParams(searchParams.toString())
@@ -109,9 +111,9 @@ export default function TripLayoutClient() {
 
             {/* 여행 정보 헤더 (온여정 스타일) */}
             <div className={css({
-                mb: '24px',
-                pb: '20px',
-                borderBottom: '1px solid #eaeaea'
+                mb: '8px',
+                pb: '16px',
+                borderBottom: '1px solid #EEEEEE'
             })}>
                 {/* 제목, 날짜·인원 표시 + 수정/삭제 아이콘 (통합 레이아웃) */}
                 <TripHeaderActions
@@ -120,56 +122,71 @@ export default function TripLayoutClient() {
                 />
             </div>
 
-            {/* Tab Navigation (Instant React State Switch) */}
+            {/* Tab Navigation (Segmented Pill Style) */}
             <div
                 className={css({
                     display: 'flex',
-                    gap: { base: '8px', sm: '16px' },
-                    borderBottom: '1px solid #EEEEEE',
-                    mb: '24px',
+                    justifyContent: { base: 'center', sm: 'flex-start' },
+                    mb: '16px',
                     position: 'sticky',
-                    top: '0',
-                    bg: 'white',
-                    zIndex: 20,
-                    px: { base: '4px', sm: 0 },
-                    mx: { base: '-20px', sm: 0 },
-                    justifyContent: { base: 'center', sm: 'flex-start' }
+                    top: { 
+                        base: '56px', // Standard GNB Height
+                        sm: '64px' 
+                    },
+                    bg: '#FBFBF9', // Perfectly unified with page background
+                    backdropFilter: 'blur(20px)', // Enhanced glass effect for content passing underneath
+                    zIndex: 100,
+                    py: '12px', // Restored slightly more breathing room
+                    mx: '0', // Removed negative margins to align with cards
+                    px: '0',
+                    transition: 'all 0.3s ease',
                 })}
             >
-                <button
-                    onClick={() => handleTabChange('plans')}
-                    className={css({
-                        display: 'flex', alignItems: 'center', gap: '8px', px: '20px', py: '16px',
-                        bg: 'transparent',
-                        cursor: 'pointer', border: 'none',
-                        color: activeTab === 'plans' ? '#222' : '#717171',
-                        fontWeight: '700',
-                        fontSize: '15px',
-                        transition: 'all 0.1s ease',
-                        borderBottom: activeTab === 'plans' ? '2px solid #222' : '2px solid transparent',
-                        _active: { transform: 'scale(0.96)' },
-                        _hover: { color: '#000' },
-                    })}
-                >
-                    <Calendar size={18} /> 일정표
-                </button>
-                <button
-                    onClick={() => handleTabChange('checklist')}
-                    className={css({
-                        display: 'flex', alignItems: 'center', gap: '8px', px: '20px', py: '16px',
-                        bg: 'transparent',
-                        cursor: 'pointer', border: 'none',
-                        color: activeTab === 'checklist' ? '#222' : '#717171',
-                        fontWeight: '700',
-                        fontSize: '15px',
-                        transition: 'all 0.1s ease',
-                        borderBottom: activeTab === 'checklist' ? '2px solid #222' : '2px solid transparent',
-                        _active: { transform: 'scale(0.96)' },
-                        _hover: { color: '#000' },
-                    })}
-                >
-                    <ListChecks size={18} /> 준비물
-                </button>
+                <div className={css({ 
+                    display: 'flex', 
+                    bg: '#EEEEEE', 
+                    p: '4px', 
+                    borderRadius: '20px', 
+                    gap: '4px',
+                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)'
+                })}>
+                    <button
+                        onClick={() => handleTabChange('plans')}
+                        className={css({
+                            display: 'flex', alignItems: 'center', gap: '8px', px: '24px', h: '42px',
+                            bg: activeTab === 'plans' ? 'white' : 'transparent',
+                            cursor: 'pointer', border: 'none',
+                            color: activeTab === 'plans' ? '#2EC4B6' : '#717171',
+                            fontWeight: '800',
+                            fontSize: '14px',
+                            borderRadius: '16px',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: activeTab === 'plans' ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
+                            _active: { transform: 'scale(0.96)' },
+                            _hover: { color: activeTab === 'plans' ? '#2EC4B6' : '#333' },
+                        })}
+                    >
+                        <Calendar size={18} strokeWidth={activeTab === 'plans' ? 2.5 : 2} /> <span className={css({ mt: '1px' })}>일정표</span>
+                    </button>
+                    <button
+                        onClick={() => handleTabChange('checklist')}
+                        className={css({
+                            display: 'flex', alignItems: 'center', gap: '8px', px: '24px', h: '42px',
+                            bg: activeTab === 'checklist' ? 'white' : 'transparent',
+                            cursor: 'pointer', border: 'none',
+                            color: activeTab === 'checklist' ? '#2EC4B6' : '#717171',
+                            fontWeight: '800',
+                            fontSize: '14px',
+                            borderRadius: '16px',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: activeTab === 'checklist' ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
+                            _active: { transform: 'scale(0.96)' },
+                            _hover: { color: activeTab === 'checklist' ? '#2EC4B6' : '#333' },
+                        })}
+                    >
+                        <ListChecks size={18} strokeWidth={activeTab === 'checklist' ? 2.5 : 2} /> <span className={css({ mt: '1px' })}>준비물</span>
+                    </button>
+                </div>
             </div>
 
             {/* 하위 컨텐츠 전환 영역 (언마운트 하지 않고 display none으로 유지하여 상태 보존 및 즉각 전환) */}

@@ -83,71 +83,79 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
             })} onClick={e => e.stopPropagation()}>
                 <button onClick={onClose} className={css({
                     position: 'absolute', top: '24px', right: '24px', bg: 'transparent',
-                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#1E3A8A' }
+                    border: 'none', cursor: 'pointer', color: '#999', _hover: { color: '#2C3A47', transform: 'scale(1.1)' }, transition: 'all 0.2s'
                 })}>
                     <X size={24} />
                 </button>
 
-                <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', mb: { base: '16px', sm: '24px' }, display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <Share2 size={20} color="#2563EB" /> 일정 공유하기
+                <h2 className={css({ fontSize: { base: '20px', sm: '24px' }, fontWeight: '900', mb: { base: '20px', sm: '28px' }, display: 'flex', alignItems: 'center', gap: '10px', color: '#2C3A47', letterSpacing: '-0.02em' })}>
+                    <div className={css({ p: '8px', bg: '#EAF9F7', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
+                        <Share2 size={22} color="#2EC4B6" strokeWidth={2.5} />
+                    </div>
+                    일정 공유하기
                 </h2>
 
-                <div className={css({ mb: '24px' })}>
-                    <p className={css({ fontSize: '14px', color: '#666', mb: '16px' })}>
+                <div className={css({ mb: '28px' })}>
+                    <p className={css({ fontSize: '14px', color: '#717171', mb: '20px', fontWeight: '500', lineHeight: '1.5' })}>
                         동행자가 아닌 분들에게도 일정을 공유할 수 있어요. 공유된 일정은 **읽기 전용**으로 표시됩니다.
                     </p>
 
-                    <div className={css({ display: 'flex', bg: '#f1f3f4', p: '4px', borderRadius: '12px', mb: '16px' })}>
+                    <div className={css({ display: 'flex', bg: '#F2F4F5', p: '4px', borderRadius: '18px', mb: '20px' })}>
                         <button
                             onClick={() => { setShareType('public'); setShareToken(''); }}
                             className={css({
-                                flex: 1, py: '10px', fontSize: '14px', fontWeight: '600',
-                                borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                flex: 1, py: '12px', fontSize: '14px', fontWeight: '800',
+                                borderRadius: '14px', border: 'none', cursor: 'pointer',
                                 bg: shareType === 'public' ? 'white' : 'transparent',
-                                boxShadow: shareType === 'public' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                                color: shareType === 'public' ? '#111' : '#666',
+                                boxShadow: shareType === 'public' ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
+                                color: shareType === 'public' ? '#2C3A47' : '#717171',
                                 transition: 'all 0.2s',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                             })}
                         >
-                            <Globe size={16} /> 전체 공개
+                            <Globe size={18} strokeWidth={shareType === 'public' ? 2.5 : 2} /> 전체 공개
                         </button>
                         <button
                             onClick={() => { setShareType('password'); setShareToken(''); }}
                             className={css({
-                                flex: 1, py: '10px', fontSize: '14px', fontWeight: '600',
-                                borderRadius: '8px', border: 'none', cursor: 'pointer',
+                                flex: 1, py: '12px', fontSize: '14px', fontWeight: '800',
+                                borderRadius: '14px', border: 'none', cursor: 'pointer',
                                 bg: shareType === 'password' ? 'white' : 'transparent',
-                                boxShadow: shareType === 'password' ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                                color: shareType === 'password' ? '#111' : '#666',
+                                boxShadow: shareType === 'password' ? '0 4px 12px rgba(0,0,0,0.06)' : 'none',
+                                color: shareType === 'password' ? '#2C3A47' : '#717171',
                                 transition: 'all 0.2s',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                             })}
                         >
-                            <Lock size={16} /> 비밀번호 보호
+                            <Lock size={18} strokeWidth={shareType === 'password' ? 2.5 : 2} /> 비밀번호 보호
                         </button>
                     </div>
 
                     {shareType === 'password' && !shareToken && (
                         <div className={css({ mb: '16px' })}>
-                            <label className={css({ display: 'block', fontSize: '13px', mb: '6px', color: '#555', fontWeight: 'bold' })}>접속 비밀번호 설정</label>
-                            <div className={css({ display: 'flex', gap: '8px' })}>
+                            <label className={css({ display: 'block', fontSize: '13px', mb: '8px', color: '#2C3A47', fontWeight: '800' })}>접속 비밀번호 설정</label>
+                            <div className={css({ display: 'flex', gap: '10px' })}>
                                 <input
                                     type="password"
                                     placeholder="공유용 비밀번호 입력"
                                     value={password}
                                     onChange={e => setPassword(e.target.value)}
                                     className={css({
-                                        flex: 1, px: '12px', py: '12px', bg: '#f8f9fa', borderRadius: '12px',
-                                        border: '1px solid #eee', outline: 'none', fontSize: '14px',
-                                        _focus: { borderColor: '#2563EB', bg: 'white' }
+                                        flex: 1, px: '14px', py: '14px', bg: '#F9F9F9', borderRadius: '16px',
+                                        border: '1px solid #EEEEEE', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#2C3A47', transition: 'all 0.2s',
+                                        _placeholder: { color: '#CCC', fontWeight: '400' },
+                                        _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' }
                                     })}
                                 />
                                 <button
                                     onClick={handleCreateLink}
                                     className={css({
-                                        px: '20px', bg: '#111', color: 'white', borderRadius: '12px',
-                                        fontWeight: 'bold', cursor: 'pointer', border: 'none'
+                                        px: '24px', bg: '#2EC4B6', color: 'white', borderRadius: '16px',
+                                        fontWeight: '800', cursor: 'pointer', border: 'none',
+                                        transition: 'all 0.2s',
+                                        boxShadow: '0 4px 12px rgba(46,196,182,0.2)',
+                                        _hover: { bg: '#249E93', transform: 'translateY(-1px)' },
+                                        _active: { transform: 'scale(0.95)' }
                                     })}
                                 >
                                     생성
@@ -159,15 +167,17 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
 
                 {loading ? (
                     <div className={css({ py: '40px', textAlign: 'center' })}>
-                        <Loader2 size={32} className={css({ animation: 'spin 1s linear infinite', mx: 'auto', mb: '12px', color: '#2563EB' })} />
+                        <Loader2 size={32} className={css({ animation: 'spin 1s linear infinite', mx: 'auto', mb: '12px', color: '#2EC4B6' })} />
                         <p className={css({ color: '#888', fontSize: '14px' })}>공유 링크를 만들고 있어요... ✈️</p>
                     </div>
                 ) : shareUrl ? (
-                    <div className={css({ bg: '#f9f9f9', p: '24px', borderRadius: '16px', border: '1px solid #f0f0f0' })}>
-                        <h3 className={css({ fontSize: '13px', fontWeight: 'bold', color: '#888', mb: '8px' })}>공유 링크 URL</h3>
+                    <div className={css({ bg: '#F9F9F9', p: '24px', borderRadius: '24px', border: '1px solid #EEEEEE' })}>
+                        <h3 className={css({ fontSize: '13px', fontWeight: '800', color: '#2C3A47', mb: '12px', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                            <div className={css({ w: '4px', h: '12px', bg: '#2EC4B6', borderRadius: '2px' })} /> 공유 링크 URL
+                        </h3>
                         <div className={css({
-                            p: '12px', bg: 'white', borderRadius: '12px', border: '1px solid #ddd',
-                            fontSize: '13px', color: '#172554', mb: '16px', lineHeight: 1.5,
+                            p: '16px', bg: 'white', borderRadius: '16px', border: '1px solid #EEEEEE',
+                            fontSize: '13px', fontWeight: '600', color: '#2C3A47', mb: '20px', lineHeight: 1.6,
                             wordBreak: 'break-all'
                         })}>
                             {shareUrl}
@@ -178,32 +188,36 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
                                 onClick={handleCopy}
                                 className={css({
                                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                    py: '12px', bg: 'white', border: '1px solid #ddd', borderRadius: '12px',
-                                    fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', _hover: { bg: '#f5f5f5' }
+                                    py: '14px', bg: 'white', border: '1px solid #EEEEEE', borderRadius: '16px',
+                                    fontSize: '14px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer', 
+                                    transition: 'all 0.2s', _hover: { bg: '#F2F4F5', borderColor: '#CCC' },
+                                    _active: { transform: 'scale(0.98)' }
                                 })}
                             >
-                                <Copy size={16} /> URL 복사
+                                <Copy size={16} strokeWidth={2.5} /> URL 복사
                             </button>
                             <button
                                 onClick={handleEmailShare}
                                 className={css({
                                     flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                    py: '12px', bg: 'white', border: '1px solid #ddd', borderRadius: '12px',
-                                    fontSize: '14px', fontWeight: 'bold', cursor: 'pointer', _hover: { bg: '#f5f5f5' }
+                                    py: '14px', bg: 'white', border: '1px solid #EEEEEE', borderRadius: '16px',
+                                    fontSize: '14px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer',
+                                    transition: 'all 0.2s', _hover: { bg: '#F2F4F5', borderColor: '#CCC' },
+                                    _active: { transform: 'scale(0.98)' }
                                 })}
                             >
-                                <Mail size={16} /> 메일 공유
+                                <Mail size={16} strokeWidth={2.5} /> 메일 공유
                             </button>
                         </div>
-                        {copied && <p className={css({ mt: '12px', textAlign: 'center', fontSize: '13px', color: '#2563EB', fontWeight: 'bold' })}>링크가 복사되었습니다!</p>}
+                        {copied && <p className={css({ mt: '12px', textAlign: 'center', fontSize: '13px', color: '#2EC4B6', fontWeight: 'bold' })}>링크가 복사되었습니다!</p>}
                     </div>
                 ) : null}
 
                 {message && !loading && (
                     <p className={css({
-                        mt: '16px', fontSize: '13px', px: '12px', py: '8px', borderRadius: '8px',
-                        bg: message.type === 'success' ? '#EFF6FF' : '#fce8e6',
-                        color: message.type === 'success' ? '#2563EB' : '#c5221f'
+                        mt: '16px', fontSize: '13px', px: '12px', py: '8px', borderRadius: '12px',
+                        bg: message.type === 'success' ? '#EAF9F7' : '#fce8e6',
+                        color: message.type === 'success' ? '#2EC4B6' : '#c5221f'
                     })}>
                         {message.text}
                     </p>

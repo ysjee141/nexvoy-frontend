@@ -320,7 +320,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             bg: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#3B82F6',
+                            color: '#2EC4B6',
                             p: '0',
                             zIndex: 1,
                         })}
@@ -365,7 +365,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             value={title}
                             onChange={e => setTitle(e.target.value)}
                             placeholder="예: 에펠탑 방문 🗼"
-                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
+                            className={css({ w: '100%', p: '14px 16px', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', bg: '#F9F9F9', fontSize: '15px', fontWeight: '600', color: '#2C3A47', transition: 'all 0.2s', _placeholder: { color: '#CCC', fontWeight: '400' }, _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' } })}
                         />
                     </div>
 
@@ -385,7 +385,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                         setGooglePlaceId(null)
                                     }}
                                     placeholder="어디로 떠나시나요? 🗺️"
-                                    className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' }, bg: '#f9f9f9' })}
+                                    className={css({ w: '100%', p: '14px 16px', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', bg: '#F9F9F9', fontSize: '15px', fontWeight: '600', color: '#2C3A47', transition: 'all 0.2s', _placeholder: { color: '#CCC', fontWeight: '400' }, _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' } })}
                                 />
                             </Autocomplete>
                         ) : (
@@ -412,7 +412,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                     value={localDate}
                                     onChange={e => setLocalDate(e.target.value)}
                                     style={{ minWidth: 0 }}
-                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
+                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '12px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#2EC4B6', boxShadow: '0 0 0 2px rgba(46, 196, 182, 0.1)' } })}
                                 />
                             </div>
                         </div>
@@ -427,7 +427,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                     value={localTime}
                                     onChange={e => setLocalTime(e.target.value)}
                                     style={{ minWidth: 0 }}
-                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '14px', _focus: { borderColor: '#3B82F6' } })}
+                                    className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '14px 16px', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', bg: '#F9F9F9', fontSize: '15px', fontWeight: '600', color: '#2C3A47', transition: 'all 0.2s', _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' } })}
                                 />
                             </div>
                         </div>
@@ -435,8 +435,8 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
 
                     <div className={css({ bg: '#f8f9fa', p: '12px', borderRadius: '8px', border: '1px solid #eee' })}>
                         <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '4px' })}>
-                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#444' })}>✈️ 지금 이 일정의 시간 기준</span>
-                            <span className={css({ fontSize: '12px', bg: '#EFF6FF', color: '#3B82F6', px: '8px', py: '2px', borderRadius: '4px', fontWeight: 'bold' })}>
+                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#2C3A47' })}>✈️ 지금 이 일정의 시간 기준</span>
+                            <span className={css({ fontSize: '12px', bg: '#EAF9F7', color: '#2EC4B6', px: '8px', py: '2px', borderRadius: '4px', fontWeight: 'bold' })}>
                                 {timezoneString}
                             </span>
                         </div>
@@ -451,7 +451,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             const currency = getCurrencyFromTimezone(timezoneString)
                             return (
                                 <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '600', mb: '6px' })}>
-                                    <span className={css({ fontSize: '15px', fontWeight: '700', color: '#3B82F6', minW: '20px' })}>
+                                    <span className={css({ fontSize: '15px', fontWeight: '700', color: '#2EC4B6', minW: '20px' })}>
                                         {currency.symbol}
                                     </span>
                                     예상 금액
@@ -463,10 +463,10 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             position: 'relative', 
                             display: 'flex', 
                             alignItems: 'center',
-                            border: '1px solid #ddd', 
+                            border: '1px solid #EEEEEE', 
                             borderRadius: '12px',
-                            bg: 'white',
-                            _focusWithin: { borderColor: '#3B82F6', ring: '2px solid rgba(59, 130, 246, 0.1)' },
+                            bg: '#F9F9F9',
+                            _focusWithin: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' },
                             transition: 'all 0.2s'
                         })}>
                             {/* 좌측 고정 통화 기호 */}
@@ -474,7 +474,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                 paddingLeft: '16px',
                                 fontSize: '16px',
                                 fontWeight: '700',
-                                color: '#3B82F6',
+                                color: '#2EC4B6',
                                 userSelect: 'none',
                                 pointerEvents: 'none'
                             })}>
@@ -541,8 +541,8 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                         px: '12px', py: '6px', fontSize: '12px', fontWeight: '700',
                                         bg: '#f1f3f4', color: '#555', border: '1px solid #eee', borderRadius: '20px',
                                         cursor: 'pointer', transition: 'all 0.2s',
-                                        _hover: { bg: '#e8eaed', borderColor: '#ddd', color: '#222' },
-                                        _active: { transform: 'scale(0.95)', bg: '#3B82F6', color: 'white', borderColor: '#3B82F6' }
+                                        _hover: { bg: '#e8eaed', borderColor: '#ddd', color: '#2C3A47' },
+                                        _active: { transform: 'scale(0.95)', bg: '#2EC4B6', color: 'white', borderColor: '#2EC4B6' }
                                     })}
                                 >
                                     {btn.label}
@@ -574,7 +574,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                                         value={url}
                                         onChange={e => handleUrlChange(i, e.target.value)}
                                         placeholder="https://..."
-                                        className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
+                                        className={css({ flex: 1, p: '12px', border: '1px solid #ddd', borderRadius: '12px', outline: 'none', _focus: { borderColor: '#2EC4B6', boxShadow: '0 0 0 2px rgba(46, 196, 182, 0.1)' } })}
                                     />
                                     {urls.length > 1 && (
                                         <button type="button" onClick={() => removeUrlField(i)} className={css({ px: '12px', color: '#dc2626', bg: '#fee2e2', borderRadius: '8px', border: 'none', cursor: 'pointer' })}>
@@ -598,17 +598,17 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             <select
                                 value={alarmMinutesBefore ?? ''}
                                 onChange={e => setAlarmMinutesBefore(e.target.value === '' ? null : Number(e.target.value))}
-                                className={css({ w: '100%', p: '14px 40px 14px 16px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', bg: 'white', color: '#1E3A8A', fontSize: '14px', fontWeight: '500', cursor: 'pointer', appearance: 'none', _focus: { borderColor: '#3B82F6' } })}
+                                className={css({ w: '100%', p: '14px 40px 14px 16px', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', bg: '#F9F9F9', color: '#2C3A47', fontSize: '15px', fontWeight: '600', cursor: 'pointer', appearance: 'none', transition: 'all 0.2s', _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' } })}
                             >
-                                <option value="">알림 없음</option>
+                                <option value="">🔔 알림 없음</option>
                                 <option value="10">출발 10분 전</option>
                                 <option value="30">출발 30분 전</option>
                                 <option value="60">출발 1시간 전</option>
                                 <option value="180">출발 3시간 전</option>
                                 <option value="1440">하루 전</option>
                             </select>
-                            <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
-                                <ChevronDown size={18} />
+                            <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#2EC4B6' })}>
+                                <ChevronDown size={18} strokeWidth={3} />
                             </div>
                         </div>
                         {alarmMinutesBefore !== null && (
@@ -627,7 +627,7 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                             onChange={e => setMemo(e.target.value)}
                             placeholder="함께 적어둘 내용이 있나요? ✍️"
                             rows={3}
-                            className={css({ w: '100%', p: '12px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', resize: 'vertical', _focus: { borderColor: '#3B82F6' } })}
+                            className={css({ w: '100%', p: '14px 16px', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', resize: 'vertical', bg: '#F9F9F9', fontSize: '15px', fontWeight: '500', color: '#2C3A47', transition: 'all 0.2s', _placeholder: { color: '#CCC', fontWeight: '400' }, _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' } })}
                         />
                     </div>
 
@@ -635,14 +635,14 @@ export default function NewPlanModal({ tripId, isOpen, onClose, onSuccess, editD
                         <button
                             type="button"
                             onClick={handleClose}
-                            className={css({ px: '16px', py: '12px', color: '#555', bg: 'white', border: '1px solid #ddd', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', fontSize: '14px' })}
+                            className={css({ px: '20px', py: '14px', color: '#717171', bg: '#F5F5F5', border: 'none', borderRadius: '14px', cursor: 'pointer', fontWeight: '700', fontSize: '15px', transition: 'all 0.2s', _active: { transform: 'scale(0.96)' }, _hover: { bg: '#EEEEEE' } })}
                         >
                             취소
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className={css({ px: '24px', py: '12px', bg: '#111', color: 'white', borderRadius: '8px', fontWeight: '800', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontSize: '14px', _hover: { bg: '#333' } })}
+                            className={css({ px: '24px', py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '800', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, fontSize: '16px', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)', _hover: { bg: '#28B0A3', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
                         >
                             {loading ? '저장 중...' : editData ? '수정할게요' : '일정 추가하기'}
                         </button>

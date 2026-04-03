@@ -23,28 +23,28 @@ import Skeleton from '@/components/ui/Skeleton'
 const FEATURES = [
   {
       icon: <Map size={28} />,
-      bg: '#EFF6FF', color: '#3B82F6',
+      bg: '#EAF9F7', color: '#2EC4B6',
       title: '스마트한 여행 관리',
       desc: '목적지·날짜·인원을 등록하면 끝. 진행 중인 여행은 자동으로 상단에 강조 표시되어 한눈에 파악됩니다.',
       badge: '여행 관리',
   },
   {
       icon: <CalendarDays size={28} />,
-      bg: '#EFF6FF', color: '#2563EB',
+      bg: '#EAF9F7', color: '#249E93',
       title: '세부 일정 완벽 관리',
       desc: '장소·시간·예산·메모·참고 URL까지. 일정을 탭하면 구글 맵 미리보기와 함께 모든 정보를 확인할 수 있습니다.',
       badge: '일정',
   },
   {
       icon: <User size={28} />,
-      bg: '#fce8b2', color: '#E37400',
+      bg: '#FFF5F2', color: '#FF9F87',
       title: '동행자와 함께하기',
       desc: '동행자를 이메일로 초대하고 편집/조회 권한으로 함께 계획하세요. 혼자 세우는 여행 계획은 이제 그만.',
       badge: '동행',
   },
   {
       icon: <CheckSquare size={28} />,
-      bg: '#fde8e8', color: '#EA4335',
+      bg: '#EAF9F7', color: '#2EC4B6',
       title: '여행 준비물 체크리스트',
       desc: '여권부터 충전기까지. 준비물을 체크리스트로 등록하고 빠뜨린 것 없이 완벽하게 챙기세요.',
       badge: '체크리스트',
@@ -396,10 +396,10 @@ export default function HomeClient() {
 
               <h1 className={css({
                   fontSize: { base: '30px', md: '48px' }, fontWeight: '900',
-                  color: '#172554', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
+                  color: '#2C3A47', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
               })}>
                   여행 계획, 가이드 없이도<br />
-                  <span className={css({ color: '#3B82F6' })}>더 쉽고 즐겁게</span> 세워 보세요
+                  <span className={css({ color: '#2EC4B6' })}>더 쉽고 즐겁게</span> 세워 보세요
               </h1>
               <p className={css({
                   fontSize: { base: '15px', md: '18px' }, color: '#555',
@@ -411,11 +411,11 @@ export default function HomeClient() {
               <div className={css({ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' })}>
                   <Link href="/signup" className={css({
                       display: 'inline-flex', alignItems: 'center', gap: '8px',
-                      bg: '#3B82F6', color: 'white', fontWeight: '700', fontSize: '15px',
-                      px: '28px', py: '14px', borderRadius: '14px', textDecoration: 'none',
-                      boxShadow: '0 6px 20px rgba(66,133,244,0.35)',
+                      bg: '#2EC4B6', color: 'white', fontWeight: '700', fontSize: '15px',
+                      px: '28px', py: '14px', borderRadius: '16px', textDecoration: 'none',
+                      boxShadow: '0 6px 20px rgba(46, 196, 182, 0.3)',
                       transition: 'all 0.2s',
-                      _hover: { bg: '#3B82F6', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(66,133,244,0.4)' },
+                      _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(46, 196, 182, 0.4)' },
                   })}>
                       지금 바로 시작하기 <ArrowRight size={17} />
                   </Link>
@@ -571,12 +571,21 @@ export default function HomeClient() {
       {user && isBetaTester(user.id) && <TesterNoticeModal userId={user.id} />}
       <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
         {showNicknamePrompt && <NicknamePrompt onClose={() => setShowNicknamePrompt(false)} />}
-        <header className={css({ mb: { base: '28px', sm: '40px' }, display: 'flex', justifyContent: 'space-between', alignItems: { base: 'flex-start', sm: 'center' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
+        <header className={css({ 
+          mb: { base: '32px', sm: '60px' }, 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: { base: 'flex-start', sm: 'flex-end' }, 
+          flexDirection: { base: 'column', sm: 'row' }, 
+          gap: '20px',
+          pb: '20px',
+          borderBottom: '1px solid #f0f0f0'
+        })}>
           <div>
             <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '900', color: '#222', letterSpacing: '-1px' })}>
                 안녕하세요, {nickname}님! 👋
             </h1>
-            <p className={css({ color: '#717171', mt: '8px', fontSize: { base: '16px', sm: '19px' }, fontWeight: '600', letterSpacing: '-0.5px' })}>
+            <p className={css({ color: '#666', mt: '12px', fontSize: { base: '16px', sm: '20px' }, fontWeight: '500', letterSpacing: '-0.4px' })}>
               {ongoing.length > 0
                 ? `현재 ${ongoing[0].destination} 여행 중이에요 ✈️`
                 : upcoming.length > 0
@@ -588,11 +597,11 @@ export default function HomeClient() {
             href="/trips/new"
             className={css({
               display: 'flex', alignItems: 'center', gap: '8px',
-              bg: '#222', color: 'white', px: '24px', py: '14px',
-              borderRadius: '12px', fontWeight: '800', transition: 'all 0.2s',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              bg: '#2EC4B6', color: 'white', px: '24px', py: '14px',
+              borderRadius: '16px', fontWeight: '800', transition: 'all 0.2s',
+              boxShadow: '0 4px 12px rgba(46, 196, 182, 0.2)',
               w: { base: '100%', sm: 'auto' }, justifyContent: 'center',
-              _hover: { bg: '#000', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(0,0,0,0.2)' },
+              _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.3)' },
               _active: { transform: 'scale(0.96)' }
             })}
           >
@@ -628,9 +637,9 @@ export default function HomeClient() {
                     title="여행 중이에요! 🎉"
                     subtitle="현재 진행 중인 여행"
                     emoji="✈️"
-                    accentColor="#3B82F6"
-                    badgeBg="#EFF6FF"
-                    badgeColor="#3B82F6"
+                    accentColor="#2EC4B6"
+                    badgeBg="#EAF9F7"
+                    badgeColor="#2EC4B6"
                     badgeLabel="여행 중"
                     trips={ongoing}
                     currentUserId={user.id}
@@ -644,9 +653,9 @@ export default function HomeClient() {
                     title="다가오는 여행"
                     subtitle="출발 전 설레는 여행"
                     emoji="🗺️"
-                    accentColor="#2563EB"
-                    badgeBg="#EFF6FF"
-                    badgeColor="#2563EB"
+                    accentColor="#249E93"
+                    badgeBg="#EAF9F7"
+                    badgeColor="#249E93"
                     badgeLabel="예정"
                     trips={upcoming}
                     currentUserId={user.id}

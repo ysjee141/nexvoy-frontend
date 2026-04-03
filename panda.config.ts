@@ -16,19 +16,20 @@ export default defineConfig({
       tokens: {
         colors: {
           brand: {
-            primary: { value: '#3B82F6' }, // OnVoy Blue
-            primaryDark: { value: '#1E40AF' },
-            secondary: { value: '#222222' }, // Dark text/bg
-            muted: { value: '#717171' }, // Secondary gray
-            light: { value: '#F7F7F7' }, // Light gray bg
-            border: { value: '#DDDDDD' },
-            accent: { value: '#008489' },
+            primary: { value: '#2EC4B6' },   // primary-mint
+            primaryDark: { value: '#249E93' }, 
+            secondary: { value: '#2C3A47' }, // text-primary (Deep Slate)
+            muted: { value: '#828D99' },     // text-secondary (Soft Cool Gray)
+            light: { value: '#FBFBF9' },     // bg-base
+            border: { value: '#EEEEEE' },
+            accent: { value: '#FF9F87' },    // accent-peach
           },
           bg: {
             surface: { value: '#FFFFFF' },
             card: { value: '#FFFFFF' },
             input: { value: '#FFFFFF' },
-            light: { value: '#F7F7F7' },
+            light: { value: '#FBFBF9' },
+            softCotton: { value: '#FBFBF9' },
           }
         },
         shadows: {

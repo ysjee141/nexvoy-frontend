@@ -235,23 +235,26 @@ function ProfileContent() {
                                     onChange={e => { setNickname(e.target.value); setNicknameError('') }}
                                     autoFocus
                                     className={css({ 
-                                        flex: 1, minW: 0, p: '6px 10px', 
-                                        border: nicknameError ? '1.5px solid #dc2626' : '1.5px solid #3B82F6', 
-                                        borderRadius: '6px', fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', outline: 'none' 
+                                        flex: 1, minW: 0, p: '10px 14px', 
+                                        bg: '#F9F9F9',
+                                        border: nicknameError ? '2px solid #EF4444' : '2px solid #2EC4B6', 
+                                        borderRadius: '12px', fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', outline: 'none',
+                                        transition: 'all 0.2s',
+                                        _focus: { bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' }
                                     })}
                                 />
                                 <div className={css({ display: 'flex', gap: '4px', flexShrink: 0 })}>
                                     <button
                                         onClick={saveNickname}
                                         disabled={isSavingNickname}
-                                        className={css({ p: '6px', bg: '#3B82F6', color: 'white', borderRadius: '6px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', _disabled: { opacity: 0.6 } })}
+                                        className={css({ p: '6px', bg: '#2EC4B6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', _hover: { bg: '#249E93' }, _disabled: { opacity: 0.6 } })}
                                         title="저장"
                                     >
                                         {isSavingNickname ? <span className={css({ fontSize: '12px', fontWeight: 'bold', px: '2px' })}>...</span> : <Check size={18} />}
                                     </button>
                                     <button
                                         onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || ''); setNicknameError('') }}
-                                        className={css({ p: '6px', bg: '#f1f3f4', color: '#555', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', _hover: { bg: '#e8eaed' } })}
+                                        className={css({ p: '6px', bg: '#F7F7F7', color: '#555', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#eee' } })}
                                         title="취소"
                                     >
                                         <X size={18} />
@@ -265,7 +268,7 @@ function ProfileContent() {
                     ) : (
                         <>
                             <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '900', color: '#222', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', letterSpacing: '-0.5px' })}>
+                                <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '900', color: '#2C3A47', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', letterSpacing: '-0.5px' })}>
                                     {displayName}
                                 </h1>
                                 <button
@@ -283,8 +286,8 @@ function ProfileContent() {
             </div>
 
             {/* 활동 통계 */}
-            <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #DDDDDD', boxShadow: '0 6px 16px rgba(0,0,0,0.06)' })}>
-                <h2 className={css({ fontSize: '18px', fontWeight: '800', mb: '24px', color: '#222' })}>나의 여정 기록</h2>
+            <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
+                <h2 className={css({ fontSize: '18px', fontWeight: '800', mb: '24px', color: '#2C3A47' })}>나의 여정 기록</h2>
                 {/* 모바일: 2x2 grid / 데스크탑: 4열 */}
                 <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '12px', textAlign: 'center' })}>
                     {[
@@ -323,8 +326,8 @@ function ProfileContent() {
 
 
             {/* 비밀번호 변경 */}
-            <section className={css({ bg: 'white', borderRadius: '16px', p: { base: '16px', sm: '24px' }, boxShadow: '0 4px 12px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '16px', fontWeight: 'bold', mb: '20px', color: '#222', display: 'flex', alignItems: 'center', gap: '8px' })}>
+            <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
+                <h2 className={css({ fontSize: '17px', fontWeight: '800', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px' })}>
                     <Lock size={18} />비밀번호 변경
                 </h2>
                 <form onSubmit={changePassword} className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
@@ -337,7 +340,12 @@ function ProfileContent() {
                                 value={newPassword}
                                 onChange={e => { setNewPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
                                 placeholder="6자 이상 입력해 주세요"
-                                className={css({ w: '100%', p: '12px 48px 12px 16px', border: '1px solid #ddd', borderRadius: '8px', fontSize: '15px', outline: 'none', _focus: { borderColor: '#3B82F6' } })}
+                                className={css({ 
+                                    w: '100%', p: '14px 48px 14px 16px', bg: '#F9F9F9', border: '1px solid #EEEEEE', borderRadius: '14px', fontSize: '15px', fontWeight: '600', color: '#2C3A47', outline: 'none', 
+                                    transition: 'all 0.2s',
+                                    _placeholder: { color: '#CCC', fontWeight: '400' },
+                                    _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' } 
+                                })}
                             />
                             <button type="button" onClick={() => setShowNew(!showNew)}
                                 className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa' })}>
@@ -367,13 +375,15 @@ function ProfileContent() {
                                 onChange={e => { setConfirmPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
                                 placeholder="한 번 더 입력해 주세요"
                                 className={css({
-                                    w: '100%', p: '12px 48px 12px 16px', fontSize: '15px', outline: 'none', borderRadius: '8px',
+                                    w: '100%', p: '14px 48px 14px 16px', bg: '#F9F9F9', fontSize: '15px', fontWeight: '600', color: '#2C3A47', outline: 'none', borderRadius: '14px',
+                                    transition: 'all 0.2s',
                                     border: confirmPassword.length === 0
-                                        ? '1px solid #ddd'
+                                        ? '1px solid #EEEEEE'
                                         : confirmPassword === newPassword
-                                            ? '1px solid #16a34a'
-                                            : '1px solid #dc2626',
-                                    _focus: { borderColor: confirmPassword === newPassword ? '#16a34a' : '#dc2626' }
+                                            ? '1px solid #10B981'
+                                            : '1px solid #EF4444',
+                                    _placeholder: { color: '#CCC', fontWeight: '400' },
+                                    _focus: { bg: 'white', borderColor: confirmPassword === newPassword ? '#10B981' : '#EF4444' }
                                 })}
                             />
                             <button type="button" onClick={() => setShowConfirm(!showConfirm)}
@@ -396,16 +406,16 @@ function ProfileContent() {
                     </div>
 
                     {passwordError && (
-                        <p className={css({ fontSize: '13px', color: '#dc2626', bg: '#fef2f2', p: '10px 14px', borderRadius: '8px' })}>{passwordError}</p>
+                        <p className={css({ fontSize: '13px', color: '#EF4444', bg: '#fef2f2', p: '12px 16px', borderRadius: '12px', fontWeight: '600' })}>{passwordError}</p>
                     )}
                     {passwordSuccess && (
-                        <p className={css({ fontSize: '13px', color: '#16a34a', bg: '#EFF6FF', p: '10px 14px', borderRadius: '8px' })}>{passwordSuccess}</p>
+                        <p className={css({ fontSize: '13px', color: '#2EC4B6', bg: '#EAF9F7', p: '12px 16px', borderRadius: '12px', fontWeight: '600' })}>{passwordSuccess}</p>
                     )}
 
                     <button
                         type="submit"
                         disabled={isChangingPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6}
-                        className={css({ mt: '4px', py: '12px', bg: '#111', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', _disabled: { opacity: 0.5, cursor: 'not-allowed' }, _hover: { bg: '#333' } })}
+                        className={css({ mt: '8px', py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', border: 'none', cursor: 'pointer', fontWeight: '800', fontSize: '15px', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(46,196,182,0.2)', _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none' }, _hover: { bg: '#249E93', transform: 'translateY(-1px)' } })}
                     >
                         {isChangingPassword ? '안전하게 바꾸는 중...' : '비밀번호 변경할게요'}
                     </button>
@@ -413,8 +423,8 @@ function ProfileContent() {
             </section>
 
             {/* 바로가기 링크 */}
-            <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #DDDDDD', boxShadow: '0 6px 16px rgba(0,0,0,0.06)' })}>
-                <h2 className={css({ fontSize: '18px', fontWeight: '800', p: '24px 24px 16px', color: '#222' })}>바로가기</h2>
+            <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
+                <h2 className={css({ fontSize: '18px', fontWeight: '800', p: '24px 24px 16px', color: '#2C3A47' })}>바로가기</h2>
                 {[
                     { href: '/templates', icon: '📦', label: '나만의 템플릿', desc: '자주 쓰는 준비물을 미리 만들어 보세요' },
                     { href: '/', icon: '✈️', label: '내 여행 목록', desc: '지금까지의 모든 여행을 확인해 보세요' },
@@ -449,7 +459,7 @@ function ProfileContent() {
             </section>
 
             {/* 기타 메뉴 */}
-            <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #DDDDDD', boxShadow: '0 6px 16px rgba(0,0,0,0.06)' })}>
+            <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
                 <button
                     onClick={() => setShowTerms(true)}
                     className={css({

@@ -118,8 +118,9 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
             display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px'
         })}>
             <div className={css({
-                bg: 'white', borderRadius: '16px', w: '100%', maxW: '400px', p: '24px', position: 'relative',
-                maxH: '80vh', display: 'flex', flexDirection: 'column'
+                bg: 'white', borderRadius: '24px', w: '100%', maxW: '420px', p: '32px', position: 'relative',
+                maxH: '85vh', display: 'flex', flexDirection: 'column',
+                boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
             })}>
                 <button
                     onClick={onClose}
@@ -128,7 +129,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                     <X size={24} />
                 </button>
 
-                <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '16px' })}>템플릿 불러오기</h3>
+                <h3 className={css({ fontSize: '22px', fontWeight: '900', mb: '24px', color: '#2C3A47', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
 
                 {loading ? (
                     <div className={css({ textAlign: 'center', py: '40px', color: '#888' })}>템플릿을 열심히 불러오고 있어요... ✈️</div>
@@ -137,21 +138,21 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                         아직 등록된 템플릿이 없네요. 나만의 템플릿을 만들어 볼까요?
                     </div>
                 ) : (
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1, pr: '4px' })}>
+                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1, pr: '4px' })}>
                         {templates.map((template: any) => (
                             <div
                                 key={template.id}
-                                className={css({ p: '14px', border: '1px solid #eee', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' })}
+                                className={css({ p: '18px', border: '1px solid #EEEEEE', borderRadius: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)', _hover: { bg: '#F9F9F9', borderColor: '#2EC4B6', transform: 'translateY(-2px)' } })}
                             >
-                                <span className={css({ fontWeight: '600', fontSize: '14px', color: '#1E3A8A', flex: 1 })}>{template.title}</span>
+                                <span className={css({ fontWeight: '700', fontSize: '15px', color: '#2C3A47', flex: 1 })}>{template.title}</span>
                                 <button
                                     onClick={() => handleApplyTemplate(template.id)}
                                     disabled={loadingTemplateId === template.id}
-                                    className={css({ display: 'flex', alignItems: 'center', gap: '6px', px: '12px', py: '8px', bg: '#3B82F6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', _hover: { bg: '#3B82F6' }, _active: { transform: 'scale(0.95)' }, _disabled: { opacity: 0.5, cursor: 'not-allowed' } })}
+                                    className={css({ display: 'flex', alignItems: 'center', gap: '6px', px: '16px', py: '10px', bg: '#2EC4B6', color: 'white', borderRadius: '12px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '800', whiteSpace: 'nowrap', transition: 'all 0.2s', boxShadow: '0 4px 10px rgba(46,196,182,0.2)', _hover: { bg: '#249E93', transform: 'translateY(-1px)' }, _active: { transform: 'scale(0.95)' }, _disabled: { opacity: 0.5, cursor: 'not-allowed' } })}
                                 >
                                     {loadingTemplateId === template.id ? '...' : (
                                         <>
-                                            <Copy size={14} /> 적용
+                                            <Copy size={15} /> 적용
                                         </>
                                     )}
                                 </button>

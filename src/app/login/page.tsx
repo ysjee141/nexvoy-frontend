@@ -79,7 +79,7 @@ export default function LoginPage() {
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
                         <Image src="/logo.png" alt="온여정 로고" width={32} height={32} priority />
-                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#172554', letterSpacing: '-0.02em' })}>온여정</span>
+                        <span className={css({ fontSize: '20px', fontWeight: '900', color: '#2C3A47', letterSpacing: '-0.02em' })}>온여정</span>
                     </div>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
@@ -101,7 +101,7 @@ export default function LoginPage() {
                         display: 'flex', 
                         flexDirection: 'column', 
                         border: '1px solid #B0B0B0',
-                        borderRadius: '12px',
+                        borderRadius: '16px',
                         overflow: 'hidden',
                         mb: '16px'
                     })}>
@@ -110,7 +110,7 @@ export default function LoginPage() {
                             p: '12px 16px',
                             transition: 'all 0.2s',
                             position: 'relative',
-                            _focusWithin: { bg: 'blue.50' }
+                            _focusWithin: { bg: '#F0F9F8' }
                         })}>
                             {/* Focus Indicator Bar */}
                             <div className={css({ 
@@ -143,7 +143,7 @@ export default function LoginPage() {
                             p: '12px 16px',
                             transition: 'all 0.2s',
                             position: 'relative',
-                            _focusWithin: { bg: 'blue.50' }
+                            _focusWithin: { bg: '#F0F9F8' }
                         })}>
                             {/* Focus Indicator Bar */}
                             <div className={css({ 
@@ -193,8 +193,8 @@ export default function LoginPage() {
                                 h: '18px',
                                 borderRadius: '4px',
                                 border: '2px solid',
-                                borderColor: rememberEmail ? '#3B82F6' : '#ddd',
-                                bg: rememberEmail ? '#3B82F6' : 'transparent',
+                                borderColor: rememberEmail ? '#2EC4B6' : '#ddd',
+                                bg: rememberEmail ? '#2EC4B6' : 'transparent',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -217,12 +217,12 @@ export default function LoginPage() {
                     {message && (
                         <div className={css({
                             p: '14px',
-                            bg: message.type === 'error' ? '#fdecea' : '#EFF6FF',
-                            color: message.type === 'error' ? '#d93025' : '#1e8e3e',
+                            bg: message.type === 'error' ? '#fdecea' : '#EAF9F7',
+                            color: message.type === 'error' ? '#d93025' : '#249E93',
                             fontSize: '14px',
                             fontWeight: '500',
-                            borderRadius: '10px',
-                            border: `1px solid ${message.type === 'error' ? '#fbd0cc' : '#ceead6'}`
+                            borderRadius: '16px',
+                            border: `1px solid ${message.type === 'error' ? '#fbd0cc' : '#EAF9F7'}`
                         })}>
                             {message.text}
                         </div>
@@ -238,15 +238,15 @@ export default function LoginPage() {
                             color: 'white',
                             fontWeight: '800',
                             fontSize: '16px',
-                            borderRadius: '10px',
+                            borderRadius: '16px',
                             cursor: loading ? 'not-allowed' : 'pointer',
                             transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '8px',
-                            _hover: { bg: 'brand.primaryDark', boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)' },
-                            _active: { transform: 'scale(0.96)', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' },
+                            _hover: { bg: 'brand.primaryDark', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.3)' },
+                            _active: { transform: 'scale(0.96)', boxShadow: '0 4px 10px rgba(46, 196, 182, 0.2)' },
                             _disabled: { opacity: 0.7, transform: 'none' },
                             mt: '8px',
                         })}

@@ -59,12 +59,12 @@ function SharePlanCard({ plan, formatLocalTime, formatDate }: any) {
                             className={css({
                                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                 w: '100%', p: '12px 16px', bg: '#ffffff', border: '1px solid #E5E7EB',
-                                borderRadius: '12px', cursor: 'pointer', transition: 'all 0.2s',
+                                borderRadius: '16px', cursor: 'pointer', transition: 'all 0.2s',
                                 _hover: { bg: '#F9FAFB', borderColor: '#D1D5DB' }
                             })}
                         >
                             <span className={css({ fontSize: '14px', fontWeight: '700', color: '#4B5563', display: 'flex', alignItems: 'center', gap: '6px' })}>
-                                <Globe size={16} color="#3B82F6" /> 참고자료 {plan.plan_urls.length}건 확인하기
+                                <Globe size={16} color="#2EC4B6" /> 참고자료 {plan.plan_urls.length}건 확인하기
                             </span>
                             {isRefsOpen ? <ChevronUp size={16} color="#9CA3AF" /> : <ChevronDown size={16} color="#9CA3AF" />}
                         </button>
@@ -181,7 +181,7 @@ export default function SharePage() {
         return (
             <div className={css({ display: 'flex', h: '100vh', alignItems: 'center', justifyContent: 'center', bg: '#f8f9fa' })}>
                 <div className={css({ bg: 'white', p: '40px', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', w: '100%', maxW: '400px', textAlign: 'center' })}>
-                    <Lock size={48} className={css({ mx: 'auto', mb: '20px', color: '#3B82F6' })} />
+                    <Lock size={48} className={css({ mx: 'auto', mb: '20px', color: '#2EC4B6' })} />
                     <h1 className={css({ fontSize: '20px', fontWeight: '800', mb: '8px' })}>비밀번호 보호됨</h1>
                     <p className={css({ fontSize: '14px', color: '#666', mb: '24px' })}>이 일정을 보려면 비밀번호를 입력해주세요.</p>
                     <form onSubmit={handlePasswordSubmit}>
@@ -190,9 +190,9 @@ export default function SharePage() {
                             value={passwordInput}
                             onChange={e => setPasswordInput(e.target.value)}
                             placeholder="비밀번호 입력"
-                            className={css({ w: '100%', p: '14px', bg: '#f1f3f4', border: 'none', borderRadius: '12px', mb: '16px', outline: 'none' })}
+                            className={css({ w: '100%', p: '14px', bg: '#f1f3f4', border: 'none', borderRadius: '16px', mb: '16px', outline: 'none' })}
                         />
-                        <button className={css({ w: '100%', p: '14px', bg: '#111', color: 'white', borderRadius: '12px', fontWeight: 'bold' })}>확인</button>
+                        <button className={css({ w: '100%', p: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: 'bold', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)' })}>확인</button>
                     </form>
                 </div>
             </div>
@@ -251,8 +251,8 @@ export default function SharePage() {
                             <div className={css({
                                 display: 'flex', alignItems: 'center', gap: '8px', 
                                 pb: '12px', mb: '4px', 
-                                borderBottom: '2px solid #3B82F6',
-                                color: '#1a56db', fontWeight: '800', fontSize: '18px'
+                                borderBottom: '2px solid #2EC4B6',
+                                color: '#2EC4B6', fontWeight: '800', fontSize: '18px'
                             })}>
                                 <Calendar size={20} />
                                 {dayGroup.label}
@@ -269,9 +269,9 @@ export default function SharePage() {
             <div className={css({ mt: '80px', pt: '40px', borderTop: '1px solid #EEEEEE', textAlign: 'center' })}>
                 <p className={css({ color: '#717171', fontSize: '15px', mb: '20px', fontWeight: '500' })}>나만의 멋진 여행 계획을 세우고 싶다면?</p>
                 <a href="/" className={css({ 
-                    px: '32px', py: '16px', bg: 'brand.primary', color: 'white', borderRadius: '12px', 
+                    px: '32px', py: '16px', bg: 'brand.primary', color: 'white', borderRadius: '16px', 
                     fontWeight: '800', textDecoration: 'none', display: 'inline-block',
-                    boxShadow: '0 8px 16px rgba(59, 130, 246, 0.2)',
+                    boxShadow: '0 8px 16px rgba(46, 196, 182, 0.2)',
                     transition: 'all 0.2s',
                     _active: { transform: 'scale(0.96)' }
                 })}>온여정 시작하기</a>

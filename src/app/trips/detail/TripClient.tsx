@@ -29,14 +29,15 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px',
-                    px: '12px', h: '42px', fontSize: '13px', fontWeight: '800', color: '#222', cursor: 'pointer',
-                    transition: 'all 0.2s', _active: { transform: 'scale(0.95)' }
+                    bg: 'white', border: '1px solid #EEEEEE', borderRadius: '12px',
+                    px: '12px', h: '42px', fontSize: '13px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer',
+                    transition: 'all 0.2s', _active: { transform: 'scale(0.95)' },
+                    _hover: { borderColor: '#2EC4B6', bg: '#EAF9F7' }
                 })}
             >
-                <Clock size={14} className={css({ color: '#888' })} />
+                <Clock size={14} className={css({ color: '#2EC4B6' })} />
                 <span className={css({ whiteSpace: 'nowrap' })}>{currentLabel}</span>
-                <ChevronDown size={14} className={css({ color: '#888' })} />
+                <ChevronDown size={14} className={css({ color: '#888', transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' })} />
             </button>
             {isOpen && (
                 <>
@@ -52,15 +53,16 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
                                 key={opt.value}
                                 onClick={() => { setTimeDisplayMode(opt.value); setIsOpen(false); }}
                                 className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
-                                    bg: timeDisplayMode === opt.value ? '#EFF6FF' : 'transparent',
-                                    color: timeDisplayMode === opt.value ? '#3B82F6' : '#555',
-                                    fontWeight: timeDisplayMode === opt.value ? '700' : '500',
-                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
+                                    bg: timeDisplayMode === opt.value ? '#EAF9F7' : 'transparent',
+                                    color: timeDisplayMode === opt.value ? '#2EC4B6' : '#2C3A47',
+                                    fontWeight: timeDisplayMode === opt.value ? '800' : '600',
+                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9', color: '#2EC4B6' },
+                                    transition: 'all 0.2s'
                                 })}
                             >
                                 {opt.label}
-                                {timeDisplayMode === opt.value && <Check size={14} />}
+                                {timeDisplayMode === opt.value && <Check size={14} strokeWidth={3} />}
                             </button>
                         ))}
                     </div>
@@ -257,11 +259,11 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
     }, [plans])
 
     return (
-        <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, pb: { base: '80px', sm: '24px' }, borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
+        <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, pb: { base: '80px', sm: '24px' }, borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' })}>
             <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, mb: { base: '16px', sm: '24px' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
                 {/* 1. 요약 정보 영역 (PC/모바일 공통) */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', color: '#222' })}>
+                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', color: '#2C3A47' })}>
                         {nextPlanInfo ? (
                             <>
                                 <span className={css({ color: '#FF4D4F' })}>●</span> {nextPlanInfo}
@@ -280,22 +282,22 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     gap: '12px', w: { base: '100%', sm: 'auto' } 
                 })}>
                     {/* PC 전용 시간 표시 옵션 토글 */}
-                    <div className={css({ display: { base: 'none', sm: 'inline-flex' }, bg: '#f1f3f4', p: '2px', borderRadius: '8px', gap: '2px', w: 'auto', h: '42px', alignItems: 'center' })}>
+                    <div className={css({ display: { base: 'none', sm: 'inline-flex' }, bg: '#F2F4F5', p: '4px', borderRadius: '16px', gap: '4px', w: 'auto', h: '46px', alignItems: 'center' })}>
                         <button
                             onClick={() => setTimeDisplayMode('local')}
-                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'local' ? '800' : '500', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#222', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'local' ? '800' : '600', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'local' ? '#2EC4B6' : '#2C3A47', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             현지 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('kst')}
-                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'kst' ? '800' : '500', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#222', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'kst' ? '800' : '600', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'kst' ? '#2EC4B6' : '#2C3A47', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             한국 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('both')}
-                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'both' ? '800' : '500', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', color: '#222', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'both' ? '800' : '600', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'both' ? '#2EC4B6' : '#2C3A47', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             동시 표기
                         </button>
@@ -313,12 +315,12 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                             onClick={() => setIsCollaboratorModalOpen(true)}
                             className={css({
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: 'white', color: '#222',
+                                bg: 'white', color: '#2C3A47',
                                 px: '12px', h: '42px',
-                                borderRadius: '8px', fontWeight: '800', fontSize: '13px',
+                                borderRadius: '16px', fontWeight: '800', fontSize: '13px',
                                 border: '1px solid #DDDDDD', whiteSpace: 'nowrap',
                                 transition: 'all 0.2s',
-                                _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' },
+                                _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' }, _active: { transform: 'scale(0.92)' },
                                 opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
                                 flex: 1
                             })}
@@ -331,12 +333,12 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 onClick={() => setIsShareModalOpen(true)}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    bg: 'white', color: '#222',
+                                    bg: 'white', color: '#2C3A47',
                                     px: '12px', h: '42px',
-                                    borderRadius: '8px', fontWeight: '800', fontSize: '13px',
+                                    borderRadius: '16px', fontWeight: '800', fontSize: '13px',
                                     border: '1px solid #DDDDDD', whiteSpace: 'nowrap',
                                     transition: 'all 0.2s',
-                                    _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' },
+                                    _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' }, _active: { transform: 'scale(0.92)' },
                                     opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
                                     flex: 1
                                 })}
@@ -356,10 +358,10 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 display: { base: 'none', sm: 'flex' },
                                 w: '100%', h: '42px',
                                 alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: '#222', color: 'white', px: '16px', borderRadius: '8px',
+                                bg: '#2EC4B6', color: 'white', px: '16px', borderRadius: '16px',
                                 fontWeight: '800', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
                                 transition: 'all 0.2s',
-                                _hover: { bg: '#000' }, _active: { transform: 'scale(0.96)' }
+                                _hover: { bg: '#249E93', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' }, _active: { transform: 'scale(0.96)' }
                             })}
                         >
                             <Plus size={18} /> 일정 추가
@@ -372,7 +374,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                 <TripDetailSkeleton />
             ) : (!plans || plans.length === 0) ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
-                    <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>아직 등록된 여정이 없어요. 🗺️</p>
+                    <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#2C3A47' })}>아직 등록된 여정이 없어요. 🗺️</p>
                     {(userRole === 'owner' || userRole === 'editor') && isOnline && (
                         <p className={css({ fontSize: '15px', color: '#666', lineHeight: '1.6' })}>새로운 일정을 추가해서 설레는 여정을 완성해 볼까요?</p>
                     )}
@@ -423,25 +425,25 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                     className={css({
                         position: 'fixed',
-                        bottom: 'calc(90px + env(safe-area-inset-bottom))', // BNB(64px) + 여점(26px) + Safe Area
-                        right: '20px',
-                        w: '48px',
-                        h: '48px',
-                        bg: '#222',
+                        bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))', 
+                        right: '24px',
+                        w: '54px',
+                        h: '54px',
+                        bg: '#2EC4B6',
                         color: 'white',
-                        borderRadius: '50%',
+                        borderRadius: '18px',
                         display: { base: 'flex', sm: 'none' },
                         alignItems: 'center',
                         justifyContent: 'center',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
+                        boxShadow: '0 8px 32px rgba(46,196,182,0.3)',
                         zIndex: 40,
                         transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                        _active: { transform: 'scale(0.88)' },
-                        _hover: { bg: '#000' }
+                        _hover: { bg: '#249E93', transform: 'translateY(-2px)' },
+                        _active: { transform: 'scale(0.9)' }
                     })}
                     aria-label="일정 추가"
                 >
-                    <Plus size={24} />
+                    <Plus size={28} strokeWidth={3} />
                 </button>
             )}
         </div>
