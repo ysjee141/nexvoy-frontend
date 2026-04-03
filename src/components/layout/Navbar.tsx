@@ -197,7 +197,7 @@ export default function Navbar() {
                         className={css({
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '4px',
+                            gap: '6px', // Increased slightly for logo
                             bg: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
@@ -207,15 +207,23 @@ export default function Navbar() {
                             _active: { bg: '#f5f5f5' }
                         })}
                     >
+                        {pageTitle === '온여정' && (
+                            <Image src="/logo.png" alt="온여정 로고" width={20} height={20} priority />
+                        )}
                         <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
                             {pageTitle}
                         </h1>
                         <ChevronDown size={18} color="#172554" />
                     </button>
                 ) : (
-                    <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
-                        {pageTitle}
-                    </h1>
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
+                        {pageTitle === '온여정' && (
+                            <Image src="/logo.png" alt="온여정 로고" width={20} height={20} priority />
+                        )}
+                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
+                            {pageTitle}
+                        </h1>
+                    </div>
                 )}
             </div>
             

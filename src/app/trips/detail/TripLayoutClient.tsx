@@ -127,17 +127,18 @@ export default function TripLayoutClient() {
                 className={css({
                     display: 'flex',
                     justifyContent: { base: 'center', sm: 'flex-start' },
-                    mb: '16px',
+                    mb: '-12px',
                     position: 'sticky',
                     top: { 
                         base: 'calc(56px + env(safe-area-inset-top))', // Accounting for safe area on Android/iOS
                         sm: '64px' 
                     },
-                    bg: '#FBFBF9', // Perfectly unified with page background
-                    backdropFilter: 'blur(20px)', // Enhanced glass effect for content passing underneath
+                    bg: 'linear-gradient(to bottom, #FBFBF9 0%, #FBFBF9 80%, rgba(251, 251, 249, 0) 100%)', // Smoother transition
+                    backdropFilter: 'blur(8px)', // Slightly reduced blur for better mobile performance and soft look
                     zIndex: 100,
-                    py: '12px', // Restored slightly more breathing room
-                    mx: '0', // Removed negative margins to align with cards
+                    pt: '12px',
+                    pb: '24px', // Extra bottom padding for the gradient fade
+                    mx: '0', 
                     px: '0',
                     transition: 'all 0.3s ease',
                 })}
