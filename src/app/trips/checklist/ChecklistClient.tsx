@@ -286,6 +286,8 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                     transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                     
                                     w: { base: '100%', sm: '320px' },
+                                    maxH: { base: '92vh', sm: 'auto' },
+                                    pb: { base: 'env(safe-area-inset-bottom)', sm: 4 },
                                     bg: 'white', 
                                     borderRadius: { base: '24px 24px 0 0', sm: '16px' },
                                     boxShadow: '0 -4px 30px rgba(0,0,0,0.2)', 
@@ -384,6 +386,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const [tripOwner, setTripOwner] = useState<any>(null)
     const [newItemAssignmentType, setNewItemAssignmentType] = useState<'anyone' | 'specific' | 'everyone'>('anyone')
     const [newItemAssignedUserId, setNewItemAssignedUserId] = useState<string>('')
+    const [newItemIsPrivate, setNewItemIsPrivate] = useState(false)
     const [editingItem, setEditingItem] = useState<any | null>(null)
     const [filterMode, setFilterMode] = useState<'all' | 'me' | string>('all')
     const [sortBy, setSortBy] = useState<'status' | 'alphabetical' | 'latest'>('status')
@@ -1190,17 +1193,48 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         border: '1px solid #DDDDDD'
                     })}>
                         <div className={css({ display: 'flex', gap: '8px', mb: '12px' })}>
-                            <input
-                                type="text"
-                                autoFocus
-                                value={newItemName}
-                                onChange={e => setNewItemName(e.target.value)}
-                                placeholder="어떤 준비물인가요?"
-                                className={css({ flex: 1, p: '12px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '15px' })}
-                            />
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    value={newItemName}
+                                    onChange={e => setNewItemName(e.target.value)}
+                                    placeholder="어떤 준비물인가요?"
+                                    className={css({ flex: 1, p: '12px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '15px' })}
+                                />
+                        </div>
+
+                        {/* 나만 보기 (입력창 아래로 이동) */}
+                        <div className={css({ mb: '12px', display: 'flex', px: '4px' })}>
+                            <label className={css({ 
+                                display: 'inline-flex', alignItems: 'center', gap: '8px', 
+                                cursor: 'pointer', userSelect: 'none',
+                                transition: 'opacity 0.2s',
+                                _hover: { opacity: 0.8 }
+                            })}>
+                                <input
+                                    type="checkbox"
+                                    checked={newItemIsPrivate}
+                                    onChange={e => {
+                                        setNewItemIsPrivate(e.target.checked)
+                                        if (e.target.checked) {
+                                            setNewItemAssignmentType('specific')
+                                            setNewItemAssignedUserId(currentUser?.id || '')
+                                        }
+                                    }}
+                                    className={css({ accentColor: '#2EC4B6', w: '18px', h: '18px' })}
+                                />
+                                <div className={css({ display: 'flex', flexDirection: 'column' })}>
+                                    <span className={css({ fontSize: '14px', fontWeight: '700', color: '#2C3A47' })}>나만 보기</span>
+                                    <span className={css({ fontSize: '11px', color: '#828D99' })}>담당자가 나로 지정되고, 일행에게는 안 보여요.</span>
+                                </div>
+                            </label>
                         </div>
                         {members.length > 0 && (
-                            <div className={css({ display: 'flex', gap: '8px', mt: '12px', flexWrap: 'wrap' })}>
+                            <div className={css({ 
+                                display: 'flex', gap: '8px', mt: '12px', flexWrap: 'wrap',
+                                opacity: newItemIsPrivate ? 0.6 : 1,
+                                pointerEvents: newItemIsPrivate ? 'none' : 'auto'
+                            })}>
                                 <select
                                     value={newItemAssignmentType}
                                     onChange={e => {

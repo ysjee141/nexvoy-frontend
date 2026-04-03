@@ -14,6 +14,7 @@ interface TemplateItemInput {
     id: string; // db id 혹은 로컬 임시 id
     item_name: string;
     category: string;
+    is_private: boolean;
     isNew?: boolean; // 신규 추가된 항목 식별용
 }
 
@@ -35,6 +36,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
             id: item.id,
             item_name: item.item_name,
             category: item.category || '기타',
+            is_private: item.is_private || false,
             isNew: false
         })) || []
     )
@@ -57,7 +59,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                 .select(`
                     id, 
                     title, 
-                    checklist_template_items (id, item_name, category)
+                    checklist_template_items (id, item_name, category, is_private)
                 `)
                 .eq('id', templateId)
                 .single()
@@ -69,6 +71,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                         id: item.id,
                         item_name: item.item_name,
                         category: item.category || '기타',
+                        is_private: item.is_private || false,
                         isNew: false
                     })))
                 } else {
@@ -88,7 +91,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
     const handleAddItem = () => {
         setItems([
             ...items,
-            { id: Date.now().toString(), item_name: '', category: '기타', isNew: true }
+            { id: Date.now().toString(), item_name: '', category: '기타', is_private: false, isNew: true }
         ])
     }
 
@@ -101,8 +104,8 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
         setItems(items.filter((item: any) => item.id !== itemToRemove.id))
     }
 
-    const handleItemChange = (id: string, field: 'item_name' | 'category', value: string) => {
-        setItems(items.map((item: any) =>
+    const handleItemChange = (id: string, field: 'item_name' | 'category' | 'is_private', value: any) => {
+        setItems(items.map(item => 
             item.id === id ? { ...item, [field]: value } : item
         ))
     }
@@ -319,15 +322,25 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                                         </div>
                                     </div>
 
-                                    <div className={css({ display: 'flex', flex: 1, alignItems: 'center' })}>
+                                    <div className={css({ display: 'flex', flex: 1, alignItems: 'center', gap: { base: '4px', sm: '8px' }, minW: 0 })}>
                                         <input
                                             type="text"
                                             value={item.item_name}
                                             onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
                                             placeholder={`${index + 1}번째 준비물`}
-                                            className={css({ flex: 1, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', fontWeight: '600', bg: 'transparent', color: '#2C3A47', _placeholder: { color: '#CCC', fontWeight: '400' } })}
+                                            className={css({ flex: 1, minW: 0, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', fontWeight: '600', bg: 'transparent', color: '#2C3A47', _placeholder: { color: '#CCC', fontWeight: '400' } })}
                                             required
                                         />
+
+                                        <label className={css({ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', userSelect: 'none', px: { base: '4px', sm: '8px' }, flexShrink: 0 })}>
+                                            <input
+                                                type="checkbox"
+                                                checked={item.is_private}
+                                                onChange={(e) => handleItemChange(item.id, 'is_private', e.target.checked)}
+                                                className={css({ accentColor: '#2EC4B6', w: '16px', h: '16px' })}
+                                            />
+                                            <span className={css({ fontSize: '12px', fontWeight: '700', color: '#717171', whiteSpace: 'nowrap' })}>나만 보기</span>
+                                        </label>
 
                                         <button
                                             type="button"

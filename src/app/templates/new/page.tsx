@@ -12,6 +12,7 @@ interface TemplateItemInput {
     id: string; // 로컬 고유키
     item_name: string;
     category: string;
+    is_private: boolean;
 }
 
 
@@ -24,7 +25,7 @@ export default function NewTemplatePage() {
     // 폼 상태
     const [title, setTitle] = useState('')
     const [items, setItems] = useState<TemplateItemInput[]>([
-        { id: '1', item_name: '', category: '의류' }
+        { id: '1', item_name: '', category: '의류', is_private: false }
     ])
 
     useEffect(() => {
@@ -40,7 +41,7 @@ export default function NewTemplatePage() {
     const handleAddItem = () => {
         setItems([
             ...items,
-            { id: Date.now().toString(), item_name: '', category: '기타' }
+            { id: Date.now().toString(), item_name: '', category: '기타', is_private: false }
         ])
     }
 
@@ -50,8 +51,8 @@ export default function NewTemplatePage() {
         }
     }
 
-    const handleItemChange = (id: string, field: 'item_name' | 'category', value: string) => {
-        setItems(items.map((item: any) =>
+    const handleItemChange = (id: string, field: 'item_name' | 'category' | 'is_private', value: any) => {
+        setItems(items.map(item => 
             item.id === id ? { ...item, [field]: value } : item
         ))
     }
@@ -91,7 +92,8 @@ export default function NewTemplatePage() {
             const itemsToInsert = validItems.map((item: any) => ({
                 template_id: newTemplate.id,
                 item_name: item.item_name.trim(),
-                category: item.category
+                category: item.category,
+                is_private: item.is_private
             }))
 
             const { error: itemsError } = await supabase
@@ -177,15 +179,25 @@ export default function NewTemplatePage() {
                                     </div>
                                 </div>
 
-                                <div className={css({ display: 'flex', flex: 1, alignItems: 'center' })}>
+                                <div className={css({ display: 'flex', flex: 1, alignItems: 'center', gap: { base: '4px', sm: '8px' }, minW: 0 })}>
                                     <input
                                         type="text"
                                         value={item.item_name}
                                         onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
                                         placeholder={`${index + 1}번째 준비물`}
-                                        className={css({ flex: 1, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', fontWeight: '600', bg: 'transparent', color: '#2C3A47', _placeholder: { color: '#CCC', fontWeight: '400' } })}
+                                        className={css({ flex: 1, minW: 0, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', fontWeight: '600', bg: 'transparent', color: '#2C3A47', _placeholder: { color: '#CCC', fontWeight: '400' } })}
                                         required
                                     />
+
+                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', userSelect: 'none', px: { base: '4px', sm: '8px' }, flexShrink: 0 })}>
+                                        <input
+                                            type="checkbox"
+                                            checked={item.is_private}
+                                            onChange={(e) => handleItemChange(item.id, 'is_private', e.target.checked)}
+                                            className={css({ accentColor: '#2EC4B6', w: '16px', h: '16px' })}
+                                        />
+                                        <span className={css({ fontSize: '12px', fontWeight: '700', color: '#717171', whiteSpace: 'nowrap' })}>나만 보기</span>
+                                    </label>
 
                                     {items.length > 1 && (
                                         <button
