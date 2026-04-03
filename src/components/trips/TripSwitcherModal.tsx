@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/utils/cache'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { formatDate } from '@/utils/date'
 
 interface Trip {
     id: string
@@ -232,23 +233,26 @@ export default function TripSwitcherModal() {
                     touchAction: 'none' // 핸들바는 즉시 반응하도록
                 })}>
                     <div className={css({ 
-                        w: '40px', h: '5px', bg: '#ddd', borderRadius: '5px'
+                        w: '44px', h: '5px', bg: '#E5E7EB', borderRadius: '5px'
                     })} />
                 </div>
                 {/* 헤더 */}
                 <div className={css({ 
-                    p: '20px', 
+                    p: '22px 24px', 
                     display: 'flex', 
                     justifyContent: 'space-between', 
                     alignItems: 'center',
-                    borderBottom: '1px solid #f0f0f0'
+                    borderBottom: '1px solid #F5F5F5'
                 })}>
-                    <h3 className={css({ fontSize: '18px', fontWeight: '800', color: '#111' })}>여정 전환하기</h3>
+                    <h3 className={css({ fontSize: '19px', fontWeight: '900', color: '#2C3A47', letterSpacing: '-0.02em' })}>여정 전환하기</h3>
                     <button 
                         onClick={handleClose}
-                        className={css({ p: '8px', borderRadius: '50%', bg: '#f5f5f5', color: '#555' })}
+                        className={css({ 
+                            p: '6px', borderRadius: '50%', bg: '#F8F9FA', color: '#9CA3AF',
+                            transition: 'all 0.2s', _hover: { bg: '#F1F3F5', color: '#2C3A47', transform: 'rotate(90deg)' }
+                        })}
                     >
-                        <X size={20} />
+                        <X size={20} strokeWidth={2.5} />
                     </button>
                 </div>
 
@@ -266,35 +270,36 @@ export default function TripSwitcherModal() {
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id)}
                             className={css({
-                                pb: '12px',
-                                px: '4px',
-                                fontSize: '15px',
-                                fontWeight: activeTab === tab.id ? '800' : '500',
-                                color: activeTab === tab.id ? 'brand.primary' : '#888',
+                                pb: '14px',
+                                px: '6px',
+                                fontSize: '15.5px',
+                                fontWeight: activeTab === tab.id ? '900' : '600',
+                                color: activeTab === tab.id ? '#2EC4B6' : '#9BA3AF',
                                 position: 'relative',
                                 cursor: 'pointer',
-                                transition: 'color 0.2s',
+                                transition: 'all 0.25s',
                                 _after: {
                                     content: '""',
                                     position: 'absolute',
                                     bottom: 0,
                                     left: 0,
                                     right: 0,
-                                    h: '3px',
-                                    bg: 'brand.primary',
-                                    borderRadius: '3px 3px 0 0',
+                                    h: '3.5px',
+                                    bg: '#2EC4B6',
+                                    borderRadius: '4px 4px 0 0',
                                     transform: activeTab === tab.id ? 'scaleX(1)' : 'scaleX(0)',
-                                    transition: 'transform 0.2s ease-out'
+                                    transition: 'transform 0.3s cubic-bezier(0.2, 0, 0, 1)'
                                 }
                             })}
                         >
                             {tab.label}
                             {tab.count > 0 && (
                                 <span className={css({ 
-                                    ml: '4px', 
-                                    fontSize: '12px', 
-                                    opacity: 0.8,
-                                    color: activeTab === tab.id ? 'brand.primary' : '#aaa'
+                                    ml: '6px', 
+                                    fontSize: '11px', 
+                                    bg: activeTab === tab.id ? 'rgba(46, 196, 182, 0.12)' : '#F3F4F6',
+                                    color: activeTab === tab.id ? '#2EC4B6' : '#9BA3AF',
+                                    px: '6px', py: '1.5px', borderRadius: '8px', fontWeight: '900'
                                 })}>
                                     {tab.count}
                                 </span>
@@ -337,8 +342,8 @@ export default function TripSwitcherModal() {
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
                             {currentList.map((trip) => {
                                 const isActive = currentTripId === trip.id
-                                const start = new Date(trip.start_date).toLocaleDateString()
-                                const end = new Date(trip.end_date).toLocaleDateString()
+                                const start = formatDate(trip.start_date)
+                                const end = formatDate(trip.end_date)
 
                                 return (
                                     <Link
@@ -351,35 +356,43 @@ export default function TripSwitcherModal() {
                                         className={css({
                                             display: 'flex',
                                             alignItems: 'center',
-                                            p: '16px',
-                                            bg: isActive ? '#f0f7ff' : 'white',
-                                            borderRadius: '16px',
-                                            border: '1px solid',
-                                            borderColor: isActive ? '#3B82F6' : '#eee',
-                                            transition: 'all 0.2s',
-                                            _active: { transform: 'scale(0.98)' },
+                                            p: '18px',
+                                            bg: isActive ? 'white' : '#F8F9FA',
+                                            borderRadius: '24px',
+                                            border: '1.5px solid',
+                                            borderColor: isActive ? '#2EC4B6' : 'transparent',
+                                            transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                                            boxShadow: isActive ? '0 12px 30px rgba(46, 196, 182, 0.12)' : 'none',
+                                            _hover: { 
+                                                bg: isActive ? 'white' : 'white', 
+                                                borderColor: '#2EC4B6',
+                                                transform: 'translateY(-2px)',
+                                                boxShadow: '0 12px 30px rgba(46, 196, 182, 0.08)'
+                                            },
+                                            _active: { transform: 'scale(0.97)' },
                                         })}
                                     >
                                         <div className={css({ 
-                                            w: '40px', h: '40px', borderRadius: '12px', 
-                                            bg: isActive ? 'brand.primary' : '#f5f5f5',
+                                            w: '44px', h: '44px', borderRadius: '14px', 
+                                            bg: isActive ? '#2EC4B6' : 'white',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            mr: '12px', flexShrink: 0
+                                            mr: '14px', flexShrink: 0,
+                                            boxShadow: isActive ? '0 6px 12px rgba(46, 196, 182, 0.2)' : '0 2px 6px rgba(0,0,0,0.03)'
                                         })}>
-                                            <MapPin size={20} color={isActive ? 'white' : '#888'} />
+                                            <MapPin size={22} color={isActive ? 'white' : '#9CA3AF'} strokeWidth={2.2} />
                                         </div>
                                         <div className={css({ flex: 1, minW: 0 })}>
                                             <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', mb: '4px' })}>
                                                 <h4 className={css({ 
-                                                    fontSize: '16px', fontWeight: '700', color: '#111',
+                                                    fontSize: '17px', fontWeight: '800', color: '#2C3A47',
                                                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'
                                                 })}>
                                                     {trip.destination}
                                                 </h4>
                                                 {isActive && (
                                                     <span className={css({ 
-                                                        bg: 'brand.primary', color: 'white', fontSize: '10px', 
-                                                        px: '6px', py: '2px', borderRadius: '4px', fontWeight: '800'
+                                                        bg: '#2EC4B6', color: 'white', fontSize: '10px', 
+                                                        px: '7px', py: '2.5px', borderRadius: '7px', fontWeight: '900'
                                                     })}>현재</span>
                                                 )}
                                             </div>
@@ -388,7 +401,7 @@ export default function TripSwitcherModal() {
                                             </p>
                                         </div>
                                         {isActive ? (
-                                            <Check size={20} color="#3B82F6" className={css({ ml: '12px' })} />
+                                            <Check size={20} color="#2EC4B6" className={css({ ml: '12px' })} />
                                         ) : (
                                             <ChevronRight size={20} color="#ccc" className={css({ ml: '12px' })} />
                                         )}
@@ -415,16 +428,20 @@ export default function TripSwitcherModal() {
                             justifyContent: 'center',
                             gap: '8px',
                             w: '100%',
-                            py: '16px',
-                            bg: '#111',
+                            py: '18px',
+                            bg: '#2EC4B6',
                             color: 'white',
-                            borderRadius: '16px',
-                            fontWeight: '800',
-                            fontSize: '16px',
+                            borderRadius: '20px',
+                            fontWeight: '900',
+                            fontSize: '17px',
                             textDecoration: 'none',
+                            boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)',
+                            transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                            _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 15px 30px rgba(46, 196, 182, 0.3)' },
+                            _active: { transform: 'translateY(0) scale(0.96)' },
                         })}
                     >
-                        <Plus size={20} /> 새 여정 만들기
+                        <Plus size={22} strokeWidth={3} /> 새 여정 만들기
                     </Link>
                 </div>
             </div>

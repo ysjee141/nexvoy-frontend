@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { css } from 'styled-system/css'
-import { Home, User, BookOpen, ListTodo } from 'lucide-react'
+import { Home, UserCircle, BookOpen, ListTodo } from 'lucide-react'
 
 export default function BottomNavbar() {
     const pathname = usePathname()
@@ -11,7 +11,7 @@ export default function BottomNavbar() {
     const navItems = [
         { icon: Home, label: '홈', href: '/' },
         { icon: ListTodo, label: '템플릿', href: '/templates' },
-        { icon: User, label: '내 정보', href: '/profile' },
+        { icon: UserCircle, label: '프로필', href: '/profile' },
     ]
 
     return (
@@ -54,12 +54,13 @@ export default function BottomNavbar() {
                                 alignItems: 'center',
                                 gap: '4px',
                                 flex: 1,
-                                color: isActive ? '#3B82F6' : '#666',
-                                transition: 'all 0.2s',
-                                _active: { transform: 'scale(0.9)' },
+                                color: isActive ? '#2EC4B6' : '#717171',
+                                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                _active: { transform: 'scale(0.92)' },
+                                _hover: { color: isActive ? '#2EC4B6' : '#222' },
                             })}
                         >
-                            <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                            <Icon size={24} strokeWidth={isActive ? 2.8 : 2} />
                             <span className={css({
                                 fontSize: '10px',
                                 fontWeight: isActive ? '700' : '500',

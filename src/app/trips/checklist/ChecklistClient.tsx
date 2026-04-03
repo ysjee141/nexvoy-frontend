@@ -1,16 +1,17 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { analytics } from '@/services/AnalyticsService'
 import { css } from 'styled-system/css'
-import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle } from 'lucide-react'
+import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle, LayoutGrid, List, Download } from 'lucide-react'
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
+import ChecklistSkeleton from './ChecklistSkeleton'
 
 const SortDropdown = ({ sortBy, setSortBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -26,21 +27,22 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '16px',
-                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#555', cursor: 'pointer',
-                    transition: 'all 0.2s', _hover: { borderColor: '#999' }
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px',
+                    px: '16px', h: '42px', fontSize: '13px', fontWeight: '800', color: '#222', cursor: 'pointer',
+                    transition: 'all 0.2s', _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                    _active: { transform: 'scale(0.98)' }
                 })}
             >
                 {selected.icon}
                 <span className={css({ display: { base: 'none', sm: 'inline' } })}>{selected.label}</span>
-                <ChevronDown size={14} />
+                <ChevronDown size={14} className={css({ ml: '2px', color: '#888' })} />
             </button>
             {isOpen && (
                 <>
                     <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
                     <div className={css({
-                        position: 'absolute', top: '100%', right: 0, mt: '4px',
+                        position: 'absolute', top: '100%', left: 0, mt: '4px',
                         bg: 'white', border: '1px solid #eee', borderRadius: '12px',
                         boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '130px',
                         overflow: 'hidden'
@@ -50,9 +52,9 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
                                 key={opt.value}
                                 onClick={() => { setSortBy(opt.value); setIsOpen(false); }}
                                 className={css({
-                                    display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
-                                    bg: sortBy === opt.value ? '#EFF6FF' : 'transparent',
-                                    color: sortBy === opt.value ? '#3B82F6' : '#555',
+                                    display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
+                                    bg: sortBy === opt.value ? '#EAF9F7' : 'transparent',
+                                    color: sortBy === opt.value ? '#2EC4B6' : '#2C3A47',
                                     fontWeight: sortBy === opt.value ? '700' : '500',
                                     border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
                                 })}
@@ -72,32 +74,36 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
 const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const options = [
-        { value: 'category', label: '카테고리별 보기' },
-        { value: 'template', label: '템플릿별 보기' }
+        { value: 'category', label: '카테고리별 보기', icon: <LayoutGrid size={14} /> },
+        { value: 'template', label: '템플릿별 보기', icon: <List size={14} /> }
     ];
-    const currentLabel = options.find(o => o.value === groupBy)?.label || '카테고리별 보기';
+    const selected = options.find(o => o.value === groupBy) || options[0];
 
     return (
         <div className={css({ position: 'relative' })}>
             <button 
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
-                    display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid #3B82F6', borderRadius: '16px',
-                    px: '12px', py: '6px', fontSize: '12px', fontWeight: '700', color: '#3B82F6', cursor: 'pointer',
-                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.1)'
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '12px',
+                    px: { base: '12px', sm: '16px' }, 
+                    h: '42px', 
+                    fontSize: '13px', fontWeight: '800', color: '#222', cursor: 'pointer',
+                    transition: 'all 0.2s', _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                    _active: { transform: 'scale(0.98)' }
                 })}
             >
-                {currentLabel}
-                <ChevronDown size={14} />
+                {selected.icon}
+                <span className={css({ display: { base: 'none', sm: 'inline' } })}>{selected.label}</span>
+                <ChevronDown size={14} className={css({ ml: '2px', color: '#888' })} />
             </button>
             {isOpen && (
                 <>
                     <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
                     <div className={css({
-                        position: 'absolute', top: '100%', right: 0, mt: '4px',
+                        position: 'absolute', top: '100%', left: 0, mt: '4px',
                         bg: 'white', border: '1px solid #eee', borderRadius: '12px',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '130px',
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '140px',
                         overflow: 'hidden'
                     })}>
                         {options.map(opt => (
@@ -105,14 +111,15 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
                                 key={opt.value}
                                 onClick={() => { setGroupBy(opt.value); setIsOpen(false); }}
                                 className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '10px', fontSize: '13px',
-                                    bg: groupBy === opt.value ? '#EFF6FF' : 'transparent',
-                                    color: groupBy === opt.value ? '#3B82F6' : '#555',
+                                    display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
+                                    bg: groupBy === opt.value ? '#EAF9F7' : 'transparent',
+                                    color: groupBy === opt.value ? '#2EC4B6' : '#2C3A47',
                                     fontWeight: groupBy === opt.value ? '700' : '500',
                                     border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
                                 })}
                             >
-                                {opt.label}
+                                {opt.icon}
+                                <span className={css({ flex: 1, whiteSpace: 'nowrap' })}>{opt.label}</span>
                                 {groupBy === opt.value && <Check size={14} />}
                             </button>
                         ))}
@@ -216,7 +223,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                     px: '14px', py: '8px', borderRadius: '20px',
                     fontSize: '13px', fontWeight: '800',
                     flexShrink: 0,
-                    bg: filterMode === 'me' ? '#3B82F6' : '#F1F3F4',
+                    bg: filterMode === 'me' ? '#2EC4B6' : '#F1F3F4',
                     color: filterMode === 'me' ? 'white' : '#666',
                     border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                 })}
@@ -233,7 +240,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                             display: 'flex', alignItems: 'center', gap: '4px',
                             px: '14px', py: '8px', borderRadius: '20px',
                             fontSize: '13px', fontWeight: '800',
-                            bg: selectedOther ? '#3B82F6' : '#F1F3F4',
+                            bg: selectedOther ? '#2EC4B6' : '#F1F3F4',
                             color: selectedOther ? 'white' : '#666',
                             border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                         })}
@@ -305,18 +312,18 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                                 className={css({
                                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', 
                                                     px: '24px', py: { base: '18px', sm: '14px' }, fontSize: '15px',
-                                                    bg: filterMode === p.user_id ? '#F0F7FF' : 'transparent',
-                                                    color: filterMode === p.user_id ? '#3B82F6' : '#444',
+                                                    bg: filterMode === p.user_id ? '#EAF9F7' : 'transparent',
+                                                    color: filterMode === p.user_id ? '#2EC4B6' : '#444',
                                                     fontWeight: filterMode === p.user_id ? '700' : '500',
                                                     border: 'none', cursor: 'pointer', _hover: { bg: '#F8F9FA' },
                                                     transition: 'all 0.15s'
                                                 })}
                                             >
                                                 <span className={css({ display: 'flex', alignItems: 'center', gap: '10px' })}>
-                                                    <div className={css({ w: '8px', h: '8px', borderRadius: '50%', bg: filterMode === p.user_id ? '#3B82F6' : 'transparent', border: filterMode === p.user_id ? 'none' : '1px solid #DDD' })} />
+                                                    <div className={css({ w: '8px', h: '8px', borderRadius: '50%', bg: filterMode === p.user_id ? '#2EC4B6' : 'transparent', border: filterMode === p.user_id ? 'none' : '1px solid #DDD' })} />
                                                     {label}
                                                 </span>
-                                                {filterMode === p.user_id && <Check size={18} />}
+                                                {filterMode === p.user_id && <Check size={18} color="#2EC4B6" />}
                                             </button>
                                         );
                                     })}
@@ -346,7 +353,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
             )}
         </div>
     );
-};
+}
 
 export default function ChecklistPage({ isActive = true }: { isActive?: boolean }) {
     const searchParams = useSearchParams()
@@ -373,7 +380,11 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const [filterMode, setFilterMode] = useState<'all' | 'me' | string>('all')
     const [sortBy, setSortBy] = useState<'status' | 'alphabetical' | 'latest'>('status')
 
+    const [showTemplateModal, setShowTemplateModal] = useState(false)
 
+    const handleAddItem = () => {
+        setIsAdding(!isAdding)
+    }
 
     const fetchChecklist = useCallback(async () => {
         if (!tripId) return
@@ -633,8 +644,48 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const ChecklistItem = ({ item }: { item: any }) => {
         const status = getItemStatus(item)
         const isAssignedToMe = item.assignment_type === 'specific' ? item.assigned_user_id === currentUser?.id : true
-        // 오프라인 상태이면 무조건 체크 토글 방지
         const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline
+
+        // Swipe-to-Action State
+        const [translateX, setTranslateX] = useState(0);
+        const [isSwiping, setIsSwiping] = useState(false);
+        const [swipeLock, setSwipeLock] = useState(false);
+        const startX = useRef(0);
+        const currentX = useRef(0);
+        const isDesktop = typeof window !== 'undefined' && window.innerWidth > 768;
+
+        const handleTouchStart = (e: React.TouchEvent) => {
+            if (isDesktop) return;
+            startX.current = e.touches[0].clientX;
+            setIsSwiping(true);
+        };
+
+        const handleTouchMove = (e: React.TouchEvent) => {
+            if (isDesktop || !isSwiping) return;
+            currentX.current = e.touches[0].clientX;
+            const diff = currentX.current - startX.current;
+            
+            // 왼쪽으로만 스와이프 허용 (0 ~ -150px)
+            if (diff < 0) {
+                setTranslateX(Math.max(diff, -150));
+            } else if (swipeLock && diff > 0) {
+                setTranslateX(Math.min(-120 + diff, 0));
+            }
+        };
+
+        const handleTouchEnd = () => {
+            if (isDesktop) return;
+            setIsSwiping(false);
+            const diff = currentX.current - startX.current;
+
+            if (diff < -60) {
+                setTranslateX(-120); // 버튼 노출 위치
+                setSwipeLock(true);
+            } else {
+                setTranslateX(0); // 원위치 (bounce 효과는 CSS transition으로 처리)
+                setSwipeLock(false);
+            }
+        };
 
         const getAssignedUserLabel = () => {
             if (item.assigned_user_id === currentUser?.id) return '나'
@@ -646,110 +697,154 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         const assignedUser = item.assignment_type === 'specific' ? getAssignedUserLabel() : null
 
         return (
-            <li
-                className={css({
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    p: '16px 20px',
-                    borderBottom: '1px solid #EEEEEE',
-                    transition: 'bg 0.1s',
-                    _active: { bg: '#F7F7F7' },
-                    _hover: { bg: { base: 'transparent', sm: '#fafafa' }, '& .action-btns': { opacity: 1 } }
-                })}
-            >
-                <div 
-                    onClick={() => canCheck && toggleItem(item.id, item.is_checked)}
-                    className={css({ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, cursor: canCheck ? 'pointer' : 'not-allowed' })}
-                >
-                    {/* 체크박스 */}
-                    <div className={css({ 
-                        w: '24px', h: '24px', 
-                        border: '2px solid', 
-                        borderColor: status.is_checked ? '#222' : (status.is_my_checked ? '#3B82F6' : '#B0B0B0'),
-                        borderRadius: '4px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        bg: status.is_checked ? '#222' : (status.is_my_checked ? '#3B82F6' : 'transparent'),
-                        transition: 'all 0.2s',
-                        opacity: !canCheck ? 0.3 : 1
+            <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid #EEEEEE', bg: '#FBFBF9' })}>
+                {/* 배경 액션 버튼 (스와이프 시 보임) */}
+                {!isDesktop && (
+                    <div className={css({
+                        position: 'absolute', top: 0, right: 0, bottom: 0,
+                        display: 'flex', alignItems: 'center', gap: '0',
+                        zIndex: 1
                     })}>
-                        {(status.is_checked || status.is_my_checked) && <Check size={16} color="white" />}
-                    </div>
-
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '2px' })}>
-                        <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                            <span className={css({ 
-                                fontSize: '16px', 
-                                fontWeight: '500', 
-                                color: status.is_checked ? '#B0B0B0' : '#222', 
-                                textDecoration: status.is_checked ? 'line-through' : 'none' 
-                            })}>
-                                {item.item_name}
-                            </span>
-                            
-                            {/* 유형 배지 */}
-                            {item.assignment_type === 'specific' && (
-                                <span className={css({ 
-                                    fontSize: '11px', px: '6px', py: '2px', borderRadius: '4px',
-                                    bg: isAssignedToMe ? '#EFF6FF' : '#f1f3f4',
-                                    color: isAssignedToMe ? '#3B82F6' : '#666',
-                                    fontWeight: '700',
-                                    display: 'flex', alignItems: 'center', gap: '3px'
-                                })}>
-                                    <User size={10} /> {assignedUser}
-                                </span>
-                            )}
-
-                            {item.assignment_type === 'everyone' && (
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setShowChecksModal(item.id)
-                                    }}
-                                    className={css({ 
-                                        fontSize: '11px', px: '6px', py: '2px', borderRadius: '4px',
-                                        bg: status.is_checked ? '#f1f3f4' : '#EFF6FF',
-                                        color: status.is_checked ? '#666' : '#3B82F6',
-                                        fontWeight: '800', border: 'none', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', gap: '3px'
-                                    })}
-                                >
-                                    <Users size={10} /> {status.checks_count}/{totalMembersCount}
-                                </button>
-                            )}
-                        </div>
-
-                        <div className={css({ display: 'flex', gap: '6px', alignItems: 'center' })}>
-                            {item.source_template_name && (
-                                <span className={css({ fontSize: '11px', color: '#888' })}>
-                                    {item.source_template_name}
-                                </span>
-                            )}
-                            {item.category && groupBy === 'template' && (
-                                <span className={css({ fontSize: '11px', color: '#888', bg: '#f1f3f4', px: '6px', py: '1px', borderRadius: '4px' })}>
-                                    {item.category}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {isOnline && (
-                    <div className={`action-btns ${css({ display: 'flex', gap: '4px', opacity: { base: 1, sm: 0 }, transition: 'all 0.2s' })}`}>
                         <button
-                            onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
-                            className={css({ bg: 'transparent', border: 'none', color: '#888', cursor: 'pointer', p: '8px', borderRadius: '4px', _hover: { color: '#222', bg: '#f1f3f4' } })}
+                            onClick={(e) => { e.stopPropagation(); setEditingItem(item); setTranslateX(0); }}
+                            className={css({ 
+                                h: '100%', px: '20px', bg: '#828D99', color: 'white', 
+                                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            })}
                         >
-                            <Settings size={16} />
+                            <Settings size={20} />
                         </button>
                         <button
-                            onClick={(e) => deleteItem(e, item.id)}
-                            className={css({ bg: 'transparent', border: 'none', color: { base: '#ff4d4f', sm: '#ccc' }, cursor: 'pointer', p: '8px', borderRadius: '4px', _hover: { color: '#dc2626', bg: '#ffeeee' } })}
+                            onClick={(e) => { deleteItem(e, item.id); setTranslateX(0); }}
+                            className={css({ 
+                                h: '100%', px: '20px', bg: '#FF9F87', color: 'white', 
+                                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            })}
                         >
-                            <Trash2 size={16} />
+                            <Trash2 size={20} />
                         </button>
                     </div>
                 )}
+
+                {/* 메인 콘텐츠 영역 */}
+                <div
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
+                    style={{ 
+                        transform: `translateX(${translateX}px)`,
+                        transition: isSwiping ? 'none' : 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Bounce effect
+                    }}
+                    className={css({
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: '16px 20px',
+                        bg: 'white',
+                        position: 'relative',
+                        zIndex: 2,
+                        transition: 'background 0.2s',
+                        _active: { bg: '#F7F7F7' },
+                        _hover: { bg: { base: 'white', sm: '#fafafa' } }
+                    })}
+                >
+                    <div 
+                        onClick={() => canCheck && toggleItem(item.id, item.is_checked)}
+                        className={css({ display: 'flex', alignItems: 'center', gap: '14px', flex: 1, cursor: canCheck ? 'pointer' : 'not-allowed' })}
+                    >
+                        {/* 체크박스 */}
+                        <div className={css({ 
+                            w: '26px', h: '26px', 
+                            border: '2px solid', 
+                            borderColor: status.is_checked ? '#828D99' : (status.is_my_checked ? '#2EC4B6' : '#EEEEEE'),
+                            borderRadius: '10px',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            bg: status.is_checked ? '#828D99' : (status.is_my_checked ? '#2EC4B6' : 'transparent'),
+                            transition: 'all 0.2s',
+                            opacity: !canCheck ? 0.3 : 1
+                        })}>
+                            {(status.is_checked || status.is_my_checked) && <Check size={18} color="white" strokeWidth={3} />}
+                        </div>
+
+                        <div className={css({ display: 'flex', flexDirection: 'column', gap: '2px' })}>
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
+                                <span className={css({ 
+                                    fontSize: '16px', 
+                                    fontWeight: '600', 
+                                    color: status.is_checked ? '#828D99' : '#2C3A47', 
+                                    textDecoration: status.is_checked ? 'line-through' : 'none',
+                                    transition: 'color 0.2s'
+                                })}>
+                                    {item.item_name}
+                                </span>
+                                
+                                {/* 유형 배지 (Pastel style) */}
+                                {item.assignment_type === 'specific' && (
+                                    <span className={css({ 
+                                        fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
+                                        bg: isAssignedToMe ? '#EAF9F7' : '#F1F3F4',
+                                        color: isAssignedToMe ? '#2EC4B6' : '#828D99',
+                                        fontWeight: '800',
+                                        display: 'flex', alignItems: 'center', gap: '4px'
+                                    })}>
+                                        <User size={10} /> {assignedUser}
+                                    </span>
+                                )}
+
+                                {item.assignment_type === 'everyone' && (
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setShowChecksModal(item.id)
+                                        }}
+                                        className={css({ 
+                                            fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
+                                            bg: status.is_checked ? '#F1F3F4' : '#EAF9F7',
+                                            color: status.is_checked ? '#828D99' : '#2EC4B6',
+                                            fontWeight: '800', border: 'none', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', gap: '4px',
+                                            transition: 'transform 0.2s',
+                                            _active: { transform: 'scale(0.92)' }
+                                        })}
+                                    >
+                                        <Users size={10} /> {status.checks_count}/{totalMembersCount}
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className={css({ display: 'flex', gap: '8px', alignItems: 'center' })}>
+                                {item.source_template_name && (
+                                    <span className={css({ fontSize: '11px', color: '#828D99', fontWeight: '500' })}>
+                                        {item.source_template_name}
+                                    </span>
+                                )}
+                                {item.category && groupBy === 'template' && (
+                                    <span className={css({ fontSize: '11px', color: '#828D99', bg: '#F1F3F4', px: '8px', py: '1px', borderRadius: '10px' })}>
+                                        {item.category}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* PC에서만 보이는 우측 버튼 */}
+                    {isDesktop && isOnline && (
+                        <div className={css({ display: 'flex', gap: '8px' })}>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
+                                className={css({ bg: 'transparent', border: 'none', color: '#828D99', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: '#2EC4B6', bg: '#EAF9F7' } })}
+                            >
+                                <Settings size={18} />
+                            </button>
+                            <button
+                                onClick={(e) => deleteItem(e, item.id)}
+                                className={css({ bg: 'transparent', border: 'none', color: '#828D99', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: '#FF9F87', bg: '#FFF5F2' } })}
+                            >
+                                <Trash2 size={18} />
+                            </button>
+                        </div>
+                    )}
+                </div>
             </li>
         )
     }
@@ -763,10 +858,10 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         
         return (
             <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setShowChecksModal(null)}>
-                <div className={css({ bg: 'white', w: '100%', maxW: '400px', borderRadius: '20px', overflow: 'hidden' })} onClick={e => e.stopPropagation()}>
+                <div className={css({ bg: 'white', w: '100%', maxW: '400px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' })} onClick={e => e.stopPropagation()}>
                     <div className={css({ p: '20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                        <h3 className={css({ fontSize: '18px', fontWeight: '800' })}>체크 현황</h3>
-                        <button onClick={() => setShowChecksModal(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer' })}><X size={20} /></button>
+                        <h3 className={css({ fontSize: '18px', fontWeight: '800', color: '#2C3A47' })}>체크 현황</h3>
+                        <button onClick={() => setShowChecksModal(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer', color: '#666' })}><X size={20} /></button>
                     </div>
                     <div className={css({ p: '20px', maxHeight: '300px', overflowY: 'auto' })}>
                         <div className={css({ mb: '16px', fontSize: '14px', color: '#666', fontWeight: '700' })}>
@@ -778,10 +873,10 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 const name = p.profiles?.nickname || p.email || '동행자'
                                 return (
                                     <li key={p.user_id} className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
-                                        <span className={css({ fontSize: '15px' })}>
+                                        <span className={css({ fontSize: '15px', fontWeight: '500', color: '#2C3A47' })}>
                                             {isMe ? `나 (${name})` : name}
                                         </span>
-                                        {checkedUserIds.includes(p.user_id) ? <Check size={18} color="#3B82F6" /> : <div className={css({ w: '18px' })} />}
+                                        {checkedUserIds.includes(p.user_id) ? <Check size={18} color="#2EC4B6" strokeWidth={3} /> : <div className={css({ w: '18px' })} />}
                                     </li>
                                 )
                             })}
@@ -811,34 +906,34 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         <div>
                             <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>항목 이름</label>
                             <input 
-                                type="text" value={name} onChange={e => setName(e.target.value)}
-                                className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: '#222' } })}
+                                type="text" value={name} onChange={(e) => setName(e.target.value)}
+                                className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: '#2EC4B6', boxShadow: '0 0 0 2px rgba(46, 196, 182, 0.1)' } })}
                             />
                         </div>
                         <div className={css({ display: 'flex', gap: '12px' })}>
                             <div className={css({ flex: 1 })}>
                                 <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>카테고리</label>
-                                <select value={category} onChange={e => setCategory(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white' })}>
+                                <select value={category} onChange={(e) => setCategory(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', outline: 'none', _focus: { borderColor: '#2EC4B6' } })}>
                                     {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
                             </div>
                         </div>
                         <div>
                             <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>완료 조건 유형</label>
-                            <select value={type} onChange={e => {
+                            <select value={type} onChange={(e) => {
                                 const newType = e.target.value as any
                                 setType(newType)
                                 if (newType === 'specific' && !assignedTo) {
                                     setAssignedTo(currentUser?.id || '')
                                 }
-                            }} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mb: '8px' })}>
+                            }} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mb: '8px', outline: 'none', _focus: { borderColor: '#2EC4B6' } })}>
                                 <option value="anyone">함께 준비해요</option>
                                 {members.length > 0 && <option value="specific">담당자를 정해요</option>}
                                 {members.length > 0 && <option value="everyone">각자 꼭 챙겨요</option>}
                             </select>
                             
                             {type === 'specific' && (
-                                <select value={assignedTo} onChange={e => setAssignedTo(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mt: '8px' })}>
+                                <select value={assignedTo} onChange={(e) => setAssignedTo(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', mt: '8px', outline: 'none', _focus: { borderColor: '#2EC4B6' } })}>
                                     {participants.map(p => {
                                         const isMe = p.user_id === currentUser?.id
                                         const label = p.profiles?.nickname || p.email || (isMe ? '나' : '동행자')
@@ -855,11 +950,11 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     <div className={css({ p: '24px', bg: '#F9F9F9', display: 'flex', gap: '12px' })}>
                         <button 
                             onClick={() => updateItem({ item_name: name, category, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null })}
-                            className={css({ flex: 1, py: '14px', bg: '#222', color: 'white', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: 'pointer', _hover: { bg: '#000' } })}
+                            className={css({ flex: 1, py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '800', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)', _hover: { bg: '#28B0A3', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
                         >
                             저장하기
                         </button>
-                        <button onClick={() => setEditingItem(null)} className={css({ flex: 1, py: '14px', bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '12px', fontWeight: '800', cursor: 'pointer' })}>
+                        <button onClick={() => setEditingItem(null)} className={css({ flex: 1, py: '14px', bg: 'white', color: '#555', border: '1px solid #DDDDDD', borderRadius: '16px', fontWeight: '800', cursor: 'pointer', _hover: { bg: '#f9f9f9', borderColor: '#828D99' } })}>
                             취소
                         </button>
                     </div>
@@ -957,14 +1052,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                     <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '800', color: '#222' })}>
                         {filterMode === 'all' ? '전체' : (filterMode === 'me' ? '내' : (participants.find(p => p.user_id === filterMode)?.profiles?.nickname || participants.find(p => p.user_id === filterMode)?.email?.split('@')[0] || '동행자'))} 준비물 {filterMode !== 'all' ? (
-                            <span className={css({ color: '#3B82F6', ml: '8px' })}>
-                                {filteredProgressPercent}% <span className={css({ fontSize: '11px', fontWeight: 'normal', color: '#888' })}>(전체 {progressPercent}%)</span>
+                            <span className={css({ color: '#2EC4B6', ml: '8px', fontWeight: '900' })}>
+                                {filteredProgressPercent}% <span className={css({ fontSize: '12px', fontWeight: '700', color: '#828D99' })}>(전체 {progressPercent}%)</span>
                             </span>
                         ) : (
                             totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>
                         )}
                     </h2>
-                    
                     <div className={css({ display: 'flex', gap: '8px' })}>
                         {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
                         {totalItems > 0 && <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />}
@@ -974,66 +1068,105 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 {/* PC/모바일 분기 액션 버튼 및 필터 라인 */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
                     
-                    {/* PC 좌측: 보기 옵션 토글 */}
-                    <div className={css({ display: { base: 'none', sm: totalItems > 0 ? 'inline-flex' : 'none' }, bg: '#f1f3f4', p: '4px', borderRadius: '8px' })}>
-                        <button
-                            onClick={() => setGroupBy('category')}
-                            className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? 'bold' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
-                        >
-                            카테고리별 보기
-                        </button>
-                        <button
-                            onClick={() => setGroupBy('template')}
-                            className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? 'bold' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
-                        >
-                            템플릿별 보기
-                        </button>
+                    {/* PC 좌측: 그룹핑 + 정렬 컨트롤 그룹 */}
+                    <div className={css({ display: { base: 'none', sm: 'flex' }, alignItems: 'center', gap: '12px' })}>
+                        <div className={css({ display: totalItems > 0 ? 'inline-flex' : 'none', bg: '#f1f3f4', p: '4px', borderRadius: '8px' })}>
+                            <button
+                                onClick={() => setGroupBy('category')}
+                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? 'bold' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                            >
+                                카테고리별 보기
+                            </button>
+                            <button
+                                onClick={() => setGroupBy('template')}
+                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? 'bold' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                            >
+                                템플릿별 보기
+                            </button>
+                        </div>
+
+                        {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
                     </div>
+
                     {/* PC에서 totalItems === 0 일 때 우측 버튼들을 오른쪽으로 밀기 위한 빈 공간용 div */}
                     {totalItems === 0 && <div className={css({ display: { base: 'none', sm: 'block' } })}></div>}
 
-                    {/* 모바일/PC 액션 버튼 */}
+                    {/* 액션 및 필터 컨트롤 그룹 (주로 모바일/PC 액션) */}
                     {isOnline && (
-                        <div className={css({ display: 'flex', gap: '8px', w: { base: '100%', sm: 'auto' }, flexWrap: 'nowrap' })}>
-                            {/* 항목 추가 버튼 (PC에서만 보임, 모바일은 하단 Sticky) */}
-                            <button
-                                onClick={() => setIsAdding(!isAdding)}
-                                className={css({
-                                    display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                    bg: '#222', color: 'white', px: '16px', py: '10px',
-                                    borderRadius: '8px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', border: 'none',
-                                    _hover: { bg: '#000' }, whiteSpace: 'nowrap'
-                                })}
-                            >
-                                <Plus size={16} /> 항목 추가
-                            </button>
+                        <div className={css({ 
+                            display: 'flex', 
+                            flexDirection: { base: 'column', sm: 'row' },
+                            gap: '8px', 
+                            w: { base: '100%', sm: 'auto' },
+                            alignItems: { base: 'stretch', sm: 'center' }
+                        })}>
+                            {/* 모바일 전용 필터 및 액션 통합 행 (그룹핑 | 정렬 | 템플릿) */}
+                            <div className={css({ 
+                                display: { base: 'flex', sm: 'none' }, 
+                                gap: '8px',
+                                w: '100%',
+                                mb: '4px'
+                            })}>
+                                {totalItems > 0 && <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />}
+                                {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
+                                
+                                <button
+                                    onClick={() => setIsTemplateModalOpen(true)}
+                                    className={css({
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                        px: '12px', h: '42px',
+                                        bg: 'white', color: '#2C3A47', border: '1px solid #DDDDDD', borderRadius: '12px',
+                                        fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                                        flex: '1',
+                                        whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                        _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' },
+                                        _active: { transform: 'scale(0.98)' }
+                                    })}
+                                >
+                                    <ListTodo size={14} color="#2EC4B6" /> 템플릿
+                                </button>
+                            </div>
 
-                            <button
-                                onClick={() => setIsTemplateModalOpen(true)}
-                                className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                    px: '16px', py: { base: '10px', sm: '10px' },
-                                    bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px',
-                                    fontSize: '13px', fontWeight: '800', cursor: 'pointer',
-                                    w: { base: '100%', sm: 'auto' }, flex: { base: 1, sm: 'none' },
-                                    flexShrink: 0,
-                                    whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                    _hover: { bg: '#F7F7F7', borderColor: '#222' },
-                                    _active: { transform: 'scale(0.98)' }
-                                })}
-                            >
-                                <ListTodo size={15} />
-                                <span>템플릿 불러오기</span>
-                            </button>
+                            <div className={css({ display: { base: 'none', sm: 'flex' }, gap: '8px', w: { base: '100%', sm: 'auto' } })}>
+                                {/* 항목 추가 버튼 (PC에서만 보임, 모바일은 하단 Sticky) */}
+                                <button
+                                    onClick={() => setIsAdding(!isAdding)}
+                                    className={css({
+                                        display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        bg: '#2C3A47', color: 'white', px: '16px', h: '42px',
+                                        borderRadius: '12px', fontWeight: '800', fontSize: '14px', cursor: 'pointer', border: 'none',
+                                        _hover: { bg: '#1a252f' }, whiteSpace: 'nowrap'
+                                    })}
+                                >
+                                    <Plus size={16} /> 항목 추가
+                                </button>
+
+                                <button
+                                    onClick={() => setIsTemplateModalOpen(true)}
+                                    className={css({
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                        px: '16px', h: '42px',
+                                        bg: 'white', color: '#2C3A47', border: '1px solid #DDDDDD', borderRadius: '12px',
+                                        fontSize: '13px', fontWeight: '800', cursor: 'pointer',
+                                        w: { base: '100%', sm: 'auto' }, flex: { base: '1', sm: 'none' },
+                                        flexShrink: '0',
+                                        whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                        _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' },
+                                        _active: { transform: 'scale(0.98)' }
+                                    })}
+                                >
+                                    <ListTodo size={14} color="#2EC4B6" /> 템플릿 불러오기
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>
             </div>
 
             {totalItems > 0 && (
-                <div className={css({ w: '100%', bg: '#F7F7F7', h: '6px', borderRadius: '3px', mb: '24px', overflow: 'hidden', px: { base: '20px', sm: 0 } })}>
+                <div className={css({ w: '100%', bg: '#EEEEEE', h: '12px', borderRadius: '16px', mb: '24px', overflow: 'hidden', border: '1px solid #EEEEEE' })}>
                     <div
-                        className={css({ h: '100%', bg: filterMode !== 'all' ? '#3B82F6' : '#222', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                        className={css({ h: '100%', bg: '#2EC4B6', borderRadius: '16px', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
                         style={{ width: `${filterMode !== 'all' ? filteredProgressPercent : progressPercent}%` }}
                     />
                 </div>
@@ -1125,7 +1258,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             <button
                                 type="submit"
                                 disabled={!newItemName.trim()}
-                                className={css({ py: '10px', px: '20px', bg: 'brand.primary', color: 'white', fontWeight: '800', borderRadius: '8px', border: 'none', cursor: 'pointer' })}
+                                className={css({ py: '10px', px: '20px', bg: '#2EC4B6', color: 'white', fontWeight: '800', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(46, 196, 182, 0.2)' })}
                             >
                                 추가
                             </button>
@@ -1142,17 +1275,16 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             )}
 
             {isLoading ? (
-                <div className={css({ textAlign: 'center', py: '60px', color: '#888' })}>
-                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', animation: 'pulse 1.5s infinite' })}></div>
-                    <div className={css({ w: '100%', h: '60px', bg: '#f1f3f4', borderRadius: '12px', mt: '12px', animation: 'pulse 1.5s infinite' })}></div>
-                </div>
+                <ChecklistSkeleton />
             ) : totalItems === 0 && !isAdding ? (
-                <div className={css({ textAlign: 'center', py: '80px', color: '#666' })}>
-                        <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: '#333' })}>
-                            아직 등록된 준비물이 없어요. 🧳
+                <div className={css({ textAlign: 'center', py: '80px', color: '#666', px: '20px' })}>
+                        <p className={css({ fontSize: '19px', fontWeight: '800', mb: '12px', color: '#333', letterSpacing: '-0.5px' })}>
+                            여행을 완벽하게 해줄 준비물을 등록해 보세요! ✨
                         </p>
                         {isOnline && (
-                            <p className={css({ fontSize: '15px', color: '#666', lineHeight: '1.6' })}>항목을 추가하거나 템플릿을 불러와서 짐 싸기를 시작해 보세요!</p>
+                            <p className={css({ fontSize: '15px', color: '#717171', lineHeight: '1.6', wordBreak: 'keep-all', maxW: '320px', mx: 'auto' })}>
+                                체크리스트로 꼼꼼하게 챙기면 여행의 설렘이 두 배가 됩니다. 🧳
+                            </p>
                         )}
                 </div>
             ) : totalItems > 0 && sortedFilteredItems.length === 0 ? (
@@ -1207,32 +1339,27 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     )}
                 </div>
             )}
-
+            {/* 모바일 하단 플로팅 버튼 - + 항목 추가 */}
             {isActive && !isAdding && !isTemplateModalOpen && isOnline && (
-                <button
+                <div
                     onClick={() => setIsAdding(true)}
                     className={css({
-                        position: 'fixed',
-                        bottom: 'calc(90px + env(safe-area-inset-bottom))',
-                        right: '20px',
-                        w: '48px',
-                        h: '48px',
-                        bg: '#222',
-                        color: 'white',
-                        borderRadius: '50%',
-                        display: { base: 'flex', sm: 'none' },
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-                        zIndex: 40,
+                        position: 'fixed', 
+                        bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))', 
+                        right: '24px',
+                        w: '54px', h: '54px', borderRadius: '18px',
+                        bg: '#2EC4B6', color: 'white',
+                        display: { base: 'flex', sm: 'none' }, 
+                        alignItems: 'center', justifyContent: 'center',
+                        boxShadow: '0 8px 32px rgba(46, 196, 182, 0.3)',
+                        cursor: 'pointer', zIndex: 100,
                         transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                        _active: { transform: 'scale(0.88)' },
-                        _hover: { bg: '#000' }
+                        _hover: { transform: 'translateY(-2px)', bg: '#249E93' },
+                        _active: { transform: 'scale(0.9)' }
                     })}
-                    aria-label="준비물 항목 추가"
                 >
-                    <Plus size={24} />
-                </button>
+                    <Plus size={28} strokeWidth={2.5} />
+                </div>
             )}
 
             {checklistId && (

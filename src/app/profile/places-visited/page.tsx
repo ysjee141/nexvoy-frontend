@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { ChevronLeft, MapPin, Footprints, Heart, Search, Sparkles } from 'lucide-react'
+import { MapPin, Search, ChevronLeft, Calendar, Footprints, Heart, Sparkles } from 'lucide-react'
+import { formatDate } from '@/utils/date'
 import { useRouter } from 'next/navigation'
 import Skeleton from '@/components/ui/Skeleton'
 import CommonListSkeleton from '@/components/common/CommonListSkeleton'
@@ -339,7 +340,7 @@ export default function PlacesVisitedPage() {
                                                                         borderRadius: '12px', fontSize: '12px', fontWeight: '850',
                                                                         boxShadow: '0 1px 3px rgba(0,0,0,0.06)'
                                                                     })}>
-                                                                        {new Date(trip.start_date).toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                                                        {formatDate(trip.start_date)}
                                                                     </div>
                                                                     
                                                                     <div className={css({ 
@@ -348,7 +349,7 @@ export default function PlacesVisitedPage() {
                                                                         borderLeft: '4px solid #E2E8F0', pl: '16px',
                                                                         fontWeight: '500'
                                                                     })}>
-                                                                        "{new Date(trip.start_date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}의 기록, <br/>
+                                                                        "{formatDate(trip.start_date)}의 기록, <br/>
                                                                         {getStableQuote(trip.id)}"
                                                                     </div>
                                                                 </div>

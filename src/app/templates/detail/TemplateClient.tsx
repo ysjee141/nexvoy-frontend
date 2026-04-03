@@ -232,7 +232,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                     >
                         <ArrowLeft size={18} /> 목록으로 돌아가기
                     </Link>
-                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#172554', lineHeight: '1.2' })}>
+                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '800', color: '#2C3A47', lineHeight: '1.2' })}>
                         {title} 수정하기
                     </h1>
                 </div>
@@ -245,8 +245,8 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                         alignItems: 'center',
                         justifyContent: 'center',
                         p: '10px',
-                        bg: '#fce8e6',
-                        color: '#d93025',
+                        bg: '#fdeeea',
+                        color: '#EF4444',
                         border: 'none',
                         borderRadius: '50%',
                         cursor: 'pointer',
@@ -260,9 +260,9 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                 </button>
             </div>
 
-            <form onSubmit={handleSubmit} className={css({ bg: 'white', p: '32px', borderRadius: '16px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' })}>
+            <form onSubmit={handleSubmit} className={css({ bg: 'white', p: { base: '20px', sm: '32px' }, borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)', border: '1px solid #EEEEEE' })}>
                 <div className={css({ mb: '32px' })}>
-                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', mb: '8px', color: '#1E3A8A' })}>
+                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '8px', color: '#2C3A47' })}>
                         템플릿 이름
                     </label>
                     <input
@@ -270,7 +270,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         placeholder="예: 여름 바다 여행 필수템 🏖️"
-                        className={css({ w: '100%', p: '14px', border: '1px solid #ddd', borderRadius: '8px', outline: 'none', fontSize: '15px', _focus: { borderColor: '#3B82F6' } })}
+                        className={css({ w: '100%', p: '14px 16px', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', bg: '#F9F9F9', fontSize: '15px', fontWeight: '600', color: '#2C3A47', transition: 'all 0.2s', _placeholder: { color: '#CCC', fontWeight: '400' }, _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' } })}
                         required
                     />
                 </div>
@@ -279,15 +279,15 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
 
                 <div className={css({ mb: '32px' })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '16px' })}>
-                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '600', color: '#1E3A8A' })}>
+                        <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', color: '#2C3A47' })}>
                             준비물 항목을 다듬어 보세요
                         </label>
-                        <span className={css({ fontSize: '13px', color: '#888' })}>총 {items.length}개</span>
+                        <span className={css({ fontSize: '13px', color: '#717171', fontWeight: '600' })}>총 {items.length}개</span>
                     </div>
 
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         {items.length === 0 ? (
-                            <div className={css({ p: '20px', textAlign: 'center', color: '#999', bg: '#f9f9f9', borderRadius: '8px' })}>
+                            <div className={css({ p: '20px', textAlign: 'center', color: '#999', bg: '#F7F7F7', borderRadius: '12px' })}>
                                 아직 등록된 준비물이 없어요. 새로운 항목을 추가해 보세요!
                             </div>
                         ) : (
@@ -297,25 +297,25 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                                     flexDirection: { base: 'column', sm: 'row' },
                                     alignItems: { base: 'stretch', sm: 'center' },
                                     bg: 'white',
-                                    borderRadius: '12px',
-                                    border: '1px solid #eaeaea',
+                                    borderRadius: '16px',
+                                    border: '1px solid #eee',
                                     boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
                                     overflow: 'hidden',
                                     transition: 'all 0.2s',
-                                    _focusWithin: { borderColor: '#3B82F6', boxShadow: '0 4px 12px rgba(16,185,129,0.1)' }
+                                    _focusWithin: { borderColor: '#2EC4B6', boxShadow: '0 4px 12px rgba(46,196,182,0.1)' }
                                 })}>
-                                    <div className={css({ position: 'relative', borderRight: { base: 'none', sm: '1px solid #eaeaea' }, borderBottom: { base: '1px solid #eaeaea', sm: 'none' }, w: { base: '100%', sm: '140px' }, flexShrink: 0 })}>
+                                    <div className={css({ position: 'relative', borderRight: { base: 'none', sm: '1px solid #EEEEEE' }, borderBottom: { base: '1px solid #EEEEEE', sm: 'none' }, w: { base: '100%', sm: '140px' }, flexShrink: 0, bg: '#F9F9F9' })}>
                                         <select
                                             value={item.category}
                                             onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '600', color: '#1E3A8A', cursor: 'pointer', appearance: 'none' })}
+                                            className={css({ w: '100%', p: '14px 40px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '800', color: '#2C3A47', cursor: 'pointer', appearance: 'none' })}
                                         >
                                             {CATEGORIES.map((cat: any) => (
                                                 <option key={cat} value={cat}>{cat}</option>
                                             ))}
                                         </select>
-                                        <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#888' })}>
-                                            <ChevronDown size={16} />
+                                        <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: '#2EC4B6' })}>
+                                            <ChevronDown size={16} strokeWidth={3} />
                                         </div>
                                     </div>
 
@@ -325,7 +325,7 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                                             value={item.item_name}
                                             onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
                                             placeholder={`${index + 1}번째 준비물`}
-                                            className={css({ flex: 1, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', bg: 'transparent', color: '#222' })}
+                                            className={css({ flex: 1, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', fontWeight: '600', bg: 'transparent', color: '#2C3A47', _placeholder: { color: '#CCC', fontWeight: '400' } })}
                                             required
                                         />
 
@@ -345,23 +345,23 @@ export default function EditTemplatePage({ initialData }: { initialData: any }) 
                     <button
                         type="button"
                         onClick={handleAddItem}
-                        className={css({ w: '100%', mt: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', p: '14px', bg: '#f8f9fa', color: '#555', borderRadius: '8px', border: '1px dashed #ccc', cursor: 'pointer', fontSize: '15px', fontWeight: '500', transition: 'all 0.2s', _hover: { bg: '#f1f3f4', borderColor: '#aaa' } })}
+                        className={css({ w: '100%', mt: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', p: '14px', bg: '#F2F4F5', color: '#2C3A47', borderRadius: '16px', border: '1px dashed #CCC', cursor: 'pointer', fontSize: '15px', fontWeight: '700', transition: 'all 0.2s', _hover: { bg: '#EAF9F7', color: '#2EC4B6', borderColor: '#2EC4B6' }, _active: { transform: 'scale(0.98)' } })}
                     >
-                        <Plus size={18} /> 준비물 추가하기
+                        <Plus size={18} strokeWidth={3} /> 준비물 추가하기
                     </button>
                 </div>
 
                 <div className={css({ display: 'flex', justifyContent: 'flex-end', gap: '12px', pt: '24px', borderTop: '1px solid #eee' })}>
                     <Link
                         href="/templates"
-                        className={css({ px: '20px', py: '12px', color: '#555', bg: 'transparent', border: 'none', cursor: 'pointer', fontWeight: '600', textDecoration: 'none' })}
+                        className={css({ px: '24px', py: '14px', color: '#717171', bg: '#F5F5F5', borderRadius: '14px', cursor: 'pointer', fontWeight: '700', textDecoration: 'none', fontSize: '15px', transition: 'all 0.2s', _hover: { bg: '#EEEEEE' }, _active: { transform: 'scale(0.96)' } })}
                     >
                         취소
                     </Link>
                     <button
                         type="submit"
                         disabled={loading}
-                        className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '24px', py: '12px', bg: '#111', color: 'white', borderRadius: '8px', fontWeight: '600', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'all 0.2s', _hover: { bg: '#333' } })}
+                        className={css({ display: 'flex', alignItems: 'center', gap: '8px', px: '24px', py: '12px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '700', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(46,196,182,0.2)', _hover: { bg: '#249E93' } })}
                     >
                         <Save size={18} /> {loading ? '저장 중...' : '변경 내용 저장할게요'}
                     </button>

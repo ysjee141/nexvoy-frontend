@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { ChevronLeft, CalendarDays, MapPin, Sparkles, TrendingUp, Clock } from 'lucide-react'
+import { formatDate } from '@/utils/date'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Skeleton from '@/components/ui/Skeleton'
@@ -170,8 +171,8 @@ export default function TravelLogPage() {
                         ) : (
                             <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px' })}>
                                 {stats.pastTrips.map((trip, index) => {
-                                    const start = new Date(trip.start_date).toLocaleDateString()
-                                    const end = new Date(trip.end_date).toLocaleDateString()
+                                    const start = formatDate(trip.start_date)
+                                    const end = formatDate(trip.end_date)
                                     const isLast = index === stats.pastTrips.length - 1
 
                                     return (
@@ -246,8 +247,8 @@ export default function TravelLogPage() {
                                     today.setHours(0, 0, 0, 0)
                                     
                                     const isOngoing = start <= today && today <= end
-                                    const startDateStr = start.toLocaleDateString()
-                                    const endDateStr = end.toLocaleDateString()
+                                    const startDateStr = formatDate(trip.start_date)
+                                    const endDateStr = formatDate(trip.end_date)
 
                                     return (
                                         <Link 

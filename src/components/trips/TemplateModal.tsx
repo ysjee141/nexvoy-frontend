@@ -113,22 +113,31 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
 
     return (
         <div className={css({
-            position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+            position: 'fixed', inset: 0,
             bg: 'rgba(0,0,0,0.5)', zIndex: 2000,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px'
+            display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px',
+            backdropFilter: 'blur(10px)',
+            animation: 'fadeIn 0.3s ease-out'
         })}>
             <div className={css({
-                bg: 'white', borderRadius: '16px', w: '100%', maxW: '400px', p: '24px', position: 'relative',
-                maxH: '80vh', display: 'flex', flexDirection: 'column'
+                bg: 'white', borderRadius: '24px', w: '100%', maxW: '440px', p: '32px', position: 'relative',
+                maxH: '85vh', display: 'flex', flexDirection: 'column',
+                boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
+                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
             })}>
                 <button
                     onClick={onClose}
-                    className={css({ position: 'absolute', top: '20px', right: '20px', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#666' })}
+                    className={css({ 
+                        position: 'absolute', top: '22px', right: '22px', 
+                        bg: '#F8F9FA', border: 'none', cursor: 'pointer', color: '#9CA3AF',
+                        p: '6px', borderRadius: '50%', transition: 'all 0.2s',
+                        _hover: { bg: '#F1F3F5', color: '#2C3A47', transform: 'rotate(90deg)' }
+                    })}
                 >
-                    <X size={24} />
+                    <X size={20} strokeWidth={2.5} />
                 </button>
 
-                <h3 className={css({ fontSize: '20px', fontWeight: 'bold', mb: '16px' })}>템플릿 불러오기</h3>
+                <h3 className={css({ fontSize: '22px', fontWeight: '900', mb: '24px', color: '#2C3A47', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
 
                 {loading ? (
                     <div className={css({ textAlign: 'center', py: '40px', color: '#888' })}>템플릿을 열심히 불러오고 있어요... ✈️</div>
@@ -137,21 +146,30 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                         아직 등록된 템플릿이 없네요. 나만의 템플릿을 만들어 볼까요?
                     </div>
                 ) : (
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', flex: 1, pr: '4px' })}>
+                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1, pr: '4px' })}>
                         {templates.map((template: any) => (
                             <div
                                 key={template.id}
-                                className={css({ p: '14px', border: '1px solid #eee', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' })}
+                                className={css({ p: '18px', border: '1px solid #EEEEEE', borderRadius: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)', _hover: { bg: '#F9F9F9', borderColor: '#2EC4B6', transform: 'translateY(-2px)' } })}
                             >
-                                <span className={css({ fontWeight: '600', fontSize: '14px', color: '#1E3A8A', flex: 1 })}>{template.title}</span>
+                                <span className={css({ fontWeight: '700', fontSize: '15px', color: '#2C3A47', flex: 1 })}>{template.title}</span>
                                 <button
                                     onClick={() => handleApplyTemplate(template.id)}
                                     disabled={loadingTemplateId === template.id}
-                                    className={css({ display: 'flex', alignItems: 'center', gap: '6px', px: '12px', py: '8px', bg: '#3B82F6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', fontSize: '12px', fontWeight: 'bold', whiteSpace: 'nowrap', _hover: { bg: '#3B82F6' }, _active: { transform: 'scale(0.95)' }, _disabled: { opacity: 0.5, cursor: 'not-allowed' } })}
+                                    className={css({ 
+                                        display: 'flex', alignItems: 'center', gap: '8px', px: '18px', py: '11px', 
+                                        bg: '#2EC4B6', color: 'white', borderRadius: '14px', border: 'none', 
+                                        cursor: 'pointer', fontSize: '14px', fontWeight: '900', whiteSpace: 'nowrap', 
+                                        transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
+                                        boxShadow: '0 6px 15px rgba(46,196,182,0.25)', 
+                                        _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 10px 20px rgba(46,196,182,0.35)' }, 
+                                        _active: { transform: 'scale(0.96)' }, 
+                                        _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none', transform: 'none' } 
+                                    })}
                                 >
                                     {loadingTemplateId === template.id ? '...' : (
                                         <>
-                                            <Copy size={14} /> 적용
+                                            <Copy size={16} strokeWidth={2.5} /> 적용하기
                                         </>
                                     )}
                                 </button>
@@ -160,6 +178,16 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
                     </div>
                 )}
             </div>
+            <style jsx global>{`
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                @keyframes slideUp {
+                    from { transform: translateY(30px); opacity: 0; }
+                    to { transform: translateY(0); opacity: 1; }
+                }
+            `}</style>
         </div>
     )
 }

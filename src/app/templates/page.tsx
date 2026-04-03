@@ -54,12 +54,12 @@ export default function TemplatesPage() {
         <div className={css({ w: '100%', py: '40px' })}>
             <header className={css({ mb: { base: '24px', sm: '40px' }, display: 'flex', flexDirection: { base: 'column', sm: 'row' }, gap: '16px', justifyContent: 'space-between', alignItems: { base: 'stretch', sm: 'center' } })}>
                 <div>
-                    <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: 'bold', color: '#172554' })}>
-                        내 체크리스트 템플릿
-                    </h1>
-                    <p className={css({ color: '#666', mt: { base: '4px', sm: '8px' }, fontSize: { base: '14px', sm: '16px' }, wordBreak: 'keep-all' })}>
-                        자주 쓰는 준비물 목록을 템플릿으로 저장하고 관리하세요.
-                    </p>
+                        <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '800', color: '#2C3A47' })}>
+                            내 체크리스트 템플릿
+                        </h1>
+                        <p className={css({ color: '#666', mt: { base: '4px', sm: '8px' }, fontSize: { base: '14px', sm: '16px' }, wordBreak: 'keep-all', fontWeight: '500' })}>
+                            자주 쓰는 준비물 목록을 템플릿으로 저장하고 관리하세요.
+                        </p>
                 </div>
                 <Link
                     href="/templates/new"
@@ -68,19 +68,19 @@ export default function TemplatesPage() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '8px',
-                        bg: '#111',
+                        bg: '#2EC4B6',
                         color: 'white',
                         px: { base: '16px', sm: '20px' },
                         py: '12px',
-                        borderRadius: '12px',
-                        fontWeight: '600',
+                        borderRadius: '16px',
+                        fontWeight: '700',
                         fontSize: { base: '15px', sm: '16px' },
                         whiteSpace: 'nowrap',
                         flexShrink: 0,
                         w: { base: '100%', sm: 'auto' },
                         transition: 'all 0.2s',
-                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                        _hover: { bg: '#333', transform: 'translateY(-2px)', boxShadow: '0 6px 16px rgba(0,0,0,0.15)' },
+                        boxShadow: '0 4px 12px rgba(46,196,182,0.2)',
+                        _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 6px 16px rgba(46,196,182,0.3)' },
                     })}
                 >
                     <Plus size={18} /> 새 템플릿 만들기
@@ -92,18 +92,18 @@ export default function TemplatesPage() {
                     <div
                         className={css({
                             bg: 'white',
-                            borderRadius: '16px',
+                            borderRadius: '24px',
                             p: '80px 20px',
                             textAlign: 'center',
-                            border: '2px dashed #ddd',
-                            color: '#888',
+                            border: '2px dashed #EEEEEE',
+                            color: '#CCC',
                         })}
                     >
                         <ListTodo size={48} className={css({ mx: 'auto', mb: '16px', color: '#ccc' })} />
-                        <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: '#555' })}>
+                        <p className={css({ fontSize: '18px', fontWeight: '800', mb: '8px', color: '#2C3A47' })}>
                             등록된 템플릿이 없습니다.
                         </p>
-                        <p className={css({ fontSize: '15px' })}>나만의 준비물 목록을 템플릿으로 만들어 보세요!</p>
+                        <p className={css({ fontSize: '15px', color: '#717171', fontWeight: '500' })}>나만의 준비물 목록을 템플릿으로 만들어 보세요!</p>
                     </div>
                 ) : (
                     <div
@@ -125,16 +125,16 @@ export default function TemplatesPage() {
                                         flexDirection: 'column',
                                         bg: 'white',
                                         p: '24px',
-                                        borderRadius: '16px',
+                                        borderRadius: '24px',
                                         boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
-                                        border: '1px solid #f0f0f0',
-                                        transition: 'all 0.3s ease',
+                                        border: '1px solid #EEEEEE',
+                                        transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                         position: 'relative',
                                         overflow: 'hidden',
                                         _hover: {
-                                            transform: 'translateY(-4px)',
-                                            boxShadow: '0 12px 24px rgba(0,0,0,0.08)',
-                                            borderColor: '#3B82F6',
+                                            transform: 'translateY(-6px)',
+                                            boxShadow: '0 12px 30px rgba(0,0,0,0.08)',
+                                            borderColor: '#2EC4B6',
                                         },
                                     })}
                                 >
@@ -145,9 +145,9 @@ export default function TemplatesPage() {
                                             justifyContent: 'center',
                                             w: '48px',
                                             h: '48px',
-                                            borderRadius: '12px',
-                                            bg: '#EFF6FF',
-                                            color: '#3B82F6',
+                                            borderRadius: '14px',
+                                            bg: '#EAF9F7',
+                                            color: '#2EC4B6',
                                             mb: '16px'
                                         })}
                                     >
@@ -156,17 +156,17 @@ export default function TemplatesPage() {
                                     <h3
                                         className={css({
                                             fontSize: '18px',
-                                            fontWeight: '700',
+                                            fontWeight: '800',
                                             mb: '8px',
-                                            color: '#222',
+                                            color: '#2C3A47',
                                         })}
                                     >
                                         {template.title}
                                     </h3>
-                                    <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#666', mb: '16px' })}>
+                                    <p className={css({ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#717171', fontWeight: '600', mb: '16px' })}>
                                         저장된 항목: {itemCount}개
                                     </p>
-                                    <div className={css({ mt: 'auto', pt: '16px', borderTop: '1px solid #f0f0f0', color: '#3B82F6', fontSize: '14px', fontWeight: 'bold' })}>
+                                    <div className={css({ mt: 'auto', pt: '16px', borderTop: '1px solid #EEEEEE', color: '#2EC4B6', fontSize: '13px', fontWeight: '800' })}>
                                         템플릿 관리하기 →
                                     </div>
                                 </Link>
