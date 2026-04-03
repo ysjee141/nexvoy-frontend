@@ -10,10 +10,11 @@ interface TemplateModalProps {
     isOpen: boolean
     onClose: () => void
     checklistId: string
+    currentUser: any
     onSuccess: (newItems: any[]) => void
 }
 
-export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess }: TemplateModalProps) {
+export default function TemplateModal({ isOpen, onClose, checklistId, currentUser, onSuccess }: TemplateModalProps) {
     const supabase = createClient()
     const [templates, setTemplates] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
@@ -85,13 +86,19 @@ export default function TemplateModal({ isOpen, onClose, checklistId, onSuccess 
         }
 
         // 4. 현재 체크리스트에 새 항목들만 벌크 인서트할 포맷팅 배열 만들기
-        const insertData = newItemsToInsert.map((tItem: any) => ({
-            checklist_id: checklistId,
-            item_name: tItem.item_name,
-            category: tItem.category || '기타',
-            is_checked: false,
-            source_template_name: templateName
-        }))
+        const insertData = newItemsToInsert.map((item: any) => {
+            const isPrivate = item.is_private || false
+            return {
+                checklist_id: checklistId,
+                item_name: item.item_name,
+                category: item.category || '기타',
+                is_checked: false,
+                source_template_name: templateName,
+                is_private: isPrivate,
+                assignment_type: isPrivate ? 'specific' : 'anyone',
+                assigned_user_id: isPrivate ? (currentUser?.id || null) : null
+            }
+        })
 
         const { data: insertedItems, error: insertError } = await supabase
             .from('checklist_items')
