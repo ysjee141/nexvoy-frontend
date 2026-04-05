@@ -19,6 +19,7 @@ let package = Package(
         .package(name: "CapacitorPushNotifications", path: "../../../node_modules/.pnpm/@capacitor+push-notifications@8.0.2_@capacitor+core@8.2.0/node_modules/@capacitor/push-notifications"),
         .package(name: "CapacitorStatusBar", path: "../../../node_modules/.pnpm/@capacitor+status-bar@8.0.1_@capacitor+core@8.2.0/node_modules/@capacitor/status-bar"),
         .package(name: "CapgoCapacitorNavigationBar", path: "../../../node_modules/.pnpm/@capgo+capacitor-navigation-bar@8.0.25_@capacitor+core@8.2.0/node_modules/@capgo/capacitor-navigation-bar"),
+        .package(name: "CapgoCapacitorUpdater", path: "../../../node_modules/.pnpm/@capgo+capacitor-updater@8.45.1_@capacitor+core@8.2.0/node_modules/@capgo/capacitor-updater"),
         .package(name: "SentryCapacitor", path: "../../../node_modules/.pnpm/@sentry+capacitor@3.2.0_@capacitor+core@8.2.0/node_modules/@sentry/capacitor")
     ],
     targets: [
@@ -34,6 +35,7 @@ let package = Package(
                 .product(name: "CapacitorPushNotifications", package: "CapacitorPushNotifications"),
                 .product(name: "CapacitorStatusBar", package: "CapacitorStatusBar"),
                 .product(name: "CapgoCapacitorNavigationBar", package: "CapgoCapacitorNavigationBar"),
+                .product(name: "CapgoCapacitorUpdater", package: "CapgoCapacitorUpdater"),
                 .product(name: "SentryCapacitor", package: "SentryCapacitor")
             ]
         )
