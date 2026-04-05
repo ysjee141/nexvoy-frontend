@@ -1,0 +1,53 @@
+name: Deploy Manual OTA (Supabase)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '배포할 버전 명칭 (예: 1.0.1)'
+        required: true
+        default: '1.0.0'
+      min_native_version:
+        description: '필요한 최소 네이티브 버전 (예: 1.0.0)'
+        required: false
+        default: '1.0.0'
+      channel:
+        description: '배포 채널'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - preview
+          - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build for Mobile (Standard Export)
+        run: pnpm build:mobile
+
+      - name: Deploy to Supabase
+        run: node scripts/deploy-ota.mjs --channel=${{ github.event.inputs.channel }}
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          APP_VERSION: ${{ github.event.inputs.version }}
+          MIN_NATIVE_VERSION: ${{ github.event.inputs.min_native_version }}
