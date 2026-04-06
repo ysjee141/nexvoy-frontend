@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
 import { ExternalLink } from 'lucide-react'
+import { MetadataService } from '@/services/ExternalApiService'
 
 // ── OG 미리보기 데이터 타입 ──
 interface OGData {
@@ -22,9 +23,11 @@ export default function UrlPreviewCard({ url }: { url: string }) {
         let cancelled = false
             ; (async () => {
                 try {
-                    const res = await fetch(`/api/og-preview/?url=${encodeURIComponent(url)}`)
-                    if (!cancelled && res.ok) setOg(await res.json())
-                } catch { /* 무시 */ } finally {
+                    const data = await MetadataService.getOgPreview(url)
+                    if (!cancelled && data) setOg(data)
+                } catch (error) {
+                    console.error('[UrlPreviewCard] Failed to fetch OG preview:', error)
+                } finally {
                     if (!cancelled) setLoading(false)
                 }
             })()

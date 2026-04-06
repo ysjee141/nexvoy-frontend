@@ -2,8 +2,8 @@
 
 import { useState, useRef } from 'react'
 import { css } from 'styled-system/css'
-import { X, Send, Image as ImageIcon, Video, Loader2, AlertCircle, Plus, MessageSquare } from 'lucide-react'
-import { sendBugReportToDiscord } from '@/utils/discord'
+import { X, Send, ImageIcon, Video, Loader2, AlertCircle, Plus, MessageSquare } from 'lucide-react'
+import { feedbackService } from '@/services/FeedbackService'
 
 interface BugReportModalProps {
     isOpen: boolean;
@@ -73,7 +73,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
         setIsSubmitting(true)
         setError('')
 
-        const result = await sendBugReportToDiscord({
+        const result = await feedbackService.sendBugReport({
             userId: user.id,
             userEmail: user.email,
             content: content.trim(),
