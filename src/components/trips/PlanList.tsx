@@ -161,7 +161,7 @@ export default function PlanList({
                                             {plan.cost > 0 && (
                                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '12px' })}>
                                                     <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', bg: 'rgba(255, 209, 102, 0.1)', color: '#F59E0B', px: '8px', py: '4px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' })}>
-                                                        <Wallet size={12} /> {formatCurrency(plan.cost, currency.code)}
+                                                        <Wallet size={12} /> {formatCurrency(plan.cost, currency)}
                                                     </div>
                                                     {currency.code !== 'KRW' && rate && (
                                                         <span className={css({ fontSize: '11px', color: '#9CA3AF', fontWeight: '500' })}>
