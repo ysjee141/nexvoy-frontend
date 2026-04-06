@@ -6,9 +6,10 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { Calendar, Users, Pencil, Trash2, X, ChevronLeft, Save, Loader2, Wallet, Minus, Plus } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
-import { getCurrencyFromTimezone, formatCurrency, formatKRW } from '@/utils/currency'
+import { getCurrencyFromTimezone, formatKRW } from '@/utils/currency'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { formatDate } from '@/utils/date'
+import { ExchangeService } from '@/services/ExternalApiService'
 
 const libraries: ("places")[] = ["places"]
 
@@ -103,18 +104,18 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
 
             const byCurrency = Object.values(byCode)
 
-            // 환율 fetch (병렬)
+            // 환율 fetch (병렬) - Refactored to use ExchangeService
             const rates: Record<string, number> = {}
             await Promise.all(
                 Array.from(uniqueNonKrw).map(async (code) => {
                     try {
-                        const apiUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-                        const res = await fetch(`${apiUrl}/api/exchange/?from=${code}`)
-                        if (res.ok) {
-                            const json = await res.json()
-                            rates[code] = json.rate
+                        const data = await ExchangeService.getExchangeRate(code)
+                        if (data && data.rate) {
+                            rates[code] = data.rate
                         }
-                    } catch { /* 환율 실패시 무시 */ }
+                    } catch (error) {
+                        console.error(`Failed to fetch exchange rate for ${code}:`, error)
+                    }
                 })
             )
 
