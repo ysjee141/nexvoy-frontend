@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { css } from 'styled-system/css'
 import { MapPin, Loader2, Info } from 'lucide-react'
+import { LocationService } from '@/services/ExternalApiService'
 
 interface LocationTooltipProps {
     locationName: string
@@ -43,9 +44,7 @@ export default function LocationTooltip({ locationName, lat, lng, className }: L
         if (!isOpen && !address && !loading) {
             setLoading(true)
             try {
-                const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-                const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=ko&key=${apiKey}`)
-                const data = await res.json()
+                const data = await LocationService.getAddress(lat, lng)
                 
                 if (data.status === 'OK' && data.results.length > 0) {
                     setAddress(data.results[0].formatted_address)
