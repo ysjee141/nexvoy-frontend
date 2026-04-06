@@ -96,8 +96,9 @@ export default function Navbar() {
                 zIndex: 1000,
                 w: '100%',
                 display: 'block',
-                bg: '#FFFFFF',
-                borderBottom: '1px solid #EBEBEB',
+                bg: 'white',
+                borderBottom: '1px solid',
+                borderBottomColor: 'brand.border',
                 boxShadow: '0 1px 12px rgba(0,0,0,0.08)',
                 paddingTop: 'env(safe-area-inset-top)',
                 transition: 'transform 0.3s ease',
@@ -117,7 +118,7 @@ export default function Navbar() {
             >
                 {/* 왼쪽: 로고 + 가이드 */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '20px' })}>
-                    <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: '#172554' })}>
+                    <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: 'brand.secondary' })}>
                         <Image src="/logo.png" alt="온여정 로고" width={28} height={28} priority />
                         <span>온여정</span>
                     </Link>
@@ -129,26 +130,26 @@ export default function Navbar() {
                         <>
                             {user ? (
                                 <>
-                                    <Link href="/" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#555', _hover: { color: '#172554' } })}>
+                                    <Link href="/" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.secondary' } })}>
                                         <Home size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>홈</span>
                                     </Link>
-                                    <Link href="/templates" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#555', _hover: { color: '#172554' } })}>
+                                    <Link href="/templates" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.secondary' } })}>
                                         <ListTodo size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>템플릿</span>
                                     </Link>
-                                    <Link href="/profile" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#555', _hover: { color: '#172554' } })}>
+                                    <Link href="/profile" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.secondary' } })}>
                                         <User size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>마이페이지</span>
                                     </Link>
-                                    <button onClick={handleSignOut} className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: '#d32f2f', ml: '12px', cursor: 'pointer', bg: 'transparent', border: 'none', _hover: { textDecoration: 'underline' } })}>
+                                    <button onClick={handleSignOut} className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.error', ml: '12px', cursor: 'pointer', bg: 'transparent', border: 'none', _hover: { textDecoration: 'underline' } })}>
                                         <LogOut size={18} />
                                         <span>로그아웃</span>
                                     </button>
                                 </>
                             ) : (
                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '12px' })}>
-                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'transparent', color: '#222', px: '12px', py: '10px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', _hover: { bg: '#F7F7F7' } })}>
+                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'transparent', color: 'brand.secondary', px: '12px', py: '10px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', _hover: { bg: 'bg.softCotton' } })}>
                                         회원가입
                                     </Link>
                                     <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'brand.primary', color: 'white', px: '24px', py: '12px', borderRadius: '32px', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s ease', _hover: { transform: 'scale(1.02)', boxShadow: '0 6px 20px rgba(59, 130, 246, 0.3)' } })}>
@@ -182,7 +183,7 @@ export default function Navbar() {
                             p: '8px',
                             bg: 'transparent',
                             border: 'none',
-                            color: '#172554',
+                            color: 'brand.secondary',
                             cursor: 'pointer',
                         })}
                     >
@@ -197,30 +198,30 @@ export default function Navbar() {
                         className={css({
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '6px', // Increased slightly for logo
+                            gap: '6px',
                             bg: 'transparent',
                             border: 'none',
                             cursor: 'pointer',
                             p: '8px',
                             borderRadius: '8px',
                             transition: 'background 0.2s',
-                            _active: { bg: '#f5f5f5' }
+                            _active: { bg: 'bg.softCotton' }
                         })}
                     >
                         {pageTitle === '온여정' && (
                             <Image src="/logo.png" alt="온여정 로고" width={20} height={20} priority />
                         )}
-                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
+                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.secondary', letterSpacing: '-0.01em' })}>
                             {pageTitle}
                         </h1>
-                        <ChevronDown size={18} color="#172554" />
+                        <ChevronDown size={18} className={css({ color: 'brand.secondary' })} />
                     </button>
                 ) : (
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
                         {pageTitle === '온여정' && (
                             <Image src="/logo.png" alt="온여정 로고" width={20} height={20} priority />
                         )}
-                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: '#172554', letterSpacing: '-0.01em' })}>
+                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.secondary', letterSpacing: '-0.01em' })}>
                             {pageTitle}
                         </h1>
                     </div>

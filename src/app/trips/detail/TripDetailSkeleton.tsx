@@ -13,7 +13,7 @@ const TimelineCardSkeleton = () => (
         
         {/* 카드 영역 */}
         <div className={css({ 
-            flex: 1, p: '16px', bg: 'white', border: '1px solid #f0f0f0', 
+            flex: 1, p: '16px', bg: 'white', border: '1px solid', borderColor: 'brand.border', 
             borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px' 
         })}>
             <Skeleton width="40px" height="40px" borderRadius="10px" />

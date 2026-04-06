@@ -209,7 +209,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
                         fontWeight: '700',
-                        color: '#222',
+                        color: 'brand.primary',
                         wordBreak: 'keep-all',
                         lineHeight: 1.2,
                         letterSpacing: '-1px',
@@ -234,7 +234,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                 }}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    p: '8px', bg: 'transparent', color: '#222', border: '1px solid #DDDDDD', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' }
+                                    p: '8px', bg: 'transparent', color: 'brand.primary', border: '1px solid token(colors.brand.border)', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: 'bg.softCotton' }, _active: { transform: 'scale(0.92)' }
                                 })}
                                 title="여행 수정"
                             >
@@ -244,7 +244,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                 onClick={() => setShowDeleteConfirm(true)}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    p: '8px', bg: 'transparent', color: '#222', border: '1px solid #DDDDDD', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#F7F7F7' }, _active: { transform: 'scale(0.92)' }
+                                    p: '8px', bg: 'transparent', color: 'brand.primary', border: '1px solid token(colors.brand.border)', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: 'bg.softCotton' }, _active: { transform: 'scale(0.92)' }
                                 })}
                                 title="여행 삭제"
                             >
@@ -260,31 +260,31 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                     flexWrap: 'wrap', 
                     alignItems: 'center', 
                     gap: '8px', 
-                    color: '#555', 
+                    color: 'brand.secondary', 
                     fontSize: { base: '14px', sm: '15px' },
                     fontWeight: '500'
                 })}>
                     {/* 날짜 */}
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
-                        <Calendar size={15} color="#FF9F87" strokeWidth={2.5} />
+                        <Calendar size={15} className={css({ color: 'brand.primary' })} strokeWidth={2.5} />
                         <span>{start} ~ {end}</span>
                     </div>
 
-                    <span className={css({ color: '#DDDDDD', px: '2px' })}>•</span>
+                    <span className={css({ color: 'brand.border', px: '2px' })}>•</span>
                     
                     {/* 인원 */}
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
-                        <Users size={15} color="#2EC4B6" strokeWidth={2.5} />
+                        <Users size={15} className={css({ color: 'brand.primary' })} strokeWidth={2.5} />
                         <span>성인 {trip.adults_count}명{trip.children_count > 0 ? `, 아이 ${trip.children_count}명` : ''}</span>
                     </div>
                     
                     {/* 총 예상 비용 */}
                     {!costSummary.loading && costSummary.byCurrency.length > 0 && (
                         <>
-                            <span className={css({ color: '#DDDDDD', px: '2px' })}>•</span>
+                            <span className={css({ color: 'brand.border', px: '2px' })}>•</span>
                             <div className={css({ display: 'flex', alignItems: 'center', gap: '5px' })}>
-                                <Wallet size={15} color="#FFD166" strokeWidth={2.5} />
-                                <span className={css({ fontWeight: '700', color: '#2C3A47' })}>
+                                <Wallet size={15} className={css({ color: 'brand.secondary' })} strokeWidth={2.5} />
+                                <span className={css({ fontWeight: '700', color: 'brand.primary' })}>
                                     {costSummary.totalKrw !== null ? `약 ${formatKRW(costSummary.totalKrw)}` : '비용 합산 중'}
                                 </span>
                             </div>
@@ -307,28 +307,28 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                         bg: 'white', w: '100%', maxW: { base: '100%', sm: '520px' },
                         h: { base: '100%', sm: 'auto' }, maxH: { base: '100dvh', sm: '90vh' },
                         overflowY: 'auto', borderRadius: { base: '0', sm: '24px' },
-                        boxShadow: { base: 'none', sm: '0 25px 70px rgba(0,0,0,0.18)' },
+                        boxShadow: { base: 'none', sm: '0 25px 70px rgba(0,0,0,0.1)' },
                         display: 'flex', flexDirection: 'column',
                         pt: { base: 'env(safe-area-inset-top)', sm: '0' },
                         animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
                     })}>
                         {/* 헤더 */}
-                        <div className={css({ p: '20px 24px', borderBottom: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10 })}>
+                        <div className={css({ p: '20px 24px', borderBottom: '1px solid token(colors.brand.border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10 })}>
                             <button
                                 onClick={() => setShowEditModal(false)}
-                                className={css({ display: { base: 'flex', sm: 'none' }, alignItems: 'center', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#2EC4B6', p: '0', zIndex: 1 })}
+                                className={css({ display: { base: 'flex', sm: 'none' }, alignItems: 'center', bg: 'transparent', border: 'none', cursor: 'pointer', color: 'brand.primary', p: '0', zIndex: 1 })}
                             >
                                 <ChevronLeft size={26} />
                             </button>
-                            <h2 className={css({ fontSize: '18px', fontWeight: '700', position: { base: 'absolute', sm: 'static' }, left: { base: '50%', sm: 'auto' }, transform: { base: 'translateX(-50%)', sm: 'none' }, whiteSpace: 'nowrap', color: '#2C3A47', letterSpacing: '-0.02em' })}>
+                            <h2 className={css({ fontSize: '18px', fontWeight: '700', position: { base: 'absolute', sm: 'static' }, left: { base: '50%', sm: 'auto' }, transform: { base: 'translateX(-50%)', sm: 'none' }, whiteSpace: 'nowrap', color: 'brand.primary', letterSpacing: '-0.02em' })}>
                                 여행 정보 수정
                             </h2>
                             <button
                                 onClick={() => setShowEditModal(false)}
                                 className={css({ 
                                     display: { base: 'none', sm: 'flex' }, 
-                                    p: '6px', borderRadius: '50%', bg: '#F8F9FA', color: '#9CA3AF',
-                                    transition: 'all 0.2s', _hover: { bg: '#F1F3F5', color: '#2C3A47', transform: 'rotate(90deg)' }
+                                    p: '6px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted',
+                                    transition: 'all 0.2s', _hover: { bg: 'brand.border', color: 'brand.primary', transform: 'rotate(90deg)' }
                                 })}
                             >
                                 <X size={20} strokeWidth={2.5} />
@@ -338,7 +338,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                         {/* 폼 */}
                         <form onSubmit={handleEdit} className={css({ p: { base: '16px', sm: '24px' }, display: 'flex', flexDirection: 'column', gap: '20px', overflowX: 'hidden' })}>
                             <div>
-                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#2C3A47' })}>
+                                <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: 'brand.primary' })}>
                                     여행지 (국가/도시)
                                 </label>
                                 {isLoaded ? (
@@ -349,7 +349,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                             value={destination}
                                             onChange={e => setDestination(e.target.value)}
                                             placeholder="예: 일본 도쿄, 프랑스 파리"
-                                            className={css({ w: '100%', p: '15px', bg: '#F8F9FA', border: '1.5px solid #F1F3F5', borderRadius: '16px', outline: 'none', fontSize: '15px', fontWeight: '600', color: '#2C3A47', transition: 'all 0.25s', _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.1)' } })}
+                                            className={css({ w: '100%', p: '15px', bg: 'bg.softCotton', border: '1.5px solid token(colors.brand.border)', borderRadius: '16px', outline: 'none', fontSize: '15px', fontWeight: '600', color: 'brand.primary', transition: 'all 0.25s', _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.1)' } })}
                                         />
                                     </Autocomplete>
                                 ) : (
@@ -358,14 +358,14 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                         required
                                         value={destination}
                                         onChange={e => setDestination(e.target.value)}
-                                        className={css({ w: '100%', p: '15px', bg: '#F8F9FA', border: '1.5px solid #F1F3F5', borderRadius: '16px', outline: 'none', fontSize: '15px', fontWeight: '600', color: '#2C3A47', transition: 'all 0.25s', _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.1)' } })}
+                                        className={css({ w: '100%', p: '15px', bg: 'bg.softCotton', border: '1.5px solid token(colors.brand.border)', borderRadius: '16px', outline: 'none', fontSize: '15px', fontWeight: '600', color: 'brand.primary', transition: 'all 0.25s', _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.1)' } })}
                                     />
                                 )}
                             </div>
 
                             <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
                                 <div>
-                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#2C3A47' })}>가는 날 (시작일)</label>
+                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: 'brand.primary' })}>가는 날 (시작일)</label>
                                     <div style={{ overflow: 'hidden', width: '100%' }}>
                                         <input
                                             type="date"
@@ -373,12 +373,12 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                             value={startDate}
                                             onChange={e => setStartDate(e.target.value)}
                                             style={{ minWidth: 0 }}
-                                            className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '13px', border: '1px solid #ddd', borderRadius: '12px', outline: 'none', _focus: { borderColor: '#2EC4B6', boxShadow: '0 0 0 2px rgba(46, 196, 182, 0.1)' } })}
+                                            className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '13px', border: '1px solid token(colors.brand.border)', borderRadius: '12px', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 2px rgba(46, 196, 182, 0.1)' } })}
                                         />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#2C3A47' })}>오는 날 (종료일)</label>
+                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: 'brand.primary' })}>오는 날 (종료일)</label>
                                     <div style={{ overflow: 'hidden', width: '100%' }}>
                                         <input
                                             type="date"
@@ -386,7 +386,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                             value={endDate}
                                             onChange={e => setEndDate(e.target.value)}
                                             style={{ minWidth: 0 }}
-                                            className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '13px', border: '1px solid #ddd', borderRadius: '12px', outline: 'none', _focus: { borderColor: '#2EC4B6', boxShadow: '0 0 0 2px rgba(46, 196, 182, 0.1)' } })}
+                                            className={css({ w: '100%', maxW: '100%', boxSizing: 'border-box', p: '13px', border: '1px solid token(colors.brand.border)', borderRadius: '12px', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 2px rgba(46, 196, 182, 0.1)' } })}
                                         />
                                     </div>
                                 </div>
@@ -394,14 +394,14 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
 
                             <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
                                 <div>
-                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#2C3A47' })}>성인 인원</label>
+                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: 'brand.primary' })}>성인 인원</label>
                                     <div className={css({
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
                                         w: '100%',
                                         p: '8px 12px',
-                                        border: '1px solid #eaeaea',
+                                        border: '1px solid token(colors.brand.border)',
                                         borderRadius: '16px',
                                         bg: 'white',
                                         boxShadow: '0 2px 10px rgba(0,0,0,0.015)'
@@ -412,27 +412,27 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                             onClick={() => setAdults(adults - 1)}
                                             className={css({ 
                                                 w: '40px', h: '40px', flexShrink: 0,
-                                                bg: adults <= 1 ? '#F5F5F5' : '#EAF9F7', color: adults <= 1 ? '#CCC' : '#2EC4B6',
-                                                border: 'none', borderRadius: '14px', 
+                                                bg: adults <= 1 ? 'bg.softCotton' : 'bg.softCotton', color: adults <= 1 ? 'brand.border' : 'brand.primary',
+                                                border: '1px solid token(colors.brand.border)', borderRadius: '14px', 
                                                 cursor: adults <= 1 ? 'not-allowed' : 'pointer',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center', 
                                                 transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)', 
-                                                _hover: { bg: adults <= 1 ? '#F5F5F5' : '#D1F2ED' },
+                                                _hover: { bg: 'brand.border' },
                                                 _active: { transform: adults <= 1 ? 'none' : 'scale(0.92)' }
                                             })}
                                         >
                                             <Minus size={18} strokeWidth={3} />
                                         </button>
-                                        <span className={css({ fontSize: '18px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{adults}</span>
+                                        <span className={css({ fontSize: '18px', fontWeight: '700', w: '40px', textAlign: 'center', color: 'brand.primary' })}>{adults}</span>
                                         <button 
                                             type="button" 
                                             onClick={() => setAdults(adults + 1)}
                                             className={css({ 
                                                 w: '40px', h: '40px', flexShrink: 0,
-                                                bg: '#2EC4B6', border: 'none', borderRadius: '14px', 
+                                                bg: 'brand.primary', border: 'none', borderRadius: '14px', 
                                                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
                                                 color: 'white', transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)', 
-                                                _hover: { bg: '#249E93', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' },
+                                                _hover: { bg: 'brand.primary', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' },
                                                 _active: { transform: 'scale(0.92)' }
                                             })}
                                         >
@@ -441,14 +441,14 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                     </div>
                                 </div>
                                 <div>
-                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: '#2C3A47' })}>아이 인원</label>
+                                    <label className={css({ display: 'block', fontSize: '14px', fontWeight: 'bold', mb: '8px', color: 'brand.primary' })}>아이 인원</label>
                                     <div className={css({
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'space-between',
                                         w: '100%',
                                         p: '8px 12px',
-                                        border: '1px solid #eaeaea',
+                                        border: '1px solid token(colors.brand.border)',
                                         borderRadius: '16px',
                                         bg: 'white',
                                         boxShadow: '0 2px 10px rgba(0,0,0,0.015)'
@@ -459,27 +459,27 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                             onClick={() => setChildren(children - 1)}
                                             className={css({ 
                                                 w: '40px', h: '40px', flexShrink: 0,
-                                                bg: children <= 0 ? '#F5F5F5' : '#EAF9F7', color: children <= 0 ? '#CCC' : '#2EC4B6',
-                                                border: 'none', borderRadius: '14px', 
+                                                bg: children <= 0 ? 'bg.softCotton' : 'bg.softCotton', color: children <= 0 ? 'brand.border' : 'brand.primary',
+                                                border: '1px solid token(colors.brand.border)', borderRadius: '14px', 
                                                 cursor: children <= 0 ? 'not-allowed' : 'pointer',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center', 
                                                 transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)', 
-                                                _hover: { bg: children <= 0 ? '#F5F5F5' : '#D1F2ED' },
+                                                _hover: { bg: 'brand.border' },
                                                 _active: { transform: children <= 0 ? 'none' : 'scale(0.92)' }
                                             })}
                                         >
                                             <Minus size={18} strokeWidth={3} />
                                         </button>
-                                        <span className={css({ fontSize: '18px', fontWeight: '700', w: '40px', textAlign: 'center', color: '#2C3A47' })}>{children}</span>
+                                        <span className={css({ fontSize: '18px', fontWeight: '700', w: '40px', textAlign: 'center', color: 'brand.primary' })}>{children}</span>
                                         <button 
                                             type="button" 
                                             onClick={() => setChildren(children + 1)}
                                             className={css({ 
                                                 w: '40px', h: '40px', flexShrink: 0,
-                                                bg: '#2EC4B6', border: 'none', borderRadius: '14px', 
+                                                bg: 'brand.primary', border: 'none', borderRadius: '14px', 
                                                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', 
                                                 color: 'white', transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)', 
-                                                _hover: { bg: '#249E93', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' },
+                                                _hover: { bg: 'brand.primary', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' },
                                                 _active: { transform: 'scale(0.92)' }
                                             })}
                                         >
@@ -490,7 +490,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                             </div>
 
                             {errorMsg && (
-                                <div className={css({ p: '12px', bg: '#fee2e2', color: '#dc2626', borderRadius: '8px', fontSize: '14px' })}>
+                                <div className={css({ p: '12px', bg: 'rgba(255, 59, 48, 0.1)', color: 'brand.error', borderRadius: '8px', fontSize: '14px' })}>
                                     {errorMsg}
                                 </div>
                             )}
@@ -500,13 +500,13 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                 disabled={saving}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                    w: '100%', mt: '8px', py: '18px', bg: '#2EC4B6', color: 'white',
+                                    w: '100%', mt: '8px', py: '18px', bg: 'brand.primary', color: 'white',
                                     fontSize: '17px', fontWeight: '700', borderRadius: '20px',
                                     cursor: saving ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
-                                    boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)',
+                                    boxShadow: '0 10px 25px rgba(46, 196, 182, 0.2)',
                                     _disabled: { opacity: 0.6, transform: 'none', boxShadow: 'none' }, 
-                                    _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 15px 35px rgba(46,196,182,0.35)' },
+                                    _hover: { bg: 'brand.primary', transform: 'translateY(-2px)', boxShadow: '0 15px 35px rgba(46,196,182,0.3)' },
                                     _active: { transform: 'scale(0.96)' }
                                 })}
                             >
@@ -533,10 +533,10 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                     })}>
                         <div className={css({ textAlign: 'center', mb: '20px' })}>
                             <div className={css({ fontSize: '40px', mb: '12px' })}>🗑️</div>
-                            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', color: '#172554', mb: '8px' })}>
+                            <h3 className={css({ fontSize: '18px', fontWeight: 'bold', color: 'brand.primary', mb: '8px' })}>
                                 여행을 삭제할까요?
                             </h3>
-                            <p className={css({ fontSize: '14px', color: '#666', lineHeight: 1.6, wordBreak: 'keep-all' })}>
+                            <p className={css({ fontSize: '14px', color: 'brand.secondary', lineHeight: 1.6, wordBreak: 'keep-all' })}>
                                 <strong>{trip.destination} 여행</strong>과 관련된 모든 일정, 체크리스트가 함께 삭제됩니다. 이 작업은 되돌릴 수 없습니다.
                             </p>
                         </div>
@@ -544,10 +544,10 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                             <button
                                 onClick={() => setShowDeleteConfirm(false)}
                                 className={css({
-                                    flex: 1, py: '14px', bg: '#F8F9FA', color: '#6B7280',
+                                    flex: 1, py: '14px', bg: 'bg.softCotton', color: 'brand.secondary',
                                     border: 'none', borderRadius: '16px', fontWeight: '700',
                                     fontSize: '15px', cursor: 'pointer', transition: 'all 0.2s',
-                                    _hover: { bg: '#F1F3F5', color: '#2C3A47' },
+                                    _hover: { bg: 'brand.border', color: 'brand.primary' },
                                     _active: { transform: 'scale(0.96)' }
                                 })}
                             >
@@ -557,13 +557,13 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                                 onClick={handleDelete}
                                 disabled={deleting}
                                 className={css({
-                                    flex: 1, py: '14px', bg: '#FF4D4D', color: 'white',
+                                    flex: 1, py: '14px', bg: 'brand.error', color: 'white',
                                     border: 'none', borderRadius: '16px', fontWeight: '700',
                                     fontSize: '15px', cursor: deleting ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
-                                    boxShadow: '0 8px 20px rgba(255, 77, 77, 0.25)',
+                                    boxShadow: '0 8px 20px rgba(255, 59, 48, 0.2)',
                                     _disabled: { opacity: 0.6, transform: 'none', boxShadow: 'none' }, 
-                                    _hover: { bg: '#E63939', transform: 'translateY(-2px)', boxShadow: '0 12px 25px rgba(255, 77, 77, 0.35)' },
+                                    _hover: { bg: 'brand.error', transform: 'translateY(-2px)', boxShadow: '0 12px 25px rgba(255, 59, 48, 0.3)' },
                                     _active: { transform: 'scale(0.96)' },
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
                                 })}

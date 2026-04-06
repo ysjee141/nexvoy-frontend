@@ -1,24 +1,33 @@
 # Antigravity AI Core Rules
 
-You MUST follow these rules at all times while working on this project.
+You MUST follow these rules at all times while working on this project. This is a strict requirement.
 
-## 1. Mandatory Workflow Adherence
+## 1. Documentation & Context First
+- **ALWAYS** refer to `docs/ai-guide` and `README.md` before starting any work to ensure alignment with project guidelines.
 - Before starting ANY task, run `view_file` on `.agents/workflows/standard-dev-flow.md` and internalize the steps.
-- Always follow the transition: Research -> Implementation Plan -> Task List -> Verification -> Walkthrough -> PR.
 
-## 2. Git Branching & Conflict Prevention
+## 2. Git Branching & Local Development
+- **ALWAYS** create feature branches from the `develop` branch.
+- **DEVELOP SYNC**: The `develop` branch must always be rebased with the latest `main` branch. 
+  - If `develop` does not exist, create it from the latest `main`.
+- **LOCAL FIRST**: All development MUST occur on a local branch. Push to a remote branch ONLY after all work and local verification are complete. This is an absolute rule.
 - **NEVER** commit directly to `develop` or `main` branches.
-- **ALWAYS** create a feature branch (`feature/xxx`) based on a clean `develop` branch.
-- **MANDATORY Periodic Sync**: Run `git fetch origin develop && git merge origin/develop` frequently during development to minimize future conflicts.
+- **MANDATORY Periodic Sync**: Run `git fetch origin develop && git merge origin/develop` frequently during development to minimize conflicts.
+
+## 3. PR & Pull Request Process
+- **CREATE ONLY**: You are responsible only for *creating* Pull Requests. 
+- **NO APPROVAL/MERGE**: NEVER approve or merge a PR yourself unless explicitly requested by the user. PR approval and merging are the user's responsibility.
 - **MANDATORY Pre-Merge Test**: Before creating ANY PR, perform a local merge (`git merge [base-branch]`) and resolve all conflicts locally.
 
-## 3. Mandatory Build Verification
+## 4. Mandatory Build Verification
 - Before submitting any PR or announcing task completion, you MUST run `pnpm build` and `pnpm build:mobile`.
 - Any build failures MUST be resolved before reporting completion.
 
-## 4. Documentation & Reporting
+## 5. Workflow & Reporting
+- Always follow the transition: Research -> Implementation Plan -> Task List -> Verification -> Walkthrough -> PR.
 - Every session MUST end with a clear `Walkthrough` of what was changed and verified.
 - Use `implementation_plan.md` for any complex changes or architectural decisions.
 
 > [!IMPORTANT]
 > If you violate these rules, the USER will consider the task FAILED. Stay disciplined.
+

@@ -23,9 +23,10 @@ export default function BottomNavbar() {
                 right: 0,
                 zIndex: 50,
                 display: { base: 'block', sm: 'none' }, // 모바일(sm 미만)에서만 표시
-                bg: 'rgba(255, 255, 255, 0.9)',
+                bg: 'white/90',
                 backdropFilter: 'blur(10px)',
-                borderTop: '1px solid #eaeaea',
+                borderTop: '1px solid',
+                borderTopColor: 'brand.border',
                 paddingBottom: 'env(safe-area-inset-bottom)', // iOS Safe Area 대응
                 boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
             })}
@@ -54,10 +55,10 @@ export default function BottomNavbar() {
                                 alignItems: 'center',
                                 gap: '4px',
                                 flex: 1,
-                                color: isActive ? '#2EC4B6' : '#717171',
+                                color: isActive ? 'brand.primary' : 'brand.muted',
                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                 _active: { transform: 'scale(0.92)' },
-                                _hover: { color: isActive ? '#2EC4B6' : '#222' },
+                                _hover: { color: isActive ? 'brand.primary' : 'brand.secondary' },
                             })}
                         >
                             <Icon size={24} strokeWidth={isActive ? 2.8 : 2} />
