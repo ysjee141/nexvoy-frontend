@@ -400,6 +400,8 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     onClose={handleModalClose}
                     onSuccess={handleModalSuccess}
                     editData={editingPlan}
+                    tripStartDate={trip?.start_date}
+                    tripEndDate={trip?.end_date}
                 />
             )}
             {tripId && (

@@ -13,9 +13,11 @@ const libraries: ("places")[] = ["places"]
 interface NewPlanModalProps {
     isOpen: boolean
     onClose: () => void
+    onSuccess: () => void
     tripId: string
-    tripStartDate: string
-    tripEndDate: string
+    tripStartDate?: string
+    tripEndDate?: string
+    editData?: any
 }
 
 // ── 핵심 타입 정의 ──
@@ -29,7 +31,15 @@ interface PlaceOption {
     type?: string
 }
 
-export default function NewPlanModal({ isOpen, onClose, tripId, tripStartDate, tripEndDate }: NewPlanModalProps) {
+export default function NewPlanModal({ 
+    isOpen, 
+    onClose, 
+    onSuccess, 
+    tripId, 
+    tripStartDate = '', 
+    tripEndDate = '', 
+    editData 
+}: NewPlanModalProps) {
     const supabase = createClient()
     const [step, setStep] = useState(1) // 1: 장소검색, 2: 상세입력
     const [loading, setLoading] = useState(false)
@@ -37,7 +47,7 @@ export default function NewPlanModal({ isOpen, onClose, tripId, tripStartDate, t
 
     // ── 폼 상태 ──
     const [selectedPlace, setSelectedPlace] = useState<PlaceOption | null>(null)
-    const [visitDate, setVisitDate] = useState(tripStartDate)
+    const [visitDate, setVisitDate] = useState('')
     const [visitTime, setVisitTime] = useState('12:00')
     const [duration, setDuration] = useState('1')
     const [cost, setCost] = useState('')
@@ -54,6 +64,42 @@ export default function NewPlanModal({ isOpen, onClose, tripId, tripStartDate, t
         libraries,
         language: 'ko',
     })
+
+    // Edit 모드일 때 초기값 설정
+    useEffect(() => {
+        if (editData && isOpen) {
+            setSelectedPlace({
+                name: editData.location_name || editData.title,
+                address: editData.address,
+                lat: editData.lat,
+                lng: editData.lng,
+                photo: editData.image_url
+            })
+            
+            // start_datetime_local (ISO) -> Date/Time 분리
+            if (editData.start_datetime_local) {
+                const [date, timePart] = editData.start_datetime_local.split('T')
+                setVisitDate(date)
+                setVisitTime(timePart?.substring(0, 5) || '12:00')
+            } else {
+                setVisitDate(editData.visit_date || tripStartDate)
+                setVisitTime(editData.visit_time || '12:00')
+            }
+            
+            setDuration(String(editData.duration_hours || '1'))
+            setCost(String(editData.cost || ''))
+            setMemo(editData.description || '')
+            setStep(2)
+        } else if (isOpen) {
+            setStep(1)
+            setSelectedPlace(null)
+            setVisitDate(tripStartDate)
+            setVisitTime('12:00')
+            setDuration('1')
+            setCost('')
+            setMemo('')
+        }
+    }, [editData, isOpen, tripStartDate])
 
     const onPlaceChanged = () => {
         if (autocomplete !== null) {
@@ -86,7 +132,7 @@ export default function NewPlanModal({ isOpen, onClose, tripId, tripStartDate, t
             // 타임존 정보를 API로 조회 (Refactored to use LocationService)
             const tzData = await LocationService.getTimezone(selectedPlace.lat, selectedPlace.lng)
 
-            const { error } = await supabase.from('plans').insert({
+            const planData = {
                 trip_id: tripId,
                 title: selectedPlace.name,
                 location_name: selectedPlace.name,
@@ -95,21 +141,25 @@ export default function NewPlanModal({ isOpen, onClose, tripId, tripStartDate, t
                 lng: selectedPlace.lng,
                 visit_date: visitDate,
                 visit_time: visitTime,
+                start_datetime_local: `${visitDate}T${visitTime}:00`,
                 duration_hours: parseFloat(duration),
                 cost: cost ? parseFloat(cost) : 0,
                 description: memo,
                 image_url: selectedPlace.photo,
                 timezone_string: tzData.timeZoneId || 'Asia/Seoul'
-            })
+            }
 
-            if (error) throw error
+            let result;
+            if (editData?.id) {
+                result = await supabase.from('plans').update(planData).eq('id', editData.id)
+            } else {
+                result = await supabase.from('plans').insert(planData)
+            }
 
+            if (result.error) throw result.error
+
+            onSuccess()
             onClose()
-            // Reset 상태
-            setStep(1)
-            setSelectedPlace(null)
-            setCost('')
-            setMemo('')
         } catch (err: any) {
             setError(err.message || '일정을 저장하는 중 오류가 발생했습니다.')
         } finally {

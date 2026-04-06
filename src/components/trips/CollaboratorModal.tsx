@@ -10,7 +10,8 @@ interface CollaboratorModalProps {
     isOpen: boolean
     onClose: () => void
     tripId: string
-    tripDestination: string
+    tripTitle: string
+    ownerId?: string
 }
 
 interface Collaborator {
@@ -20,7 +21,7 @@ interface Collaborator {
     joined_at: string
 }
 
-export default function CollaboratorModal({ isOpen, onClose, tripId, tripDestination }: CollaboratorModalProps) {
+export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, ownerId }: CollaboratorModalProps) {
     const supabase = createClient()
     const [email, setEmail] = useState('')
     const [loading, setLoading] = useState(false)
@@ -73,7 +74,11 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripDestina
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('로그인이 필요합니다.')
 
-            const result = await CollaborationService.inviteUser(tripId, email.trim(), user.id)
+            const result = await CollaborationService.createInvite({
+                tripId,
+                email: email.trim(),
+                tripTitle
+            })
 
             if (result.error) {
                 setError(result.error)
