@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { App } from '@capacitor/app';
+import { SplashScreen } from '@capacitor/splash-screen';
 import { createClient } from '@/utils/supabase/client';
 
 const supabase = createClient();
@@ -53,15 +54,15 @@ export function useOTAUpdate() {
 
         // 5. Compare versions (simple string comparison for now, can be improved)
         if (latestVersion.version === currentVersion) {
-            // Already on latest version (or at least same version tag)
-            // But we might need more granular check if needed
-            setStatus('idle');
-            return;
+          // Already on latest version (or at least same version tag)
+          // But we might need more granular check if needed
+          setStatus('idle');
+          return;
         }
 
         // 6. Download update
         setStatus('downloading');
-        
+
         const removeListener = await CapacitorUpdater.addListener('download', (data: { percent: number }) => {
           setProgress(data.percent);
         });
@@ -76,7 +77,7 @@ export function useOTAUpdate() {
         // 7. Apply update
         setStatus('applying');
         await CapacitorUpdater.set({ id: bundle.id });
-        
+
         // App will reload automatically
       } catch (err) {
         console.error('OTA Update failed:', err);
@@ -93,6 +94,12 @@ export function useOTAUpdate() {
     });
 
   }, []);
+
+  useEffect(() => {
+    if (status === 'idle' || status === 'error') {
+      SplashScreen.hide();
+    }
+  }, [status]);
 
   return { status, progress, error };
 }
