@@ -23,6 +23,10 @@ export default defineConfig({
             light: { value: '#FBFBF9' },     // bg-base
             border: { value: '#EEEEEE' },
             accent: { value: '#FF9F87' },    // accent-peach
+            error: { value: '#FF4D4F' },
+            errorLight: { value: '#FFF1F0' },
+            success: { value: '#52C41A' },
+            warning: { value: '#FABC2A' },
           },
           bg: {
             surface: { value: '#FFFFFF' },
@@ -30,6 +34,7 @@ export default defineConfig({
             input: { value: '#FFFFFF' },
             light: { value: '#FBFBF9' },
             softCotton: { value: '#FBFBF9' },
+            canvas: { value: '#F8FAFF' },
           }
         },
         shadows: {

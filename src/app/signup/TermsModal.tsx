@@ -55,7 +55,8 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     p: '16px 20px',
-                    borderBottom: '1px solid #F5F5F5',
+                    borderBottom: '1px solid',
+                    borderColor: 'brand.border',
                     pt: { base: 'calc(16px + env(safe-area-inset-top))', sm: '24px' },
                     px: { base: '20px', sm: '24px' },
                     bg: 'white'
@@ -63,21 +64,21 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                     <button onClick={onClose} className={css({ 
                         display: { base: 'flex', sm: 'none' }, 
                         alignItems: 'center', bg: 'none', border: 'none', p: 0, 
-                        color: '#2EC4B6', cursor: 'pointer' 
+                        color: 'brand.primary', cursor: 'pointer' 
                     })}>
                         <ChevronLeft size={24} strokeWidth={2.5} />
                     </button>
                     <h2 className={css({ 
-                        fontSize: '18px', fontWeight: '700', color: '#2C3A47', flex: 1, 
+                        fontSize: '18px', fontWeight: '700', color: 'brand.secondary', flex: 1, 
                         textAlign: { base: 'center', sm: 'left' }, letterSpacing: '-0.02em' 
                     })}>
                         이용약관 및 개인정보 처리방침
                     </h2>
                     <button onClick={onClose} className={css({ 
                         display: { base: 'none', sm: 'flex' }, 
-                        p: '6px', bg: '#F8F9FA', borderRadius: '50%', color: '#9CA3AF', 
+                        p: '6px', bg: 'bg.softCotton', borderRadius: '50%', color: 'brand.muted', 
                         cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-                        _hover: { bg: '#F1F3F5', color: '#2C3A47', transform: 'rotate(90deg)' }
+                        _hover: { bg: 'brand.border', color: 'brand.secondary', transform: 'rotate(90deg)' }
                     })}>
                         <X size={20} strokeWidth={2.5} />
                     </button>
@@ -91,18 +92,18 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                     pb: 'calc(env(safe-area-inset-bottom) + 40px)',
                     scrollbarWidth: 'thin',
                     '&::-webkit-scrollbar': { w: '6px' },
-                    '&::-webkit-scrollbar-thumb': { bg: '#E5E7EB', borderRadius: '10px' }
+                    '&::-webkit-scrollbar-thumb': { bg: 'brand.border', borderRadius: '10px' }
                 })}>
                     <div className={css({
                         fontSize: '14.5px',
-                        color: '#4B5563',
+                        color: 'brand.muted',
                         lineHeight: 1.7,
                         wordBreak: 'keep-all',
-                        '& h3': { fontSize: '16px', fontWeight: '700', mt: '32px', mb: '12px', color: '#2EC4B6', display: 'flex', alignItems: 'center', gap: '8px' },
+                        '& h3': { fontSize: '16px', fontWeight: '700', mt: '32px', mb: '12px', color: 'brand.primary', display: 'flex', alignItems: 'center', gap: '8px' },
                         '& p': { mb: '14px', fontWeight: '500' },
                         '& ul': { pl: '20px', mb: '14px', listStyleType: 'none', position: 'relative' },
-                        '& li': { mb: '8px', position: 'relative', pl: '12px', _before: { content: '"•"', position: 'absolute', left: 0, color: '#2EC4B6', fontWeight: 'bold' } },
-                        '& strong': { color: '#2C3A47', fontWeight: '700' }
+                        '& li': { mb: '8px', position: 'relative', pl: '12px', _before: { content: '"•"', position: 'absolute', left: 0, color: 'brand.primary', fontWeight: 'bold' } },
+                        '& strong': { color: 'brand.secondary', fontWeight: '700' }
                     })}>
                         <p className={css({ fontSize: '15px' })}>본 서비스는 이용자의 개인정보를 소중히 다루며, 관련 법령을 준수합니다.</p>
 
@@ -144,12 +145,12 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                         <ul>
                             <li><strong>담당자</strong>: 지윤성</li>
                             <li><strong>문의처</strong>: <a href="mailto:ysjee141@gmail.com" className={css({ 
-                                color: '#2EC4B6', 
-                                textDecoration: 'underline',
-                                fontWeight: '700',
-                                transition: 'color 0.2s',
-                                _hover: { color: '#249E93' }
-                            })}>ysjee141@gmail.com</a></li>
+                                    color: 'brand.primary', 
+                                    textDecoration: 'underline',
+                                    fontWeight: '700',
+                                    transition: 'color 0.2s',
+                                    _hover: { color: 'brand.primaryDark' }
+                                })}>ysjee141@gmail.com</a></li>
                         </ul>
                     </div>
                 </div>

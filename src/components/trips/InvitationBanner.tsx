@@ -38,8 +38,9 @@ export default function InvitationBanner() {
 
     return (
         <div className={css({
-            bg: '#EFF6FF',
-            borderBottom: '1px solid #BFDBFE',
+            bg: 'bg.softCotton',
+            borderBottom: '1px solid',
+            borderBottomColor: 'brand.border',
             px: '20px',
             py: '12px'
         })}>
@@ -52,7 +53,7 @@ export default function InvitationBanner() {
                 flexDirection: { base: 'column', sm: 'row' },
                 gap: '12px'
             })}>
-                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', color: '#3B82F6', fontSize: '14px', fontWeight: '500' })}>
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', color: 'brand.primary', fontSize: '14px', fontWeight: '500' })}>
                     <Mail size={18} />
                     <span>반가운 소식! 새로운 여행 초대 {invitations.length}건이 도착했어요! 💌</span>
                 </div>
@@ -67,10 +68,12 @@ export default function InvitationBanner() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '12px',
-                            boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                            w: { base: '100%', sm: 'auto' }
+                            boxShadow: 'dimensional',
+                            w: { base: '100%', sm: 'auto' },
+                            border: '1px solid',
+                            borderColor: 'brand.border'
                         })}>
-                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: '#172554' })}>
+                            <span className={css({ fontSize: '13px', fontWeight: 'bold', color: 'brand.secondary' })}>
                                 {inv.trips?.destination || '여행'}
                             </span>
                             <div className={css({ display: 'flex', gap: '4px' })}>
@@ -78,19 +81,20 @@ export default function InvitationBanner() {
                                     onClick={() => handleAccept(inv.id)}
                                     disabled={processingId === inv.id}
                                     className={css({
-                                        bg: '#3B82F6',
+                                        bg: 'brand.primary',
                                         color: 'white',
                                         border: 'none',
-                                        borderRadius: '4px',
-                                        px: '8px',
-                                        py: '4px',
+                                        borderRadius: '8px',
+                                        px: '12px',
+                                        py: '6px',
                                         fontSize: '12px',
                                         fontWeight: 'bold',
                                         cursor: 'pointer',
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '4px',
-                                        _hover: { bg: '#174ea6' },
+                                        transition: 'all 0.2s',
+                                        _hover: { bg: 'brand.primaryDark', transform: 'scale(1.02)' },
                                         _disabled: { opacity: 0.5 }
                                     })}
                                 >

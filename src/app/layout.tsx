@@ -36,8 +36,8 @@ export default function RootLayout({
           minH: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          bg: '#F8FAFF',
-          color: '#172554',
+          bg: 'bg.canvas',
+          color: 'brand.secondary',
         })}
       >
         {/*
