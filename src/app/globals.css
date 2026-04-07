@@ -44,8 +44,8 @@ html {
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #FBFBF9; /* bg-base (Soft Cotton) */
-    color: #2C3A47;      /* text-primary (Deep Slate) */
+    background: #FFFFFF; /* bg-light (Pure White) */
+    color: #1E293B;      /* text-primary (Deep Slate) */
     min-height: 100vh;
     font-family: var(--font-sans);
 }
@@ -64,10 +64,10 @@ body {
 }
 
 .airbnb-btn-primary {
-    background: #2EC4B6; /* primary-mint */
+    background: #2563EB; /* primary-blue (Cobalt) */
     color: #FFFFFF;
     border: none;
-    border-radius: 16px; /* Guided: 16px+ */
+    border-radius: 16px; 
     padding: 12px 24px;
     font-weight: 700;
     cursor: pointer;
@@ -75,13 +75,13 @@ body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    box-shadow: 0 6px 20px rgba(46, 196, 182, 0.25); /* Guided: Mint shadow */
+    box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
     transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
 }
 
 .airbnb-btn-primary:active {
     transform: scale(0.96);
-    background: #249E93; /* primary-mint dark */
+    background: #1D4ED8; /* primary-blue dark */
 }
 
 .airbnb-btn-secondary {
@@ -112,8 +112,8 @@ body {
 }
 
 .airbnb-input:focus {
-    border-color: #2EC4B6;
-    box-shadow: 0 0 0 1px #2EC4B6;
+    border-color: #2563EB;
+    box-shadow: 0 0 0 1px #2563EB;
 }
 
 .floating-nav {

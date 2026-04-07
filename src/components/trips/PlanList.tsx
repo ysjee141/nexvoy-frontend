@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
-import { Clock, CheckCircle2, Circle, Trash2, Edit3, Wallet } from 'lucide-react'
+import { Clock, CheckCircle2, Circle, Trash2, Edit3, Wallet, Bell } from 'lucide-react'
 import { getCurrencyFromTimezone, formatCurrency } from '@/utils/currency'
 import LocationTooltip from '../common/LocationTooltip'
 import UrlPreviewCard from '../common/UrlPreviewCard'
@@ -11,16 +11,17 @@ import { ExchangeService } from '@/services/ExternalApiService'
 interface Plan {
     id: string
     title: string
-    location_name: string
+    location: string
     address: string
     lat: number
     lng: number
     visit_date?: string
     visit_time?: string
     start_datetime_local: string
-    duration_hours: number
+    end_datetime_local: string
+    alarm_minutes_before?: number
     cost: number
-    description: string
+    memo: string
     image_url: string
     is_completed: boolean
     timezone_string: string
@@ -28,6 +29,7 @@ interface Plan {
 
 interface PlanListProps {
     plans: any[]
+    exchangeRates: Record<string, number>
     activeDropdown: string | null
     setActiveDropdown: (id: string | null) => void
     userRole: 'owner' | 'editor' | 'viewer' | null
@@ -36,10 +38,12 @@ interface PlanListProps {
     formatKstTime: (date: string, tz: string) => string
     onEdit: (plan: any) => void
     onDelete: (id: string) => void
+    onDetail: (plan: any) => void
 }
 
 export default function PlanList({ 
     plans, 
+    exchangeRates,
     activeDropdown, 
     setActiveDropdown, 
     userRole, 
@@ -47,36 +51,15 @@ export default function PlanList({
     formatLocalTime, 
     formatKstTime, 
     onEdit, 
-    onDelete 
+    onDelete,
+    onDetail 
 }: PlanListProps) {
-    const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({})
-
-    useEffect(() => {
-        if (plans && plans.length > 0) {
-            const uniqueTimezones = Array.from(new Set(plans.map((p: any) => p.timezone_string || 'Asia/Seoul')))
-            uniqueTimezones.forEach(async (tz) => {
-                const currency = getCurrencyFromTimezone(tz)
-                if (currency.code !== 'KRW' && !exchangeRates[currency.code]) {
-                    try {
-                        const data = await ExchangeService.getExchangeRate(currency.code)
-                        if (data && data.rate) {
-                            setExchangeRates(prev => ({ ...prev, [currency.code]: data.rate }))
-                        }
-                    } catch (e) {
-                        console.error('Failed to pre-fetch rate:', e)
-                    }
-                }
-            })
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [plans])
-
     if (!plans || plans.length === 0) {
         return (
-            <div className={css({ textAlign: 'center', py: '80px', bg: '#F8F9FA', borderRadius: '24px', border: '2px dashed #E5E7EB' })}>
+            <div className={css({ textAlign: 'center', py: '80px', bg: 'bg.softCotton', borderRadius: '24px', border: '2px dashed', borderColor: 'brand.border' })}>
                 <div className={css({ fontSize: '48px', mb: '16px' })}>🗺️</div>
-                <h3 className={css({ fontSize: '18px', fontWeight: '700', color: '#2C3A47', mb: '8px' })}>아직 일정이 없어요</h3>
-                <p className={css({ color: '#9CA3AF', fontSize: '14px' })}>상단의 + 버튼을 눌러 첫 일정을 추가해보세요!</p>
+                <h3 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.secondary', mb: '8px' })}>아직 일정이 없어요</h3>
+                <p className={css({ color: 'brand.muted', fontSize: '14px' })}>상단의 + 버튼을 눌러 첫 일정을 추가해보세요!</p>
             </div>
         )
     }
@@ -94,104 +77,225 @@ export default function PlanList({
             {Object.entries(groupedPlans).map(([date, datePlans], idx) => (
                 <div key={date} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', mb: '4px' })}>
-                        <div className={css({ bg: '#2EC4B6', color: 'white', px: '12px', py: '4px', borderRadius: '10px', fontSize: '13px', fontWeight: '800' })}>
+                        <div className={css({ bg: 'brand.primary', color: 'white', px: '10px', py: '3px', borderRadius: '8px', fontSize: '12px', fontWeight: '800' })}>
                             DAY {idx + 1}
                         </div>
-                        <h3 className={css({ fontSize: '16px', fontWeight: '700', color: '#172554' })}>
+                        <h3 className={css({ fontSize: '16px', fontWeight: '700', color: 'brand.secondary' })}>
                             {new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
                         </h3>
                     </div>
 
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', pl: '10px', borderLeft: '2px solid #F1F3F5' })}>
-                        {datePlans.map((plan) => {
-                            const currency = getCurrencyFromTimezone(plan.timezone_string || 'Asia/Seoul')
-                            const rate = exchangeRates[currency.code]
-                            
-                            return (
-                                <div key={plan.id} className={css({
-                                    bg: 'white', p: '20px', borderRadius: '20px', border: '1.5px solid #F1F3F5',
-                                    display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative',
-                                    transition: 'all 0.2s', _hover: { boxShadow: '0 8px 30px rgba(0,0,0,0.04)', borderColor: '#2EC4B6' },
-                                    opacity: plan.is_completed ? 0.7 : 1
-                                })}>
-                                    <div className={css({ display: 'flex', gap: '14px' })}>
-                                        {/* 체크 버튼 */}
-                                        <div className={css({ mt: '2px', color: plan.is_completed ? '#2EC4B6' : '#D1D5DB' })}>
-                                            {plan.is_completed ? <CheckCircle2 size={22} fill="currentColor" color="white" /> : <Circle size={22} />}
-                                        </div>
-
-                                        <div className={css({ flex: 1, minW: 0 })}>
-                                            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: '4px' })}>
-                                                <h4 className={css({ fontSize: '17px', fontWeight: '700', color: '#2C3A47', textDecoration: plan.is_completed ? 'line-through' : 'none' })}>{plan.title}</h4>
-                                                {(userRole === 'owner' || userRole === 'editor') && (
-                                                    <div className={css({ display: 'flex', gap: '4px' })}>
-                                                        <button onClick={() => onEdit(plan)} className={css({ p: '4px', color: '#9CA3AF', _hover: { color: '#2EC4B6' }, bg: 'transparent', border: 'none', cursor: 'pointer' })}><Edit3 size={16} /></button>
-                                                        <button onClick={() => onDelete(plan.id)} className={css({ p: '4px', color: '#9CA3AF', _hover: { color: '#FF5A5F' }, bg: 'transparent', border: 'none', cursor: 'pointer' })}><Trash2 size={16} /></button>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '10px', mb: '10px' })}>
-                                                <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#2EC4B6', fontWeight: '700' })}>
-                                                    <Clock size={13} />
-                                                    {timeDisplayMode === 'local' && formatLocalTime(plan.start_datetime_local)}
-                                                    {timeDisplayMode === 'kst' && `한국 ${formatKstTime(plan.start_datetime_local, plan.timezone_string)}`}
-                                                    {timeDisplayMode === 'both' && (
-                                                        <>
-                                                            {formatLocalTime(plan.start_datetime_local)}
-                                                            <span className={css({ color: '#DDD', fontWeight: 'normal' })}>|</span>
-                                                            <span className={css({ fontSize: '11px', fontWeight: '500' })}>{formatKstTime(plan.start_datetime_local, plan.timezone_string)}(KST)</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                                <LocationTooltip 
-                                                    locationName={plan.location_name} 
-                                                    lat={plan.lat} 
-                                                    lng={plan.lng} 
-                                                    className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: '#6B7280', fontWeight: '500', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}
-                                                />
-                                            </div>
-
-                                            {plan.description && (
-                                                <div className={css({ p: '12px 14px', bg: '#F8F9FA', borderRadius: '12px', mb: '12px', fontSize: '13px', color: '#4B5563', lineHeight: 1.6, borderLeft: '3px solid #E5E7EB' })}>
-                                                    {plan.description}
-                                                </div>
-                                            )}
-
-                                            {plan.cost > 0 && (
-                                                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '12px' })}>
-                                                    <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', bg: 'rgba(255, 209, 102, 0.1)', color: '#F59E0B', px: '8px', py: '4px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' })}>
-                                                        <Wallet size={12} /> {formatCurrency(plan.cost, currency)}
-                                                    </div>
-                                                    {currency.code !== 'KRW' && rate && (
-                                                        <span className={css({ fontSize: '11px', color: '#9CA3AF', fontWeight: '500' })}>
-                                                            (약 {Math.round(plan.cost * rate).toLocaleString()}원)
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* URL 미리보기 */}
-                                            {(() => {
-                                                const urlRegex = /(https?:\/\/[^\s]+)/g
-                                                const urls = plan.description?.match(urlRegex)
-                                                if (urls && urls.length > 0) {
-                                                    return (
-                                                        <div className={css({ mt: '8px' })}>
-                                                            <UrlPreviewCard url={urls[0]} />
-                                                        </div>
-                                                    )
-                                                }
-                                                return null
-                                            })()}
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
+                    <div className={css({ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '24px',
+                        position: 'relative',
+                        pl: '24px',
+                        _before: {
+                            content: '""',
+                            position: 'absolute',
+                            top: '12px',
+                            bottom: '12px',
+                            left: '7px',
+                            w: '1px',
+                            bg: 'brand.border',
+                            zIndex: 0
+                        }
+                    })}>
+                        {datePlans.map((plan) => (
+                            <div key={plan.id} className={css({ position: 'relative' })}>
+                                <div className={css({
+                                    position: 'absolute',
+                                    left: '-21px',
+                                    top: '26px',
+                                    w: '9px',
+                                    h: '9px',
+                                    borderRadius: '50%',
+                                    bg: 'brand.primary',
+                                    border: '2px solid white',
+                                    zIndex: 1,
+                                    boxShadow: '0 0 0 1px brand.primary/30'
+                                })} />
+                                <PlanCard 
+                                    plan={plan}
+                                    exchangeRates={exchangeRates}
+                                    userRole={userRole}
+                                    timeDisplayMode={timeDisplayMode}
+                                    formatLocalTime={formatLocalTime}
+                                    formatKstTime={formatKstTime}
+                                    onEdit={onEdit}
+                                    onDelete={onDelete}
+                                    onDetail={onDetail}
+                                />
+                            </div>
+                        ))}
                     </div>
                 </div>
             ))}
+        </div>
+    )
+}
+
+function PlanCard({ 
+    plan, 
+    exchangeRates, 
+    userRole, 
+    timeDisplayMode, 
+    formatLocalTime, 
+    formatKstTime, 
+    onEdit, 
+    onDelete, 
+    onDetail 
+}: {
+    plan: any
+    exchangeRates: Record<string, number>
+    userRole: 'owner' | 'editor' | 'viewer' | null
+    timeDisplayMode: 'local' | 'kst' | 'both'
+    formatLocalTime: (date: string) => string
+    formatKstTime: (date: string, tz: string) => string
+    onEdit: (plan: any) => void
+    onDelete: (id: string) => void
+    onDetail: (plan: any) => void
+}) {
+    const [isTooltipOpen, setIsTooltipOpen] = useState(false)
+    const currency = getCurrencyFromTimezone(plan.timezone_string || 'Asia/Seoul')
+    const rate = exchangeRates[currency.code]
+
+    return (
+        <div 
+            onClick={() => onDetail(plan)}
+            style={{ 
+                '--plan-image': plan.image_url ? `url("${plan.image_url}")` : 'none'
+            } as any}
+            className={css({
+            bg: 'white', p: '20px', borderRadius: '20px', border: '1px solid', borderColor: 'brand.border',
+            display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+            _hover: !isTooltipOpen ? { 
+                boxShadow: '0 12px 24px rgba(0,0,0,0.08)', 
+                borderColor: 'brand.primary/50', 
+                transform: 'translateY(-2px)',
+                _before: plan.image_url ? {
+                    transform: 'scale(1.05)',
+                    opacity: 0.95
+                } : {}
+            } : {},
+            opacity: plan.is_completed ? 0.7 : 1,
+            cursor: 'pointer',
+            // background 처리
+            _before: plan.image_url ? {
+                content: '""',
+                display: 'block',
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: 'var(--plan-image)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: 0.8,
+                filter: 'brightness(0.9) contrast(1.1)',
+                zIndex: 0,
+                transition: 'all 0.5s ease',
+                borderRadius: '24px',
+            } : {},
+            _after: plan.image_url ? {
+                content: '""',
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to right, white 15%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.4) 100%)',
+                zIndex: 1,
+                borderRadius: '24px',
+            } : {}
+        })}>
+            <div className={css({ display: 'flex', gap: '14px', position: 'relative', zIndex: 2 })}>
+                <div className={css({ flex: 1, minW: 0 })}>
+                    <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: '4px' })}>
+                        <h4 className={css({ fontSize: '17px', fontWeight: '700', color: 'brand.secondary', textDecoration: plan.is_completed ? 'line-through' : 'none' })}>{plan.title}</h4>
+                        {(userRole === 'owner' || userRole === 'editor') && (
+                            <div className={css({ display: 'flex', gap: '4px' })}>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onEdit(plan)
+                                    }} 
+                                    className={css({ p: '6px', color: 'brand.secondary', _hover: { color: 'brand.primary', bg: 'white/80' }, bg: 'white/40', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' })}
+                                >
+                                    <Edit3 size={16} />
+                                </button>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onDelete(plan.id)
+                                    }} 
+                                    className={css({ p: '6px', color: 'brand.secondary', _hover: { color: 'brand.accent', bg: 'white/80' }, bg: 'white/40', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' })}
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '10px', mb: '10px' })}>
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'brand.secondary', fontWeight: '700' })}>
+                            <Clock size={13} />
+                            {timeDisplayMode === 'local' && formatLocalTime(plan.start_datetime_local)}
+                            {timeDisplayMode === 'kst' && `한국 ${formatKstTime(plan.start_datetime_local, plan.timezone_string)}`}
+                            {timeDisplayMode === 'both' && (
+                                <>
+                                    {formatLocalTime(plan.start_datetime_local)}
+                                    <span className={css({ color: 'brand.border', fontWeight: 'normal' })}>|</span>
+                                    <span className={css({ fontSize: '11px', fontWeight: '500' })}>{formatKstTime(plan.start_datetime_local, plan.timezone_string)}(KST)</span>
+                                </>
+                            )}
+                            {plan.alarm_minutes_before > 0 && (
+                                <span className={css({ display: 'inline-flex', alignItems: 'center', ml: '4px' })}>
+                                    <Bell size={13} className={css({ color: 'orange.500' })} fill="currentColor" />
+                                </span>
+                            )}
+                        </div>
+                        <LocationTooltip 
+                            locationName={plan.location} 
+                            lat={plan.location_lat || plan.lat} 
+                            lng={plan.location_lng || plan.lng} 
+                            address={plan.address}
+                            onOpenChange={setIsTooltipOpen}
+                            className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'brand.secondary', fontWeight: '600', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}
+                        />
+                    </div>
+
+                    {plan.memo && (
+                        <div className={css({ p: '12px 14px', bg: 'bg.softCotton', borderRadius: '12px', mb: '12px', fontSize: '13px', color: 'brand.secondary', lineHeight: 1.6, borderLeft: '3px solid', borderColor: 'brand.border' })}>
+                            {plan.memo}
+                        </div>
+                    )}
+
+                    {plan.cost > 0 && (
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '12px' })}>
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', bg: 'brand.primary/10', color: 'brand.primary', px: '8px', py: '4px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' })}>
+                                <Wallet size={12} /> {formatCurrency(plan.cost, currency)}
+                            </div>
+                            {currency.code !== 'KRW' && rate && (
+                                <span className={css({ fontSize: '11px', color: 'brand.muted', fontWeight: '500' })}>
+                                    (약 {Math.round(plan.cost * rate).toLocaleString()}원)
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* URL 미리보기 */}
+                    {(() => {
+                        const urlRegex = /(https?:\/\/[^\s]+)/g
+                        const urls = plan.memo?.match(urlRegex)
+                        if (urls && urls.length > 0) {
+                            return (
+                                <div className={css({ mt: '8px' })}>
+                                    <UrlPreviewCard url={urls[0]} />
+                                </div>
+                            )
+                        }
+                        return null
+                    })()}
+                </div>
+            </div>
         </div>
     )
 }

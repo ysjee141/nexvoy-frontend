@@ -11,27 +11,45 @@ const nextConfig: NextConfig = {
     unoptimized: isMobileBuild ? true : undefined,
   },
   experimental: {
-    turbopackUseSystemTlsCerts: true,
+    turbopackUseSystemTlsCerts: process.env.NODE_ENV === 'production', // macOS 특정 환경에서 지연을 유발할 수 있어 임시 비활성화
   },
 };
 
-export default withSentryConfig(nextConfig, {
+// [SENTRY] 운영 환경에서만 Sentry를 활성화하여 개발 성능을 보호합니다.
+const isProd = process.env.NODE_ENV === 'production';
+
+export default isProd ? withSentryConfig(nextConfig, {
   // For all available options, see:
-  // https://www.npmjs.com/package/@sentry/webpack-plugin#options
+  // https://github.com/getsentry/sentry-webpack-plugin#options
 
-  org: "nexvoy",
-
-  project: "onvoy",
+  org: "travel-pack",
+  project: "javascript-nextjs",
 
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 
-  // Upload a larger set of source maps for prettier stack traces (increases build time)
+  // For all available options, see:
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+
+  // Upload a larger set of source maps for prettier stack traces (can increase build time)
   widenClientFileUpload: true,
 
-  // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  // Automatically annotate React components to show their full name in breadcrumbs and session replay
+  // annotateReactComponents: true,
+
+  // Routes browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
+  // See : https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/#use-the-sentry-cron-monitor-feature
   tunnelRoute: "/monitoring",
 
-  // Enables automatic instrumentation of Vercel Cron Monitors.
+  // Hides source maps from visitors
+  hideSourceMaps: true,
+
+  // Automatically tree-shake Sentry logger statements to reduce bundle size
+  disableLogger: true,
+
+  // Enables automatic instrumentation of Vercel Cron Monitors. (Does not authorize)
+  // See the following for more information:
+  // https://sentry.io/product/crons/
+  // https://vercel.com/docs/cron-jobs
   automaticVercelMonitors: true,
-});
+}) : nextConfig;

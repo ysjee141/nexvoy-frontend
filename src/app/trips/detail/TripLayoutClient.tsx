@@ -127,65 +127,74 @@ export default function TripLayoutClient() {
                 className={css({
                     display: 'flex',
                     justifyContent: { base: 'center', sm: 'flex-start' },
-                    mb: '-12px',
+                    mb: '0',
                     position: 'sticky',
                     top: { 
-                        base: 'calc(56px + env(safe-area-inset-top))', // Accounting for safe area on Android/iOS
+                        base: 'calc(56px + env(safe-area-inset-top))', 
                         sm: '64px' 
                     },
-                    bg: 'linear-gradient(to bottom, #FBFBF9 0%, #FBFBF9 80%, rgba(251, 251, 249, 0) 100%)', // Smoother transition
-                    backdropFilter: 'blur(8px)', // Slightly reduced blur for better mobile performance and soft look
+                    bg: 'white',
+                    borderBottom: '1px solid',
+                    borderColor: 'brand.border',
                     zIndex: 100,
-                    pt: '12px',
-                    pb: '24px', // Extra bottom padding for the gradient fade
-                    mx: '0', 
-                    px: '0',
+                    pt: '4px',
                     transition: 'all 0.3s ease',
                 })}
             >
                 <div className={css({ 
                     display: 'flex', 
-                    bg: '#EEEEEE', 
-                    p: '4px', 
-                    borderRadius: '20px', 
-                    gap: '4px',
-                    boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.02)'
+                    gap: '32px',
+                    px: { base: '16px', sm: '0' }
                 })}>
                     <button
                         onClick={() => handleTabChange('plans')}
                         className={css({
-                            display: 'flex', alignItems: 'center', gap: '8px', px: '24px', h: '42px',
-                            bg: activeTab === 'plans' ? 'white' : 'transparent',
-                            cursor: 'pointer', border: 'none',
-                            color: activeTab === 'plans' ? '#2EC4B6' : '#717171',
+                            display: 'flex', alignItems: 'center', gap: '8px', px: '4px', h: '48px',
+                            cursor: 'pointer', border: 'none', bg: 'transparent',
+                            color: activeTab === 'plans' ? 'brand.primary' : 'brand.muted',
                             fontWeight: '700',
-                            fontSize: '14px',
-                            borderRadius: '16px',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            boxShadow: activeTab === 'plans' ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
+                            fontSize: '15px',
+                            position: 'relative',
+                            transition: 'all 0.2s',
+                            _after: {
+                                content: '""',
+                                position: 'absolute',
+                                bottom: '0',
+                                left: '0',
+                                right: '0',
+                                h: '3px',
+                                bg: activeTab === 'plans' ? 'brand.primary' : 'transparent',
+                                borderRadius: '3px 3px 0 0'
+                            },
                             _active: { transform: 'scale(0.96)' },
-                            _hover: { color: activeTab === 'plans' ? '#2EC4B6' : '#333' },
                         })}
                     >
-                        <Calendar size={18} strokeWidth={activeTab === 'plans' ? 2.5 : 2} /> <span className={css({ mt: '1px' })}>일정표</span>
+                        <Calendar size={18} strokeWidth={activeTab === 'plans' ? 2.5 : 2} /> 일정표
                     </button>
                     <button
                         onClick={() => handleTabChange('checklist')}
                         className={css({
-                            display: 'flex', alignItems: 'center', gap: '8px', px: '24px', h: '42px',
-                            bg: activeTab === 'checklist' ? 'white' : 'transparent',
-                            cursor: 'pointer', border: 'none',
-                            color: activeTab === 'checklist' ? '#2EC4B6' : '#717171',
+                            display: 'flex', alignItems: 'center', gap: '8px', px: '4px', h: '48px',
+                            cursor: 'pointer', border: 'none', bg: 'transparent',
+                            color: activeTab === 'checklist' ? 'brand.primary' : 'brand.muted',
                             fontWeight: '700',
-                            fontSize: '14px',
-                            borderRadius: '16px',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            boxShadow: activeTab === 'checklist' ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
+                            fontSize: '15px',
+                            position: 'relative',
+                            transition: 'all 0.2s',
+                            _after: {
+                                content: '""',
+                                position: 'absolute',
+                                bottom: '0',
+                                left: '0',
+                                right: '0',
+                                h: '3px',
+                                bg: activeTab === 'checklist' ? 'brand.primary' : 'transparent',
+                                borderRadius: '3px 3px 0 0'
+                            },
                             _active: { transform: 'scale(0.96)' },
-                            _hover: { color: activeTab === 'checklist' ? '#2EC4B6' : '#333' },
                         })}
                     >
-                        <ListChecks size={18} strokeWidth={activeTab === 'checklist' ? 2.5 : 2} /> <span className={css({ mt: '1px' })}>준비물</span>
+                        <ListChecks size={18} strokeWidth={activeTab === 'checklist' ? 2.5 : 2} /> 준비물
                     </button>
                 </div>
             </div>

@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { X, MapPin, Clock, Calendar, Check, Search, ChevronRight, Loader2, Camera, Navigation, Map, Info, Compass } from 'lucide-react'
+import { X, MapPin, Clock, Calendar, Check, Search, ChevronRight, Loader2, Camera, Navigation, Map, Info, Compass, Bell } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { LocationService } from '@/services/ExternalApiService'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 const libraries: ("places")[] = ["places"]
 
@@ -29,6 +30,7 @@ interface PlaceOption {
     photo?: string
     rating?: number
     type?: string
+    googlePlaceId?: string
 }
 
 export default function NewPlanModal({ 
@@ -47,17 +49,57 @@ export default function NewPlanModal({
 
     // ── 폼 상태 ──
     const [selectedPlace, setSelectedPlace] = useState<PlaceOption | null>(null)
+    const [customTitle, setCustomTitle] = useState('')
     const [visitDate, setVisitDate] = useState('')
     const [visitTime, setVisitTime] = useState('12:00')
     const [duration, setDuration] = useState('1')
+    const [alarmMinutes, setAlarmMinutes] = useState(60)
     const [cost, setCost] = useState('')
     const [memo, setMemo] = useState('')
 
     // ── 구글 맵 상태 ──
     const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
+    const [detailAutocomplete, setDetailAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
+    const [inputValue, setInputValue] = useState('')
     const searchInputRef = useRef<HTMLInputElement>(null)
 
-    useModalBackButton(isOpen, onClose, 'newPlanModal')
+    const resetForm = useCallback(() => {
+        setStep(1)
+        setCustomTitle('')
+        setSelectedPlace(null)
+        setVisitDate(tripStartDate || '')
+        setVisitTime('12:00')
+        setDuration('1')
+        setAlarmMinutes(60)
+        setCost('')
+        setMemo('')
+        setInputValue('')
+    }, [tripStartDate])
+
+    const isDirty = useCallback(() => {
+        if (editData) {
+            return (
+                customTitle !== (editData.title || '') ||
+                selectedPlace?.name !== (editData.location || '') ||
+                memo !== (editData.memo || '') ||
+                cost !== String(editData.cost || '')
+            );
+        }
+        return step > 1 || customTitle !== '' || memo !== '' || cost !== '' || (selectedPlace !== null && step === 1);
+    }, [editData, step, customTitle, selectedPlace, memo, cost]);
+
+    const handleClose = useCallback(() => {
+        if (isDirty()) {
+            if (!window.confirm('작성 중인 내용이 사라집니다. 그래도 닫으시겠습니까?')) {
+                return;
+            }
+        }
+        resetForm();
+        onClose();
+    }, [isDirty, onClose, resetForm]);
+
+    useModalBackButton(isOpen, handleClose, 'newPlanModal')
+    useScrollLock(isOpen)
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
@@ -68,56 +110,117 @@ export default function NewPlanModal({
     // Edit 모드일 때 초기값 설정
     useEffect(() => {
         if (editData && isOpen) {
+            setStep(2)
+            setCustomTitle(editData.title || '')
             setSelectedPlace({
-                name: editData.location_name || editData.title,
-                address: editData.address,
-                lat: editData.lat,
-                lng: editData.lng,
-                photo: editData.image_url
+                name: editData.location || '',
+                address: editData.address || editData.location || '',
+                lat: editData.location_lat || 0,
+                lng: editData.location_lng || 0,
+                photo: editData.image_url || undefined,
+                googlePlaceId: editData.google_place_id || undefined,
             })
             
-            // start_datetime_local (ISO) -> Date/Time 분리
             if (editData.start_datetime_local) {
                 const [date, timePart] = editData.start_datetime_local.split('T')
                 setVisitDate(date)
                 setVisitTime(timePart?.substring(0, 5) || '12:00')
             } else {
-                setVisitDate(editData.visit_date || tripStartDate)
-                setVisitTime(editData.visit_time || '12:00')
+                setVisitDate(tripStartDate)
+                setVisitTime('12:00')
             }
             
-            setDuration(String(editData.duration_hours || '1'))
+            const start = editData.start_datetime_local
+            const end = editData.end_datetime_local
+            if (start && end) {
+                const s = new Date(start).getTime()
+                const e = new Date(end).getTime()
+                const diff = (e - s) / (1000 * 60 * 60)
+                setDuration(String(Math.max(0.5, Math.min(diff, 24))))
+            } else {
+                setDuration('1')
+            }
+
+            setAlarmMinutes(editData.alarm_minutes_before || 0)
             setCost(String(editData.cost || ''))
-            setMemo(editData.description || '')
-            setStep(2)
+            setMemo(editData.memo || '')
         } else if (isOpen) {
-            setStep(1)
-            setSelectedPlace(null)
-            setVisitDate(tripStartDate)
-            setVisitTime('12:00')
-            setDuration('1')
-            setCost('')
-            setMemo('')
+            resetForm()
         }
-    }, [editData, isOpen, tripStartDate])
+    }, [editData, isOpen, tripStartDate, resetForm])
 
     const onPlaceChanged = () => {
         if (autocomplete !== null) {
             const place = autocomplete.getPlace()
-            if (!place.geometry || !place.geometry.location) return
+            if (!place.geometry || !place.geometry.location) {
+                if (inputValue) handleContinueManual()
+                return
+            }
 
             const photo = place.photos?.[0]?.getUrl({ maxWidth: 400 })
+            
+            // 이름과 주소 구분
+            const name = place.name || ''
+            const address = place.formatted_address || ''
 
             setSelectedPlace({
-                name: place.name || '',
-                address: place.formatted_address || '',
+                name: name,
+                address: address,
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng(),
                 photo,
                 rating: place.rating,
-                type: place.types?.[0]
+                type: place.types?.[0],
+                googlePlaceId: place.place_id
             })
-            setStep(2) // 다음 단계로 자동 이동
+            setStep(2)
+        }
+    }
+
+    const onDetailPlaceChanged = () => {
+        if (detailAutocomplete !== null) {
+            const place = detailAutocomplete.getPlace()
+            if (!place.geometry || !place.geometry.location) return
+
+            const photo = place.photos?.[0]?.getUrl({ maxWidth: 400 })
+            
+            // 이름과 주소 구분 (Google 이 때때로 이름에 주소를 넣는 경우 대응)
+            const name = place.name || ''
+            const address = place.formatted_address || ''
+
+            setSelectedPlace({
+                name: name,
+                address: address,
+                lat: place.geometry.location.lat(),
+                lng: place.geometry.location.lng(),
+                photo,
+                rating: place.rating,
+                type: place.types?.[0],
+                googlePlaceId: place.place_id
+            })
+        }
+    }
+
+    const handleContinueManual = () => {
+        if (!inputValue.trim()) return
+        setSelectedPlace({
+            name: inputValue,
+            address: '',
+            lat: 0,
+            lng: 0,
+            photo: undefined,
+            googlePlaceId: undefined
+        })
+        setStep(2)
+    }
+
+    const handleCategoryClick = (label: string) => {
+        setInputValue(label)
+        if (searchInputRef.current) {
+            searchInputRef.current.value = label
+            searchInputRef.current.focus()
+            const event = new Event('input', { bubbles: true })
+            searchInputRef.current.dispatchEvent(event)
         }
     }
 
@@ -129,23 +232,32 @@ export default function NewPlanModal({
         setError('')
 
         try {
-            // 타임존 정보를 API로 조회 (Refactored to use LocationService)
             const tzData = await LocationService.getTimezone(selectedPlace.lat, selectedPlace.lng)
+
+            const startStr = `${visitDate}T${visitTime}:00`
+            const startDateObj = new Date(startStr)
+            const endDateObj = new Date(startDateObj.getTime() + parseFloat(duration) * 60 * 60 * 1000)
+            const endStr = endDateObj.toISOString().slice(0, 19).replace('Z', '')
+
+            // 제목과 장소 매핑 로직 반영
+            const titleToSave = customTitle.trim() || selectedPlace.name;
+            const locationToSave = customTitle.trim() ? selectedPlace.name : selectedPlace.address;
+            const addressToSave = selectedPlace.address;
 
             const planData = {
                 trip_id: tripId,
-                title: selectedPlace.name,
-                location_name: selectedPlace.name,
-                address: selectedPlace.address,
-                lat: selectedPlace.lat,
-                lng: selectedPlace.lng,
-                visit_date: visitDate,
-                visit_time: visitTime,
-                start_datetime_local: `${visitDate}T${visitTime}:00`,
-                duration_hours: parseFloat(duration),
-                cost: cost ? parseFloat(cost) : 0,
-                description: memo,
+                title: titleToSave,
+                location: locationToSave,
+                address: addressToSave,
+                location_lat: selectedPlace.lat || 0,
+                location_lng: selectedPlace.lng || 0,
+                google_place_id: selectedPlace.googlePlaceId,
                 image_url: selectedPlace.photo,
+                start_datetime_local: startStr,
+                end_datetime_local: endStr,
+                cost: cost ? parseFloat(cost) : 0,
+                memo: memo,
+                alarm_minutes_before: alarmMinutes,
                 timezone_string: tzData.timeZoneId || 'Asia/Seoul'
             }
 
@@ -171,8 +283,8 @@ export default function NewPlanModal({
 
     return (
         <div className={css({
-            position: 'fixed', inset: 0, zIndex: 100,
-            bg: 'rgba(0,0,0,0.5)',
+            position: 'fixed', inset: 0, zIndex: 3000,
+            bg: 'black/50',
             backdropFilter: 'blur(10px)',
             display: 'flex', alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center', p: { base: '0', sm: '20px' },
@@ -182,30 +294,32 @@ export default function NewPlanModal({
                 bg: 'white', w: '100%', maxW: { base: '100%', sm: '520px' },
                 h: { base: '100dvh', sm: 'auto' }, maxH: { base: '100dvh', sm: '90vh' },
                 overflowY: 'auto', borderRadius: { base: '0', sm: '32px' },
-                boxShadow: { base: 'none', sm: '0 25px 70px rgba(0,0,0,0.18)' },
+                boxShadow: { base: 'none', sm: 'floating' },
                 display: 'flex', flexDirection: 'column',
                 pt: { base: 'env(safe-area-inset-top)', sm: '0' },
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
             })}>
                 {/* 헤더 */}
                 <div className={css({
-                    p: '22px 24px', borderBottom: '1px solid #F5F5F5', display: 'flex',
-                    justifyContent: step === 2 ? 'space-between' : 'center', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10
+                    p: '22px 24px', borderBottom: '1px solid', borderBottomColor: 'brand.border', display: 'flex',
+                    justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10
                 })}>
-                    {step === 2 && (
+                    {step === 2 ? (
                         <button
                             onClick={() => setStep(1)}
-                            className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '15px', fontWeight: '700', color: '#2EC4B6', bg: 'transparent', p: 0, border: 'none', cursor: 'pointer' })}
+                            className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '15px', fontWeight: '700', color: 'brand.primary', bg: 'transparent', p: 0, border: 'none', cursor: 'pointer' })}
                         >
                             이전
                         </button>
-                    )}
-                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: '#2C3A47', letterSpacing: '-0.02em', position: 'absolute', left: '50%', transform: 'translateX(-50%)' })}>
+                    ) : <div style={{ width: '40px' }} />}
+                    
+                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em', position: 'absolute', left: '50%', transform: 'translateX(-50%)' })}>
                         {step === 1 ? '일정 장소 찾기' : '상세 일정 기록'}
                     </h2>
+                    
                     <button
-                        onClick={onClose}
-                        className={css({ ml: 'auto', p: '8px', borderRadius: '50%', bg: '#F8F9FA', color: '#9CA3AF', transition: 'all 0.2s', _hover: { bg: '#F1F3F5', color: '#2C3A47', transform: 'rotate(90deg)' } })}
+                        onClick={handleClose}
+                        className={css({ p: '8px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', transition: 'all 0.2s', _hover: { bg: 'brand.border', color: 'brand.secondary', transform: 'rotate(90deg)' } })}
                     >
                         <X size={20} strokeWidth={2.5} />
                     </button>
@@ -213,50 +327,80 @@ export default function NewPlanModal({
 
                 <div className={css({ p: { base: '20px', sm: '32px' }, flex: 1 })}>
                     {step === 1 ? (
-                        /* 단계 1: 구글 상소 검색 */
+                        /* 단계 1: 구글 장소 검색 */
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '28px', animation: 'fadeIn 0.3s' })}>
                             <div className={css({ textAlign: 'center', py: '10px' })}>
-                                <div className={css({ w: '64px', h: '64px', bg: 'rgba(46, 196, 182, 0.1)', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 16px' })}>
-                                    <MapPin size={30} color="#2EC4B6" strokeWidth={2.2} />
+                                <div className={css({ w: '64px', h: '64px', bg: 'brand.primary/10', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 16px' })}>
+                                    <MapPin size={30} className={css({ color: 'brand.primary' })} strokeWidth={2.2} />
                                 </div>
-                                <h3 className={css({ fontSize: '22px', fontWeight: '800', color: '#172554', mb: '8px', letterSpacing: '-0.03em' })}>어디로 떠나볼까요?</h3>
-                                <p className={css({ color: '#6B7280', fontSize: '15px', fontWeight: '500' })}>구글 맵에서 정확한 위치 정보를 찾아드려요.</p>
+                                <h3 className={css({ fontSize: '22px', fontWeight: '800', color: 'brand.secondary', mb: '8px', letterSpacing: '-0.03em' })}>어디로 떠나볼까요?</h3>
+                                <p className={css({ color: 'brand.muted', fontSize: '15px', fontWeight: '500' })}>구글 맵에서 정확한 위치 정보를 찾아드려요.</p>
                             </div>
 
                             <div className={css({ position: 'relative' })}>
-                                <div className={css({ position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF', zIndex: 1 })}>
-                                    <Search size={20} />
-                                </div>
                                 {isLoaded && (
                                     <Autocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
-                                        <input
-                                            ref={searchInputRef}
-                                            type="text"
-                                            placeholder="레스토랑, 명소, 공항 등을 검색하세요"
-                                            className={css({
-                                                w: '100%', p: '20px 20px 20px 52px', bg: '#F8F9FA', border: '2px solid #F1F3F5',
-                                                borderRadius: '20px', fontSize: '16px', fontWeight: '600', outline: 'none',
-                                                transition: 'all 0.3s', _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 5px rgba(46, 196, 182, 0.1)' }
-                                            })}
-                                            autoFocus
-                                        />
+                                            <div className={css({ position: 'relative', width: '100%' })}>
+                                                <div className={css({ 
+                                                    position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', 
+                                                    color: 'brand.muted', zIndex: 10, pointerEvents: 'none',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                                })}>
+                                                    <Search size={20} />
+                                                </div>
+                                                <input
+                                                    ref={searchInputRef}
+                                                    type="text"
+                                                    placeholder="레스토랑, 명소, 공항 등을 검색하세요"
+                                                    value={inputValue}
+                                                    onChange={(e) => setInputValue(e.target.value)}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter' && inputValue && !autocomplete?.getPlace()?.geometry) {
+                                                            handleContinueManual()
+                                                        }
+                                                    }}
+                                                    className={css({
+                                                        w: '100%', p: '18px 20px 18px 52px', bg: 'bg.softCotton', border: '2px solid', borderColor: 'brand.border',
+                                                        borderRadius: '20px', fontSize: '16px', fontWeight: '600', outline: 'none',
+                                                        transition: 'all 0.3s', _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 5px rgba(var(--colors-brand-primary-rgb), 0.1)' }
+                                                    })}
+                                                    autoFocus
+                                                />
+                                            </div>
                                     </Autocomplete>
+                                )}
+
+                                {inputValue.trim().length > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleContinueManual}
+                                        className={css({
+                                            mt: '12px', w: '100%', py: '14px', bg: 'brand.primary/10', color: 'brand.primary',
+                                            borderRadius: '16px', fontWeight: '700', fontSize: '14px', border: '1.5px dashed', borderColor: 'brand.primary',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer',
+                                            transition: 'all 0.2s', _hover: { bg: 'brand.primary/20', transform: 'translateY(-2px)' }
+                                        })}
+                                    >
+                                        <ChevronRight size={18} /> &quot;{inputValue}&quot;(으)로 계속하기 (수동 입력)
+                                    </button>
                                 )}
                             </div>
 
                             <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', mt: '10px' })}>
                                 {[
-                                    { icon: <Compass size={18} />, label: '관광 명소', color: '#FF9F87' },
-                                    { icon: <Navigation size={18} />, label: '대중 교통', color: '#2EC4B6' },
-                                    { icon: <Map size={18} />, label: '맛집/카페', color: '#FFD166' },
-                                    { icon: <Camera size={18} />, label: '포토 스팟', color: '#3B82F6' }
+                                    { icon: <Compass size={18} />, label: '관광 명소', color: 'token(colors.brand.secondary)' },
+                                    { icon: <Navigation size={18} />, label: '대중 교통', color: 'token(colors.brand.primary)' },
+                                    { icon: <Map size={18} />, label: '맛집/카페', color: 'token(colors.brand.primary)' },
+                                    { icon: <Camera size={18} />, label: '포토 스팟', color: 'token(colors.brand.secondary)' }
                                 ].map((item, idx) => (
-                                    <div key={idx} className={css({ 
-                                        p: '16px', bg: '#F8F9FA', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '10px',
-                                        fontSize: '14px', fontWeight: '700', color: '#2C3A47', border: '1.5px solid #F1F3F5', cursor: 'pointer',
-                                        transition: 'all 0.2s', _hover: { borderColor: item.color, bg: 'white', transform: 'translateY(-2px)' }
-                                    })}>
-                                        <div style={{ color: item.color }}>{item.icon}</div>
+                                    <div key={idx} 
+                                        onClick={() => handleCategoryClick(item.label)}
+                                        className={css({ 
+                                            p: '16px', bg: 'bg.softCotton', borderRadius: '18px', display: 'flex', alignItems: 'center', gap: '10px',
+                                            fontSize: '14px', fontWeight: '700', color: 'brand.secondary', border: '1.5px solid', borderColor: 'brand.border', cursor: 'pointer',
+                                            transition: 'all 0.2s', _hover: { borderColor: item.color, bg: 'white', transform: 'translateY(-2px)' }
+                                        })}>
+                                        <div className={css({ color: item.color })}>{item.icon}</div>
                                         {item.label}
                                     </div>
                                 ))}
@@ -264,27 +408,81 @@ export default function NewPlanModal({
                         </div>
                     ) : (
                         /* 단계 2: 상세 정보 입력 */
-                        <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '22px', animation: 'slideRight 0.4s cubic-bezier(0.2, 0, 0, 1)' })}>
-                            {/* 선택된 장소 카드 */}
+                        <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.4s ease-out' })}>
+
+                            {/* 선택된 장소 편집 필드 */}
                             {selectedPlace && (
-                                <div className={css({ p: '18px', bg: 'white', borderRadius: '24px', border: '2px solid #F1F3F5', display: 'flex', gap: '14px', alignItems: 'center', boxShadow: '0 4px 15px rgba(0,0,0,0.02)' })}>
-                                    <div className={css({ w: '70px', h: '70px', bg: '#F8F9FA', borderRadius: '16px', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
-                                        {selectedPlace.photo ? (
-                                            // eslint-disable-next-line @next/next/no-img-element
-                                            <img src={selectedPlace.photo} alt={selectedPlace.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                        ) : <MapPin size={28} color="#D1D5DB" />}
+                                <div className={css({ 
+                                    display: 'flex', flexDirection: 'column', gap: '16px', p: '24px', bg: 'white', borderRadius: '24px', 
+                                    border: '2px solid', borderColor: 'brand.border', boxShadow: '0 4px 15px rgba(46, 196, 182, 0.05)' 
+                                })}>
+                                    <div className={css({ display: 'flex', gap: '14px', alignItems: 'center', mb: '4px' })}>
+                                        <div className={css({ 
+                                            w: '54px', h: '54px', bg: 'bg.softCotton', borderRadius: '14px', overflow: 'hidden', flexShrink: 0, 
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                                        })}>
+                                            {selectedPlace.photo ? (
+                                                // eslint-disable-next-line @next/next/no-img-element
+                                                <img src={selectedPlace.photo} alt={selectedPlace.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            ) : <MapPin size={24} className={css({ color: 'brand.border' })} />}
+                                        </div>
+                                        <div className={css({ flex: 1, minW: 0 })}>
+                                            <label className={css({ display: 'block', fontSize: '12px', fontWeight: '700', color: 'brand.muted', mb: '4px' })}>장소 이름</label>
+                                            <Autocomplete 
+                                                onLoad={(a) => setDetailAutocomplete(a)} 
+                                                onPlaceChanged={onDetailPlaceChanged}
+                                            >
+                                                <input
+                                                    type="text"
+                                                    value={selectedPlace.name}
+                                                    onChange={e => setSelectedPlace({ ...selectedPlace, name: e.target.value })}
+                                                    placeholder="장소 이름을 입력하세요"
+                                                    className={css({ 
+                                                        w: '100%', fontSize: '16px', fontWeight: '800', color: 'brand.secondary', 
+                                                        border: 'none', bg: 'transparent', outline: 'none', p: 0, 
+                                                        borderBottom: '1.5px solid transparent',
+                                                        transition: 'all 0.2s',
+                                                        _focus: { borderBottomColor: 'brand.primary' } 
+                                                    })}
+                                                />
+                                            </Autocomplete>
+                                        </div>
                                     </div>
-                                    <div className={css({ minW: 0 })}>
-                                        <h4 className={css({ fontSize: '17px', fontWeight: '800', color: '#172554', mb: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{selectedPlace.name}</h4>
-                                        <p className={css({ fontSize: '13px', color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '500' })}>{selectedPlace.address}</p>
+                                    <div className={css({ borderTop: '1px solid', borderColor: 'brand.border', pt: '12px' })}>
+                                        <label className={css({ display: 'block', fontSize: '12px', fontWeight: '700', color: 'brand.muted', mb: '4px' })}>상세 주소</label>
+                                        <input
+                                            type="text"
+                                            value={selectedPlace.address}
+                                            onChange={e => setSelectedPlace({ ...selectedPlace, address: e.target.value })}
+                                            placeholder="주소를 입력하세요"
+                                            className={css({ w: '100%', fontSize: '13px', fontWeight: '500', color: 'brand.secondary', border: 'none', bg: 'transparent', outline: 'none', p: 0, _focus: { borderBottom: '1.5px solid', borderColor: 'brand.primary' } })}
+                                        />
                                     </div>
                                 </div>
                             )}
 
-                            <div className={css({ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' })}>
+                            {/* 일정 제목 입력 (선택 사항) - 장소 카드 하단에 배치 */}
+                            <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
+                                <label className={css({ fontSize: '13px', fontWeight: '700', color: 'brand.secondary', display: 'flex', alignItems: 'center', gap: '6px' })}>
+                                    일정 제목 <span className={css({ fontSize: '11px', fontWeight: '500', color: 'brand.muted' })}>(선택 입력)</span>
+                                </label>
+                                <input 
+                                    type="text"
+                                    placeholder="예: 근사한 저녁 식사, 박물관 투어"
+                                    value={customTitle}
+                                    onChange={(e) => setCustomTitle(e.target.value)}
+                                    className={css({ 
+                                        w: '100%', p: '16px 20px', bg: 'bg.softCotton', borderRadius: '18px', border: '2px solid', borderColor: 'brand.border', 
+                                        fontSize: '15px', fontWeight: '600', transition: 'all 0.2s', 
+                                        _focus: { bg: 'white', borderColor: 'brand.primary', outline: 'none', boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.1)' } 
+                                    })}
+                                />
+                            </div>
+
+                             <div className={css({ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' })}>
                                 <div>
-                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#2C3A47' })}>
-                                        <Calendar size={14} color="#2EC4B6" /> 방문 날짜
+                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.secondary' })}>
+                                        <Calendar size={14} className={css({ color: 'brand.primary' })} /> 방문 날짜
                                     </label>
                                     <input
                                         type="date"
@@ -293,75 +491,88 @@ export default function NewPlanModal({
                                         max={tripEndDate}
                                         value={visitDate}
                                         onChange={e => setVisitDate(e.target.value)}
-                                        className={css({ w: '100%', p: '14px', bg: '#F8F9FA', border: '1.5px solid #F1F3F5', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '600' })}
+                                        className={css({ w: '100%', p: '14px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '600' })}
                                     />
                                 </div>
                                 <div>
-                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#2C3A47' })}>
-                                        <Clock size={14} color="#2EC4B6" /> 방문 시간
+                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.secondary' })}>
+                                        <Clock size={14} className={css({ color: 'brand.primary' })} /> 방문 시간
                                     </label>
                                     <input
                                         type="time"
                                         required
                                         value={visitTime}
                                         onChange={e => setVisitTime(e.target.value)}
-                                        className={css({ w: '100%', p: '14px', bg: '#F8F9FA', border: '1.5px solid #F1F3F5', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '600' })}
+                                        className={css({ w: '100%', p: '14px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '600' })}
                                     />
                                 </div>
                             </div>
 
-                            <div className={css({ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '14px' })}>
+                            <div className={css({ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' })}>
                                 <div>
-                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#2C3A47' })}>
-                                        💰 예상 비용
-                                    </label>
-                                    <div className={css({ position: 'relative' })}>
-                                        <input
-                                            type="number"
-                                            placeholder="금액을 입력하세요 (예: 500)"
-                                            value={cost}
-                                            onChange={e => setCost(e.target.value)}
-                                            className={css({ w: '100%', p: '14px 14px 14px 14px', bg: '#F8F9FA', border: '1.5px solid #F1F3F5', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '700' })}
-                                        />
-                                    </div>
-                                    <p className={css({ fontSize: '11px', color: '#9CA3AF', mt: '4px', pl: '4px' })}>자세한 비용은 여정에서 관리됩니다.</p>
-                                </div>
-                                <div>
-                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#2C3A47' })}>
+                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.secondary' })}>
                                         ⏳ 체류 시간
                                     </label>
                                     <select
                                         value={duration}
                                         onChange={e => setDuration(e.target.value)}
-                                        className={css({ w: '100%', p: '14px', bg: '#F8F9FA', border: '1.5px solid #F1F3F5', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '600' })}
+                                        className={css({ w: '100%', p: '14px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '600' })}
                                     >
                                         <option value="0.5">30분 내외</option>
                                         <option value="1">1시간 내외</option>
-                                        <option value="1.5">1시간 30분</option>
-                                        <option value="2">2시간</option>
+                                        <option value="2">2시간 내외</option>
                                         <option value="3">3시간 이상</option>
-                                        <option value="12">반나절 소요</option>
-                                        <option value="24">숙박 및 전일</option>
+                                        <option value="5">5시간 이상</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.secondary' })}>
+                                        <Bell size={14} className={css({ color: 'brand.primary' })} /> 알림 설정
+                                    </label>
+                                    <select
+                                        value={alarmMinutes}
+                                        onChange={e => setAlarmMinutes(parseInt(e.target.value))}
+                                        className={css({ w: '100%', p: '14px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '600' })}
+                                    >
+                                        <option value="0">알림 없음</option>
+                                        <option value="10">10분 전</option>
+                                        <option value="30">30분 전</option>
+                                        <option value="60">1시간 전</option>
+                                        <option value="120">2시간 전</option>
+                                        <option value="1440">1일 전</option>
                                     </select>
                                 </div>
                             </div>
 
                             <div>
-                                <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#2C3A47' })}>📝 메모/남길 말</label>
+                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.secondary' })}>
+                                    💰 예상 비용
+                                </label>
+                                <input
+                                    type="number"
+                                    placeholder="금액을 입력하세요 (예: 500)"
+                                    value={cost}
+                                    onChange={e => setCost(e.target.value)}
+                                    className={css({ w: '100%', p: '14px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '16px', outline: 'none', fontSize: '14px', fontWeight: '700' })}
+                                />
+                            </div>
+
+                            <div>
+                                <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.secondary' })}>📝 메모/남길 말</label>
                                 <textarea
                                     placeholder="장소의 특징이나 미리 알아둘 것이 있다면 적어주세요!"
                                     value={memo}
                                     onChange={e => setMemo(e.target.value)}
                                     className={css({
-                                        w: '100%', h: '90px', p: '16px', bg: '#F8F9FA', border: '1.5px solid #F1F3F5', borderRadius: '20px',
+                                        w: '100%', h: '90px', p: '16px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '20px',
                                         fontSize: '14px', fontWeight: '500', outline: 'none', transition: 'all 0.2s', resize: 'none',
-                                        _focus: { borderColor: '#2EC4B6', bg: 'white' }
+                                        _focus: { borderColor: 'brand.primary', bg: 'white' }
                                     })}
                                 />
                             </div>
 
                             {error && (
-                                <div className={css({ p: '14px', bg: '#FFF5F5', color: '#FF5A5F', borderRadius: '14px', fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                                <div className={css({ p: '14px', bg: 'bg.softCotton', color: 'brand.error', borderRadius: '14px', fontSize: '13px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' })}>
                                     <Info size={16} /> {error}
                                 </div>
                             )}
@@ -370,14 +581,15 @@ export default function NewPlanModal({
                                 type="submit"
                                 disabled={loading}
                                 className={css({
-                                    w: '100%', py: '18px', bg: '#2EC4B6', color: 'white', borderRadius: '20px', fontWeight: '800',
+                                    w: '100%', py: '18px', bg: 'brand.primary', color: 'white', borderRadius: '20px', fontWeight: '800',
                                     fontSize: '17px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
                                     justifyContent: 'center', gap: '8px', boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)',
                                     transition: 'all 0.3s', _disabled: { opacity: 0.6 },
-                                    _hover: { bg: '#249E93', transform: 'translateY(-2px)' }, _active: { transform: 'scale(0.97)' }
+                                    _hover: { bg: 'brand.primary', transform: 'translateY(-2px)', boxShadow: '0 15px 30px rgba(46, 196, 182, 0.35)' }, 
+                                    _active: { transform: 'scale(0.97)' }
                                 })}
                             >
-                                {loading ? <><Loader2 size={20} className={css({ animation: 'spin 1.5s linear infinite' })} /> 저장 중...</> : <><Check size={20} strokeWidth={3} /> 일정 추가하기</>}
+                                {loading ? <><Loader2 size={20} className={css({ animation: 'spin 1.5s linear infinite' })} /> 저장 중...</> : <><Check size={20} strokeWidth={3} /> {editData ? '수정 완료' : '일정 추가하기'}</>}
                             </button>
                         </form>
                     )}
@@ -387,7 +599,6 @@ export default function NewPlanModal({
             <style jsx global>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                @keyframes slideRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
                 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
                 .pac-container { 
                     border-radius: 16px; 
@@ -396,7 +607,7 @@ export default function NewPlanModal({
                     margin-top: 8px;
                     padding: 8px 0;
                     font-family: inherit;
-                    z-index: 2100 !important;
+                    z-index: 4000 !important;
                 }
                 .pac-item { 
                     padding: 10px 16px; 
@@ -404,9 +615,9 @@ export default function NewPlanModal({
                     display: flex;
                     align-items: center;
                 }
-                .pac-item:hover { background-color: #F8F9FA; }
-                .pac-item-query { font-size: 14px; font-weight: 700; color: #2C3A47; }
-                .pac-matched { color: #2EC4B6; }
+                .pac-item:hover { background-color: token(colors.bg.softCotton); }
+                .pac-item-query { font-size: 14px; font-weight: 700; color: token(colors.brand.secondary); }
+                .pac-matched { color: token(colors.brand.primary); }
                 .pac-icon { display: none; }
             `}</style>
         </div>

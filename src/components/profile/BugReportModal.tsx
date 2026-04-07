@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { css } from 'styled-system/css'
 import { X, Send, ImageIcon, Video, Loader2, AlertCircle, Plus, MessageSquare } from 'lucide-react'
 import { feedbackService } from '@/services/FeedbackService'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 interface BugReportModalProps {
     isOpen: boolean;
@@ -18,6 +19,8 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
     const fileRef = useRef<HTMLInputElement>(null)
+
+    useScrollLock(isOpen)
 
     const handleClose = () => {
         const isDirty = content.trim() !== '' || files.length > 0
@@ -114,7 +117,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                     alignItems: 'center', justifyContent: 'space-between', bg: 'white'
                 })}>
                     <h2 className={css({ fontSize: '18px', fontWeight: '700', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.02em' })}>
-                        <MessageSquare size={20} color="#2EC4B6" strokeWidth={2.5} /> 테스터 피드백 보내기
+                        <MessageSquare size={20} color="#2563EB" strokeWidth={2.5} /> 테스터 피드백 보내기
                     </h2>
                     <button onClick={handleClose} className={css({ 
                         p: '6px', bg: '#F8F9FA', border: 'none', cursor: 'pointer', color: '#9CA3AF', 
@@ -127,12 +130,12 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
 
                 {/* 테스터 감사 인사 및 가이드 */}
                 <div className={css({
-                    p: '18px 24px', bg: 'rgba(46, 196, 182, 0.05)', borderBottom: '1.5px solid rgba(46, 196, 182, 0.1)',
+                    p: '18px 24px', bg: 'rgba(37, 99, 235, 0.05)', borderBottom: '1.5px solid rgba(37, 99, 235, 0.1)',
                     display: 'flex', gap: '14px', alignItems: 'flex-start'
                 })}>
                     <div className={css({ fontSize: '20px', mt: '2px' })}>✨</div>
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '4px' })}>
-                        <h3 className={css({ fontSize: '14px', fontWeight: '700', color: '#2EC4B6' })}>테스트에 참여해주셔서 고맙습니다!</h3>
+                        <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.primary' })}>테스트에 참여해주셔서 고맙습니다!</h3>
                         <p className={css({ fontSize: '13px', color: '#6B7280', fontWeight: '600', lineHeight: '1.55', wordBreak: 'keep-all' })}>
                             테스터님의 소중한 의견과 발견된 결함들이 모여 더 완벽한 온여정이 만들어집니다. 어떤 의견이라도 편하게 들려주세요!
                         </p>
@@ -142,7 +145,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                 {success ? (
                     <div className={css({ p: '70px 40px', textAlign: 'center', animation: 'fadeIn 0.5s ease-out' })}>
                         <div className={css({ 
-                            w: '80px', h: '80px', bg: 'rgba(46, 196, 182, 0.1)', borderRadius: '50%', 
+                            w: '80px', h: '80px', bg: 'rgba(37, 99, 235, 0.08)', borderRadius: '50%', 
                             display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 24px',
                             fontSize: '40px'
                         })}>✨</div>
@@ -161,7 +164,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                                     w: '100%', h: '130px', p: '18px', border: '1.5px solid #F1F3F5', borderRadius: '20px',
                                     outline: 'none', fontSize: '15px', resize: 'none', fontWeight: '500', bg: '#F8F9FA',
                                     transition: 'all 0.2s',
-                                    _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.1)' }
+                                    _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.1)' }
                                 })}
                             />
                         </div>
@@ -184,7 +187,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                                         position: 'relative', w: '68px', h: '68px', borderRadius: '16px', bg: '#F8F9FA',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #F1F3F5'
                                     })}>
-                                        {file.type.startsWith('image/') ? <ImageIcon size={22} color="#2EC4B6" /> : <Video size={22} color="#2EC4B6" />}
+                                        {file.type.startsWith('image/') ? <ImageIcon size={22} color="#2563EB" /> : <Video size={22} color="#2563EB" />}
                                         <button
                                             type="button"
                                             onClick={() => removeFile(i)}
@@ -207,7 +210,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                                         w: '68px', h: '68px', borderRadius: '16px', border: '1.5px dashed #D1D5DB',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', bg: 'transparent',
                                         cursor: 'pointer', transition: 'all 0.2s',
-                                        _hover: { bg: '#F1F3F5', borderColor: '#2EC4B6', color: '#2EC4B6' }
+                                        _hover: { bg: '#F1F3F5', borderColor: 'brand.primary', color: 'brand.primary' }
                                     })}
                                 >
                                     <Plus size={28} color="currentColor" strokeWidth={1.5} />
@@ -242,13 +245,13 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                             type="submit"
                             disabled={isSubmitting || !content.trim() || isOverSize}
                             className={css({
-                                w: '100%', py: '18px', bg: '#2EC4B6', color: 'white', borderRadius: '20px',
+                                w: '100%', py: '18px', bg: 'brand.primary', color: 'white', borderRadius: '20px',
                                 fontWeight: '700', fontSize: '17px', border: 'none', cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                                boxShadow: '0 8px 25px rgba(46, 196, 182, 0.25)',
+                                boxShadow: '0 8px 25px rgba(37, 99, 235, 0.2)',
                                 transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                 _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none', transform: 'none' }, 
-                                _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 12px 30px rgba(46, 196, 182, 0.35)' },
+                                _hover: { bg: '#1D4ED8', transform: 'translateY(-2px)', boxShadow: '0 12px 30px rgba(37, 99, 235, 0.25)' },
                                 _active: { transform: 'scale(0.97)' }
                             })}
                         >

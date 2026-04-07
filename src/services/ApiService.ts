@@ -21,11 +21,18 @@ class ApiService {
 
   /**
    * 보정된 절대 경로 URL을 반환합니다.
+   * 웹 환경에서는 상대 경로를 그대로 사용하고, Native 환경(Capacitor)에서만 절대 경로를 사용합니다.
    */
   private getAbsoluteUrl(url: string): string {
     if (url.startsWith('http')) return url;
-    // 상대 경로(/api/...)를 절대 경로(https://.../api/...)로 변환
     const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+    
+    // 웹 환경(localhost 등)에서는 상대 경로를 사용하여 CORS 문제 방지
+    if (!Capacitor.isNativePlatform()) {
+      return cleanUrl;
+    }
+    
+    // Capacitor(iOS/Android) 환경에서는 절대 경로가 필요함
     return `${this.baseUrl}${cleanUrl}`;
   }
 
@@ -65,7 +72,8 @@ class ApiService {
       }
     } else {
       // Web 환경: standard fetch
-      const urlObj = new URL(fullUrl);
+      // 상대 경로일 경우 base (origin)가 필요함
+      const urlObj = new URL(fullUrl, typeof window !== 'undefined' ? window.location.origin : this.baseUrl);
       if (options.params) {
         Object.entries(options.params).forEach(([key, value]) => {
           urlObj.searchParams.append(key, value);

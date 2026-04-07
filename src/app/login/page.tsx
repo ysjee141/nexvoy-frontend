@@ -63,35 +63,35 @@ export default function LoginPage() {
             display: 'flex',
             alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center',
-            bg: { base: 'white', sm: '#F7F7F7' },
+            bg: { base: 'white', sm: 'bg.softCotton' },
             p: { base: '0', sm: '20px' },
         })}>
             <div className={css({
                 bg: 'white',
                 p: { base: '80px 24px 40px', sm: '48px' },
                 borderRadius: { base: '0', sm: '24px' },
-                boxShadow: { base: 'none', sm: '0 8px 28px rgba(0,0,0,0.12)' },
+                boxShadow: { base: 'none', sm: 'floating' },
                 maxW: { base: '100%', sm: '480px' },
                 w: '100%',
                 minH: { base: '100vh', sm: 'auto' },
-                border: { base: 'none', sm: '1px solid #DDDDDD' },
+                border: { base: 'none', sm: '1px solid' }, borderColor: 'brand.border',
             })}>
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
                         <Image src="/logo.png" alt="온여정 로고" width={32} height={32} priority />
-                        <span className={css({ fontSize: '20px', fontWeight: '700', color: '#2C3A47', letterSpacing: '-0.02em' })}>온여정</span>
+                        <span className={css({ fontSize: '20px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em' })}>온여정</span>
                     </div>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
                         fontWeight: '700',
-                        color: '#222',
+                        color: 'brand.secondary',
                         mb: '12px',
                         letterSpacing: '-0.03em',
                         lineHeight: 1.2,
                     })}>
                         반가워요! 다시 오셨네요.
                     </h1>
-                    <p className={css({ fontSize: '16px', color: '#717171', wordBreak: 'keep-all' })}>
+                    <p className={css({ fontSize: '16px', color: 'brand.muted', wordBreak: 'keep-all' })}>
                         소중한 여행의 모든 순간, 온여정이 동행할게요.
                     </p>
                 </div>
@@ -100,17 +100,19 @@ export default function LoginPage() {
                     <div className={css({ 
                         display: 'flex', 
                         flexDirection: 'column', 
-                        border: '1px solid #B0B0B0',
+                        border: '1px solid',
+                        borderColor: 'brand.border',
                         borderRadius: '16px',
                         overflow: 'hidden',
                         mb: '16px'
                     })}>
                         <div className={css({ 
-                            borderBottom: '1px solid #B0B0B0',
+                            borderBottom: '1px solid',
+                            borderColor: 'brand.border',
                             p: '12px 16px',
                             transition: 'all 0.2s',
                             position: 'relative',
-                            _focusWithin: { bg: '#F0F9F8' }
+                            _focusWithin: { bg: 'bg.softCotton' }
                         })}>
                             {/* Focus Indicator Bar */}
                             <div className={css({ 
@@ -119,7 +121,7 @@ export default function LoginPage() {
                                 '.group:focus-within &': { opacity: 1 } 
                             })} />
                             <div className="group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
                                     이메일
                                 </label>
                                 <input
@@ -131,7 +133,7 @@ export default function LoginPage() {
                                         w: '100%',
                                         outline: 'none',
                                         fontSize: '15px',
-                                        color: '#222',
+                                        color: 'brand.secondary',
                                         bg: 'transparent',
                                     })}
                                     placeholder="you@example.com"
@@ -143,7 +145,7 @@ export default function LoginPage() {
                             p: '12px 16px',
                             transition: 'all 0.2s',
                             position: 'relative',
-                            _focusWithin: { bg: '#F0F9F8' }
+                            _focusWithin: { bg: 'bg.softCotton' }
                         })}>
                             {/* Focus Indicator Bar */}
                             <div className={css({ 
@@ -152,7 +154,7 @@ export default function LoginPage() {
                                 '.group:focus-within &': { opacity: 1 } 
                             })} />
                             <div className="group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: '#222', mb: '2px', textTransform: 'uppercase' })}>
+                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
                                     비밀번호
                                 </label>
                                 <input
@@ -164,7 +166,7 @@ export default function LoginPage() {
                                         w: '100%',
                                         outline: 'none',
                                         fontSize: '15px',
-                                        color: '#222',
+                                        color: 'brand.secondary',
                                         bg: 'transparent',
                                     })}
                                     placeholder="••••••••"
@@ -183,9 +185,9 @@ export default function LoginPage() {
                                 cursor: 'pointer',
                                 userSelect: 'none',
                                 fontSize: '14px',
-                                color: '#666',
+                                color: 'brand.muted',
                                 transition: 'all 0.2s',
-                                _hover: { color: '#172554' }
+                                _hover: { color: 'brand.secondary' }
                             })}
                         >
                             <div className={css({
@@ -193,8 +195,8 @@ export default function LoginPage() {
                                 h: '18px',
                                 borderRadius: '4px',
                                 border: '2px solid',
-                                borderColor: rememberEmail ? '#2EC4B6' : '#ddd',
-                                bg: rememberEmail ? '#2EC4B6' : 'transparent',
+                                borderColor: rememberEmail ? 'brand.primary' : 'brand.border',
+                                bg: rememberEmail ? 'brand.primary' : 'transparent',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
@@ -217,12 +219,13 @@ export default function LoginPage() {
                     {message && (
                         <div className={css({
                             p: '14px',
-                            bg: message.type === 'error' ? '#fdecea' : '#EAF9F7',
-                            color: message.type === 'error' ? '#d93025' : '#249E93',
+                            bg: message.type === 'error' ? 'brand.errorLight' : 'bg.softCotton',
+                            color: message.type === 'error' ? 'brand.error' : 'brand.primaryDark',
                             fontSize: '14px',
                             fontWeight: '500',
                             borderRadius: '16px',
-                            border: `1px solid ${message.type === 'error' ? '#fbd0cc' : '#EAF9F7'}`
+                            border: `1px solid`,
+                            borderColor: message.type === 'error' ? 'brand.error' : 'bg.softCotton',
                         })}>
                             {message.text}
                         </div>
@@ -260,19 +263,20 @@ export default function LoginPage() {
                 <div className={css({
                     mt: '28px',
                     pt: '20px',
-                    borderTop: '1px solid #eee',
+                    borderTop: '1px solid',
+                    borderColor: 'brand.border',
                     textAlign: 'center',
                     fontSize: '15px',
-                    color: '#666'
+                    color: 'brand.muted'
                 })}>
                     계정이 없으신가요?{' '}
                     <Link
                         href="/signup"
                         className={css({
-                            color: '#222',
+                            color: 'brand.secondary',
                             fontWeight: '700',
                             textDecoration: 'underline',
-                            _hover: { color: '#000' },
+                            _hover: { color: 'black' },
                         })}
                     >
                         회원가입하기

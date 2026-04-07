@@ -1,13 +1,14 @@
 'use client'
 
-import { Suspense } from 'react'
-import ClientPage from './TemplateClient'
-import { TemplateFormSkeleton } from '@/components/template/TemplateFormSkeleton'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
-export default function Page() {
-    return (
-        <Suspense fallback={<TemplateFormSkeleton />}>
-            <ClientPage initialData={null} />
-        </Suspense>
-    )
+export default function TemplateDetailRedirect() {
+    const router = useRouter()
+    
+    useEffect(() => {
+        router.replace('/templates')
+    }, [router])
+
+    return null
 }

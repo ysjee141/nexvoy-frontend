@@ -24,19 +24,20 @@ export default function OfflineBanner() {
 
     return (
         <div className={css({
-            w: '100%',
-            bg: '#EA4335',
+            bg: 'brand.error',
             color: 'white',
+            px: '20px',
+            py: '10px',
+            textAlign: 'center',
+            fontSize: '14px',
+            fontWeight: '700',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            p: '8px 16px',
-            fontSize: '14px',
-            fontWeight: '600',
-            position: 'sticky',
-            top: 0,
-            zIndex: 1000
+            animation: 'fadeIn 0.3s ease-out',
+            zIndex: 1100,
+            position: 'relative'
         })}>
             <WifiOff size={16} />
             오프라인 상태입니다. 기능이 일부 제한됩니다.

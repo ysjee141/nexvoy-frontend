@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { css } from 'styled-system/css'
-import { X, Copy } from 'lucide-react'
+import { X, Copy, Loader2 } from 'lucide-react'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/utils/supabase/client'
 
@@ -19,6 +20,8 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
     const [templates, setTemplates] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null)
+
+    useScrollLock(isOpen)
 
     useEffect(() => {
         if (!isOpen) return
@@ -134,56 +137,62 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
             })}>
                 <button
                     onClick={onClose}
-                    className={css({ 
-                        position: 'absolute', top: '22px', right: '22px', 
-                        bg: '#F8F9FA', border: 'none', cursor: 'pointer', color: '#9CA3AF',
-                        p: '6px', borderRadius: '50%', transition: 'all 0.2s',
-                        _hover: { bg: '#F1F3F5', color: '#2C3A47', transform: 'rotate(90deg)' }
+                    className={css({
+                        position: 'absolute', right: '16px', top: '16px',
+                        w: '36px', h: '36px', borderRadius: '12px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        bg: 'bg.softCotton', border: 'none', cursor: 'pointer', color: 'brand.muted',
+                        transition: 'all 0.2s',
+                        _hover: { bg: 'brand.border', color: 'brand.secondary', transform: 'rotate(90deg)' }
                     })}
                 >
                     <X size={20} strokeWidth={2.5} />
                 </button>
 
-                <h3 className={css({ fontSize: '22px', fontWeight: '700', mb: '24px', color: '#2C3A47', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
+                <h3 className={css({ fontSize: '22px', fontWeight: '700', mb: '24px', color: 'brand.secondary', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
 
-                {loading ? (
-                    <div className={css({ textAlign: 'center', py: '40px', color: '#888' })}>템플릿을 열심히 불러오고 있어요... ✈️</div>
-                ) : templates.length === 0 ? (
-                    <div className={css({ textAlign: 'center', py: '40px', color: '#888', fontSize: '14px' })}>
-                        아직 등록된 템플릿이 없네요. 나만의 템플릿을 만들어 볼까요?
-                    </div>
-                ) : (
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1, pr: '4px' })}>
-                        {templates.map((template: any) => (
-                            <div
-                                key={template.id}
-                                className={css({ p: '18px', border: '1px solid #EEEEEE', borderRadius: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)', _hover: { bg: '#F9F9F9', borderColor: '#2EC4B6', transform: 'translateY(-2px)' } })}
-                            >
-                                <span className={css({ fontWeight: '700', fontSize: '15px', color: '#2C3A47', flex: 1 })}>{template.title}</span>
-                                <button
-                                    onClick={() => handleApplyTemplate(template.id)}
-                                    disabled={loadingTemplateId === template.id}
-                                    className={css({ 
-                                        display: 'flex', alignItems: 'center', gap: '8px', px: '18px', py: '11px', 
-                                        bg: '#2EC4B6', color: 'white', borderRadius: '14px', border: 'none', 
-                                        cursor: 'pointer', fontSize: '14px', fontWeight: '700', whiteSpace: 'nowrap', 
-                                        transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
-                                        boxShadow: '0 6px 15px rgba(46,196,182,0.25)', 
-                                        _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 10px 20px rgba(46,196,182,0.35)' }, 
-                                        _active: { transform: 'scale(0.96)' }, 
-                                        _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none', transform: 'none' } 
+                <div className={css({ maxHeight: '400px', overflowY: 'auto', pr: '8px' })}>
+                    {loading ? (
+                        <div className={css({ textAlign: 'center', py: '40px', color: 'brand.muted' })}>
+                            <Loader2 size={36} className={css({ animation: 'spin 1s linear infinite', mx: 'auto', mb: '16px', color: 'brand.primary' })} />
+                            템플릿을 열심히 불러오고 있어요... ✈️
+                        </div>
+                    ) : templates.length === 0 ? (
+                        <div className={css({ textAlign: 'center', py: '40px', color: 'brand.muted', fontSize: '14px' })}>
+                            아직 저장된 템플릿이 없네요! 😅
+                        </div>
+                    ) : (
+                        <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
+                            {templates.map((template) => (
+                                <div
+                                    key={template.id}
+                                    className={css({
+                                        p: '18px', border: '1px solid', borderColor: 'brand.border', borderRadius: '18px',
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+                                        transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                                        _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary', transform: 'translateY(-2px)' }
                                     })}
                                 >
-                                    {loadingTemplateId === template.id ? '...' : (
-                                        <>
-                                            <Copy size={16} strokeWidth={2.5} /> 적용하기
-                                        </>
-                                    )}
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                )}
+                                    <span className={css({ fontWeight: '700', fontSize: '15px', color: 'brand.secondary', flex: 1 })}>{template.title}</span>
+                                    <button
+                                        onClick={() => handleApplyTemplate(template.id)}
+                                        disabled={loadingTemplateId === template.id}
+                                        className={css({
+                                            bg: 'brand.primary', color: 'white', borderRadius: '14px', border: 'none',
+                                            px: '14px', py: '10px', fontSize: '13px', fontWeight: '700',
+                                            cursor: 'pointer', transition: 'all 0.2s',
+                                            _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: 'dimensional' },
+                                            _active: { transform: 'scale(0.95)' },
+                                            _disabled: { opacity: 0.5, cursor: 'not-allowed' }
+                                        })}
+                                    >
+                                        {loadingTemplateId === template.id ? <Loader2 size={16} className={css({ animation: 'spin 1s linear infinite' })} /> : '가져오기'}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
             <style jsx global>{`
                 @keyframes fadeIn {

@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { X, UserPlus, Mail, Shield, Trash2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { CollaborationService } from '@/services/ExternalApiService'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -28,6 +29,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const [collaborators, setCollaborators] = useState<Collaborator[]>([])
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+
+    useScrollLock(isOpen)
 
     useEffect(() => {
         if (isOpen) {
@@ -125,11 +128,11 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
             })}>
                 {/* 헤더 */}
-                <div className={css({ p: '20px 24px', borderBottom: '1px solid #F5F5F5', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                        <UserPlus size={20} color="#2EC4B6" /> 함께하는 일행 관리
+                <div className={css({ p: '20px 24px', borderBottom: '1px solid', borderBottomColor: 'brand.border', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.secondary', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                        <UserPlus size={20} className={css({ color: 'brand.primary' })} /> 함께하는 일행 관리
                     </h2>
-                    <button onClick={onClose} className={css({ p: '6px', borderRadius: '50%', bg: '#F8F9FA', color: '#9CA3AF', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#F1F3F5', color: '#2C3A47' } })}>
+                    <button onClick={onClose} className={css({ p: '6px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: 'brand.border', color: 'brand.secondary' } })}>
                         <X size={20} />
                     </button>
                 </div>
@@ -137,18 +140,18 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                 <div className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '24px' })}>
                     {/* 초대 폼 */}
                     <form onSubmit={handleInvite} className={css({ display: 'flex', flexDirection: 'column', gap: '10px' })}>
-                        <label className={css({ fontSize: '14px', fontWeight: '700', color: '#2C3A47' })}>이메일로 초대하기</label>
+                        <label className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>이메일로 초대하기</label>
                         <div className={css({ display: 'flex', gap: '8px' })}>
                             <div className={css({ position: 'relative', flex: 1 })}>
-                                <Mail size={16} className={css({ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: '#9CA3AF' })} />
+                                <Mail size={16} className={css({ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'brand.muted' })} />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={e => setEmail(e.target.value)}
                                     placeholder="friend@example.com"
                                     className={css({
-                                        w: '100%', p: '12px 12px 12px 40px', bg: '#F8F9FA', border: '1.5px solid #F1F3F5', borderRadius: '14px',
-                                        fontSize: '15px', outline: 'none', transition: 'all 0.2s', _focus: { borderColor: '#2EC4B6', bg: 'white' }
+                                        w: '100%', p: '12px 12px 12px 40px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '14px',
+                                        fontSize: '15px', outline: 'none', transition: 'all 0.2s', _focus: { borderColor: 'brand.primary', bg: 'white' }
                                     })}
                                 />
                             </div>
@@ -156,38 +159,38 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                 type="submit"
                                 disabled={loading || !email}
                                 className={css({
-                                    p: '0 20px', bg: '#2EC4B6', color: 'white', border: 'none', borderRadius: '14px',
+                                    p: '0 20px', bg: 'brand.primary', color: 'white', border: 'none', borderRadius: '14px',
                                     fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', _disabled: { opacity: 0.5 },
-                                    _hover: { bg: '#249E93' }, _active: { transform: 'scale(0.95)' }
+                                    _hover: { bg: 'brand.primaryDark' }, _active: { transform: 'scale(0.95)' }
                                 })}
                             >
                                 {loading ? <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} /> : '초대'}
                             </button>
                         </div>
-                        {error && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#FF5A5F', fontWeight: '600', mt: '4px' })}><AlertCircle size={14} /> {error}</div>}
-                        {success && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#2EC4B6', fontWeight: '600', mt: '4px' })}><CheckCircle2 size={14} /> {success}</div>}
+                        {error && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'brand.error', fontWeight: '600', mt: '4px' })}><AlertCircle size={14} /> {error}</div>}
+                        {success && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'brand.primary', fontWeight: '600', mt: '4px' })}><CheckCircle2 size={14} /> {success}</div>}
                     </form>
 
                     {/* 멤버 리스트 */}
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                        <h3 className={css({ fontSize: '14px', fontWeight: '700', color: '#2C3A47' })}>참여 중인 멤버 ({collaborators.length})</h3>
+                        <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>참여 중인 멤버 ({collaborators.length})</h3>
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', maxH: '200px', overflowY: 'auto', pr: '4px' })}>
                             {collaborators.map(member => (
                                 <div key={member.id} className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    p: '12px 16px', bg: '#F8F9FA', borderRadius: '16px', border: '1px solid #F1F3F5'
+                                    p: '12px 16px', bg: 'bg.softCotton', borderRadius: '16px', border: '1px solid', borderColor: 'brand.border'
                                 })}>
                                     <div className={css({ display: 'flex', flexDirection: 'column' })}>
-                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: '#2C3A47' })}>{member.email}</span>
-                                        <span className={css({ fontSize: '11px', color: '#9CA3AF', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                            {member.role === 'owner' ? <Shield size={10} color="#FF9F87" /> : null}
+                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>{member.email}</span>
+                                        <span className={css({ fontSize: '11px', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                            {member.role === 'owner' ? <Shield size={10} className={css({ color: 'brand.accent' })} /> : null}
                                             {member.role === 'owner' ? '관리자' : '편집자'}  •  {new Date(member.joined_at).toLocaleDateString()} 합류
                                         </span>
                                     </div>
                                     {member.role !== 'owner' && (
                                         <button
                                             onClick={() => handleRemove(member.id)}
-                                            className={css({ p: '6px', bg: 'transparent', border: 'none', color: '#FF5A5F', cursor: 'pointer', transition: 'all 0.2s', _hover: { transform: 'scale(1.1)' } })}
+                                            className={css({ p: '6px', bg: 'transparent', border: 'none', color: 'brand.error', cursor: 'pointer', transition: 'all 0.2s', _hover: { transform: 'scale(1.1)' } })}
                                             title="추방하기"
                                         >
                                             <Trash2 size={16} />
@@ -199,8 +202,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                     </div>
                 </div>
 
-                <div className={css({ p: '16px 24px', bg: '#F8F9FA', borderTop: '1px solid #F1F3F5', textAlign: 'center' })}>
-                    <p className={css({ fontSize: '12px', color: '#9CA3AF', lineHeight: 1.5, wordBreak: 'keep-all' })}>
+                <div className={css({ p: '16px 24px', bg: 'bg.softCotton', borderTop: '1px solid', borderTopColor: 'brand.border', textAlign: 'center' })}>
+                    <p className={css({ fontSize: '12px', color: 'brand.muted', lineHeight: 1.5, wordBreak: 'keep-all' })}>
                         초대된 멤버는 해당 여행의 일정을 추가, 수정, 삭제할 수 있습니다.<br />
                         멤버 초대를 위해 상대방이 <strong>온여정</strong>에 가입되어 있어야 합니다.
                     </p>

@@ -16,20 +16,25 @@ export default defineConfig({
       tokens: {
         colors: {
           brand: {
-            primary: { value: '#2EC4B6' },   // primary-mint
-            primaryDark: { value: '#249E93' }, 
-            secondary: { value: '#2C3A47' }, // text-primary (Deep Slate)
-            muted: { value: '#828D99' },     // text-secondary (Soft Cool Gray)
-            light: { value: '#FBFBF9' },     // bg-base
-            border: { value: '#EEEEEE' },
-            accent: { value: '#FF9F87' },    // accent-peach
+            primary: { value: '#2563EB' },   // primary-blue (Cobalt)
+            primaryDark: { value: '#1D4ED8' }, 
+            secondary: { value: '#1E293B' }, // text-primary (Deep Slate)
+            muted: { value: '#64748B' },     // text-secondary (Cool Slate)
+            light: { value: '#FFFFFF' },     // bg-base (Pure White)
+            border: { value: '#E2E8F0' },    // Thin Blue Gray
+            accent: { value: '#3B82F6' },    // accent-blue-light
+            error: { value: '#EF4444' },
+            errorLight: { value: '#FEF2F2' },
+            success: { value: '#10B981' },
+            warning: { value: '#F59E0B' },
           },
           bg: {
             surface: { value: '#FFFFFF' },
             card: { value: '#FFFFFF' },
             input: { value: '#FFFFFF' },
-            light: { value: '#FBFBF9' },
-            softCotton: { value: '#FBFBF9' },
+            light: { value: '#FFFFFF' },
+            softCotton: { value: '#F8FAFF' }, // Very light blue tint for subtle grouping
+            canvas: { value: '#FFFFFF' },
           }
         },
         shadows: {

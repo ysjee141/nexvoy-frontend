@@ -16,7 +16,7 @@ export const Skeleton = ({ width = '100%', height = '20px', borderRadius = '8px'
                     width,
                     height: circle ? (typeof width === 'object' ? width : width) : height,
                     borderRadius: circle ? '50%' : borderRadius,
-                    background: 'linear-gradient(90deg, #f5f5f5 25%, #eeeeee 50%, #f5f5f5 75%)',
+                    background: 'linear-gradient(90deg, token(colors.bg.softCotton) 25%, token(colors.brand.border) 50%, token(colors.bg.softCotton) 75%)',
                     backgroundSize: '200% 100%',
                     animation: 'shimmer 2s infinite linear',
                     display: 'block'

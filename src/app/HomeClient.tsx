@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Plus, MapPin, CalendarDays, Luggage, User } from 'lucide-react'
 import InvitationBanner from '@/components/trips/InvitationBanner'
 import TripSection from '@/components/trips/TripSection'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CacheUtil } from '@/utils/cache'
 import {
@@ -18,33 +18,34 @@ import NicknamePrompt from '@/components/profile/NicknamePrompt'
 import { isBetaTester } from '@/constants/testers'
 import TesterNoticeModal from '@/components/layout/TesterNoticeModal'
 import Skeleton from '@/components/ui/Skeleton'
+import { useUIStore } from '@/stores/useUIStore'
 
 // ── 주요 기능 카드 (Guide에서 이식) ──
 const FEATURES = [
   {
       icon: <Map size={28} />,
-      bg: '#EAF9F7', color: '#2EC4B6',
+      bg: 'bg.softCotton', color: 'brand.primary',
       title: '스마트한 여행 관리',
       desc: '목적지·날짜·인원을 등록하면 끝. 진행 중인 여행은 자동으로 상단에 강조 표시되어 한눈에 파악됩니다.',
       badge: '여행 관리',
   },
   {
       icon: <CalendarDays size={28} />,
-      bg: '#EAF9F7', color: '#249E93',
+      bg: 'bg.softCotton', color: 'brand.primaryDark',
       title: '세부 일정 완벽 관리',
       desc: '장소·시간·예산·메모·참고 URL까지. 일정을 탭하면 구글 맵 미리보기와 함께 모든 정보를 확인할 수 있습니다.',
       badge: '일정',
   },
   {
       icon: <User size={28} />,
-      bg: '#FFF5F2', color: '#FF9F87',
+      bg: 'brand.errorLight', color: 'brand.accent',
       title: '동행자와 함께하기',
       desc: '동행자를 이메일로 초대하고 편집/조회 권한으로 함께 계획하세요. 혼자 세우는 여행 계획은 이제 그만.',
       badge: '동행',
   },
   {
       icon: <CheckSquare size={28} />,
-      bg: '#EAF9F7', color: '#2EC4B6',
+      bg: 'bg.softCotton', color: 'brand.primary',
       title: '여행 준비물 체크리스트',
       desc: '여권부터 충전기까지. 준비물을 체크리스트로 등록하고 빠뜨린 것 없이 완벽하게 챙기세요.',
       badge: '체크리스트',
@@ -56,7 +57,7 @@ const STEPS = [
   {
       num: '01',
       icon: <Plus size={22} />,
-      color: '#3B82F6',
+      color: 'brand.primary',
       title: '여행을 만드세요',
       desc: '"새 여행 추가"를 눌러 여행지와 날짜를 입력하기만 하면 됩니다. 30초면 충분합니다.',
       highlight: '평균 30초 만에 여행 생성',
@@ -64,7 +65,7 @@ const STEPS = [
   {
       num: '02',
       icon: <CalendarDays size={22} />,
-      color: '#2563EB',
+      color: 'brand.primaryDark',
       title: '일정을 채우세요',
       desc: '장소를 검색해 일정에 추가하면 현지 통화·타임존이 자동으로 설정됩니다. 시차 계산은 저한테 맡기세요.',
       highlight: '현지 통화 & 한화 동시 표시',
@@ -72,7 +73,7 @@ const STEPS = [
   {
       num: '03',
       icon: <Share2 size={22} />,
-      color: '#FBBC05',
+      color: 'brand.accent',
       title: '함께 계획하세요',
       desc: '동행자 이메일만 입력하면 즉시 초대됩니다. 각자의 아이디어를 실시간으로 반영할 수 있습니다.',
       highlight: '2초 만에 초대 완료',
@@ -80,7 +81,7 @@ const STEPS = [
   {
       num: '04',
       icon: <CheckSquare size={22} />,
-      color: '#EA4335',
+      color: 'brand.error',
       title: '완벽하게 준비하세요',
       desc: '체크리스트로 준비물을 꼼꼼하게 챙기시고, 출발 당일 든든하게 여행을 시작하세요.',
       highlight: '준비물 하나도 빠짐없이',
@@ -91,37 +92,37 @@ const STEPS = [
 const ADVANCED = [
   {
       icon: <Wallet size={20} />,
-      color: '#2563EB',
+      color: 'brand.primary',
       title: '실시간 환율 자동 변환',
       desc: '홍콩달러, 엔화, 달러… 어떤 통화든 예상 금액을 자동으로 한화로 환산해 드립니다. 환율은 1시간마다 최신화됩니다.',
   },
   {
       icon: <MapPin size={20} />,
-      color: '#F4511E',
+      color: 'brand.accent',
       title: '구글 맵 바로 열기',
       desc: '일정을 탭하면 구글 맵 미리보기이 뜹니다. 장소명을 누르면 앱 또는 웹으로 바로 이동. 길 찾기도 끊김 없이.',
   },
   {
       icon: <Clock size={20} />,
-      color: '#3B82F6',
+      color: 'brand.primary',
       title: '현지·한국 시간 동시 확인',
       desc: '시차 때문에 머리 아플 필요 없습니다. 현지 시간과 한국 시간을 나란히 보여드립니다.',
   },
   {
       icon: <Link2 size={20} />,
-      color: '#9E9E9E',
+      color: 'brand.muted',
       title: '참고자료 URL 카드 미리보기',
       desc: '블로그, 예약 사이트 등 참고 링크를 저장하면 카드 형태의 미리보기로 깔끔하게 정리됩니다.',
   },
   {
       icon: <Globe size={20} />,
-      color: '#FBBC05',
+      color: 'brand.warning',
       title: '링크 하나로 여행 공유',
       desc: '공유 링크를 생성해 가족·친구에게 보내세요. 로그인 없이도 내 여행 일정을 볼 수 있습니다.',
   },
   {
       icon: <Star size={20} />,
-      color: '#EA4335',
+      color: 'brand.error',
       title: '진행 중 일정 강조 표시',
       desc: '오늘 진행 중인 일정이 상단에 자동으로 표시됩니다. 여행 중에도 다음 일정을 한눈에 파악하세요.',
   },
@@ -155,7 +156,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
   return (
       <div className={css({
-          border: '1px solid #eee', borderRadius: '12px',
+          border: '1px solid', borderColor: 'brand.border', borderRadius: '12px',
           overflow: 'hidden', transition: 'box-shadow 0.2s',
           _hover: { boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
       })}>
@@ -167,11 +168,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
                   textAlign: 'left', gap: '12px',
               })}
           >
-              <span className={css({ fontWeight: '600', fontSize: '15px', color: '#172554', lineHeight: 1.4 })}>{q}</span>
-              {open ? <ChevronUp size={18} color="#aaa" style={{ flexShrink: 0 }} /> : <ChevronDown size={18} color="#aaa" style={{ flexShrink: 0 }} />}
+              <span className={css({ fontWeight: '600', fontSize: '15px', color: 'brand.secondary', lineHeight: 1.4 })}>{q}</span>
+              {open ? <ChevronUp size={18} color="brand.muted" style={{ flexShrink: 0 }} /> : <ChevronDown size={18} color="brand.muted" style={{ flexShrink: 0 }} />}
           </button>
           {open && (
-              <div className={css({ p: '16px 20px', fontSize: '14px', color: '#555', lineHeight: 1.7, bg: '#fafafa', borderTop: '1px solid #f0f0f0' })}>
+              <div className={css({ p: '16px 20px', fontSize: '14px', color: 'brand.muted', lineHeight: 1.7, bg: 'bg.softCotton', borderTop: '1px solid', borderTopColor: 'brand.border' })}>
                   {a}
               </div>
           )}
@@ -184,19 +185,19 @@ function SectionTitle({ badge, title, sub }: { badge: string; title: string; sub
       <div className={css({ textAlign: 'center', mb: '40px' })}>
           <span className={css({
               display: 'inline-block', fontSize: '11px', fontWeight: '700',
-              color: '#3B82F6', letterSpacing: '1.5px', textTransform: 'uppercase',
-              bg: '#EFF6FF', px: '10px', py: '4px', borderRadius: '20px', mb: '12px',
+              color: 'brand.primary', letterSpacing: '1.5px', textTransform: 'uppercase',
+              bg: 'bg.softCotton', px: '10px', py: '4px', borderRadius: '20px', mb: '12px',
           })}>
               {badge}
           </span>
           <h2 className={css({
               fontSize: { base: '22px', md: '32px' }, fontWeight: '700',
-              color: '#172554', letterSpacing: '-0.02em', mb: '10px',
+              color: 'brand.secondary', letterSpacing: '-0.02em', mb: '10px',
           })}>
               {title}
           </h2>
           {sub && (
-              <p className={css({ fontSize: '15px', color: '#777', maxW: '480px', mx: 'auto', lineHeight: 1.6 })}>{sub}</p>
+              <p className={css({ fontSize: '15px', color: 'brand.muted', maxW: '480px', mx: 'auto', lineHeight: 1.6 })}>{sub}</p>
           )}
       </div>
   )
@@ -213,6 +214,8 @@ export default function HomeClient() {
   const [loading, setLoading] = useState(true)
   const [isFirstCheck, setIsFirstCheck] = useState(true) // 최초 세션/캐시 확인용
   const [showNicknamePrompt, setShowNicknamePrompt] = useState(false)
+
+  const { setMobileTitle, isNewTripModalOpen, setIsNewTripModalOpen } = useUIStore()
   const searchParams = useSearchParams()
   const activeTab = searchParams.get('tab')
 
@@ -221,34 +224,87 @@ export default function HomeClient() {
   const upcomingRef = useRef<HTMLDivElement>(null)
   const completedRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const processTrips = (allTrips: any[]) => {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+  const processTrips = useCallback((allTrips: any[]) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-      setOngoing(allTrips.filter((t: any) => {
-        const start = new Date(t.start_date)
-        const end = new Date(t.end_date)
-        start.setHours(0, 0, 0, 0)
-        end.setHours(23, 59, 59, 999)
-        return start <= today && today <= end
-      }))
+    setOngoing(allTrips.filter((t: any) => {
+      const start = new Date(t.start_date)
+      const end = new Date(t.end_date)
+      start.setHours(0, 0, 0, 0)
+      end.setHours(23, 59, 59, 999)
+      return start <= today && today <= end
+    }))
 
-      setUpcoming(allTrips.filter((t: any) => {
-        const start = new Date(t.start_date)
-        start.setHours(0, 0, 0, 0)
-        return start > today
-      }))
+    setUpcoming(allTrips.filter((t: any) => {
+      const start = new Date(t.start_date)
+      start.setHours(0, 0, 0, 0)
+      return start > today
+    }))
 
-      setCompleted(allTrips.filter((t: any) => {
-        const end = new Date(t.end_date)
-        end.setHours(23, 59, 59, 999)
-        return end < today
-      }))
+    setCompleted(allTrips.filter((t: any) => {
+      const end = new Date(t.end_date)
+      end.setHours(23, 59, 59, 999)
+      return end < today
+    }))
 
-      setHasAnyTrip(allTrips.length > 0)
+    setHasAnyTrip(allTrips.length > 0)
+  }, [])
+
+  const fetchNetworkBackground = useCallback(async () => {
+    const { data: { user: networkUser } } = await supabase.auth.getUser()
+    if (!networkUser) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+    setUser(networkUser)
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nickname')
+      .eq('id', networkUser.id)
+      .single()
+
+    setNickname(profile?.nickname || networkUser.email?.split('@')[0] || '여행자')
+    if (profile) {
+      await CacheUtil.setProfile(profile)
+    }
+    setShowNicknamePrompt(!profile?.nickname)
+
+    // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
+    const { data: memberTripData } = await supabase
+      .from('trip_members')
+      .select('trip_id')
+      .eq('user_id', networkUser.id)
+      .eq('status', 'accepted')
+
+    const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
+
+    // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
+    let query = supabase
+      .from('trips')
+      .select('*, checklists(id, checklist_items(id, is_checked))')
+
+    if (memberTripIds.length > 0) {
+      query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
+    } else {
+      query = query.eq('user_id', networkUser.id)
     }
 
+    const { data: trips } = await query.order('start_date', { ascending: true })
+
+    const allTrips = trips || []
+    processTrips(allTrips)
+    
+    try {
+      await CacheUtil.set('offline_home_all_trips', allTrips)
+    } catch (e) {
+      console.warn('Cache save failed', e)
+    }
+  }, [supabase, processTrips])
+
+  useEffect(() => {
     async function loadCacheFirst() {
       // 1. 빠른 로컬 세션 확인 (네트워크 지연 없음)
       const { data: { session } } = await supabase.auth.getSession()
@@ -282,65 +338,12 @@ export default function HomeClient() {
       setLoading(false)
     }
 
-    async function fetchNetworkBackground() {
-      const { data: { user: networkUser } } = await supabase.auth.getUser()
-      if (!networkUser) {
-        setUser(null)
-        setLoading(false)
-        return
-      }
-      setUser(networkUser)
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('nickname')
-        .eq('id', networkUser.id)
-        .single()
-
-      setNickname(profile?.nickname || networkUser.email?.split('@')[0] || '여행자')
-      if (profile) {
-        await CacheUtil.setProfile(profile)
-      }
-      setShowNicknamePrompt(!profile?.nickname)
-
-      // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
-      const { data: memberTripData } = await supabase
-        .from('trip_members')
-        .select('trip_id')
-        .eq('user_id', networkUser.id)
-        .eq('status', 'accepted')
-
-      const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
-
-      // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
-      let query = supabase
-        .from('trips')
-        .select('*, checklists(id, checklist_items(id, is_checked))')
-
-      if (memberTripIds.length > 0) {
-        query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
-      } else {
-        query = query.eq('user_id', networkUser.id)
-      }
-
-      const { data: trips } = await query.order('start_date', { ascending: true })
-
-      const allTrips = trips || []
-      processTrips(allTrips)
-      
-      try {
-        await CacheUtil.set('offline_home_all_trips', allTrips)
-      } catch (e) {
-        console.warn('Cache save failed', e)
-      }
-    }
-
     // 두 가지를 실행: 먼저 캐시 & 세션으로 화면을 채우고, 뒤이어 네트워크 통신으로 동기화 (SWR)
     loadCacheFirst().then(() => {
         setIsFirstCheck(false)
         fetchNetworkBackground()
     })
-  }, [supabase])
+  }, [supabase, processTrips, fetchNetworkBackground])
 
   // 탭 파라미터에 따른 스크롤 처리
   useEffect(() => {
@@ -373,21 +376,21 @@ export default function HomeClient() {
           {/* ── 히어로 ── */}
           <section className={css({
               textAlign: 'center',
-              py: { base: '56px', md: '88px' },
+              py: { base: '64px', md: '100px' },
               px: '16px',
-              bg: 'linear-gradient(160deg, #f8faff 0%, #eef2ff 55%, #EFF6FF 100%)',
-              borderRadius: '20px',
-              mb: '64px',
+              bg: 'white',
+              borderRadius: '24px',
+              mb: '72px',
               position: 'relative',
               overflow: 'hidden',
           })}>
-              <div style={{ position: 'absolute', top: -60, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'rgba(66,133,244,0.07)' }} />
-              <div style={{ position: 'absolute', bottom: -40, left: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(52,168,83,0.07)' }} />
-              <div style={{ position: 'absolute', top: '20%', left: '8%', width: 80, height: 80, borderRadius: '50%', background: 'rgba(251,188,5,0.06)' }} />
+              <div className={css({ position: 'absolute', top: '-60px', right: '-60px', width: '260px', height: '260px', borderRadius: '50%', bg: 'brand.primary/3' })} />
+              <div className={css({ position: 'absolute', bottom: '-40px', left: '-40px', width: '180px', height: '180px', borderRadius: '50%', bg: 'brand.secondary/3' })} />
+              <div className={css({ position: 'absolute', top: '20%', left: '8%', width: '80px', height: '80px', borderRadius: '50%', bg: 'brand.accent/5' })} />
 
               <div className={css({
                   display: 'inline-flex', alignItems: 'center', gap: '6px',
-                  bg: '#EFF6FF', color: '#3B82F6', fontSize: '12px', fontWeight: '700',
+                  bg: 'bg.softCotton', color: 'brand.primary', fontSize: '12px', fontWeight: '700',
                   px: '12px', py: '5px', borderRadius: '20px', mb: '20px',
                   letterSpacing: '0.5px',
               })}>
@@ -396,13 +399,13 @@ export default function HomeClient() {
 
               <h1 className={css({
                   fontSize: { base: '30px', md: '48px' }, fontWeight: '700',
-                  color: '#2C3A47', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
+                  color: 'brand.secondary', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
               })}>
                   여행 계획, 가이드 없이도<br />
-                  <span className={css({ color: '#2EC4B6' })}>더 쉽고 즐겁게</span> 세워 보세요
+                  <span className={css({ color: 'brand.primary' })}>더 쉽고 즐겁게</span> 세워 보세요
               </h1>
               <p className={css({
-                  fontSize: { base: '15px', md: '18px' }, color: '#555',
+                  fontSize: { base: '15px', md: '18px' }, color: 'brand.muted',
                   maxW: '520px', mx: 'auto', lineHeight: 1.8, mb: '36px', wordBreak: 'keep-all',
               })}>
                   일정 관리부터 환율 변환, 동행자와의 계획까지.<br />
@@ -411,21 +414,21 @@ export default function HomeClient() {
               <div className={css({ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' })}>
                   <Link href="/signup" className={css({
                       display: 'inline-flex', alignItems: 'center', gap: '8px',
-                      bg: '#2EC4B6', color: 'white', fontWeight: '700', fontSize: '15px',
-                      px: '28px', py: '14px', borderRadius: '16px', textDecoration: 'none',
-                      boxShadow: '0 6px 20px rgba(46, 196, 182, 0.3)',
+                      bg: 'brand.primary', color: 'white', fontWeight: '700', fontSize: '15px',
+                       px: '28px', py: '14px', borderRadius: '16px', textDecoration: 'none',
+                      boxShadow: '0 6px 20px rgba(37, 99, 235, 0.25)',
                       transition: 'all 0.2s',
-                      _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(46, 196, 182, 0.4)' },
+                      _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(37, 99, 235, 0.35)' },
                   })}>
                       지금 바로 시작하기 <ArrowRight size={17} />
                   </Link>
                   <Link href="/login" className={css({
                       display: 'inline-flex', alignItems: 'center', gap: '6px',
-                      bg: 'white', color: '#1E3A8A', fontWeight: '600', fontSize: '15px',
+                      bg: 'white', color: 'brand.secondary', fontWeight: '600', fontSize: '15px',
                       px: '24px', py: '14px', borderRadius: '14px', textDecoration: 'none',
-                      border: '1px solid #e0e0e0',
+                      border: '1px solid', borderColor: 'brand.border',
                       transition: 'all 0.2s',
-                      _hover: { bg: '#f8f8f8', borderColor: '#ccc' },
+                      _hover: { bg: 'bg.softCotton', borderColor: 'brand.muted' },
                   })}>
                       로그인하기
                   </Link>
@@ -442,19 +445,19 @@ export default function HomeClient() {
               })}>
                   {FEATURES.map(f => (
                       <div key={f.title} className={css({
-                          bg: 'white', border: '1px solid #eee', borderRadius: '18px',
+                          bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '18px',
                           p: '24px', display: 'flex', flexDirection: 'column', gap: '14px',
                           transition: 'all 0.2s',
-                          _hover: { transform: 'translateY(-4px)', boxShadow: '0 12px 32px rgba(0,0,0,0.09)', borderColor: 'transparent' },
+                          _hover: { transform: 'translateY(-4px)', boxShadow: 'floating', borderColor: 'transparent' },
                       })}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                              <div style={{ width: 52, height: 52, borderRadius: 14, background: f.bg, color: f.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div className={css({ width: '52px', height: '52px', borderRadius: '14px', background: 'bg.softCotton', color: 'brand.primary', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
                                   {f.icon}
                               </div>
-                              <span style={{ fontSize: 11, fontWeight: 700, color: f.color, background: f.bg, padding: '3px 8px', borderRadius: 20 }}>{f.badge}</span>
+                              <span className={css({ fontSize: '11px', fontWeight: '700', color: 'brand.primary', background: 'bg.softCotton', padding: '3px 8px', borderRadius: '20px' })}>{f.badge}</span>
                           </div>
-                          <h3 className={css({ fontWeight: '700', fontSize: '16px', color: '#172554', lineHeight: 1.3 })}>{f.title}</h3>
-                          <p className={css({ fontSize: '13px', color: '#666', lineHeight: 1.7 })}>{f.desc}</p>
+                          <h3 className={css({ fontWeight: '700', fontSize: '16px', color: 'brand.secondary', lineHeight: 1.3 })}>{f.title}</h3>
+                          <p className={css({ fontSize: '13px', color: 'brand.muted', lineHeight: 1.7 })}>{f.desc}</p>
                       </div>
                   ))}
               </div>
@@ -466,27 +469,27 @@ export default function HomeClient() {
               <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px' })}>
                   {STEPS.map((s, i) => (
                       <div key={s.num} className={css({
-                          bg: 'white', border: '1px solid #eee', borderRadius: '16px',
+                          bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '16px',
                           p: { base: '20px', md: '22px 28px' },
                           display: 'flex', gap: '18px', alignItems: 'flex-start',
                           transition: 'all 0.2s',
-                          _hover: { boxShadow: '0 6px 20px rgba(0,0,0,0.07)', borderColor: '#e0e0e0' },
+                          _hover: { boxShadow: '0 6px 20px rgba(0,0,0,0.07)', borderColor: 'brand.border' },
                       })}>
-                          <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-                              <div style={{ width: 48, height: 48, borderRadius: 14, background: s.color + '15', color: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div className={css({ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' })}>
+                              <div className={css({ width: '48px', height: '48px', borderRadius: '14px', background: 'bg.softCotton', color: 'brand.primary', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
                                   {s.icon}
                               </div>
-                              {i < STEPS.length - 1 && <div style={{ width: 2, height: 20, background: '#f0f0f0', borderRadius: 2 }} />}
+                              {i < STEPS.length - 1 && <div className={css({ width: '2px', height: '20px', background: 'brand.border', borderRadius: '2px' })} />}
                           </div>
                           <div className={css({ flex: 1, pt: '4px' })}>
                               <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '5px', flexWrap: 'wrap' })}>
-                                  <span className={css({ fontSize: '11px', fontWeight: '700', color: '#ccc', letterSpacing: '1px' })}>{s.num}</span>
-                                  <h3 className={css({ fontWeight: '700', fontSize: '16px', color: '#172554' })}>{s.title}</h3>
-                                  <span style={{ fontSize: 11, fontWeight: 700, color: s.color, background: s.color + '12', padding: '2px 8px', borderRadius: 20 }}>
+                                  <span className={css({ fontSize: '11px', fontWeight: '700', color: 'brand.muted', letterSpacing: '1px' })}>{s.num}</span>
+                                  <h3 className={css({ fontWeight: '700', fontSize: '16px', color: 'brand.secondary' })}>{s.title}</h3>
+                                  <span className={css({ fontSize: '11px', fontWeight: '700', color: 'brand.primary', background: 'bg.softCotton', padding: '2px 8px', borderRadius: '20px' })}>
                                       ✓ {s.highlight}
                                   </span>
                               </div>
-                              <p className={css({ fontSize: '14px', color: '#555', lineHeight: 1.65 })}>{s.desc}</p>
+                              <p className={css({ fontSize: '14px', color: 'brand.muted', lineHeight: 1.65 })}>{s.desc}</p>
                           </div>
                       </div>
                   ))}
@@ -503,17 +506,17 @@ export default function HomeClient() {
               })}>
                   {ADVANCED.map(a => (
                       <div key={a.title} className={css({
-                          bg: 'white', border: '1px solid #eee', borderRadius: '14px',
+                          bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '14px',
                           p: '20px', display: 'flex', gap: '14px', alignItems: 'flex-start',
                           transition: 'all 0.2s',
-                          _hover: { boxShadow: '0 4px 14px rgba(0,0,0,0.07)', borderColor: '#e0e0e0' },
+                          _hover: { boxShadow: '0 4px 14px rgba(0,0,0,0.07)', borderColor: 'brand.border' },
                       })}>
-                          <div style={{ width: 40, height: 40, borderRadius: 11, flexShrink: 0, background: a.color + '15', display: 'flex', alignItems: 'center', justifyContent: 'center', color: a.color }}>
+                          <div className={css({ width: '40px', height: '40px', borderRadius: '11px', flexShrink: 0, background: 'bg.softCotton', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'brand.primary' })}>
                               {a.icon}
                           </div>
                           <div>
-                              <h4 className={css({ fontWeight: '700', fontSize: '14px', color: '#172554', mb: '5px' })}>{a.title}</h4>
-                              <p className={css({ fontSize: '13px', color: '#666', lineHeight: 1.65 })}>{a.desc}</p>
+                              <h4 className={css({ fontWeight: '700', fontSize: '14px', color: 'brand.secondary', mb: '5px' })}>{a.title}</h4>
+                              <p className={css({ fontSize: '13px', color: 'brand.muted', lineHeight: 1.65 })}>{a.desc}</p>
                           </div>
                       </div>
                   ))}
@@ -531,28 +534,28 @@ export default function HomeClient() {
           {/* ── CTA 하단 ── */}
           <section className={css({
               textAlign: 'center',
-              bg: 'linear-gradient(135deg, #1a56db 0%, #2563EB 100%)',
+              bg: 'linear-gradient(135deg, brand.primaryDark 0%, brand.primary 100%)',
               borderRadius: '20px',
               py: { base: '48px', md: '68px' },
               px: '20px',
               position: 'relative',
               overflow: 'hidden',
           })}>
-              <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-              <div style={{ position: 'absolute', bottom: -30, left: -30, width: 150, height: 150, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
-              <div className={css({ display: 'inline-flex', alignItems: 'center', gap: '6px', bg: 'rgba(255,255,255,0.15)', color: 'white', fontSize: '12px', fontWeight: '700', px: '12px', py: '5px', borderRadius: '20px', mb: '16px' })}>
+              <div className={css({ position: 'absolute', top: '-40px', right: '-40px', width: '200px', height: '200px', borderRadius: '50%', bg: 'white/5' })} />
+              <div className={css({ position: 'absolute', bottom: '-30px', left: '-30px', width: '150px', height: '150px', borderRadius: '50%', bg: 'white/5' })} />
+              <div className={css({ display: 'inline-flex', alignItems: 'center', gap: '6px', bg: 'white/15', color: 'white', fontSize: '12px', fontWeight: '700', px: '12px', py: '5px', borderRadius: '20px', mb: '16px' })}>
                   <Zap size={13} /> 지금 바로 시작하세요
               </div>
               <h2 className={css({ fontSize: { base: '24px', md: '34px' }, fontWeight: '700', color: 'white', mb: '12px', letterSpacing: '-0.02em', lineHeight: 1.2 })}>
                   다음 여행, 온여정와<br />함께 계획하세요 ✈️
               </h2>
-              <p className={css({ fontSize: '15px', color: 'rgba(255,255,255,0.83)', mb: '32px', lineHeight: 1.7, wordBreak: 'keep-all' })}>
+              <p className={css({ fontSize: '15px', color: 'white/85', mb: '32px', lineHeight: 1.7, wordBreak: 'keep-all' })}>
                   무료 계정 하나로 무제한 여행을 관리해 보세요.<br />
                   카드 등록이나 복잡한 절차 없이, 누구나 바로 시작할 수 있어요.
               </p>
               <Link href="/signup" className={css({
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  bg: 'white', color: '#1a56db', fontWeight: '700', fontSize: '16px',
+                  bg: 'white', color: 'brand.primaryDark', fontWeight: '700', fontSize: '16px',
                   px: '36px', py: '16px', borderRadius: '14px', textDecoration: 'none',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
                   transition: 'all 0.2s',
@@ -572,20 +575,21 @@ export default function HomeClient() {
       <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
         {showNicknamePrompt && <NicknamePrompt onClose={() => setShowNicknamePrompt(false)} />}
         <header className={css({ 
-          mb: { base: '32px', sm: '60px' }, 
+          mb: { base: '40px', sm: '72px' }, 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: { base: 'flex-start', sm: 'flex-end' }, 
           flexDirection: { base: 'column', sm: 'row' }, 
-          gap: '20px',
-          pb: '20px',
-          borderBottom: '1px solid #f0f0f0'
+          gap: '24px',
+          pb: '24px',
+          borderBottom: '1px solid',
+          borderColor: 'brand.border'
         })}>
           <div>
-            <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '700', color: '#222', letterSpacing: '-1px' })}>
+            <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '700', color: 'brand.secondary', letterSpacing: '-1px' })}>
                 안녕하세요, {nickname}님! 👋
             </h1>
-            <p className={css({ color: '#666', mt: '12px', fontSize: { base: '16px', sm: '20px' }, fontWeight: '500', letterSpacing: '-0.4px' })}>
+            <p className={css({ color: 'brand.muted', mt: '12px', fontSize: { base: '16px', sm: '20px' }, fontWeight: '500', letterSpacing: '-0.4px' })}>
               {ongoing.length > 0
                 ? `현재 ${ongoing[0].destination} 여행 중이에요 ✈️`
                 : upcoming.length > 0
@@ -593,21 +597,23 @@ export default function HomeClient() {
                   : '새로운 여행을 계획해 보세요.'}
             </p>
           </div>
-          <Link
-            href="/trips/new"
+          <button
+            onClick={() => setIsNewTripModalOpen(true)}
             className={css({
               display: 'flex', alignItems: 'center', gap: '8px',
-              bg: '#2EC4B6', color: 'white', px: '24px', py: '14px',
+              bg: 'brand.primary', color: 'white', px: '24px', py: '14px',
               borderRadius: '16px', fontWeight: '700', transition: 'all 0.2s',
-              boxShadow: '0 4px 12px rgba(46, 196, 182, 0.2)',
+              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.25)',
               w: { base: '100%', sm: 'auto' }, justifyContent: 'center',
-              _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.3)' },
+              border: 'none', cursor: 'pointer',
+              _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(37, 99, 235, 0.35)' },
               _active: { transform: 'scale(0.96)' }
             })}
           >
-            <Plus size={22} /> 새 여행 만들기
-          </Link>
+            <Plus size={22} strokeWidth={2.5} /> 새 여행 만들기
+          </button>
         </header>
+
 
         {!hasAnyTrip ? (
           /* 여행이 하나도 없을 때 또는 로딩 중일 때 */
@@ -620,26 +626,25 @@ export default function HomeClient() {
           ) : (
             <div className={css({
               bg: 'white', borderRadius: '16px', p: { base: '40px 20px', sm: '60px' },
-              textAlign: 'center', border: '2px dashed #ddd',
+              textAlign: 'center', border: '2px dashed', borderColor: 'brand.border',
             })}>
-              <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: '#ccc' })} />
-              <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: '#555' })}>
+              <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: 'brand.border' })} />
+              <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: 'brand.secondary' })}>
                 아직 계획된 여행이 없네요.
               </p>
-              <p className={css({ fontSize: '14px', color: '#999' })}>새로운 설렘을 위해 첫 여정을 만들어 볼까요? 🗺️</p>
+              <p className={css({ fontSize: '14px', color: 'brand.muted' })}>새로운 설렘을 위해 첫 여정을 만들어 볼까요? 🗺️</p>
             </div>
           )
         ) : (
           <div>
-            {/* ①  여행 중 */}
             <div ref={ongoingRef}>
                 <TripSection
                     title="여행 중이에요! 🎉"
                     subtitle="현재 진행 중인 여행"
                     emoji="✈️"
-                    accentColor="#2EC4B6"
-                    badgeBg="#EAF9F7"
-                    badgeColor="#2EC4B6"
+                    accentColor="brand.accent"
+                    badgeBg="bg.softCotton"
+                    badgeColor="brand.accent"
                     badgeLabel="여행 중"
                     trips={ongoing}
                     currentUserId={user.id}
@@ -653,9 +658,9 @@ export default function HomeClient() {
                     title="다가오는 여행"
                     subtitle="출발 전 설레는 여행"
                     emoji="🗺️"
-                    accentColor="#249E93"
-                    badgeBg="#EAF9F7"
-                    badgeColor="#249E93"
+                    accentColor="brand.primary"
+                    badgeBg="bg.softCotton"
+                    badgeColor="brand.primary"
                     badgeLabel="예정"
                     trips={upcoming}
                     currentUserId={user.id}
@@ -669,9 +674,9 @@ export default function HomeClient() {
                     title="다녀온 여행"
                     subtitle="소중한 추억이 된 여행"
                     emoji="📸"
-                    accentColor="#9e9e9e"
-                    badgeBg="#f5f5f5"
-                    badgeColor="#666"
+                    accentColor="brand.muted"
+                    badgeBg="bg.softCotton"
+                    badgeColor="brand.muted"
                     badgeLabel="완료"
                     trips={completed}
                     currentUserId={user.id}
