@@ -376,16 +376,16 @@ export default function HomeClient() {
           {/* ── 히어로 ── */}
           <section className={css({
               textAlign: 'center',
-              py: { base: '56px', md: '88px' },
+              py: { base: '64px', md: '100px' },
               px: '16px',
-              bg: 'linear-gradient(160deg, #F8FAFF 0%, #F1F3F5 100%)',
-              borderRadius: '20px',
-              mb: '64px',
+              bg: 'white',
+              borderRadius: '24px',
+              mb: '72px',
               position: 'relative',
               overflow: 'hidden',
           })}>
-              <div className={css({ position: 'absolute', top: '-60px', right: '-60px', width: '260px', height: '260px', borderRadius: '50%', bg: 'brand.primary/5' })} />
-              <div className={css({ position: 'absolute', bottom: '-40px', left: '-40px', width: '180px', height: '180px', borderRadius: '50%', bg: 'brand.secondary/5' })} />
+              <div className={css({ position: 'absolute', top: '-60px', right: '-60px', width: '260px', height: '260px', borderRadius: '50%', bg: 'brand.primary/3' })} />
+              <div className={css({ position: 'absolute', bottom: '-40px', left: '-40px', width: '180px', height: '180px', borderRadius: '50%', bg: 'brand.secondary/3' })} />
               <div className={css({ position: 'absolute', top: '20%', left: '8%', width: '80px', height: '80px', borderRadius: '50%', bg: 'brand.accent/5' })} />
 
               <div className={css({
@@ -415,10 +415,10 @@ export default function HomeClient() {
                   <Link href="/signup" className={css({
                       display: 'inline-flex', alignItems: 'center', gap: '8px',
                       bg: 'brand.primary', color: 'white', fontWeight: '700', fontSize: '15px',
-                      px: '28px', py: '14px', borderRadius: '16px', textDecoration: 'none',
-                      boxShadow: '0 6px 20px rgba(46, 196, 182, 0.3)',
+                       px: '28px', py: '14px', borderRadius: '16px', textDecoration: 'none',
+                      boxShadow: '0 6px 20px rgba(37, 99, 235, 0.25)',
                       transition: 'all 0.2s',
-                      _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(46, 196, 182, 0.4)' },
+                      _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(37, 99, 235, 0.35)' },
                   })}>
                       지금 바로 시작하기 <ArrowRight size={17} />
                   </Link>
@@ -575,13 +575,13 @@ export default function HomeClient() {
       <div className={css({ maxW: 'screen-xl', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '16px', sm: '20px' } })}>
         {showNicknamePrompt && <NicknamePrompt onClose={() => setShowNicknamePrompt(false)} />}
         <header className={css({ 
-          mb: { base: '32px', sm: '60px' }, 
+          mb: { base: '40px', sm: '72px' }, 
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: { base: 'flex-start', sm: 'flex-end' }, 
           flexDirection: { base: 'column', sm: 'row' }, 
-          gap: '20px',
-          pb: '20px',
+          gap: '24px',
+          pb: '24px',
           borderBottom: '1px solid',
           borderColor: 'brand.border'
         })}>
@@ -603,10 +603,10 @@ export default function HomeClient() {
               display: 'flex', alignItems: 'center', gap: '8px',
               bg: 'brand.primary', color: 'white', px: '24px', py: '14px',
               borderRadius: '16px', fontWeight: '700', transition: 'all 0.2s',
-              boxShadow: '0 8px 20px rgba(46, 196, 182, 0.25)',
+              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.25)',
               w: { base: '100%', sm: 'auto' }, justifyContent: 'center',
               border: 'none', cursor: 'pointer',
-              _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(46, 196, 182, 0.35)' },
+              _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(37, 99, 235, 0.35)' },
               _active: { transform: 'scale(0.96)' }
             })}
           >

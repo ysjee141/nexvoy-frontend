@@ -246,7 +246,7 @@ export default function PlanDetailModal({
                                         left: '50%',
                                         transform: 'translateX(-50%)',
                                         width: isActive ? '40%' : '0%',
-                                        height: '3px',
+                                        height: '2px',
                                         bg: 'brand.primary',
                                         borderRadius: '2px',
                                         transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
@@ -371,9 +371,9 @@ export default function PlanDetailModal({
 
                                     {/* 시간 */}
                                     <InfoRow 
-                                        icon={<Clock size={18} className={css({ color: '#3B82F6' })} />} 
+                                        icon={<Clock size={18} className={css({ color: 'brand.primary' })} />} 
                                         label="시간"
-                                        bgColor="bg.softCotton"
+                                        bgColor="rgba(37, 99, 235, 0.05)"
                                         value={
                                             <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', w: '100%' })}>
                                                 <div className={css({ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
@@ -384,7 +384,7 @@ export default function PlanDetailModal({
                                                     <span className={css({ color: 'brand.border', fontSize: '12px' })}>|</span>
                                                     <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '5px' })}>
                                                         <span className={css({ fontSize: '12px', color: 'brand.muted', fontWeight: '600' })}>한국</span>
-                                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary', bg: 'brand.primary/10', px: '10px', py: '5px', borderRadius: '12px' })}>{kstTime}</span>
+                                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary', bg: 'rgba(37, 99, 235, 0.08)', px: '10px', py: '5px', borderRadius: '12px' })}>{kstTime}</span>
                                                     </span>
                                                 </div>
                                                 {plan.end_datetime_local && (
@@ -407,7 +407,7 @@ export default function PlanDetailModal({
                                         <InfoRow 
                                             icon={<Bell size={18} className={css({ color: '#F59E0B' })} />} 
                                             label="알림 설정"
-                                            bgColor="bg.softCotton"
+                                            bgColor="rgba(245, 158, 11, 0.05)"
                                             value={
                                                 <span className={css({ fontSize: '14px', fontWeight: '600', color: 'brand.secondary' })}>
                                                     {plan.alarm_minutes_before === 0 ? '알림 없음' : 
@@ -427,7 +427,7 @@ export default function PlanDetailModal({
                                         <InfoRow 
                                             icon={<Globe size={18} className={css({ color: '#6366F1' })} />} 
                                             label="타임존"
-                                            bgColor="bg.softCotton"
+                                            bgColor="rgba(99, 102, 241, 0.05)"
                                             value={<span className={css({ fontSize: '13px', color: 'brand.muted', fontFamily: 'monospace' })}>{plan.timezone_string}</span>}
                                         />
                                     )}
@@ -437,7 +437,7 @@ export default function PlanDetailModal({
                                         <InfoRow 
                                             icon={<Wallet size={18} className={css({ color: '#10B981' })} />} 
                                             label="예상 금액"
-                                            bgColor="bg.softCotton"
+                                            bgColor="rgba(16, 185, 129, 0.05)"
                                             value={
                                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
                                                     <span className={css({ fontSize: '15.5px', fontWeight: '600', color: 'brand.secondary', letterSpacing: '-0.01em' })}>{localAmount}</span>
@@ -507,22 +507,22 @@ export default function PlanDetailModal({
                         <button onClick={() => { onEdit(plan); handleClose() }} disabled={!isOnline}
                             className={css({ 
                                 flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', py: '14px', 
-                                bg: 'brand.primary', color: 'white', borderRadius: '16px', fontWeight: '700', fontSize: '15px', 
+                                bg: 'brand.primary', color: 'white', borderRadius: '14px', fontWeight: '700', fontSize: '15px', 
                                 border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', 
-                                opacity: isOnline ? 1 : 0.5, boxShadow: 'dimensional',
+                                opacity: isOnline ? 1 : 0.5,
                                 transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
-                                _hover: { transform: 'translateY(-2px)', boxShadow: 'floating', bg: 'brand.primaryDark' } 
+                                _hover: { transform: 'translateY(-1px)', bg: 'brand.primaryDark', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' } 
                             })}>
                             <Pencil size={16} strokeWidth={2.5} /> 수정하기
                         </button>
                         <button onClick={() => { onDelete(plan.id); handleClose() }} disabled={!isOnline}
                             className={css({ 
                                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', py: '14px', 
-                                bg: 'bg.softCotton', color: 'brand.error', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '16px', 
+                                bg: 'white', color: '#94A3B8', border: '1px solid', borderColor: 'brand.border', borderRadius: '14px', 
                                 fontWeight: '700', fontSize: '15px', cursor: isOnline ? 'pointer' : 'not-allowed', 
                                 opacity: isOnline ? 1 : 0.5,
                                 transition: 'all 0.2s',
-                                _hover: { bg: 'brand.border', color: 'brand.error' } 
+                                _hover: { bg: '#F8FAFC', color: '#F43F5E', borderColor: '#F43F5E/30' } 
                             })}>
                             <Trash2 size={16} strokeWidth={2.5} /> 삭제
                         </button>
