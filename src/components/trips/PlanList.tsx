@@ -77,7 +77,7 @@ export default function PlanList({
             {Object.entries(groupedPlans).map(([date, datePlans], idx) => (
                 <div key={date} className={css({ display: 'flex', flexDirection: 'column', gap: '16px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', mb: '4px' })}>
-                        <div className={css({ bg: 'brand.primary', color: 'white', px: '12px', py: '4px', borderRadius: '10px', fontSize: '13px', fontWeight: '800' })}>
+                        <div className={css({ bg: 'brand.primary', color: 'white', px: '10px', py: '3px', borderRadius: '8px', fontSize: '12px', fontWeight: '800' })}>
                             DAY {idx + 1}
                         </div>
                         <h3 className={css({ fontSize: '16px', fontWeight: '700', color: 'brand.secondary' })}>
@@ -85,20 +85,49 @@ export default function PlanList({
                         </h3>
                     </div>
 
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
+                    <div className={css({ 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '24px',
+                        position: 'relative',
+                        pl: '24px',
+                        _before: {
+                            content: '""',
+                            position: 'absolute',
+                            top: '12px',
+                            bottom: '12px',
+                            left: '7px',
+                            w: '1px',
+                            bg: 'brand.border',
+                            zIndex: 0
+                        }
+                    })}>
                         {datePlans.map((plan) => (
-                            <PlanCard 
-                                key={plan.id}
-                                plan={plan}
-                                exchangeRates={exchangeRates}
-                                userRole={userRole}
-                                timeDisplayMode={timeDisplayMode}
-                                formatLocalTime={formatLocalTime}
-                                formatKstTime={formatKstTime}
-                                onEdit={onEdit}
-                                onDelete={onDelete}
-                                onDetail={onDetail}
-                            />
+                            <div key={plan.id} className={css({ position: 'relative' })}>
+                                <div className={css({
+                                    position: 'absolute',
+                                    left: '-21px',
+                                    top: '26px',
+                                    w: '9px',
+                                    h: '9px',
+                                    borderRadius: '50%',
+                                    bg: 'brand.primary',
+                                    border: '2px solid white',
+                                    zIndex: 1,
+                                    boxShadow: '0 0 0 1px brand.primary/30'
+                                })} />
+                                <PlanCard 
+                                    plan={plan}
+                                    exchangeRates={exchangeRates}
+                                    userRole={userRole}
+                                    timeDisplayMode={timeDisplayMode}
+                                    formatLocalTime={formatLocalTime}
+                                    formatKstTime={formatKstTime}
+                                    onEdit={onEdit}
+                                    onDelete={onDelete}
+                                    onDetail={onDetail}
+                                />
+                            </div>
                         ))}
                     </div>
                 </div>
@@ -139,12 +168,13 @@ function PlanCard({
                 '--plan-image': plan.image_url ? `url("${plan.image_url}")` : 'none'
             } as any}
             className={css({
-            bg: 'white', p: '20px', borderRadius: '24px', border: '1.5px solid', borderColor: 'brand.border',
+            bg: 'white', p: '20px', borderRadius: '20px', border: '1px solid', borderColor: 'brand.border',
             display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
             _hover: !isTooltipOpen ? { 
-                boxShadow: '0 20px 40px rgba(0,0,0,0.08)', 
-                borderColor: 'brand.primary', 
-                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 24px rgba(0,0,0,0.08)', 
+                borderColor: 'brand.primary/50', 
+                transform: 'translateY(-2px)',
                 _before: plan.image_url ? {
                     transform: 'scale(1.05)',
                     opacity: 0.95
