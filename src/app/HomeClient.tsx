@@ -637,15 +637,14 @@ export default function HomeClient() {
           )
         ) : (
           <div>
-            {/* ①  여행 중 */}
             <div ref={ongoingRef}>
                 <TripSection
                     title="여행 중이에요! 🎉"
                     subtitle="현재 진행 중인 여행"
                     emoji="✈️"
-                    accentColor="brand.primary"
+                    accentColor="brand.accent"
                     badgeBg="bg.softCotton"
-                    badgeColor="brand.primary"
+                    badgeColor="brand.accent"
                     badgeLabel="여행 중"
                     trips={ongoing}
                     currentUserId={user.id}
@@ -659,9 +658,9 @@ export default function HomeClient() {
                     title="다가오는 여행"
                     subtitle="출발 전 설레는 여행"
                     emoji="🗺️"
-                    accentColor="brand.primaryDark"
+                    accentColor="brand.primary"
                     badgeBg="bg.softCotton"
-                    badgeColor="brand.primaryDark"
+                    badgeColor="brand.primary"
                     badgeLabel="예정"
                     trips={upcoming}
                     currentUserId={user.id}

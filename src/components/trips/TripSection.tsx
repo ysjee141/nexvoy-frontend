@@ -117,9 +117,7 @@ export default function TripSection({
                                 <div className={css({
                                     position: 'absolute', top: 0, left: 0, right: 0,
                                     h: '4px',
-                                    bg: isOwner
-                                        ? 'brand.primary'
-                                        : 'brand.muted',
+                                    bg: !isOwner ? 'brand.muted' : (accentColor === 'brand.accent' ? 'brand.accent' : accentColor === 'brand.primary' ? 'brand.primary' : 'brand.muted'),
                                 })} />
 
                                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '10px' })}>
@@ -148,7 +146,7 @@ export default function TripSection({
                                     mb: '12px', display: 'flex', alignItems: 'center', gap: '6px',
                                     color: 'brand.secondary', wordBreak: 'break-all',
                                 })}>
-                                    <MapPin size={18} className={css({ color: 'brand.accent' })} />
+                                    <MapPin size={18} className={css({ color: accentColor === 'brand.accent' ? 'brand.accent' : accentColor === 'brand.primary' ? 'brand.primary' : 'brand.muted' })} />
                                     {trip.destination}
                                 </h3>
 
@@ -172,7 +170,13 @@ export default function TripSection({
                                     </div>
                                     <div className={css({ w: '100%', h: '8px', bg: 'bg.softCotton', borderRadius: '10px', overflow: 'hidden', border: '1px solid', borderColor: 'brand.border' })}>
                                         <div
-                                            className={css({ h: '100%', bg: progressPercent === 100 ? 'brand.primary' : 'brand.accent', transition: 'width 1s cubic-bezier(0.2, 0, 0, 1)' })}
+                                            className={css({ 
+                                                h: '100%', 
+                                                bg: progressPercent === 100 
+                                                    ? 'brand.primary' 
+                                                    : (accentColor === 'brand.accent' ? 'brand.accent' : accentColor === 'brand.primary' ? 'brand.primary' : 'brand.muted'),
+                                                transition: 'width 1s cubic-bezier(0.2, 0, 0, 1)' 
+                                            })}
                                             style={{ width: `${progressPercent}%` }}
                                         />
                                     </div>
