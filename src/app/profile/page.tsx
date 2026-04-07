@@ -216,321 +216,403 @@ function ProfileContent() {
 
     return (
         <div className={css({ maxW: '720px', mx: 'auto', py: { base: '20px', sm: '40px' }, px: { base: '0', sm: '0' }, display: 'flex', flexDirection: 'column', gap: '16px' })}>
-            {/* 헤더 */}
-            <div className={css({ display: 'flex', alignItems: 'center', gap: '16px', mb: '4px' })}>
+            {/* 프리미엄 헤더: 히어로 배경 & 아바타 */}
+            <div className={css({ 
+                position: 'relative', 
+                mb: '12px',
+                pt: { base: '40px', sm: '60px' },
+                pb: '24px',
+                px: { base: '20px', sm: '32px' },
+                background: 'linear-gradient(180deg, rgba(46, 196, 182, 0.08) 0%, rgba(255, 255, 255, 0) 100%)',
+                borderRadius: '32px',
+                display: 'flex', 
+                flexDirection: 'column',
+                alignItems: 'center',
+                textAlign: 'center',
+                gap: '20px'
+            })}>
+                {/* 아바타 영역 */}
                 <div className={css({
-                    w: { base: '64px', sm: '72px' }, h: { base: '64px', sm: '72px' }, borderRadius: '50%',
-                    bg: '#222',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: 'white', fontSize: { base: '26px', sm: '30px' }, fontWeight: '700', flexShrink: 0
+                    position: 'relative',
+                    w: { base: '88px', sm: '100px' }, 
+                    h: { base: '88px', sm: '100px' }, 
+                    borderRadius: '32px',
+                    bg: 'brand.secondary',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    color: 'white', 
+                    fontSize: { base: '36px', sm: '42px' }, 
+                    fontWeight: '800', 
+                    flexShrink: 0,
+                    boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
+                    transform: 'rotate(-2deg)',
+                    transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                    _hover: { transform: 'rotate(0deg) scale(1.05)' }
                 })}>
                     {displayName.charAt(0).toUpperCase()}
+                    <div className={css({
+                        position: 'absolute',
+                        bottom: '-4px',
+                        right: '-4px',
+                        w: '32px',
+                        h: '32px',
+                        bg: 'brand.primary',
+                        borderRadius: '10px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'white',
+                        boxShadow: '0 4px 8px rgba(46, 196, 182, 0.3)',
+                        border: '3px solid white'
+                    })}>
+                        <Check size={16} strokeWidth={3} />
+                    </div>
                 </div>
-                <div className={css({ flex: 1, minW: 0 })}>
+
+                <div className={css({ w: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' })}>
                     {isEditingNickname ? (
-                        <div className={css({ display: 'flex', flexDirection: 'column', w: '100%', gap: '4px' })}>
-                            <div className={css({ display: 'flex', gap: '8px', flexDirection: 'row', alignItems: 'center', w: '100%' })}>
+                        <div className={css({ display: 'flex', flexDirection: 'column', w: '100%', maxW: '320px', gap: '8px' })}>
+                            <div className={css({ display: 'flex', gap: '8px', alignItems: 'center' })}>
                                 <input
                                     value={nickname}
                                     onChange={e => { setNickname(e.target.value); setNicknameError('') }}
                                     autoFocus
                                     className={css({ 
-                                        flex: 1, minW: 0, p: '10px 14px', 
-                                        bg: '#F9F9F9',
+                                        flex: 1, minW: 0, p: '12px 16px', 
+                                        bg: 'white',
                                         border: nicknameError ? '2px solid #EF4444' : '2px solid #2EC4B6', 
-                                        borderRadius: '12px', fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', outline: 'none',
-                                        transition: 'all 0.2s',
-                                        _focus: { bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' }
+                                        borderRadius: '16px', fontSize: '18px', fontWeight: 'bold', outline: 'none',
+                                        textAlign: 'center',
+                                        boxShadow: 'floating',
+                                        transition: 'all 0.2s'
                                     })}
                                 />
-                                <div className={css({ display: 'flex', gap: '4px', flexShrink: 0 })}>
+                                <div className={css({ display: 'flex', gap: '6px' })}>
                                     <button
                                         onClick={saveNickname}
                                         disabled={isSavingNickname}
-                                        className={css({ p: '6px', bg: '#2EC4B6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', _hover: { bg: '#249E93' }, _disabled: { opacity: 0.6 } })}
-                                        title="저장"
+                                        className={css({ w: '44px', h: '44px', bg: '#2EC4B6', color: 'white', borderRadius: '12px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', _hover: { bg: '#249E93', transform: 'translateY(-2px)' }, _disabled: { opacity: 0.6 } })}
                                     >
-                                        {isSavingNickname ? <span className={css({ fontSize: '12px', fontWeight: 'bold', px: '2px' })}>...</span> : <Check size={18} />}
-                                    </button>
-                                    <button
-                                        onClick={() => { setIsEditingNickname(false); setNickname(profile?.nickname || ''); setNicknameError('') }}
-                                        className={css({ p: '6px', bg: '#F7F7F7', color: '#555', borderRadius: '8px', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: '#eee' } })}
-                                        title="취소"
-                                    >
-                                        <X size={18} />
+                                        {isSavingNickname ? '...' : <Check size={20} strokeWidth={3} />}
                                     </button>
                                 </div>
                             </div>
                             {nicknameError && (
-                                <p className={css({ fontSize: '12px', color: '#dc2626', fontWeight: '600', mt: '2px' })}>{nicknameError}</p>
+                                <p className={css({ fontSize: '13px', color: '#dc2626', fontWeight: '600' })}>{nicknameError}</p>
                             )}
                         </div>
                     ) : (
                         <>
-                            <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                                <h1 className={css({ fontSize: { base: '24px', sm: '28px' }, fontWeight: '700', color: '#2C3A47', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap', letterSpacing: '-0.5px' })}>
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' })}>
+                                <h1 className={css({ fontSize: { base: '26px', sm: '32px' }, fontWeight: '850', color: '#2C3A47', letterSpacing: '-0.03em' })}>
                                     {displayName}
                                 </h1>
                                 <button
                                     onClick={() => setIsEditingNickname(true)}
-                                    className={css({ bg: 'transparent', border: 'none', color: '#717171', cursor: 'pointer', p: '4px', borderRadius: '4px', _hover: { bg: '#F7F7F7', color: '#222' }, transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' })}
-                                    aria-label="닉네임 수정"
+                                    className={css({ bg: 'rgba(46, 196, 182, 0.1)', border: 'none', color: '#2EC4B6', cursor: 'pointer', p: '6px', borderRadius: '8px', _hover: { bg: '#2EC4B6', color: 'white' }, transition: 'all 0.3s' })}
                                 >
-                                    <Edit2 size={16} />
+                                    <Edit2 size={16} strokeWidth={2.5} />
                                 </button>
                             </div>
-                            <p className={css({ color: '#717171', fontSize: '15px', mt: '2px', fontWeight: '500', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' })}>{user.email}</p>
+                            <p className={css({ color: 'brand.muted', fontSize: '15px', mt: '4px', fontWeight: '600', opacity: 0.8 })}>{user.email}</p>
                         </>
                     )}
                 </div>
             </div>
 
-            {/* 활동 통계 */}
-            <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '18px', fontWeight: '700', mb: '24px', color: '#2C3A47' })}>나의 여정 기록</h2>
-                {/* 모바일: 2x2 grid / 데스크탑: 4열 */}
-                <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '12px', textAlign: 'center' })}>
+            {/* 프리미엄 여정 기록 대시보드 */}
+            <section className={css({ bg: 'white', borderRadius: '32px', p: { base: '24px', sm: '32px' }, boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
+                <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '24px' })}>
+                    <h2 className={css({ fontSize: '20px', fontWeight: '850', color: '#2C3A47', letterSpacing: '-0.02em' })}>나의 여정 대시보드</h2>
+                    <span className={css({ fontSize: '13px', px: '10px', py: '4px', bg: 'rgba(46,196,182,0.1)', color: 'brand.primary', borderRadius: '10px', fontWeight: '800' })}>전체 통계</span>
+                </div>
+                
+                <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '16px' })}>
                     {[
-                        { label: '다녀온 여행', value: stats.completedTrips, icon: '📸', href: '/?tab=completed' },
-                        { label: '다가올 여행', value: stats.upcomingTrips, icon: '✈️', href: '/?tab=upcoming' },
-                        { label: '함께한 날들', value: `${stats.totalDays}일`, icon: '📅', href: '/profile/travel-log' },
-                        { label: '기록한 장소들', value: stats.totalPlans, icon: '📍', href: '/profile/places-visited' },
+                        { label: '완료한 여행', value: stats.completedTrips, sub: '번의 추억', icon: '📸', href: '/?tab=completed', color: '#FFF5F0' },
+                        { label: '다가올 여행', value: stats.upcomingTrips, sub: '번의 설렘', icon: '✈️', href: '/?tab=upcoming', color: '#EAF9F7' },
+                        { label: '함께한 날들', value: stats.totalDays, sub: '일 동안', icon: '📅', href: '/profile/travel-log', color: '#F0F4FF' },
+                        { label: '기록한 장소', value: stats.totalPlans, sub: '곳의 흔적', icon: '📍', href: '/profile/places-visited', color: '#FFF9E5' },
                     ].map(item => (
                         <Link 
                             key={item.label} 
                             href={item.href}
                             className={css({ 
-                                p: { base: '16px 8px', sm: '20px' }, 
-                                bg: '#F7F7F7', 
-                                borderRadius: '16px', 
-                                border: '1px solid #EEEEEE',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                p: { base: '20px 12px', sm: '24px 16px' }, 
+                                bg: 'white', 
+                                borderRadius: '24px', 
+                                border: '1px solid #F5F5F5',
                                 textDecoration: 'none',
-                                transition: 'all 0.2s',
+                                transition: 'all 0.4s cubic-bezier(0.2, 0, 0, 1)',
+                                boxShadow: 'dimensional',
                                 _hover: { 
-                                    bg: 'white', 
-                                    transform: 'translateY(-2px)', 
-                                    boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
-                                    borderColor: '#ddd'
+                                    transform: 'translateY(-6px)', 
+                                    boxShadow: 'floating',
+                                    borderColor: 'brand.primary',
+                                    '& [data-stat-icon]': { transform: 'scale(1.2) rotate(5deg)' }
                                 },
-                                _active: { transform: 'scale(0.98)' }
+                                _active: { transform: 'scale(0.97)' }
                             })}
                         >
-                            <div className={css({ fontSize: '24px', mb: '8px' })}>{item.icon}</div>
-                            <div className={css({ fontSize: { base: '22px', sm: '26px' }, fontWeight: '700', color: '#222', letterSpacing: '-0.5px' })}>{item.value}</div>
-                            <div className={css({ fontSize: '13px', color: '#717171', mt: '4px', whiteSpace: 'nowrap', fontWeight: '600' })}>{item.label}</div>
+                            <div 
+                                data-stat-icon
+                                className={css({ 
+                                    fontSize: '28px', 
+                                    mb: '14px', 
+                                    w: '52px', h: '52px', 
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    bg: item.color, 
+                                    borderRadius: '16px',
+                                    transition: 'all 0.3s ease'
+                                })}
+                            >
+                                {item.icon}
+                            </div>
+                            <div className={css({ fontSize: '24px', fontWeight: '900', color: '#2C3A47', letterSpacing: '-0.5px' })}>{item.value}</div>
+                            <div className={css({ fontSize: '13px', color: '#828D99', mt: '4px', fontWeight: '700', opacity: 0.9 })}>{item.label}</div>
+                            <div className={css({ fontSize: '11px', color: '#AAA', mt: '2px', fontWeight: '600' })}>{item.sub}</div>
                         </Link>
                     ))}
                 </div>
             </section>
 
-
-
-            {/* 비밀번호 변경 */}
-            <section className={css({ bg: 'white', borderRadius: '24px', p: { base: '20px', sm: '32px' }, border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '17px', fontWeight: '700', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <Lock size={18} />비밀번호 변경
-                </h2>
-                <form onSubmit={changePassword} className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                    {/* 새 비밀번호 */}
-                    <div>
-                        <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>새 비밀번호</label>
-                        <div className={css({ position: 'relative' })}>
-                            <input
-                                type={showNew ? 'text' : 'password'}
-                                value={newPassword}
-                                onChange={e => { setNewPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
-                                placeholder="6자 이상 입력해 주세요"
-                                className={css({ 
-                                    w: '100%', p: '14px 48px 14px 16px', bg: '#F9F9F9', border: '1px solid #EEEEEE', borderRadius: '14px', fontSize: '15px', fontWeight: '600', color: '#2C3A47', outline: 'none', 
-                                    transition: 'all 0.2s',
-                                    _placeholder: { color: '#CCC', fontWeight: '400' },
-                                    _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' } 
-                                })}
-                            />
-                            <button type="button" onClick={() => setShowNew(!showNew)}
-                                className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa' })}>
-                                {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                        </div>
-                        {/* 최소 길이 안내 */}
-                        {newPassword.length > 0 && newPassword.length < 6 && (
-                            <p className={css({ fontSize: '12px', color: '#f59e0b', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                <XCircle size={13} /> 6자 이상으로 조금 더 튼튼하게 만들어 주세요! ({newPassword.length}/6)
-                            </p>
-                        )}
-                        {newPassword.length >= 6 && (
-                            <p className={css({ fontSize: '12px', color: '#16a34a', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                <CheckCircle2 size={13} /> 아주 좋은 비밀번호예요!
-                            </p>
-                        )}
+            {/* 계정 보안 설정 */}
+            <section className={css({ bg: 'white', borderRadius: '32px', p: { base: '24px', sm: '32px' }, boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
+                <h2 className={css({ fontSize: '18px', fontWeight: '850', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '-0.02em' })}>
+                    <div className={css({ w: '36px', h: '36px', bg: 'rgba(46, 196, 182, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'brand.primary' })}>
+                        <Lock size={18} strokeWidth={2.5} />
                     </div>
-
-                    {/* 새 비밀번호 확인 */}
-                    <div>
-                        <label className={css({ fontSize: '13px', fontWeight: '600', color: '#555', mb: '6px', display: 'block' })}>새 비밀번호 확인</label>
-                        <div className={css({ position: 'relative' })}>
-                            <input
-                                type={showConfirm ? 'text' : 'password'}
-                                value={confirmPassword}
-                                onChange={e => { setConfirmPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
-                                placeholder="한 번 더 입력해 주세요"
-                                className={css({
-                                    w: '100%', p: '14px 48px 14px 16px', bg: '#F9F9F9', fontSize: '15px', fontWeight: '600', color: '#2C3A47', outline: 'none', borderRadius: '14px',
-                                    transition: 'all 0.2s',
-                                    border: confirmPassword.length === 0
-                                        ? '1px solid #EEEEEE'
-                                        : confirmPassword === newPassword
-                                            ? '1px solid #10B981'
-                                            : '1px solid #EF4444',
-                                    _placeholder: { color: '#CCC', fontWeight: '400' },
-                                    _focus: { bg: 'white', borderColor: confirmPassword === newPassword ? '#10B981' : '#EF4444' }
-                                })}
-                            />
-                            <button type="button" onClick={() => setShowConfirm(!showConfirm)}
-                                className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#aaa' })}>
-                                {showConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
+                    계정 보안 설정
+                </h2>
+                
+                <form onSubmit={changePassword} className={css({ display: 'flex', flexDirection: 'column', gap: '20px' })}>
+                    <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: '1fr 1fr' }, gap: '16px' })}>
+                        {/* 새 비밀번호 */}
+                        <div>
+                            <label className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary', mb: '8px', display: 'block', ml: '4px' })}>새 비밀번호</label>
+                            <div className={css({ position: 'relative' })}>
+                                <input
+                                    type={showNew ? 'text' : 'password'}
+                                    value={newPassword}
+                                    onChange={e => { setNewPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
+                                    placeholder="6자 이상 입력"
+                                    className={css({ 
+                                        w: '100%', p: '16px 48px 16px 16px', bg: 'bg.softCotton', border: '2px solid transparent', borderRadius: '18px', fontSize: '15px', fontWeight: '600', color: 'brand.secondary', outline: 'none', 
+                                        transition: 'all 0.2s',
+                                        _placeholder: { color: '#BBB', fontWeight: '500' },
+                                        _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.08)' } 
+                                    })}
+                                />
+                                <button type="button" onClick={() => setShowNew(!showNew)}
+                                    className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#BBB', transition: 'color 0.2s', _hover: { color: 'brand.primary' } })}>
+                                    {showNew ? <EyeOff size={20} strokeWidth={2} /> : <Eye size={20} strokeWidth={2} />}
+                                </button>
+                            </div>
+                            {newPassword.length > 0 && (
+                                <div className={css({ mt: '8px', ml: '4px' })}>
+                                    {newPassword.length < 6 ? (
+                                        <p className={css({ fontSize: '12px', color: '#F59E0B', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px' })}>
+                                            <XCircle size={14} /> 6자 이상 작성이 필요해요 ({newPassword.length}/6)
+                                        </p>
+                                    ) : (
+                                        <p className={css({ fontSize: '12px', color: 'brand.success', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px' })}>
+                                            <CheckCircle2 size={14} /> 안전한 비밀번호입니다!
+                                        </p>
+                                    )}
+                                </div>
+                            )}
                         </div>
-                        {/* 실시간 일치 여부 피드백 */}
-                        {confirmPassword.length > 0 && (
-                            confirmPassword === newPassword ? (
-                                <p className={css({ fontSize: '12px', color: '#16a34a', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                    <CheckCircle2 size={13} /> 완벽해요! 비밀번호가 일치합니다.
-                                </p>
-                            ) : (
-                                <p className={css({ fontSize: '12px', color: '#dc2626', mt: '4px', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                    <XCircle size={13} /> 비밀번호가 달라요. 다시 한번 확인해 볼까요?
-                                </p>
-                            )
-                        )}
+
+                        {/* 새 비밀번호 확인 */}
+                        <div>
+                            <label className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary', mb: '8px', display: 'block', ml: '4px' })}>비밀번호 확인</label>
+                            <div className={css({ position: 'relative' })}>
+                                <input
+                                    type={showConfirm ? 'text' : 'password'}
+                                    value={confirmPassword}
+                                    onChange={e => { setConfirmPassword(e.target.value); setPasswordError(''); setPasswordSuccess('') }}
+                                    placeholder="다시 한번 입력"
+                                    className={css({
+                                        w: '100%', p: '16px 48px 16px 16px', bg: 'bg.softCotton', border: '2px solid transparent', fontSize: '15px', fontWeight: '600', color: 'brand.secondary', outline: 'none', borderRadius: '18px',
+                                        transition: 'all 0.2s',
+                                        _placeholder: { color: '#BBB', fontWeight: '500' },
+                                        _focus: { 
+                                            bg: 'white', 
+                                            borderColor: confirmPassword === newPassword && confirmPassword !== '' ? 'brand.success' : 'brand.primary',
+                                            boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.08)'
+                                        },
+                                        ...(confirmPassword !== '' && {
+                                            borderColor: confirmPassword === newPassword ? 'brand.success' : 'brand.error',
+                                            bg: 'white'
+                                        })
+                                    })}
+                                />
+                                <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                                    className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', bg: 'transparent', border: 'none', cursor: 'pointer', color: '#BBB', transition: 'color 0.2s', _hover: { color: 'brand.primary' } })}>
+                                    {showConfirm ? <EyeOff size={20} strokeWidth={2} /> : <Eye size={20} strokeWidth={2} />}
+                                </button>
+                            </div>
+                            {confirmPassword.length > 0 && (
+                                <div className={css({ mt: '8px', ml: '4px' })}>
+                                    {confirmPassword === newPassword ? (
+                                        <p className={css({ fontSize: '12px', color: 'brand.success', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px' })}>
+                                            <CheckCircle2 size={14} /> 일치합니다.
+                                        </p>
+                                    ) : (
+                                        <p className={css({ fontSize: '12px', color: 'brand.error', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '5px' })}>
+                                            <XCircle size={14} /> 비밀번호가 서로 달라요.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {passwordError && (
-                        <p className={css({ fontSize: '13px', color: '#EF4444', bg: '#fef2f2', p: '12px 16px', borderRadius: '12px', fontWeight: '600' })}>{passwordError}</p>
+                        <div className={css({ fontSize: '14px', color: 'brand.error', bg: 'brand.errorLight', p: '14px 18px', borderRadius: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                            <XCircle size={16} /> {passwordError}
+                        </div>
                     )}
                     {passwordSuccess && (
-                        <p className={css({ fontSize: '13px', color: '#2EC4B6', bg: '#EAF9F7', p: '12px 16px', borderRadius: '12px', fontWeight: '600' })}>{passwordSuccess}</p>
+                        <div className={css({ fontSize: '14px', color: 'brand.primary', bg: 'rgba(46,196,182,0.1)', p: '14px 18px', borderRadius: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                            <CheckCircle2 size={16} /> {passwordSuccess}
+                        </div>
                     )}
 
                     <button
                         type="submit"
                         disabled={isChangingPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword || newPassword.length < 6}
-                        className={css({ mt: '8px', py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', border: 'none', cursor: 'pointer', fontWeight: '700', fontSize: '15px', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(46,196,182,0.2)', _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none' }, _hover: { bg: '#249E93', transform: 'translateY(-1px)' } })}
+                        className={css({ 
+                            mt: '4px', py: '18px', 
+                            bg: 'brand.primary', color: 'white', borderRadius: '20px', border: 'none', 
+                            cursor: 'pointer', fontWeight: '850', fontSize: '16px', 
+                            transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
+                            boxShadow: '0 8px 16px rgba(46,196,182,0.25)', 
+                            _disabled: { opacity: 0.3, cursor: 'not-allowed', boxShadow: 'none' }, 
+                            _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 20px rgba(46,196,182,0.3)' },
+                            _active: { transform: 'scale(0.98)' }
+                        })}
                     >
-                        {isChangingPassword ? '안전하게 바꾸는 중...' : '비밀번호 변경할게요'}
+                        {isChangingPassword ? '비밀번호 변경 처리 중...' : '비밀번호 업데이트'}
                     </button>
                 </form>
             </section>
 
-            {/* 바로가기 링크 */}
-            <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
-                <h2 className={css({ fontSize: '18px', fontWeight: '700', p: '24px 24px 16px', color: '#2C3A47' })}>바로가기</h2>
-                {[
-                    { href: '/templates', icon: '📦', label: '나만의 템플릿', desc: '자주 쓰는 준비물을 미리 만들어 보세요' },
-                    { href: '/', icon: '✈️', label: '내 여행 목록', desc: '지금까지의 모든 여행을 확인해 보세요' },
-                ].map((item, i, arr) => (
-                    <Link
-                        key={item.href}
-                        href={item.href}
+            {/* 바로가기: 서비스 메뉴 */}
+            <section className={css({ bg: 'white', borderRadius: '32px', overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
+                <div className={css({ p: '24px 24px 12px' })}>
+                    <h2 className={css({ fontSize: '18px', fontWeight: '850', color: '#2C3A47', letterSpacing: '-0.02em' })}>마이페이지 메뉴</h2>
+                </div>
+                
+                <div className={css({ display: 'flex', flexDirection: 'column' })}>
+                    {[
+                        { href: '/templates', icon: '📦', label: '준비물 템플릿 관리', desc: '나만의 체크리스트를 미리 구성해 두세요' },
+                        { href: '/profile/travel-log', icon: '📖', label: '여행 발자취 (Travel Log)', desc: '지금까지 다녀온 모든 여행의 기록입니다' },
+                        { href: '/feedback', icon: '💬', label: '건의 및 버그 제보', desc: '온여정을 더 좋게 만드는 소중한 의견을 주세요' },
+                    ].map((item, i) => (
+                        <Link
+                            key={item.href}
+                            href={item.href}
+                            className={css({
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                px: '24px',
+                                py: '20px',
+                                borderTop: '1px solid #F5F5F5',
+                                textDecoration: 'none',
+                                transition: 'all 0.25s ease',
+                                _hover: { bg: 'rgba(46, 196, 182, 0.04)', px: '28px' },
+                                _active: { bg: 'rgba(46, 196, 182, 0.08)' }
+                            })}
+                        >
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
+                                <div className={css({ fontSize: '22px', w: '40px', h: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', bg: 'bg.softCotton', borderRadius: '12px' })}>
+                                    {item.icon}
+                                </div>
+                                <div>
+                                    <div className={css({ fontSize: '16px', fontWeight: '750', color: 'brand.secondary' })}>{item.label}</div>
+                                    <div className={css({ fontSize: '13px', color: 'brand.muted', mt: '2px', fontWeight: '600' })}>{item.desc}</div>
+                                </div>
+                            </div>
+                            <ChevronRight size={20} className={css({ color: '#CCC', transition: 'all 0.2s' })} />
+                        </Link>
+                    ))}
+                </div>
+            </section>
+
+            {/* 기타 지원 및 법률 히스토리 */}
+            <section className={css({ bg: 'white', borderRadius: '32px', overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
+                <div className={css({ display: 'flex', flexDirection: 'column' })}>
+                    <button
+                        onClick={() => setShowTerms(true)}
                         className={css({
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            px: '24px',
-                            py: '20px',
-                            borderTop: '1px solid #EEEEEE',
-                            textDecoration: 'none',
-                            color: '#222',
-                            transition: 'all 0.2s',
-                            _hover: { bg: '#F7F7F7' },
-                            _active: { transform: 'scale(0.98)' }
+                            w: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            px: '24px', py: '18px', bg: 'transparent', border: 'none', cursor: 'pointer',
+                            transition: 'all 0.25s ease',
+                            _hover: { bg: 'rgba(46, 196, 182, 0.04)', px: '28px' }
                         })}
                     >
-                        <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                            <span className={css({ fontSize: '20px' })}>{item.icon}</span>
-                            <div>
-                                <div className={css({ fontSize: '16px', fontWeight: '700' })}>{item.label}</div>
-                                <div className={css({ fontSize: '13px', color: '#717171', mt: '2px' })}>{item.desc}</div>
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
+                            <div className={css({ w: '40px', h: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', bg: '#F0F4FF', borderRadius: '12px', color: '#4F46E5' })}>
+                                <ShieldCheck size={20} strokeWidth={2.5} />
+                            </div>
+                            <div className={css({ textAlign: 'left' })}>
+                                <div className={css({ fontSize: '15px', fontWeight: '750', color: 'brand.secondary' })}>약관 및 개인정보 정책</div>
                             </div>
                         </div>
-                        <ChevronRight size={18} color="#B0B0B0" />
+                        <ChevronRight size={20} color="#CCC" />
+                    </button>
+                    
+                    <Link
+                        href="/profile/licenses"
+                        className={css({
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            px: '24px', py: '18px', borderTop: '1px solid #F5F5F5', textDecoration: 'none',
+                            transition: 'all 0.25s ease',
+                            _hover: { bg: 'rgba(46, 196, 182, 0.04)', px: '28px' }
+                        })}
+                    >
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
+                            <div className={css({ w: '40px', h: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', bg: '#FFF9E5', borderRadius: '12px', color: '#FABC2A' })}>
+                                <Edit2 size={20} strokeWidth={2.5} />
+                            </div>
+                            <div className={css({ textAlign: 'left' })}>
+                                <div className={css({ fontSize: '15px', fontWeight: '750', color: 'brand.secondary' })}>오픈 소스 라이선스</div>
+                            </div>
+                        </div>
+                        <ChevronRight size={20} color="#CCC" />
                     </Link>
-                ))}
+                </div>
             </section>
 
-            {/* 기타 메뉴 */}
-            <section className={css({ bg: 'white', borderRadius: '24px', overflow: 'hidden', border: '1px solid #eee', boxShadow: '0 6px 16px rgba(0,0,0,0.04)' })}>
-                <button
-                    onClick={() => setShowTerms(true)}
-                    className={css({
-                        w: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        px: '24px',
-                        py: '20px',
-                        bg: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#222',
-                        transition: 'all 0.2s',
-                        _hover: { bg: '#F7F7F7' },
-                        _active: { transform: 'scale(0.98)' },
-                        borderBottom: '1px solid #EEEEEE'
-                    })}
-                >
-                    <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                        <ShieldCheck size={20} color="#717171" />
-                        <div className={css({ textAlign: 'left' })}>
-                            <div className={css({ fontSize: '16px', fontWeight: '700' })}>이용약관 및 개인정보 처리방침</div>
-                            <div className={css({ fontSize: '13px', color: '#717171', mt: '2px' })}>온여정의 정책을 확인합니다</div>
-                        </div>
-                    </div>
-                    <ChevronRight size={18} color="#B0B0B0" />
-                </button>
-                <Link
-                    href="/profile/licenses"
-                    className={css({
-                        w: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        px: '24px',
-                        py: '20px',
-                        textDecoration: 'none',
-                        color: '#222',
-                        transition: 'all 0.2s',
-                        _hover: { bg: '#F7F7F7' },
-                        _active: { transform: 'scale(0.98)' }
-                    })}
-                >
-                    <div className={css({ display: 'flex', alignItems: 'center', gap: '14px' })}>
-                        <Edit2 size={20} color="#717171" />
-                        <div className={css({ textAlign: 'left' })}>
-                            <div className={css({ fontSize: '16px', fontWeight: '700' })}>오픈 소스 라이선스</div>
-                            <div className={css({ fontSize: '13px', color: '#717171', mt: '2px' })}>라이브러리 목록 확인</div>
-                        </div>
-                    </div>
-                    <ChevronRight size={18} color="#B0B0B0" />
-                </Link>
-            </section>
-
-            {/* 로그아웃 & 탈퇴 */}
-            <div className={css({ mt: '20px', mb: '40px', display: 'flex', justifyContent: 'center', gap: '20px', alignItems: 'center' })}>
+            {/* 로그아웃 & 탈퇴 푸터 */}
+            <div className={css({ mt: '24px', mb: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' })}>
                 <button
                     onClick={handleLogout}
                     className={css({
-                        bg: 'transparent', border: 'none', cursor: 'pointer', p: 0,
-                        fontSize: '13px', color: '#aaa', textDecoration: 'none', 
-                        transition: 'all 0.2s', 
-                        _hover: { color: '#888', textDecoration: 'underline' }
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        px: '24px', py: '12px', bg: 'white', border: '1px solid #EEE', borderRadius: '16px',
+                        fontSize: '14px', fontWeight: '700', color: 'brand.muted', cursor: 'pointer',
+                        transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
+                        _hover: { bg: '#FFF1F0', color: '#FF4D4F', borderColor: '#FFCCC7', transform: 'translateY(-2px)' }
                     })}
                 >
-                    로그아웃
+                    <LogOut size={16} /> 안전하게 로그아웃
                 </button>
                 
-                <Link href="/profile/withdrawal" className={css({ fontSize: '13px', color: '#aaa', textDecoration: 'none', transition: 'color 0.2s', _hover: { color: '#888', textDecoration: 'underline' } })}>
-                    회원 탈퇴
+                <Link 
+                    href="/profile/withdrawal" 
+                    className={css({ 
+                        fontSize: '13px', color: '#BBB', textDecoration: 'none', fontWeight: '600',
+                        transition: 'color 0.2s', _hover: { color: 'brand.secondary', textDecoration: 'underline' } 
+                    })}
+                >
+                    회원 탈퇴는 여기서 하실 수 있어요
                 </Link>
             </div>
             <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />

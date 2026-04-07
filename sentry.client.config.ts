@@ -8,14 +8,16 @@ if (Capacitor.isNativePlatform()) {
   // 모바일 앱 환경 구동 시: 네이티브 크래시 리포트를 위해 Capacitor 특화 버전을 사용
   SentryCapacitor.init({
     dsn,
-    tracesSampleRate: 1.0,
+    enabled: process.env.NODE_ENV === "production",
+    tracesSampleRate: 0.1,
     debug: false,
   });
 } else {
   // 브라우저 웹 환경 구동 시: 기존 Next.js Sentry 설정 유지
   SentryNext.init({
     dsn,
-    tracesSampleRate: 1.0,
+    enabled: process.env.NODE_ENV === "production",
+    tracesSampleRate: 0.1,
     debug: false,
     integrations: [
       SentryNext.captureConsoleIntegration({

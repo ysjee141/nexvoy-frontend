@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { css } from 'styled-system/css'
 import { X, Send, ImageIcon, Video, Loader2, AlertCircle, Plus, MessageSquare } from 'lucide-react'
 import { feedbackService } from '@/services/FeedbackService'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 interface BugReportModalProps {
     isOpen: boolean;
@@ -18,6 +19,8 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
     const fileRef = useRef<HTMLInputElement>(null)
+
+    useScrollLock(isOpen)
 
     const handleClose = () => {
         const isDirty = content.trim() !== '' || files.length > 0

@@ -7,6 +7,7 @@ import { X, MapPin, Clock, Calendar, Check, Search, ChevronRight, Loader2, Camer
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { LocationService } from '@/services/ExternalApiService'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 const libraries: ("places")[] = ["places"]
 
@@ -98,6 +99,7 @@ export default function NewPlanModal({
     }, [isDirty, onClose, resetForm]);
 
     useModalBackButton(isOpen, handleClose, 'newPlanModal')
+    useScrollLock(isOpen)
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,

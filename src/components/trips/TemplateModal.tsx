@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { css } from 'styled-system/css'
 import { X, Copy, Loader2 } from 'lucide-react'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/utils/supabase/client'
 
@@ -19,6 +20,8 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
     const [templates, setTemplates] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
     const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null)
+
+    useScrollLock(isOpen)
 
     useEffect(() => {
         if (!isOpen) return

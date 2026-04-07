@@ -6,6 +6,7 @@ import { css } from 'styled-system/css'
 import { X, MapPin, Calendar, Users, Minus, Plus, Loader2, Check, Sparkles } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import { analytics } from '@/services/AnalyticsService'
 
 const libraries: ("places")[] = ["places"]
@@ -75,6 +76,7 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
     }, [isDirty, onClose])
 
     useModalBackButton(isOpen, handleClose, 'editTripModal')
+    useScrollLock(isOpen)
 
     const { isLoaded } = useLoadScript({
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
