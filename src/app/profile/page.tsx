@@ -170,6 +170,12 @@ function ProfileContent() {
         setIsSavingNickname(false)
     }
 
+    const cancelEditingNickname = () => {
+        setIsEditingNickname(false)
+        setNickname(profile?.nickname || user?.email?.split('@')[0] || '')
+        setNicknameError('')
+    }
+
     const changePassword = async (e: React.FormEvent) => {
         e.preventDefault()
         setPasswordError('')
@@ -277,6 +283,10 @@ function ProfileContent() {
                                 <input
                                     value={nickname}
                                     onChange={e => { setNickname(e.target.value); setNicknameError('') }}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') saveNickname()
+                                        if (e.key === 'Escape') cancelEditingNickname()
+                                    }}
                                     autoFocus
                                     className={css({ 
                                         flex: 1, minW: 0, p: '12px 16px', 
@@ -290,9 +300,32 @@ function ProfileContent() {
                                 />
                                 <div className={css({ display: 'flex', gap: '6px' })}>
                                     <button
+                                        onClick={cancelEditingNickname}
+                                        className={css({ 
+                                            w: '44px', h: '44px', 
+                                            bg: 'bg.softCotton', color: 'brand.muted', 
+                                            borderRadius: '12px', border: 'none', cursor: 'pointer', 
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                            transition: 'all 0.2s', 
+                                            _hover: { bg: '#FEE2E2', color: '#EF4444', transform: 'translateY(-2px)' } 
+                                        })}
+                                        title="취소"
+                                    >
+                                        <X size={20} strokeWidth={3} />
+                                    </button>
+                                    <button
                                         onClick={saveNickname}
                                         disabled={isSavingNickname}
-                                        className={css({ w: '44px', h: '44px', bg: '#2EC4B6', color: 'white', borderRadius: '12px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s', _hover: { bg: '#249E93', transform: 'translateY(-2px)' }, _disabled: { opacity: 0.6 } })}
+                                        className={css({ 
+                                            w: '44px', h: '44px', 
+                                            bg: '#2EC4B6', color: 'white', 
+                                            borderRadius: '12px', border: 'none', cursor: 'pointer', 
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                            transition: 'all 0.2s', 
+                                            _hover: { bg: '#249E93', transform: 'translateY(-2px)' }, 
+                                            _disabled: { opacity: 0.6 } 
+                                        })}
+                                        title="저장"
                                     >
                                         {isSavingNickname ? '...' : <Check size={20} strokeWidth={3} />}
                                     </button>
