@@ -77,7 +77,7 @@ export default function TemplatesPage() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         gap: '8px',
-                        bg: '#2EC4B6',
+                        bg: 'brand.primary',
                         color: 'white',
                         px: { base: '16px', sm: '20px' },
                         py: '12px',
@@ -90,8 +90,8 @@ export default function TemplatesPage() {
                         cursor: 'pointer',
                         w: { base: '100%', sm: 'auto' },
                         transition: 'all 0.2s',
-                        boxShadow: '0 4px 12px rgba(46,196,182,0.2)',
-                        _hover: { bg: '#249E93', transform: 'translateY(-2px)', boxShadow: '0 6px 16px rgba(46,196,182,0.3)' },
+                        boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)',
+                        _hover: { bg: '#1D4ED8', transform: 'translateY(-2px)', boxShadow: '0 6px 16px rgba(37, 99, 235, 0.3)' },
                     })}
                 >
                     <Plus size={18} strokeWidth={3} /> 새 템플릿 만들기
@@ -151,7 +151,7 @@ export default function TemplatesPage() {
                                         cursor: 'pointer',
                                         _hover: {
                                             transform: 'translateY(-6px)',
-                                            boxShadow: '0 16px 32px rgba(46,196,182,0.12)',
+                                            boxShadow: '0 16px 32px rgba(37, 99, 235, 0.1)',
                                             borderColor: 'brand.primary/40',
                                             '& [data-icon-bg]': {
                                                 transform: 'scale(1.05) rotate(3deg)',

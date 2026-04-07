@@ -229,7 +229,7 @@ function ProfileContent() {
                 pt: { base: '40px', sm: '60px' },
                 pb: '24px',
                 px: { base: '20px', sm: '32px' },
-                background: 'linear-gradient(180deg, rgba(46, 196, 182, 0.08) 0%, rgba(255, 255, 255, 0) 100%)',
+                background: 'linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(255, 255, 255, 0) 100%)',
                 borderRadius: '32px',
                 display: 'flex', 
                 flexDirection: 'column',
@@ -269,7 +269,7 @@ function ProfileContent() {
                         alignItems: 'center',
                         justifyContent: 'center',
                         color: 'white',
-                        boxShadow: '0 4px 8px rgba(46, 196, 182, 0.3)',
+                        boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)',
                         border: '3px solid white'
                     })}>
                         <Check size={16} strokeWidth={3} />
@@ -291,7 +291,7 @@ function ProfileContent() {
                                     className={css({ 
                                         flex: 1, minW: 0, p: '12px 16px', 
                                         bg: 'white',
-                                        border: nicknameError ? '2px solid #EF4444' : '2px solid #2EC4B6', 
+                                        border: nicknameError ? '2px solid #EF4444' : '2px solid #2563EB', 
                                         borderRadius: '16px', fontSize: '18px', fontWeight: 'bold', outline: 'none',
                                         textAlign: 'center',
                                         boxShadow: 'floating',
@@ -318,11 +318,11 @@ function ProfileContent() {
                                         disabled={isSavingNickname}
                                         className={css({ 
                                             w: '44px', h: '44px', 
-                                            bg: '#2EC4B6', color: 'white', 
+                                            bg: 'brand.primary', color: 'white', 
                                             borderRadius: '12px', border: 'none', cursor: 'pointer', 
                                             display: 'flex', alignItems: 'center', justifyContent: 'center', 
                                             transition: 'all 0.2s', 
-                                            _hover: { bg: '#249E93', transform: 'translateY(-2px)' }, 
+                                            _hover: { bg: '#1D4ED8', transform: 'translateY(-2px)' }, 
                                             _disabled: { opacity: 0.6 } 
                                         })}
                                         title="저장"
@@ -343,7 +343,7 @@ function ProfileContent() {
                                 </h1>
                                 <button
                                     onClick={() => setIsEditingNickname(true)}
-                                    className={css({ bg: 'rgba(46, 196, 182, 0.1)', border: 'none', color: '#2EC4B6', cursor: 'pointer', p: '6px', borderRadius: '8px', _hover: { bg: '#2EC4B6', color: 'white' }, transition: 'all 0.3s' })}
+                                    className={css({ bg: 'rgba(37, 99, 235, 0.1)', border: 'none', color: 'brand.primary', cursor: 'pointer', p: '6px', borderRadius: '8px', _hover: { bg: 'brand.primary', color: 'white' }, transition: 'all 0.3s' })}
                                 >
                                     <Edit2 size={16} strokeWidth={2.5} />
                                 </button>
@@ -358,13 +358,13 @@ function ProfileContent() {
             <section className={css({ bg: 'white', borderRadius: '32px', p: { base: '24px', sm: '32px' }, boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
                 <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: '24px' })}>
                     <h2 className={css({ fontSize: '20px', fontWeight: '850', color: '#2C3A47', letterSpacing: '-0.02em' })}>나의 여정 대시보드</h2>
-                    <span className={css({ fontSize: '13px', px: '10px', py: '4px', bg: 'rgba(46,196,182,0.1)', color: 'brand.primary', borderRadius: '10px', fontWeight: '800' })}>전체 통계</span>
+                    <span className={css({ fontSize: '13px', px: '10px', py: '4px', bg: 'rgba(37,99,235,0.08)', color: 'brand.primary', borderRadius: '10px', fontWeight: '800' })}>전체 통계</span>
                 </div>
                 
                 <div className={css({ display: 'grid', gridTemplateColumns: { base: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: '16px' })}>
                     {[
                         { label: '완료한 여행', value: stats.completedTrips, sub: '번의 추억', icon: '📸', href: '/?tab=completed', color: '#FFF5F0' },
-                        { label: '다가올 여행', value: stats.upcomingTrips, sub: '번의 설렘', icon: '✈️', href: '/?tab=upcoming', color: '#EAF9F7' },
+                        { label: '다가올 여행', value: stats.upcomingTrips, sub: '번의 설렘', icon: '✈️', href: '/?tab=upcoming', color: 'rgba(37, 99, 235, 0.05)' },
                         { label: '함께한 날들', value: stats.totalDays, sub: '일 동안', icon: '📅', href: '/profile/travel-log', color: '#F0F4FF' },
                         { label: '기록한 장소', value: stats.totalPlans, sub: '곳의 흔적', icon: '📍', href: '/profile/places-visited', color: '#FFF9E5' },
                     ].map(item => (
@@ -416,7 +416,7 @@ function ProfileContent() {
             {/* 계정 보안 설정 */}
             <section className={css({ bg: 'white', borderRadius: '32px', p: { base: '24px', sm: '32px' }, boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
                 <h2 className={css({ fontSize: '18px', fontWeight: '850', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '-0.02em' })}>
-                    <div className={css({ w: '36px', h: '36px', bg: 'rgba(46, 196, 182, 0.1)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'brand.primary' })}>
+                    <div className={css({ w: '36px', h: '36px', bg: 'rgba(37, 99, 235, 0.08)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'brand.primary' })}>
                         <Lock size={18} strokeWidth={2.5} />
                     </div>
                     계정 보안 설정
@@ -437,7 +437,7 @@ function ProfileContent() {
                                         w: '100%', p: '16px 48px 16px 16px', bg: 'bg.softCotton', border: '2px solid transparent', borderRadius: '18px', fontSize: '15px', fontWeight: '600', color: 'brand.secondary', outline: 'none', 
                                         transition: 'all 0.2s',
                                         _placeholder: { color: '#BBB', fontWeight: '500' },
-                                        _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.08)' } 
+                                        _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.08)' } 
                                     })}
                                 />
                                 <button type="button" onClick={() => setShowNew(!showNew)}
@@ -476,7 +476,7 @@ function ProfileContent() {
                                         _focus: { 
                                             bg: 'white', 
                                             borderColor: confirmPassword === newPassword && confirmPassword !== '' ? 'brand.success' : 'brand.primary',
-                                            boxShadow: '0 0 0 4px rgba(46, 196, 182, 0.08)'
+                                            boxShadow: '0 0 0 4px rgba(37, 99, 235, 0.08)'
                                         },
                                         ...(confirmPassword !== '' && {
                                             borderColor: confirmPassword === newPassword ? 'brand.success' : 'brand.error',
@@ -511,7 +511,7 @@ function ProfileContent() {
                         </div>
                     )}
                     {passwordSuccess && (
-                        <div className={css({ fontSize: '14px', color: 'brand.primary', bg: 'rgba(46,196,182,0.1)', p: '14px 18px', borderRadius: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                        <div className={css({ fontSize: '14px', color: 'brand.primary', bg: 'rgba(37,99,235,0.08)', p: '14px 18px', borderRadius: '16px', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '8px' })}>
                             <CheckCircle2 size={16} /> {passwordSuccess}
                         </div>
                     )}
@@ -524,9 +524,9 @@ function ProfileContent() {
                             bg: 'brand.primary', color: 'white', borderRadius: '20px', border: 'none', 
                             cursor: 'pointer', fontWeight: '850', fontSize: '16px', 
                             transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)', 
-                            boxShadow: '0 8px 16px rgba(46,196,182,0.25)', 
-                            _disabled: { opacity: 0.3, cursor: 'not-allowed', boxShadow: 'none' }, 
-                            _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 20px rgba(46,196,182,0.3)' },
+                                    boxShadow: '0 8px 16px rgba(37, 99, 235, 0.15)', 
+                                    _disabled: { opacity: 0.3, cursor: 'not-allowed', boxShadow: 'none' }, 
+                                    _hover: { bg: '#1D4ED8', transform: 'translateY(-2px)', boxShadow: '0 12px 20px rgba(37, 99, 235, 0.25)' },
                             _active: { transform: 'scale(0.98)' }
                         })}
                     >
@@ -559,8 +559,8 @@ function ProfileContent() {
                                 borderTop: '1px solid #F5F5F5',
                                 textDecoration: 'none',
                                 transition: 'all 0.25s ease',
-                                _hover: { bg: 'rgba(46, 196, 182, 0.04)', px: '28px' },
-                                _active: { bg: 'rgba(46, 196, 182, 0.08)' }
+                                _hover: { bg: 'rgba(37, 99, 235, 0.04)', px: '28px' },
+                                _active: { bg: 'rgba(37, 99, 235, 0.08)' }
                             })}
                         >
                             <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
@@ -587,7 +587,7 @@ function ProfileContent() {
                             w: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             px: '24px', py: '18px', bg: 'transparent', border: 'none', cursor: 'pointer',
                             transition: 'all 0.25s ease',
-                            _hover: { bg: 'rgba(46, 196, 182, 0.04)', px: '28px' }
+                            _hover: { bg: 'rgba(37, 99, 235, 0.04)', px: '28px' }
                         })}
                     >
                         <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
@@ -607,7 +607,7 @@ function ProfileContent() {
                             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                             px: '24px', py: '18px', borderTop: '1px solid #F5F5F5', textDecoration: 'none',
                             transition: 'all 0.25s ease',
-                            _hover: { bg: 'rgba(46, 196, 182, 0.04)', px: '28px' }
+                            _hover: { bg: 'rgba(37, 99, 235, 0.04)', px: '28px' }
                         })}
                     >
                         <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
