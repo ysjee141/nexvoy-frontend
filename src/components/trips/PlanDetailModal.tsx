@@ -336,7 +336,10 @@ export default function PlanDetailModal({
 
                             )}
 
-                                <div className={css({ display: 'flex', flexDirection: 'column', gap: '20px' })}>
+                                <div className={css({ 
+                                    display: 'flex', flexDirection: 'column', gap: '24px',
+                                    p: { base: '20px 24px', sm: '24px 32px' } 
+                                })}>
                                     {/* 상세 구역 구분선 */}
                                     <div className={css({ h: '4px', w: '40px', bg: 'brand.primary/20', borderRadius: '2px', mb: '4px' })} />
 
@@ -344,7 +347,10 @@ export default function PlanDetailModal({
 
                                     {/* 장소 */}
                                     {plan.location && (
-                                        <InfoRow icon={<MapPin size={18} color="brand.accent" />} label="장소"
+                                        <InfoRow 
+                                            icon={<MapPin size={18} className={css({ color: 'brand.primary' })} />} 
+                                            label="장소"
+                                            bgColor="bg.softCotton"
                                             value={
                                                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '4px' })}>
                                                     {mapUrl ? (
@@ -364,7 +370,10 @@ export default function PlanDetailModal({
                                     )}
 
                                     {/* 시간 */}
-                                    <InfoRow icon={<Clock size={18} color="brand.primary" />} label="시간"
+                                    <InfoRow 
+                                        icon={<Clock size={18} className={css({ color: '#3B82F6' })} />} 
+                                        label="시간"
+                                        bgColor="bg.softCotton"
                                         value={
                                             <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', w: '100%' })}>
                                                 <div className={css({ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
@@ -395,7 +404,10 @@ export default function PlanDetailModal({
 
                                     {/* 알림 설정 */}
                                     {plan.alarm_minutes_before !== undefined && (
-                                        <InfoRow icon={<Bell size={18} color="brand.primary" />} label="알림 설정"
+                                        <InfoRow 
+                                            icon={<Bell size={18} className={css({ color: '#F59E0B' })} />} 
+                                            label="알림 설정"
+                                            bgColor="bg.softCotton"
                                             value={
                                                 <span className={css({ fontSize: '14px', fontWeight: '600', color: 'brand.secondary' })}>
                                                     {plan.alarm_minutes_before === 0 ? '알림 없음' : 
@@ -412,14 +424,20 @@ export default function PlanDetailModal({
 
                                     {/* 타임존 */}
                                     {plan.timezone_string && (
-                                        <InfoRow icon={<Globe size={18} color="brand.primary" />} label="타임존"
+                                        <InfoRow 
+                                            icon={<Globe size={18} className={css({ color: '#6366F1' })} />} 
+                                            label="타임존"
+                                            bgColor="bg.softCotton"
                                             value={<span className={css({ fontSize: '13px', color: 'brand.muted', fontFamily: 'monospace' })}>{plan.timezone_string}</span>}
                                         />
                                     )}
 
                                     {/* 예상 금액 */}
                                     {localAmount && (
-                                        <InfoRow icon={<Wallet size={18} color="brand.primary" />} label="예상 금액"
+                                        <InfoRow 
+                                            icon={<Wallet size={18} className={css({ color: '#10B981' })} />} 
+                                            label="예상 금액"
+                                            bgColor="bg.softCotton"
                                             value={
                                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
                                                     <span className={css({ fontSize: '15.5px', fontWeight: '600', color: 'brand.secondary', letterSpacing: '-0.01em' })}>{localAmount}</span>
@@ -436,7 +454,10 @@ export default function PlanDetailModal({
 
                                     {/* 메모 */}
                                     {plan.memo && (
-                                        <InfoRow icon={<FileText size={18} color="brand.muted" />} label="메모"
+                                        <InfoRow 
+                                            icon={<FileText size={18} className={css({ color: 'brand.muted' })} />} 
+                                            label="메모"
+                                            bgColor="bg.softCotton"
                                             value={
                                                 <p className={css({ fontSize: '14px', color: 'brand.secondary', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', bg: 'bg.softCotton', p: '12px', borderRadius: '12px', m: '0' })}>
                                                     {plan.memo}
@@ -528,19 +549,20 @@ export default function PlanDetailModal({
 }
 
 // ── 정보 행 ──
-function InfoRow({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
+function InfoRow({ icon, label, value, bgColor = 'bg.softCotton' }: { icon: React.ReactNode; label: string; value: React.ReactNode; bgColor?: string }) {
     return (
-        <div className={css({ display: 'flex', gap: '16px', alignItems: 'center' })}>
+        <div className={css({ display: 'flex', gap: '16px', alignItems: 'flex-start' })}>
             <div className={css({ 
-                w: '38px', h: '38px', borderRadius: '12px', bg: 'bg.softCotton', 
-                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                w: '42px', h: '42px', borderRadius: '14px', bg: bgColor, 
+                display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                mt: '2px' // 텍스트 첫 줄과 높이를 맞추기 위한 미세 조정
             })}>
                 {icon}
             </div>
             <div className={css({ flex: 1, minW: 0 })}>
-                <p className={css({ fontSize: '11px', fontWeight: '700', color: 'brand.muted', textTransform: 'uppercase', letterSpacing: '0.05em', m: '0 0 2px 0' })}>{label}</p>
-                <div className={css({ display: 'flex', alignItems: 'center' })}>{typeof value === 'string'
-                    ? <span className={css({ fontSize: '15.5px', color: 'brand.secondary', fontWeight: '600', wordBreak: 'break-word', lineHeight: 1.4 })}>{value}</span>
+                <p className={css({ fontSize: '11px', fontWeight: '800', color: 'brand.muted', textTransform: 'uppercase', letterSpacing: '0.08em', m: '0 0 4px 0' })}>{label}</p>
+                <div className={css({ display: 'flex', flexDirection: 'column', justifyContent: 'center' })}>{typeof value === 'string'
+                    ? <span className={css({ fontSize: '15.5px', color: 'brand.secondary', fontWeight: '700', wordBreak: 'break-word', lineHeight: 1.5 })}>{value}</span>
                     : value}
                 </div>
             </div>
