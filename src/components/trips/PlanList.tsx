@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
-import { Clock, CheckCircle2, Circle, Trash2, Edit3, Wallet } from 'lucide-react'
+import { Clock, CheckCircle2, Circle, Trash2, Edit3, Wallet, Bell } from 'lucide-react'
 import { getCurrencyFromTimezone, formatCurrency } from '@/utils/currency'
 import LocationTooltip from '../common/LocationTooltip'
 import UrlPreviewCard from '../common/UrlPreviewCard'
@@ -11,16 +11,17 @@ import { ExchangeService } from '@/services/ExternalApiService'
 interface Plan {
     id: string
     title: string
-    location_name: string
+    location: string
     address: string
     lat: number
     lng: number
     visit_date?: string
     visit_time?: string
     start_datetime_local: string
-    duration_hours: number
+    end_datetime_local: string
+    alarm_minutes_before?: number
     cost: number
-    description: string
+    memo: string
     image_url: string
     is_completed: boolean
     timezone_string: string
@@ -28,6 +29,7 @@ interface Plan {
 
 interface PlanListProps {
     plans: any[]
+    exchangeRates: Record<string, number>
     activeDropdown: string | null
     setActiveDropdown: (id: string | null) => void
     userRole: 'owner' | 'editor' | 'viewer' | null
@@ -36,10 +38,12 @@ interface PlanListProps {
     formatKstTime: (date: string, tz: string) => string
     onEdit: (plan: any) => void
     onDelete: (id: string) => void
+    onDetail: (plan: any) => void
 }
 
 export default function PlanList({ 
     plans, 
+    exchangeRates,
     activeDropdown, 
     setActiveDropdown, 
     userRole, 
@@ -47,30 +51,9 @@ export default function PlanList({
     formatLocalTime, 
     formatKstTime, 
     onEdit, 
-    onDelete 
+    onDelete,
+    onDetail 
 }: PlanListProps) {
-    const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({})
-
-    useEffect(() => {
-        if (plans && plans.length > 0) {
-            const uniqueTimezones = Array.from(new Set(plans.map((p: any) => p.timezone_string || 'Asia/Seoul')))
-            uniqueTimezones.forEach(async (tz) => {
-                const currency = getCurrencyFromTimezone(tz)
-                if (currency.code !== 'KRW' && !exchangeRates[currency.code]) {
-                    try {
-                        const data = await ExchangeService.getExchangeRate(currency.code)
-                        if (data && data.rate) {
-                            setExchangeRates(prev => ({ ...prev, [currency.code]: data.rate }))
-                        }
-                    } catch (e) {
-                        console.error('Failed to pre-fetch rate:', e)
-                    }
-                }
-            })
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [plans])
-
     if (!plans || plans.length === 0) {
         return (
             <div className={css({ textAlign: 'center', py: '80px', bg: 'bg.softCotton', borderRadius: '24px', border: '2px dashed', borderColor: 'brand.border' })}>
@@ -102,96 +85,187 @@ export default function PlanList({
                         </h3>
                     </div>
 
-                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px', pl: '10px', borderLeft: '2px solid', borderColor: 'brand.border' })}>
-                        {datePlans.map((plan) => {
-                            const currency = getCurrencyFromTimezone(plan.timezone_string || 'Asia/Seoul')
-                            const rate = exchangeRates[currency.code]
-                            
-                            return (
-                                <div key={plan.id} className={css({
-                                    bg: 'white', p: '20px', borderRadius: '20px', border: '1.5px solid', borderColor: 'brand.border',
-                                    display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative',
-                                    transition: 'all 0.2s', _hover: { boxShadow: 'floating', borderColor: 'brand.primary' },
-                                    opacity: plan.is_completed ? 0.7 : 1
-                                })}>
-                                    <div className={css({ display: 'flex', gap: '14px' })}>
-                                        {/* 체크 버튼 */}
-                                        <div className={css({ mt: '2px', color: plan.is_completed ? 'brand.primary' : 'brand.muted' })}>
-                                            {plan.is_completed ? <CheckCircle2 size={22} fill="currentColor" color="white" /> : <Circle size={22} />}
-                                        </div>
-
-                                        <div className={css({ flex: 1, minW: 0 })}>
-                                            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: '4px' })}>
-                                                <h4 className={css({ fontSize: '17px', fontWeight: '700', color: 'brand.secondary', textDecoration: plan.is_completed ? 'line-through' : 'none' })}>{plan.title}</h4>
-                                                {(userRole === 'owner' || userRole === 'editor') && (
-                                                    <div className={css({ display: 'flex', gap: '4px' })}>
-                                                        <button onClick={() => onEdit(plan)} className={css({ p: '4px', color: 'brand.muted', _hover: { color: 'brand.primary' }, bg: 'transparent', border: 'none', cursor: 'pointer' })}><Edit3 size={16} /></button>
-                                                        <button onClick={() => onDelete(plan.id)} className={css({ p: '4px', color: 'brand.muted', _hover: { color: 'brand.accent' }, bg: 'transparent', border: 'none', cursor: 'pointer' })}><Trash2 size={16} /></button>
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '10px', mb: '10px' })}>
-                                                <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'brand.primary', fontWeight: '700' })}>
-                                                    <Clock size={13} />
-                                                    {timeDisplayMode === 'local' && formatLocalTime(plan.start_datetime_local)}
-                                                    {timeDisplayMode === 'kst' && `한국 ${formatKstTime(plan.start_datetime_local, plan.timezone_string)}`}
-                                                    {timeDisplayMode === 'both' && (
-                                                        <>
-                                                            {formatLocalTime(plan.start_datetime_local)}
-                                                            <span className={css({ color: 'brand.border', fontWeight: 'normal' })}>|</span>
-                                                            <span className={css({ fontSize: '11px', fontWeight: '500' })}>{formatKstTime(plan.start_datetime_local, plan.timezone_string)}(KST)</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                                <LocationTooltip 
-                                                    locationName={plan.location_name} 
-                                                    lat={plan.lat} 
-                                                    lng={plan.lng} 
-                                                    className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'brand.muted', fontWeight: '500', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}
-                                                />
-                                            </div>
-
-                                            {plan.description && (
-                                                <div className={css({ p: '12px 14px', bg: 'bg.softCotton', borderRadius: '12px', mb: '12px', fontSize: '13px', color: 'brand.secondary', lineHeight: 1.6, borderLeft: '3px solid', borderColor: 'brand.border' })}>
-                                                    {plan.description}
-                                                </div>
-                                            )}
-
-                                            {plan.cost > 0 && (
-                                                <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '12px' })}>
-                                                    <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', bg: 'brand.primary/10', color: 'brand.primary', px: '8px', py: '4px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' })}>
-                                                        <Wallet size={12} /> {formatCurrency(plan.cost, currency)}
-                                                    </div>
-                                                    {currency.code !== 'KRW' && rate && (
-                                                        <span className={css({ fontSize: '11px', color: 'brand.muted', fontWeight: '500' })}>
-                                                            (약 {Math.round(plan.cost * rate).toLocaleString()}원)
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* URL 미리보기 */}
-                                            {(() => {
-                                                const urlRegex = /(https?:\/\/[^\s]+)/g
-                                                const urls = plan.description?.match(urlRegex)
-                                                if (urls && urls.length > 0) {
-                                                    return (
-                                                        <div className={css({ mt: '8px' })}>
-                                                            <UrlPreviewCard url={urls[0]} />
-                                                        </div>
-                                                    )
-                                                }
-                                                return null
-                                            })()}
-                                        </div>
-                                    </div>
-                                </div>
-                            )
-                        })}
+                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
+                        {datePlans.map((plan) => (
+                            <PlanCard 
+                                key={plan.id}
+                                plan={plan}
+                                exchangeRates={exchangeRates}
+                                userRole={userRole}
+                                timeDisplayMode={timeDisplayMode}
+                                formatLocalTime={formatLocalTime}
+                                formatKstTime={formatKstTime}
+                                onEdit={onEdit}
+                                onDelete={onDelete}
+                                onDetail={onDetail}
+                            />
+                        ))}
                     </div>
                 </div>
             ))}
+        </div>
+    )
+}
+
+function PlanCard({ 
+    plan, 
+    exchangeRates, 
+    userRole, 
+    timeDisplayMode, 
+    formatLocalTime, 
+    formatKstTime, 
+    onEdit, 
+    onDelete, 
+    onDetail 
+}: {
+    plan: any
+    exchangeRates: Record<string, number>
+    userRole: 'owner' | 'editor' | 'viewer' | null
+    timeDisplayMode: 'local' | 'kst' | 'both'
+    formatLocalTime: (date: string) => string
+    formatKstTime: (date: string, tz: string) => string
+    onEdit: (plan: any) => void
+    onDelete: (id: string) => void
+    onDetail: (plan: any) => void
+}) {
+    const [isTooltipOpen, setIsTooltipOpen] = useState(false)
+    const currency = getCurrencyFromTimezone(plan.timezone_string || 'Asia/Seoul')
+    const rate = exchangeRates[currency.code]
+
+    return (
+        <div 
+            onClick={() => onDetail(plan)}
+            style={{ 
+                '--plan-image': plan.image_url ? `url("${plan.image_url}")` : 'none'
+            } as any}
+            className={css({
+            bg: 'white', p: '20px', borderRadius: '24px', border: '1.5px solid', borderColor: 'brand.border',
+            display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative',
+            _hover: !isTooltipOpen ? { 
+                boxShadow: '0 20px 40px rgba(0,0,0,0.08)', 
+                borderColor: 'brand.primary', 
+                transform: 'translateY(-4px)',
+                _before: plan.image_url ? {
+                    transform: 'scale(1.05)',
+                    opacity: 0.95
+                } : {}
+            } : {},
+            opacity: plan.is_completed ? 0.7 : 1,
+            cursor: 'pointer',
+            // background 처리
+            _before: plan.image_url ? {
+                content: '""',
+                display: 'block',
+                position: 'absolute',
+                inset: 0,
+                backgroundImage: 'var(--plan-image)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: 0.8,
+                filter: 'brightness(0.9) contrast(1.1)',
+                zIndex: 0,
+                transition: 'all 0.5s ease',
+                borderRadius: '24px',
+            } : {},
+            _after: plan.image_url ? {
+                content: '""',
+                position: 'absolute',
+                inset: 0,
+                background: 'linear-gradient(to right, white 15%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.4) 100%)',
+                zIndex: 1,
+                borderRadius: '24px',
+            } : {}
+        })}>
+            <div className={css({ display: 'flex', gap: '14px', position: 'relative', zIndex: 2 })}>
+                <div className={css({ flex: 1, minW: 0 })}>
+                    <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: '4px' })}>
+                        <h4 className={css({ fontSize: '17px', fontWeight: '700', color: 'brand.secondary', textDecoration: plan.is_completed ? 'line-through' : 'none' })}>{plan.title}</h4>
+                        {(userRole === 'owner' || userRole === 'editor') && (
+                            <div className={css({ display: 'flex', gap: '4px' })}>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onEdit(plan)
+                                    }} 
+                                    className={css({ p: '6px', color: 'brand.secondary', _hover: { color: 'brand.primary', bg: 'white/80' }, bg: 'white/40', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' })}
+                                >
+                                    <Edit3 size={16} />
+                                </button>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onDelete(plan.id)
+                                    }} 
+                                    className={css({ p: '6px', color: 'brand.secondary', _hover: { color: 'brand.accent', bg: 'white/80' }, bg: 'white/40', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' })}
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '10px', mb: '10px' })}>
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'brand.secondary', fontWeight: '700' })}>
+                            <Clock size={13} />
+                            {timeDisplayMode === 'local' && formatLocalTime(plan.start_datetime_local)}
+                            {timeDisplayMode === 'kst' && `한국 ${formatKstTime(plan.start_datetime_local, plan.timezone_string)}`}
+                            {timeDisplayMode === 'both' && (
+                                <>
+                                    {formatLocalTime(plan.start_datetime_local)}
+                                    <span className={css({ color: 'brand.border', fontWeight: 'normal' })}>|</span>
+                                    <span className={css({ fontSize: '11px', fontWeight: '500' })}>{formatKstTime(plan.start_datetime_local, plan.timezone_string)}(KST)</span>
+                                </>
+                            )}
+                            {plan.alarm_minutes_before > 0 && (
+                                <span className={css({ display: 'inline-flex', alignItems: 'center', ml: '4px' })}>
+                                    <Bell size={13} className={css({ color: 'orange.500' })} fill="currentColor" />
+                                </span>
+                            )}
+                        </div>
+                        <LocationTooltip 
+                            locationName={plan.location} 
+                            lat={plan.location_lat || plan.lat} 
+                            lng={plan.location_lng || plan.lng} 
+                            address={plan.address}
+                            onOpenChange={setIsTooltipOpen}
+                            className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'brand.secondary', fontWeight: '600', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}
+                        />
+                    </div>
+
+                    {plan.memo && (
+                        <div className={css({ p: '12px 14px', bg: 'bg.softCotton', borderRadius: '12px', mb: '12px', fontSize: '13px', color: 'brand.secondary', lineHeight: 1.6, borderLeft: '3px solid', borderColor: 'brand.border' })}>
+                            {plan.memo}
+                        </div>
+                    )}
+
+                    {plan.cost > 0 && (
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '12px' })}>
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', bg: 'brand.primary/10', color: 'brand.primary', px: '8px', py: '4px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' })}>
+                                <Wallet size={12} /> {formatCurrency(plan.cost, currency)}
+                            </div>
+                            {currency.code !== 'KRW' && rate && (
+                                <span className={css({ fontSize: '11px', color: 'brand.muted', fontWeight: '500' })}>
+                                    (약 {Math.round(plan.cost * rate).toLocaleString()}원)
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* URL 미리보기 */}
+                    {(() => {
+                        const urlRegex = /(https?:\/\/[^\s]+)/g
+                        const urls = plan.memo?.match(urlRegex)
+                        if (urls && urls.length > 0) {
+                            return (
+                                <div className={css({ mt: '8px' })}>
+                                    <UrlPreviewCard url={urls[0]} />
+                                </div>
+                            )
+                        }
+                        return null
+                    })()}
+                </div>
+            </div>
         </div>
     )
 }

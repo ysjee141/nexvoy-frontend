@@ -5,6 +5,8 @@ interface UIState {
     setMobileTitle: (title: string | null) => void
     isTripSwitcherOpen: boolean
     setIsTripSwitcherOpen: (isOpen: boolean) => void
+    isNewTripModalOpen: boolean
+    setIsNewTripModalOpen: (isOpen: boolean) => void
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -12,4 +14,6 @@ export const useUIStore = create<UIState>((set) => ({
     setMobileTitle: (title) => set({ mobileTitle: title }),
     isTripSwitcherOpen: false,
     setIsTripSwitcherOpen: (isOpen) => set({ isTripSwitcherOpen: isOpen }),
+    isNewTripModalOpen: false,
+    setIsNewTripModalOpen: (isOpen) => set({ isNewTripModalOpen: isOpen }),
 }))

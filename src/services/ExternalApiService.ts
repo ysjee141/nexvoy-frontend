@@ -54,7 +54,7 @@ export const MetadataService = {
   getOgPreview: async (url: string) => {
     // 앱에서도 정상 작동하도록 절대 경로 기반으로 호출 (ApiService가 처리)
     const response = await apiService.get(`/api/og-preview/`, { 
-      url: encodeURIComponent(url) 
+      url: url 
     });
     return response.data;
   }

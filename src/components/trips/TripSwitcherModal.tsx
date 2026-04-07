@@ -19,7 +19,7 @@ interface Trip {
 }
 
 export default function TripSwitcherModal() {
-    const { isTripSwitcherOpen, setIsTripSwitcherOpen, setMobileTitle } = useUIStore()
+    const { isTripSwitcherOpen, setIsTripSwitcherOpen, setMobileTitle, setIsNewTripModalOpen } = useUIStore()
     const searchParams = useSearchParams()
     const currentTripId = searchParams.get('id')
     
@@ -419,9 +419,11 @@ export default function TripSwitcherModal() {
                     borderTop: '1px solid token(colors.brand.border)', 
                     bg: 'white' 
                 })}>
-                    <Link
-                        href="/trips/new"
-                        onClick={handleClose}
+                    <button
+                        onClick={() => {
+                            setIsNewTripModalOpen(true)
+                            handleClose()
+                        }}
                         className={css({
                             display: 'flex',
                             alignItems: 'center',
@@ -434,7 +436,8 @@ export default function TripSwitcherModal() {
                             borderRadius: '20px',
                             fontWeight: '700',
                             fontSize: '17px',
-                            textDecoration: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
                             boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)',
                             transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                             _hover: { bg: 'brand.primary', transform: 'translateY(-2px)', boxShadow: '0 15px 30px rgba(46, 196, 182, 0.3)' },
@@ -442,7 +445,7 @@ export default function TripSwitcherModal() {
                         })}
                     >
                         <Plus size={22} strokeWidth={3} /> 새 여정 만들기
-                    </Link>
+                    </button>
                 </div>
             </div>
 

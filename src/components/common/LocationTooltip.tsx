@@ -7,14 +7,16 @@ import { LocationService } from '@/services/ExternalApiService'
 
 interface LocationTooltipProps {
     locationName: string
+    address?: string
     lat?: number
     lng?: number
     className?: string
+    onOpenChange?: (isOpen: boolean) => void
 }
 
-export default function LocationTooltip({ locationName, lat, lng, className }: LocationTooltipProps) {
+export default function LocationTooltip({ locationName, address: initialAddress, lat, lng, className, onOpenChange }: LocationTooltipProps) {
     const [isOpen, setIsOpen] = useState(false)
-    const [address, setAddress] = useState<string | null>(null)
+    const [address, setAddress] = useState<string | null>(initialAddress || null)
     const [loading, setLoading] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
 
@@ -22,6 +24,7 @@ export default function LocationTooltip({ locationName, lat, lng, className }: L
         const handleClickOutside = (event: MouseEvent) => {
             if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
                 setIsOpen(false)
+                onOpenChange?.(false)
             }
         }
         if (isOpen) {
@@ -42,22 +45,29 @@ export default function LocationTooltip({ locationName, lat, lng, className }: L
         }
 
         if (!isOpen && !address && !loading) {
-            setLoading(true)
-            try {
-                const data = await LocationService.getAddress(lat, lng)
-                
-                if (data.status === 'OK' && data.results.length > 0) {
-                    setAddress(data.results[0].formatted_address)
-                } else {
-                    setAddress('주소를 불러올 수 없습니다.')
+            if (initialAddress) {
+                setAddress(initialAddress)
+            } else if (lat && lng) {
+                setLoading(true)
+                try {
+                    const data = await LocationService.getAddress(lat, lng)
+                    if (data.status === 'OK' && data.results.length > 0) {
+                        setAddress(data.results[0].formatted_address)
+                    } else {
+                        setAddress('주소를 불러올 수 없습니다.')
+                    }
+                } catch (err) {
+                    setAddress('주소 로딩 오류가 발생했습니다.')
+                } finally {
+                    setLoading(false)
                 }
-            } catch (err) {
-                setAddress('주소 로딩 오류가 발생했습니다.')
-            } finally {
-                setLoading(false)
+            } else {
+                setAddress('상세 주소 정보가 없습니다.')
             }
         }
-        setIsOpen(!isOpen)
+        const nextOpen = !isOpen
+        setIsOpen(nextOpen)
+        onOpenChange?.(nextOpen)
     }
 
     return (
