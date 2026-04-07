@@ -9,6 +9,7 @@ import {
 import { getCurrencyFromTimezone, formatCurrency, formatKRW } from '@/utils/currency'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import UrlPreviewCard from '@/components/common/UrlPreviewCard'
 // ── Main Modal ──
 interface PlanDetailModalProps {
@@ -45,10 +46,7 @@ export default function PlanDetailModal({
         return () => document.removeEventListener('keydown', handleKey)
     }, [handleClose])
 
-    useEffect(() => {
-        document.body.style.overflow = 'hidden'
-        return () => { document.body.style.overflow = '' }
-    }, [])
+    useScrollLock(true)
 
     const currency = getCurrencyFromTimezone(plan.timezone_string || 'Asia/Seoul')
     const localAmount = plan.cost > 0 ? formatCurrency(plan.cost, currency) : null

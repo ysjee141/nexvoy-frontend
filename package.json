@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "NODE_OPTIONS='--dns-result-order=ipv4first' next dev",
     "build": "next build",
     "build:mobile": "mv src/app/api src/app_api_tmp && mv src/app/auth src/app_auth_tmp && mv src/app/share src/app_share_tmp && BUILD_TARGET=mobile next build; mv src/app_api_tmp src/app/api; mv src/app_auth_tmp src/app/auth; mv src/app_share_tmp src/app/share",
-    "start": "next start",
+    "start": "NODE_OPTIONS='--dns-result-order=ipv4first' next start",
     "lint": "eslint",
     "prepare": "panda codegen"
   },

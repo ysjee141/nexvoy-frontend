@@ -5,6 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { X, UserPlus, Mail, Shield, Trash2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { CollaborationService } from '@/services/ExternalApiService'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -28,6 +29,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const [collaborators, setCollaborators] = useState<Collaborator[]>([])
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+
+    useScrollLock(isOpen)
 
     useEffect(() => {
         if (isOpen) {

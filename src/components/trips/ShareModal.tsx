@@ -6,6 +6,7 @@ import { X, Share2, Copy, Mail, Lock, Globe, Check, Loader2 } from 'lucide-react
 import { analytics } from '@/services/AnalyticsService'
 import { collaboration } from '@/utils/collaboration'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 interface ShareModalProps {
     tripId: string
@@ -23,6 +24,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
     useModalBackButton(isOpen, onClose, 'shareModal')
+    useScrollLock(isOpen)
 
     const fetchShareToken = async (type: 'public' | 'password') => {
         setLoading(true)

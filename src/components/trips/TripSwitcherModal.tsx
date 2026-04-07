@@ -9,6 +9,7 @@ import { CacheUtil } from '@/utils/cache'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { formatDate } from '@/utils/date'
+import { useScrollLock } from '@/hooks/useScrollLock'
 
 interface Trip {
     id: string
@@ -22,6 +23,8 @@ export default function TripSwitcherModal() {
     const { isTripSwitcherOpen, setIsTripSwitcherOpen, setMobileTitle, setIsNewTripModalOpen } = useUIStore()
     const searchParams = useSearchParams()
     const currentTripId = searchParams.get('id')
+    
+    useScrollLock(isTripSwitcherOpen)
     
     const [ongoing, setOngoing] = useState<Trip[]>([])
     const [upcoming, setUpcoming] = useState<Trip[]>([])
