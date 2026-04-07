@@ -61,8 +61,8 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
                                 onClick={() => { setSortBy(opt.value); setIsOpen(false); }}
                                 className={css({
                                     display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
-                                    bg: sortBy === opt.value ? '#EAF9F7' : 'transparent',
-                                    color: sortBy === opt.value ? '#2EC4B6' : '#2C3A47',
+                                    bg: sortBy === opt.value ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
+                                    color: sortBy === opt.value ? 'brand.primary' : '#2C3A47',
                                     fontWeight: sortBy === opt.value ? '700' : '500',
                                     border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
                                 })}
@@ -120,8 +120,8 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
                                 onClick={() => { setGroupBy(opt.value); setIsOpen(false); }}
                                 className={css({
                                     display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
-                                    bg: groupBy === opt.value ? '#EAF9F7' : 'transparent',
-                                    color: groupBy === opt.value ? '#2EC4B6' : '#2C3A47',
+                                    bg: groupBy === opt.value ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
+                                    color: groupBy === opt.value ? 'brand.primary' : '#2C3A47',
                                     fontWeight: groupBy === opt.value ? '700' : '500',
                                     border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
                                 })}
@@ -231,7 +231,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                     px: '14px', py: '8px', borderRadius: '20px',
                     fontSize: '13px', fontWeight: '700',
                     flexShrink: 0,
-                    bg: filterMode === 'me' ? '#2EC4B6' : '#F1F3F4',
+                    bg: filterMode === 'me' ? 'brand.primary' : '#F1F3F4',
                     color: filterMode === 'me' ? 'white' : '#666',
                     border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                 })}
@@ -248,7 +248,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                             display: 'flex', alignItems: 'center', gap: '4px',
                             px: '14px', py: '8px', borderRadius: '20px',
                             fontSize: '13px', fontWeight: '700',
-                            bg: selectedOther ? '#2EC4B6' : '#F1F3F4',
+                            bg: selectedOther ? 'brand.primary' : '#F1F3F4',
                             color: selectedOther ? 'white' : '#666',
                             border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                         })}
@@ -322,18 +322,18 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                                 className={css({
                                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', 
                                                     px: '24px', py: { base: '18px', sm: '14px' }, fontSize: '15px',
-                                                    bg: filterMode === p.user_id ? '#EAF9F7' : 'transparent',
-                                                    color: filterMode === p.user_id ? '#2EC4B6' : '#444',
+                                                    bg: filterMode === p.user_id ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
+                                                    color: filterMode === p.user_id ? 'brand.primary' : '#444',
                                                     fontWeight: filterMode === p.user_id ? '700' : '500',
                                                     border: 'none', cursor: 'pointer', _hover: { bg: '#F8F9FA' },
                                                     transition: 'all 0.15s'
                                                 })}
                                             >
                                                 <span className={css({ display: 'flex', alignItems: 'center', gap: '10px' })}>
-                                                    <div className={css({ w: '8px', h: '8px', borderRadius: '50%', bg: filterMode === p.user_id ? '#2EC4B6' : 'transparent', border: filterMode === p.user_id ? 'none' : '1px solid #DDD' })} />
+                                                    <div className={css({ w: '8px', h: '8px', borderRadius: '50%', bg: filterMode === p.user_id ? 'brand.primary' : 'transparent', border: filterMode === p.user_id ? 'none' : '1px solid #DDD' })} />
                                                     {label}
                                                 </span>
-                                                {filterMode === p.user_id && <Check size={18} color="#2EC4B6" />}
+                                                {filterMode === p.user_id && <Check size={18} className={css({ color: 'brand.primary' })} />}
                                             </button>
                                         );
                                     })}
@@ -712,7 +712,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         const assignedUser = item.assignment_type === 'specific' ? getAssignedUserLabel() : null
 
         return (
-            <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid #EEEEEE', bg: '#FBFBF9' })}>
+            <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'brand.border', bg: 'white' })}>
                 {/* 배경 액션 버튼 (스와이프 시 보임) */}
                 <div className={css({
                     position: 'absolute', top: 0, right: 0, bottom: 0,
@@ -723,20 +723,20 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         <button
                             onClick={(e) => { e.stopPropagation(); setEditingItem(item); setTranslateX(0); }}
                             className={css({ 
-                                h: '100%', px: '20px', bg: '#828D99', color: 'white', 
+                                h: '100%', px: '24px', bg: 'brand.primary', color: 'white', 
                                 border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center'
                             })}
                         >
-                            <Settings size={20} />
+                            <Settings size={20} strokeWidth={2.5} />
                         </button>
                         <button
                             onClick={(e) => { deleteItem(e, item.id); setTranslateX(0); }}
                             className={css({ 
-                                h: '100%', px: '20px', bg: '#FF9F87', color: 'white', 
+                                h: '100%', px: '24px', bg: '#F43F5E', color: 'white', 
                                 border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center'
                             })}
                         >
-                            <Trash2 size={20} />
+                            <Trash2 size={20} strokeWidth={2.5} />
                         </button>
                 </div>
 
@@ -753,13 +753,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        p: '16px 20px',
+                        p: '18px 20px',
                         bg: 'white',
                         position: 'relative',
                         zIndex: 2,
                         transition: 'background 0.2s',
-                        _active: { bg: '#F7F7F7' },
-                        _hover: { bg: { base: 'white', sm: '#fafafa' } }
+                        _active: { bg: '#F8FAFC' },
+                        _hover: { bg: { base: 'white', sm: '#FBFCFE' } }
                     })}
                 >
                     <div 
@@ -770,12 +770,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         <div className={css({ 
                             w: '26px', h: '26px', 
                             border: '2px solid', 
-                            borderColor: status.is_checked ? '#828D99' : (status.is_my_checked ? '#2EC4B6' : '#EEEEEE'),
-                            borderRadius: '10px',
+                            borderColor: status.is_checked ? '#94A3B8' : (status.is_my_checked ? 'brand.primary' : 'brand.border'),
+                            borderRadius: '8px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            bg: status.is_checked ? '#828D99' : (status.is_my_checked ? '#2EC4B6' : 'transparent'),
+                            bg: status.is_checked ? '#94A3B8' : (status.is_my_checked ? 'brand.primary' : 'transparent'),
                             transition: 'all 0.2s',
-                            opacity: !canCheck ? 0.3 : 1
+                            opacity: !canCheck ? 0.3 : 1,
+                            boxShadow: status.is_my_checked ? '0 2px 6px rgba(37, 99, 235, 0.2)' : 'none'
                         })}>
                             {(status.is_checked || status.is_my_checked) && <Check size={18} color="white" strokeWidth={3} />}
                         </div>
@@ -785,7 +786,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 <span className={css({ 
                                     fontSize: '16px', 
                                     fontWeight: '600', 
-                                    color: status.is_checked ? '#828D99' : '#2C3A47', 
+                                    color: status.is_checked ? '#94A3B8' : 'brand.secondary', 
                                     textDecoration: status.is_checked ? 'line-through' : 'none',
                                     transition: 'color 0.2s'
                                 })}>
@@ -796,8 +797,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                 {item.assignment_type === 'specific' && (
                                     <span className={css({ 
                                         fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
-                                        bg: isAssignedToMe ? '#EAF9F7' : '#F1F3F4',
-                                        color: isAssignedToMe ? '#2EC4B6' : '#828D99',
+                                        bg: isAssignedToMe ? 'rgba(37, 99, 235, 0.05)' : '#F1F5F9',
+                                        color: isAssignedToMe ? 'brand.primary' : '#94A3B8',
                                         fontWeight: '700',
                                         display: 'flex', alignItems: 'center', gap: '4px'
                                     })}>
@@ -814,8 +815,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         }}
                                         className={css({ 
                                             fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
-                                            bg: status.is_checked ? '#F1F3F4' : '#EAF9F7',
-                                            color: status.is_checked ? '#828D99' : '#2EC4B6',
+                                            bg: status.is_checked ? '#F1F3F4' : 'rgba(37, 99, 235, 0.08)',
+                                            color: status.is_checked ? '#828D99' : 'brand.primary',
                                             fontWeight: '700', border: 'none', cursor: 'pointer',
                                             display: 'flex', alignItems: 'center', gap: '4px',
                                             transition: 'transform 0.2s',
@@ -847,7 +848,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         <div className={css({ display: { base: 'none', sm: 'flex' }, gap: '8px' })}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
-                                className={css({ bg: 'transparent', border: 'none', color: '#828D99', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: '#2EC4B6', bg: '#EAF9F7' } })}
+                                className={css({ bg: 'transparent', border: 'none', color: '#828D99', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: 'brand.primary', bg: 'rgba(37, 99, 235, 0.08)' } })}
                             >
                                 <Settings size={18} />
                             </button>
@@ -889,7 +890,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         <span className={css({ fontSize: '15px', fontWeight: '500', color: '#2C3A47' })}>
                                             {getMemberDisplayName(p, p.user_id === currentUser?.id)}
                                         </span>
-                                        {checkedUserIds.includes(p.user_id) ? <Check size={18} color="#2EC4B6" strokeWidth={3} /> : <div className={css({ w: '18px' })} />}
+                                        {checkedUserIds.includes(p.user_id) ? <Check size={18} color="#2563EB" strokeWidth={3} /> : <div className={css({ w: '18px' })} />}
                                     </li>
                                 )
                             })}
@@ -921,13 +922,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>항목 이름</label>
                             <input 
                                 type="text" value={name} onChange={(e) => setName(e.target.value)}
-                                className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: '#2EC4B6', boxShadow: '0 0 0 2px rgba(46, 196, 182, 0.1)' } })}
+                                className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 2px rgba(37, 99, 235, 0.1)' } })}
                             />
                         </div>
                         <div className={css({ display: 'flex', gap: '12px' })}>
                             <div className={css({ flex: 1 })}>
                                 <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>카테고리</label>
-                                <select value={category} onChange={(e) => setCategory(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', outline: 'none', _focus: { borderColor: '#2EC4B6' } })}>
+                                <select value={category} onChange={(e) => setCategory(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', outline: 'none', _focus: { borderColor: 'brand.primary' } })}>
                                     {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
                             </div>
@@ -946,7 +947,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                             setAssignedTo(currentUser?.id || '')
                                         }
                                     }}
-                                    className={css({ accentColor: '#2EC4B6', w: '18px', h: '18px' })}
+                                    className={css({ accentColor: 'brand.primary', w: '18px', h: '18px' })}
                                 />
                                 <div className={css({ display: 'flex', flexDirection: 'column' })}>
                                     <span className={css({ fontSize: '15px', fontWeight: '700', color: '#2C3A47' })}>나만 보기</span>
@@ -991,7 +992,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     <div className={css({ p: '24px', bg: '#F9F9F9', display: 'flex', gap: '12px' })}>
                         <button 
                             onClick={() => updateItem({ item_name: name, category, is_private: isPrivate, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null })}
-                            className={css({ flex: 1, py: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)', _hover: { bg: '#28B0A3', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
+                            className={css({ flex: 1, py: '14px', bg: 'brand.primary', color: 'white', borderRadius: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(37, 99, 235, 0.2)', _hover: { bg: '#1D4ED8', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
                         >
                             저장하기
                         </button>
@@ -1098,7 +1099,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
                     <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '700', color: '#222' })}>
                         {filterMode === 'all' ? '전체' : (filterMode === 'me' ? '내' : (getMemberDisplayName(participants.find(p => p.user_id === filterMode), filterMode === currentUser?.id)))} 준비물 {filterMode !== 'all' ? (
-                            <span className={css({ color: '#2EC4B6', ml: '8px', fontWeight: '700' })}>
+                            <span className={css({ color: 'brand.primary', ml: '8px', fontWeight: '700' })}>
                                 {filteredProgressPercent}% <span className={css({ fontSize: '12px', fontWeight: '700', color: '#828D99' })}>(전체 {progressPercent}%)</span>
                             </span>
                         ) : (
@@ -1161,11 +1162,11 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                         flex: '1',
                                         whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                        _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' },
+                                        _hover: { bg: '#F7F7F7', borderColor: 'brand.primary' },
                                         _active: { transform: 'scale(0.98)' }
                                     })}
                                 >
-                                    <ListTodo size={14} color="#2EC4B6" /> 템플릿
+                                    <ListTodo size={14} color="#2563EB" /> 템플릿
                                 </button>
                             </div>
 
@@ -1193,11 +1194,11 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                         w: { base: '100%', sm: 'auto' }, flex: { base: '1', sm: 'none' },
                                         flexShrink: '0',
                                         whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                        _hover: { bg: '#F7F7F7', borderColor: '#2EC4B6' },
+                                        _hover: { bg: '#F7F7F7', borderColor: 'brand.primary' },
                                         _active: { transform: 'scale(0.98)' }
                                     })}
                                 >
-                                    <ListTodo size={14} color="#2EC4B6" /> 템플릿 불러오기
+                                    <ListTodo size={14} color="#2563EB" /> 템플릿 불러오기
                                 </button>
                             </div>
                         </div>
@@ -1208,7 +1209,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             {totalItems > 0 && (
                 <div className={css({ w: '100%', bg: '#EEEEEE', h: '12px', borderRadius: '16px', mb: '24px', overflow: 'hidden', border: '1px solid #EEEEEE' })}>
                     <div
-                        className={css({ h: '100%', bg: '#2EC4B6', borderRadius: '16px', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                        className={css({ h: '100%', bg: 'brand.primary', borderRadius: '16px', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
                         style={{ width: `${filterMode !== 'all' ? filteredProgressPercent : progressPercent}%` }}
                     />
                 </div>
@@ -1262,7 +1263,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                                             setNewItemAssignedUserId(currentUser?.id || '')
                                         }
                                     }}
-                                    className={css({ accentColor: '#2EC4B6', w: '18px', h: '18px' })}
+                                    className={css({ accentColor: 'brand.primary', w: '18px', h: '18px' })}
                                 />
                                 <div className={css({ display: 'flex', flexDirection: 'column' })}>
                                     <span className={css({ fontSize: '14px', fontWeight: '700', color: '#2C3A47' })}>나만 보기</span>
@@ -1335,7 +1336,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             <button
                                 type="submit"
                                 disabled={!newItemName.trim()}
-                                className={css({ py: '10px', px: '20px', bg: '#2EC4B6', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(46, 196, 182, 0.2)' })}
+                                className={css({ py: '10px', px: '20px', bg: 'brand.primary', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' })}
                             >
                                 추가
                             </button>
@@ -1425,13 +1426,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))', 
                         right: '24px',
                         w: '54px', h: '54px', borderRadius: '18px',
-                        bg: '#2EC4B6', color: 'white',
+                        bg: 'brand.primary', color: 'white',
                         display: { base: 'flex', sm: 'none' }, 
                         alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 8px 32px rgba(46, 196, 182, 0.3)',
+                        boxShadow: '0 8px 32px rgba(37, 99, 235, 0.3)',
                         cursor: 'pointer', zIndex: 100,
                         transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                        _hover: { transform: 'translateY(-2px)', bg: '#249E93' },
+                        _hover: { transform: 'translateY(-2px)', bg: '#1D4ED8' },
                         _active: { transform: 'scale(0.9)' }
                     })}
                 >
