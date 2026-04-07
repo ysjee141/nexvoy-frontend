@@ -10,6 +10,7 @@ import NativeAnalytics from '@/components/common/NativeAnalytics'
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import BugReportFAB from '@/components/layout/BugReportFAB'
 import UpdateOverlay from '@/components/layout/UpdateOverlay'
+import GlobalModals from '@/components/layout/GlobalModals'
 
 export const metadata: Metadata = {
   title: '온여정 - 당신의 따뜻한 여행 동반자',
@@ -69,6 +70,7 @@ export default function RootLayout({
           <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
         )}
         <NativeAnalytics />
+        <GlobalModals />
       </body>
     </html>
   )

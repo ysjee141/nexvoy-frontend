@@ -8,9 +8,12 @@ import { Plus, UserPlus, Share2, ChevronDown, Check, Clock } from 'lucide-react'
 import NewPlanModal from '@/components/trips/NewPlanModal'
 import CollaboratorModal from '@/components/trips/CollaboratorModal'
 import ShareModal from '@/components/trips/ShareModal'
+import PlanDetailModal from '@/components/trips/PlanDetailModal'
 import { collaboration } from '@/utils/collaboration'
 import PlanList from '@/components/trips/PlanList'
 import { useNetworkStore } from '@/stores/useNetworkStore'
+import { getCurrencyFromTimezone } from '@/utils/currency'
+import { ExchangeService } from '@/services/ExternalApiService'
 import { CacheUtil } from '@/utils/cache'
 import { NotificationService } from '@/services/NotificationService'
 import TripDetailSkeleton from './TripDetailSkeleton'
@@ -90,6 +93,30 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
 
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
     const [editingPlan, setEditingPlan] = useState<any>(null)
+    const [selectedPlanForDetail, setSelectedPlanForDetail] = useState<any>(null)
+    const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+    const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({})
+
+    // Fetch exchange rates when plans change
+    useEffect(() => {
+        if (plans && plans.length > 0) {
+            const uniqueTimezones = Array.from(new Set(plans.map((p: any) => p.timezone_string || 'Asia/Seoul')))
+            uniqueTimezones.forEach(async (tz) => {
+                const currency = getCurrencyFromTimezone(tz)
+                if (currency.code !== 'KRW' && !exchangeRates[currency.code]) {
+                    try {
+                        const data = await ExchangeService.getExchangeRate(currency.code)
+                        if (data && data.rate) {
+                            setExchangeRates(prev => ({ ...prev, [currency.code]: data.rate }))
+                        }
+                    } catch (e) {
+                        console.error('Failed to pre-fetch rate:', e)
+                    }
+                }
+            })
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [plans])
 
     // 현지 시간 문자열을 'Z' 없이 그대로 표시 (타임존 오해석 없음)
     const formatLocalTime = (dateString: string): string => {
@@ -237,6 +264,11 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
         fetchPlans()
     }
 
+    const handlePlanDetail = (plan: any) => {
+        setSelectedPlanForDetail(plan)
+        setIsDetailModalOpen(true)
+    }
+
     // 24시간 이내 가장 가까운 일정 계산
     const nextPlanInfo = useMemo(() => {
         const now = new Date()
@@ -382,12 +414,28 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
             ) : (
                 <PlanList
                     plans={plans}
+                    exchangeRates={exchangeRates}
                     activeDropdown={activeDropdown}
                     setActiveDropdown={setActiveDropdown}
                     userRole={userRole}
                     timeDisplayMode={timeDisplayMode}
                     formatLocalTime={formatLocalTime}
                     formatKstTime={formatKstTime}
+                    onEdit={handleEditPlan}
+                    onDelete={handleDeletePlan}
+                    onDetail={handlePlanDetail}
+                />
+            )}
+
+            {isDetailModalOpen && selectedPlanForDetail && (
+                <PlanDetailModal
+                    plan={selectedPlanForDetail}
+                    exchangeRates={exchangeRates}
+                    formatLocalTime={formatLocalTime}
+                    formatKstTime={formatKstTime}
+                    timeDisplayMode={timeDisplayMode}
+                    userRole={userRole}
+                    onClose={() => setIsDetailModalOpen(false)}
                     onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}
                 />

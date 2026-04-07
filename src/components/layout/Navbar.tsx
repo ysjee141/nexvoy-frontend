@@ -6,10 +6,12 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
-import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft, ChevronDown } from 'lucide-react'
+import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft, ChevronDown, MessageSquareText } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/utils/cache'
 import TripSwitcherModal from '@/components/trips/TripSwitcherModal'
+import { useBugReport } from '@/hooks/useBugReport'
+import BugReportModal from '../profile/BugReportModal'
 
 const PAGE_TITLES: Record<string, string> = {
     '/': '온여정',
@@ -40,6 +42,13 @@ export default function Navbar() {
     const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || PAGE_TITLES[pathname] || '온여정'
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+
+    // 버그 제보 공유 훅
+    const { 
+        isOpen: isBugModalOpen, 
+        setIsOpen: setIsBugModalOpen, 
+        isVisible: isBugReportVisible 
+    } = useBugReport()
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -226,12 +235,47 @@ export default function Navbar() {
                         </h1>
                     </div>
                 )}
+
+                {/* 오른쪽: 피드백 버튼 (베타 테스터 전용) */}
+                {isBugReportVisible && (
+                    <button
+                        onClick={() => setIsBugModalOpen(true)}
+                        className={css({
+                            position: 'absolute',
+                            right: '8px',
+                            p: '10px',
+                            bg: 'transparent',
+                            border: 'none',
+                            color: 'brand.primary',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s',
+                            _active: { transform: 'scale(0.9)', opacity: 0.7 }
+                        })}
+                        title="피드백 보내기"
+                    >
+                        <div className={css({ position: 'relative' })}>
+                            <MessageSquareText size={22} />
+                            <span className={css({
+                                position: 'absolute', top: '-2px', right: '-2px',
+                                w: '7px', h: '7px', bg: 'orange.500', borderRadius: '50%',
+                                border: '1.5px solid white'
+                            })} />
+                        </div>
+                    </button>
+                )}
             </div>
             
             {/* 여행 전환 모달 */}
             <Suspense fallback={null}>
                 <TripSwitcherModal />
             </Suspense>
+
+            {/* 피드백 모달 */}
+            <BugReportModal 
+                isOpen={isBugModalOpen} 
+                onClose={() => setIsBugModalOpen(false)} 
+                user={{ id: user?.id, email: user?.email }} 
+            />
         </nav>
     )
 }

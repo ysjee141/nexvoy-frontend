@@ -157,14 +157,14 @@ export default function TripLayoutClient() {
                             display: 'flex', alignItems: 'center', gap: '8px', px: '24px', h: '42px',
                             bg: activeTab === 'plans' ? 'white' : 'transparent',
                             cursor: 'pointer', border: 'none',
-                            color: activeTab === 'plans' ? '#2EC4B6' : '#717171',
+                            color: activeTab === 'plans' ? 'brand.secondary' : '#717171',
                             fontWeight: '700',
                             fontSize: '14px',
                             borderRadius: '16px',
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             boxShadow: activeTab === 'plans' ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
                             _active: { transform: 'scale(0.96)' },
-                            _hover: { color: activeTab === 'plans' ? '#2EC4B6' : '#333' },
+                            _hover: { color: activeTab === 'plans' ? 'brand.secondary' : '#333' },
                         })}
                     >
                         <Calendar size={18} strokeWidth={activeTab === 'plans' ? 2.5 : 2} /> <span className={css({ mt: '1px' })}>일정표</span>
@@ -175,14 +175,14 @@ export default function TripLayoutClient() {
                             display: 'flex', alignItems: 'center', gap: '8px', px: '24px', h: '42px',
                             bg: activeTab === 'checklist' ? 'white' : 'transparent',
                             cursor: 'pointer', border: 'none',
-                            color: activeTab === 'checklist' ? '#2EC4B6' : '#717171',
+                            color: activeTab === 'checklist' ? 'brand.secondary' : '#717171',
                             fontWeight: '700',
                             fontSize: '14px',
                             borderRadius: '16px',
                             transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                             boxShadow: activeTab === 'checklist' ? '0 4px 12px rgba(0,0,0,0.08)' : 'none',
                             _active: { transform: 'scale(0.96)' },
-                            _hover: { color: activeTab === 'checklist' ? '#2EC4B6' : '#333' },
+                            _hover: { color: activeTab === 'checklist' ? 'brand.secondary' : '#333' },
                         })}
                     >
                         <ListChecks size={18} strokeWidth={activeTab === 'checklist' ? 2.5 : 2} /> <span className={css({ mt: '1px' })}>준비물</span>

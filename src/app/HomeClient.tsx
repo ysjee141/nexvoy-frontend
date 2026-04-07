@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Plus, MapPin, CalendarDays, Luggage, User } from 'lucide-react'
 import InvitationBanner from '@/components/trips/InvitationBanner'
 import TripSection from '@/components/trips/TripSection'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CacheUtil } from '@/utils/cache'
 import {
@@ -18,6 +18,7 @@ import NicknamePrompt from '@/components/profile/NicknamePrompt'
 import { isBetaTester } from '@/constants/testers'
 import TesterNoticeModal from '@/components/layout/TesterNoticeModal'
 import Skeleton from '@/components/ui/Skeleton'
+import { useUIStore } from '@/stores/useUIStore'
 
 // ── 주요 기능 카드 (Guide에서 이식) ──
 const FEATURES = [
@@ -213,6 +214,8 @@ export default function HomeClient() {
   const [loading, setLoading] = useState(true)
   const [isFirstCheck, setIsFirstCheck] = useState(true) // 최초 세션/캐시 확인용
   const [showNicknamePrompt, setShowNicknamePrompt] = useState(false)
+
+  const { setMobileTitle, isNewTripModalOpen, setIsNewTripModalOpen } = useUIStore()
   const searchParams = useSearchParams()
   const activeTab = searchParams.get('tab')
 
@@ -221,34 +224,87 @@ export default function HomeClient() {
   const upcomingRef = useRef<HTMLDivElement>(null)
   const completedRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const processTrips = (allTrips: any[]) => {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+  const processTrips = useCallback((allTrips: any[]) => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-      setOngoing(allTrips.filter((t: any) => {
-        const start = new Date(t.start_date)
-        const end = new Date(t.end_date)
-        start.setHours(0, 0, 0, 0)
-        end.setHours(23, 59, 59, 999)
-        return start <= today && today <= end
-      }))
+    setOngoing(allTrips.filter((t: any) => {
+      const start = new Date(t.start_date)
+      const end = new Date(t.end_date)
+      start.setHours(0, 0, 0, 0)
+      end.setHours(23, 59, 59, 999)
+      return start <= today && today <= end
+    }))
 
-      setUpcoming(allTrips.filter((t: any) => {
-        const start = new Date(t.start_date)
-        start.setHours(0, 0, 0, 0)
-        return start > today
-      }))
+    setUpcoming(allTrips.filter((t: any) => {
+      const start = new Date(t.start_date)
+      start.setHours(0, 0, 0, 0)
+      return start > today
+    }))
 
-      setCompleted(allTrips.filter((t: any) => {
-        const end = new Date(t.end_date)
-        end.setHours(23, 59, 59, 999)
-        return end < today
-      }))
+    setCompleted(allTrips.filter((t: any) => {
+      const end = new Date(t.end_date)
+      end.setHours(23, 59, 59, 999)
+      return end < today
+    }))
 
-      setHasAnyTrip(allTrips.length > 0)
+    setHasAnyTrip(allTrips.length > 0)
+  }, [])
+
+  const fetchNetworkBackground = useCallback(async () => {
+    const { data: { user: networkUser } } = await supabase.auth.getUser()
+    if (!networkUser) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+    setUser(networkUser)
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nickname')
+      .eq('id', networkUser.id)
+      .single()
+
+    setNickname(profile?.nickname || networkUser.email?.split('@')[0] || '여행자')
+    if (profile) {
+      await CacheUtil.setProfile(profile)
+    }
+    setShowNicknamePrompt(!profile?.nickname)
+
+    // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
+    const { data: memberTripData } = await supabase
+      .from('trip_members')
+      .select('trip_id')
+      .eq('user_id', networkUser.id)
+      .eq('status', 'accepted')
+
+    const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
+
+    // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
+    let query = supabase
+      .from('trips')
+      .select('*, checklists(id, checklist_items(id, is_checked))')
+
+    if (memberTripIds.length > 0) {
+      query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
+    } else {
+      query = query.eq('user_id', networkUser.id)
     }
 
+    const { data: trips } = await query.order('start_date', { ascending: true })
+
+    const allTrips = trips || []
+    processTrips(allTrips)
+    
+    try {
+      await CacheUtil.set('offline_home_all_trips', allTrips)
+    } catch (e) {
+      console.warn('Cache save failed', e)
+    }
+  }, [supabase, processTrips])
+
+  useEffect(() => {
     async function loadCacheFirst() {
       // 1. 빠른 로컬 세션 확인 (네트워크 지연 없음)
       const { data: { session } } = await supabase.auth.getSession()
@@ -282,65 +338,12 @@ export default function HomeClient() {
       setLoading(false)
     }
 
-    async function fetchNetworkBackground() {
-      const { data: { user: networkUser } } = await supabase.auth.getUser()
-      if (!networkUser) {
-        setUser(null)
-        setLoading(false)
-        return
-      }
-      setUser(networkUser)
-
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('nickname')
-        .eq('id', networkUser.id)
-        .single()
-
-      setNickname(profile?.nickname || networkUser.email?.split('@')[0] || '여행자')
-      if (profile) {
-        await CacheUtil.setProfile(profile)
-      }
-      setShowNicknamePrompt(!profile?.nickname)
-
-      // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
-      const { data: memberTripData } = await supabase
-        .from('trip_members')
-        .select('trip_id')
-        .eq('user_id', networkUser.id)
-        .eq('status', 'accepted')
-
-      const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
-
-      // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
-      let query = supabase
-        .from('trips')
-        .select('*, checklists(id, checklist_items(id, is_checked))')
-
-      if (memberTripIds.length > 0) {
-        query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
-      } else {
-        query = query.eq('user_id', networkUser.id)
-      }
-
-      const { data: trips } = await query.order('start_date', { ascending: true })
-
-      const allTrips = trips || []
-      processTrips(allTrips)
-      
-      try {
-        await CacheUtil.set('offline_home_all_trips', allTrips)
-      } catch (e) {
-        console.warn('Cache save failed', e)
-      }
-    }
-
     // 두 가지를 실행: 먼저 캐시 & 세션으로 화면을 채우고, 뒤이어 네트워크 통신으로 동기화 (SWR)
     loadCacheFirst().then(() => {
         setIsFirstCheck(false)
         fetchNetworkBackground()
     })
-  }, [supabase])
+  }, [supabase, processTrips, fetchNetworkBackground])
 
   // 탭 파라미터에 따른 스크롤 처리
   useEffect(() => {
@@ -594,21 +597,23 @@ export default function HomeClient() {
                   : '새로운 여행을 계획해 보세요.'}
             </p>
           </div>
-          <Link
-            href="/trips/new"
+          <button
+            onClick={() => setIsNewTripModalOpen(true)}
             className={css({
               display: 'flex', alignItems: 'center', gap: '8px',
               bg: 'brand.primary', color: 'white', px: '24px', py: '14px',
               borderRadius: '16px', fontWeight: '700', transition: 'all 0.2s',
-              boxShadow: '0 4px 12px rgba(46, 196, 182, 0.2)',
+              boxShadow: '0 8px 20px rgba(46, 196, 182, 0.25)',
               w: { base: '100%', sm: 'auto' }, justifyContent: 'center',
-              _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.3)' },
+              border: 'none', cursor: 'pointer',
+              _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(46, 196, 182, 0.35)' },
               _active: { transform: 'scale(0.96)' }
             })}
           >
-            <Plus size={22} /> 새 여행 만들기
-          </Link>
+            <Plus size={22} strokeWidth={2.5} /> 새 여행 만들기
+          </button>
         </header>
+
 
         {!hasAnyTrip ? (
           /* 여행이 하나도 없을 때 또는 로딩 중일 때 */
