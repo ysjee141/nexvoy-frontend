@@ -141,8 +141,8 @@ export default function TemplateForm({
                                                 <option key={cat} value={cat}>{cat}</option>
                                             ))}
                                         </select>
-                                        <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'brand.primary' })}>
-                                            <ChevronDown size={14} strokeWidth={3} />
+                                        <div className={css({ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'brand.muted' })}>
+                                            <ChevronDown size={14} strokeWidth={2.5} />
                                         </div>
                                     </div>
 
@@ -226,8 +226,8 @@ export default function TemplateForm({
                         borderRadius: '22px', fontWeight: '800', fontSize: '17px',
                         border: 'none', cursor: loading ? 'not-allowed' : 'pointer', 
                         opacity: loading ? 0.7 : 1, transition: 'all 0.3s', 
-                        boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)', 
-                        _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 15px 30px rgba(46, 196, 182, 0.35)' },
+                        boxShadow: '0 8px 20px rgba(46, 196, 182, 0.15)', 
+                        _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(46, 196, 182, 0.25)' },
                         _active: { transform: 'scale(0.97)' }
                     })}
                 >

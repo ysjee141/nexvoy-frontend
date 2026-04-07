@@ -141,7 +141,7 @@ export default function TemplatesPage() {
                                         flexDirection: 'column',
                                         textAlign: 'left',
                                         bg: 'white',
-                                        p: '20px',
+                                        p: '24px',
                                         borderRadius: '24px',
                                         boxShadow: '0 4px 20px rgba(0,0,0,0.04)',
                                         border: '1px solid #EEEEEE',
@@ -151,16 +151,41 @@ export default function TemplatesPage() {
                                         cursor: 'pointer',
                                         _hover: {
                                             transform: 'translateY(-6px)',
-                                            boxShadow: '0 16px 32px rgba(46,196,182,0.1)',
-                                            borderColor: '#2EC4B6',
+                                            boxShadow: '0 16px 32px rgba(46,196,182,0.12)',
+                                            borderColor: 'brand.primary/40',
                                             '& [data-icon-bg]': {
                                                 transform: 'scale(1.05) rotate(3deg)',
-                                                bg: '#2EC4B6',
+                                                bg: 'brand.primary',
                                                 color: 'white'
+                                            },
+                                            '& [data-item-count]': {
+                                                color: 'brand.primary'
                                             }
                                         },
+                                        _active: {
+                                            transform: 'scale(0.97)',
+                                            bg: 'bg.softCotton',
+                                            transition: 'all 0.1s'
+                                        }
                                     })}
                                 >
+                                    {/* 우측 상단 배지 */}
+                                    <div className={css({
+                                        position: 'absolute',
+                                        top: '20px',
+                                        right: '20px',
+                                        bg: { base: 'brand.primary/10', sm: 'bg.softCotton' },
+                                        color: { base: 'brand.primary', sm: 'brand.muted' },
+                                        fontSize: '10px',
+                                        fontWeight: '800',
+                                        px: '8px',
+                                        py: '3px',
+                                        borderRadius: '10px',
+                                        letterSpacing: '0.02em',
+                                        transition: 'all 0.3s'
+                                    })}>
+                                        MY
+                                    </div>
                                     {/* 상단: 아이콘 & 제목 세트 (가로형) */}
                                     <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', mb: '16px' })}>
                                         <div
@@ -169,11 +194,11 @@ export default function TemplatesPage() {
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                w: '40px',
-                                                h: '40px',
-                                                borderRadius: '14px',
-                                                bg: '#EAF9F7',
-                                                color: '#2EC4B6',
+                                                w: '44px',
+                                                h: '44px',
+                                                borderRadius: '16px',
+                                                bg: { base: 'brand.primary/10', sm: 'bg.softCotton' },
+                                                color: { base: 'brand.primary', sm: 'brand.secondary' },
                                                 transition: 'all 0.3s ease',
                                                 flexShrink: 0
                                             })}
@@ -185,10 +210,13 @@ export default function TemplatesPage() {
                                                 {template.title}
                                             </h3>
                                             <div className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
-                                                <span className={css({ color: '#2EC4B6', fontSize: '12px', fontWeight: '700' })}>
+                                                <span 
+                                                    data-item-count
+                                                    className={css({ color: { base: 'brand.primary', sm: 'brand.muted' }, fontSize: '12px', fontWeight: '700', transition: 'color 0.3s' })}
+                                                >
                                                     항목 {itemCount}개
                                                 </span>
-                                                <span className={css({ w: '2px', h: '2px', bg: '#DDD', borderRadius: '50%' })} />
+                                                <span className={css({ w: '2px', h: '2px', bg: { base: 'brand.primary/40', sm: '#DDD' }, borderRadius: '50%' })} />
                                                 <span className={css({ fontSize: '11px', color: '#AAA', fontWeight: '500' })}>
                                                     {formatDate(template.created_at)}
                                                 </span>
@@ -197,7 +225,7 @@ export default function TemplatesPage() {
                                     </div>
 
                                     {/* 준비물 미리보기 */}
-                                    <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '6px', mb: '16px', flex: 1, overflow: 'hidden', maxH: '64px' })}>
+                                    <div className={css({ display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', alignItems: 'flex-start', gap: '6px', mb: '0', flex: 1, overflow: 'hidden', maxH: '64px' })}>
                                         {previewItems.length > 0 ? (
                                             <>
                                                 {previewItems.slice(0, 3).map((item: any, idx: number) => (
@@ -229,23 +257,6 @@ export default function TemplatesPage() {
                                                 등록된 준비물이 없습니다.
                                             </div>
                                         )}
-                                    </div>
-
-                                    {/* 푸터 */}
-                                    <div className={css({ 
-                                        mt: 'auto', 
-                                        w: '100%', 
-                                        pt: '12px', 
-                                        borderTop: '1px solid #F5F5F5', 
-                                        color: '#2EC4B6', 
-                                        fontSize: '13px', 
-                                        fontWeight: '700',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between'
-                                    })}>
-                                        <span>템플릿 관리하기</span>
-                                        <Plus size={16} className={css({ transform: 'rotate(45deg)' })} />
                                     </div>
                                 </button>
                             )
