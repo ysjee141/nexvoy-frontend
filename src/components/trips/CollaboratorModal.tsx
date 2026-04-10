@@ -120,12 +120,15 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             position: 'fixed', inset: 0, zIndex: 1000,
             bg: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px',
-            animation: 'fadeIn 0.3s ease-out'
+            animation: 'fadeIn 0.3s ease-out',
+            overscrollBehavior: 'none',
+            touchAction: 'none',
         })}>
             <div className={css({
                 bg: 'white', w: '100%', maxW: '480px', borderRadius: '24px', overflow: 'hidden',
                 boxShadow: '0 25px 70px rgba(0,0,0,0.2)',
-                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
+                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)',
+                overscrollBehavior: 'contain',
             })}>
                 {/* 헤더 */}
                 <div className={css({ p: '20px 24px', borderBottom: '1px solid', borderBottomColor: 'brand.border', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
@@ -174,7 +177,17 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                     {/* 멤버 리스트 */}
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>참여 중인 멤버 ({collaborators.length})</h3>
-                        <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', maxH: '200px', overflowY: 'auto', pr: '4px' })}>
+                        <div className={css({ 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '8px', 
+                            maxH: '200px', 
+                            overflowY: 'auto', 
+                            pr: '4px',
+                            overscrollBehavior: 'contain',
+                            WebkitOverflowScrolling: 'touch',
+                            touchAction: 'pan-y',
+                        })}>
                             {collaborators.map(member => (
                                 <div key={member.id} className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
