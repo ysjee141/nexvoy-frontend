@@ -76,13 +76,16 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
         <div className={css({
             position: 'fixed', top: 0, left: 0, w: '100vw', h: '100vh',
             bg: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3000,
-            backdropFilter: 'blur(10px)', animation: 'fadeIn 0.3s ease-out'
+            backdropFilter: 'blur(10px)', animation: 'fadeIn 0.3s ease-out',
+            overscrollBehavior: 'none',
+            touchAction: 'none',
         })} onClick={onClose}>
             <div className={css({
                 bg: 'white', w: { base: '95%', sm: '480px' }, borderRadius: '24px', p: { base: '24px', sm: '32px' },
                 boxShadow: '0 20px 60px rgba(0,0,0,0.15)', position: 'relative',
                 maxW: '100%', boxSizing: 'border-box',
-                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
+                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)',
+                overscrollBehavior: 'contain',
             })} onClick={e => e.stopPropagation()}>
                 <button
                     onClick={onClose}

@@ -98,6 +98,8 @@ export default function PlanDetailModal({
                 p: { base: '0', sm: '20px' },
                 backdropFilter: 'blur(10px)',
                 animation: 'fadeIn 0.3s ease-out',
+                overscrollBehavior: 'none',
+                touchAction: 'none',
             })}
             onClick={(e) => { if (e.target === e.currentTarget) handleClose() }}
         >
@@ -272,7 +274,15 @@ export default function PlanDetailModal({
                 </div>
 
                 {/* ── 본문 ── */}
-                <div className={css({ overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column' })}>
+                <div className={css({ 
+                    overflowY: 'auto', 
+                    flex: 1, 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    overscrollBehavior: 'contain',
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-y',
+                })}>
 
                     {/* ▸ 기본 정보 탭 */}
                     {tab === 'info' && (
