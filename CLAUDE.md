@@ -5,7 +5,7 @@
 ## 필수 참조 문서
 - `docs/develop-context/` -- 아키텍처, 컨벤션, 도메인, 규칙, 디자인 가이드
 - `docs/adrs/` -- 아키텍처 결정 기록
-- `.agents/workflows/standard-dev-flow.md` -- 표준 개발 워크플로우 (절대 규칙)
+- `docs/develop-context/standard-dev-flow.md` -- 표준 개발 워크플로우 (절대 규칙)
 
 > **모든 작업 전 `docs/develop-context/` 문서를 반드시 읽고 규칙을 준수하라.**
 
@@ -112,4 +112,5 @@
 | 날짜 | 변경 내용 | 대상 | 사유 |
 |------|----------|------|------|
 | 2026-04-10 | 초기 구성 | 전체 | 1인 개발자를 위한 가상 개발 팀 하네스 구축 |
-| 2026-04-10 | 절대 규칙 추가 | CLAUDE.md, developer, orchestrator | standard-dev-flow.md/antigravity_rules 기반 워크플로우 통합 |
+| 2026-04-10 | 절대 규칙 추가 | CLAUDE.md, developer, orchestrator | standard-dev-flow.md 기반 워크플로우 통합 |
+| 2026-04-10 | 참조 경로 수정 | CLAUDE.md, orchestrator | standard-dev-flow.md를 docs/develop-context/로 이동 |
