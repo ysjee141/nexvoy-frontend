@@ -288,7 +288,9 @@ export default function NewPlanModal({
             backdropFilter: 'blur(10px)',
             display: 'flex', alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center', p: { base: '0', sm: '20px' },
-            animation: 'fadeIn 0.3s ease-out'
+            animation: 'fadeIn 0.3s ease-out',
+            overscrollBehavior: 'none',
+            touchAction: 'none',
         })}>
             <div className={css({
                 bg: 'white', w: '100%', maxW: { base: '100%', sm: '520px' },
@@ -297,7 +299,10 @@ export default function NewPlanModal({
                 boxShadow: { base: 'none', sm: 'floating' },
                 display: 'flex', flexDirection: 'column',
                 pt: { base: 'env(safe-area-inset-top)', sm: '0' },
-                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
+                animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)',
+                overscrollBehavior: 'contain',
+                WebkitOverflowScrolling: 'touch',
+                touchAction: 'pan-y',
             })}>
                 {/* 헤더 */}
                 <div className={css({
