@@ -177,12 +177,12 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                     {/* 멤버 리스트 */}
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>참여 중인 멤버 ({collaborators.length})</h3>
-                        <div className={css({ 
-                            display: 'flex', 
-                            flexDirection: 'column', 
-                            gap: '8px', 
-                            maxH: '200px', 
-                            overflowY: 'auto', 
+                        <div className={css({
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '8px',
+                            maxH: '200px',
+                            overflowY: 'auto',
                             pr: '4px',
                             overscrollBehavior: 'contain',
                             WebkitOverflowScrolling: 'touch',

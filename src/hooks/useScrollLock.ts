@@ -12,14 +12,14 @@ export function useScrollLock(isOpen: boolean) {
         if (!isOpen) return
 
         lockCount++
-        
+
         // 현재 스타일 저장
         const originalStyle = window.getComputedStyle(document.body).overflow
         const originalPadding = document.body.style.paddingRight
-        
+
         // 스크롤바 너비 계산 (데스크탑에서 레이아웃 튐 방지)
         const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth
-        
+
         if (lockCount === 1) {
             document.body.style.overflow = 'hidden'
             if (scrollBarWidth > 0) {

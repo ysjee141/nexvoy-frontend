@@ -57,3 +57,4 @@ styled-system-studio
 .agents
 .github_config
 .antigravity_rules
+.claude/settings.local.json
