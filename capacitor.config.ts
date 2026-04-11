@@ -19,6 +19,9 @@ const config: CapacitorConfig = {
       androidScaleType: "CENTER_CROP",
       showSpinner: false,
     },
+    SystemBars: {
+      insetsHandling: 'disable',
+    },
   },
   server: {
     cleartext: false,

@@ -6,14 +6,16 @@ import { Capacitor } from '@capacitor/core';
 /**
  * 네이티브 플랫폼(iOS/Android)의 시스템 UI(상태바, 네비게이션 바) 설정을 담당하는 서비스.
  *
- * ## Android 15+ (targetSdkVersion 36) 제한사항
+ * ## Android Safe Area 처리 구조
  *
- * Android 15부터 edge-to-edge 모드가 강제 적용되어 앱 컨텐츠가 시스템 바 뒤까지 렌더링됩니다.
- * - `StatusBar.setBackgroundColor()` 및 `NavigationBar.setNavigationBarColor()`는
- *   시스템 바의 반투명 오버레이 색상만 변경하며, 앱 컨텐츠 영역을 축소하지 않습니다.
- * - Android WebView에서는 `env(safe-area-inset-*)` CSS 함수가 항상 0px을 반환합니다.
- * - Capacitor 8.x SystemBars 플러그인이 `--safe-area-inset-*` CSS 변수를 주입하므로,
- *   CSS에서 `max(env(safe-area-inset-*), var(--safe-area-inset-*))` 패턴으로 폴백 처리합니다.
+ * Android 15+ (targetSdkVersion 36)에서는 edge-to-edge 모드가 강제 적용되어
+ * 앱 컨텐츠가 시스템 바 뒤까지 렌더링됩니다.
+ *
+ * - **CSS 변수 주입**: `MainActivity.java`에서 WindowInsets를 읽어
+ *   `--safe-area-inset-*` CSS 변수를 WebView에 직접 주입합니다.
+ *   (Capacitor 내장 SystemBars 플러그인의 자동 주입은 타이밍 문제로 비활성화)
+ * - **CSS 폴백**: `max(env(safe-area-inset-*), var(--safe-area-inset-*))` 패턴으로
+ *   iOS(env)와 Android(var) 모두 호환합니다.
  */
 export const NativeUIService = {
     async initialize() {
