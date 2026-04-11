@@ -51,6 +51,8 @@
 
 ### 모바일 (Capacitor)
 - [ ] Safe Area 패딩: `max(env(safe-area-inset-*), var(--safe-area-inset-*))` 폴백 패턴 사용
+- [ ] 풀스크린 모달: `pt`(상단) + `pb`(하단) 둘 다 적용 확인
+- [ ] 스크롤 모달: `pt`가 스크롤 컨테이너가 아닌 sticky 헤더에 있는지 확인 (Status Bar 블리드 방지)
 - [ ] CapacitorHttp 활용 (CORS 우회 필요 시)
 - [ ] `Capacitor.isNativePlatform()` 분기 처리
 - [ ] Framer Motion 전환 효과 (있는 경우)
