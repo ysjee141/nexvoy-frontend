@@ -48,10 +48,23 @@ const Card = ({ children }) => (
 
 ### 2-2. Mobile UI (Safe Area)
 모바일 하이브리드 앱 환경을 위해 상단 노치와 하단 홈 버튼 영역에 대한 패딩 처리가 필수적입니다.
+- **폴백 패턴**: `max(env(safe-area-inset-*), var(--safe-area-inset-*))` — iOS(`env()`)와 Android(`var()`, MainActivity 주입) 호환
 - **Top**: `padding-top: max(env(safe-area-inset-top), var(--safe-area-inset-top))`
 - **Bottom**: `padding-bottom: max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))`
-- `max(env(), var())` 폴백 패턴을 사용하여 iOS(`env()`)와 Android 15+(`var()`, Capacitor SystemBars 플러그인 주입) 모두 호환합니다.
-- Panda CSS 토큰이나 유틸리티를 사용하여 레이아웃이 시스템 UI에 가려지지 않도록 조절합니다.
+
+#### 풀스크린 모달의 Safe Area 규칙
+- **상단+하단 모두 필수**: `pt`만 적용하고 `pb`를 누락하면 하단 시스템 바에 UI가 가려짐
+- **스크롤 가능한 모달**: `pt`를 스크롤 컨테이너가 아닌 **sticky 헤더**에 적용해야 함. 컨테이너에 두면 스크롤 시 콘텐츠가 Status Bar 뒤로 비침
+  ```
+  // ✅ 올바른 패턴
+  Container (overflowY: auto, pb: safe-area-bottom)
+    Header (sticky, top: 0, bg: white, pt: calc(기존패딩 + safe-area-top))
+
+  // ❌ 잘못된 패턴
+  Container (overflowY: auto, pt: safe-area-top)  ← 스크롤 시 블리드
+    Header (sticky, top: 0)
+  ```
+- **비스크롤 모달** (overflow: hidden + 내부 스크롤 영역 분리): 컨테이너에 `pt` 적용 가능
 
 ---
 
