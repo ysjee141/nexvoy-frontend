@@ -299,6 +299,7 @@ export default function NewPlanModal({
                 boxShadow: { base: 'none', sm: 'floating' },
                 display: 'flex', flexDirection: 'column',
                 pt: { base: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))', sm: '0' },
+                pb: { base: 'max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))', sm: '0' },
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)',
                 overscrollBehavior: 'contain',
                 WebkitOverflowScrolling: 'touch',
