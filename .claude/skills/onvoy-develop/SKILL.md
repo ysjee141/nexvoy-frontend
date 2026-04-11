@@ -72,7 +72,9 @@ Agent(
 
 > 이 단계는 기능 개발/버그 수정 시 반드시 수행한다. 리뷰/QA만 요청한 경우는 건너뛴다.
 
-1. **GitHub Issue 생성**: GitHub MCP를 사용하여 이슈 생성 (planner 분석 결과 기반)
+1. **GitHub Issue 생성**: `gh issue create` 명령으로 이슈 생성 (planner 분석 결과 기반)
+   - **필수**: `.claude/settings.local.json`의 `GH_TOKEN`을 환경변수로 지정하여 `ysjee141` 계정 사용
+   - 예: `GH_TOKEN="..." gh issue create --repo ysjee141/nexvoy-frontend ...`
 2. **develop 브랜치 최신화**:
    ```bash
    git checkout develop && git pull origin develop
@@ -185,12 +187,17 @@ Agent(
    - 충돌 발생 시 해결 후 재빌드
 2. **원격 Push** (이 시점에서 최초로 push):
    ```bash
-   git push -u origin feature/[issue-title]-[issue-number]
+   GH_TOKEN="<settings.local.json의 토큰>" git push -u origin feature/[issue-title]-[issue-number]
    ```
 3. **PR 생성**: Base=`develop`
+   ```bash
+   GH_TOKEN="<settings.local.json의 토큰>" gh pr create --repo ysjee141/nexvoy-frontend --base develop ...
+   ```
    - 본문에 `Resolves #[이슈번호]` 포함
    - 변경 내용 요약 + 테스트 체크리스트
 4. **PR 생성까지만 수행** -- 승인/머지는 사용자가 직접 진행한다
+
+> **GitHub 인증 규칙**: 모든 `gh` CLI 및 `git push` 명령에 `.claude/settings.local.json`의 `GH_TOKEN`을 환경변수로 반드시 지정한다. 기본 인증(`ysjee141_yanolja` EMU)이 아닌 `ysjee141` 개인 계정을 사용해야 한다.
 
 ## 데이터 흐름
 
