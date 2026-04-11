@@ -153,13 +153,14 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                 overflowY: 'auto', borderRadius: { base: '0', sm: '32px' },
                 boxShadow: { base: 'none', sm: 'floating' },
                 display: 'flex', flexDirection: 'column',
-                pt: { base: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))', sm: '0' },
                 pb: { base: 'max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))', sm: '0' },
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
             })}>
                 {/* 헤더 */}
                 <div className={css({
-                    p: '22px 24px', borderBottom: '1px solid', borderBottomColor: 'brand.border', display: 'flex',
+                    p: '22px 24px',
+                    pt: { base: 'calc(22px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))', sm: '22px' },
+                    borderBottom: '1px solid', borderBottomColor: 'brand.border', display: 'flex',
                     justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10
                 })}>
                     <div style={{ width: '40px' }} />
