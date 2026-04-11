@@ -12,6 +12,7 @@ import { getCurrencyFromTimezone } from '@/utils/currency'
 import { ExchangeService } from '@/services/ExternalApiService'
 import RouteMapInfoModal from '@/components/trips/RouteMapInfoModal'
 import PlanDetailModal from '@/components/trips/PlanDetailModal'
+import NewPlanModal from '@/components/trips/NewPlanModal'
 
 const GOOGLE_MAPS_LIBRARIES: ('places')[] = ['places']
 
@@ -124,6 +125,8 @@ export default function RouteMapView({
     const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | null>(null)
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
     const [detailPlan, setDetailPlan] = useState<Plan | null>(null)
+    const [editingPlan, setEditingPlan] = useState<any>(null)
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false)
     const [selectedDate, setSelectedDate] = useState<string>('all')
     const [dataLoaded, setDataLoaded] = useState(false)
     const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({})
@@ -318,6 +321,29 @@ export default function RouteMapView({
         },
         []
     )
+
+    const handleEditPlan = useCallback(
+        async (plan: any) => {
+            const { data: urlsData } = await supabase.from('plan_urls').select('url').eq('plan_id', plan.id)
+            setEditingPlan({ ...plan, plan_urls: urlsData || [] })
+            setDetailPlan(null)
+            setIsEditModalOpen(true)
+        },
+        [supabase]
+    )
+
+    // plans 재패칭 (수정/삭제 후)
+    const refetchPlans = useCallback(async () => {
+        if (!tripId) return
+        const { data } = await supabase
+            .from('plans')
+            .select('*')
+            .eq('trip_id', tripId)
+            .order('start_datetime_local', { ascending: true })
+        if (data) {
+            setPlans(data.map((p: any) => ({ ...p, is_visited: p.is_visited ?? false })) as Plan[])
+        }
+    }, [tripId, supabase])
 
     const handleDeletePlan = useCallback(
         async (planId: string) => {
@@ -522,9 +548,22 @@ export default function RouteMapView({
                     timeDisplayMode="both"
                     userRole={userRole}
                     onClose={() => setDetailPlan(null)}
-                    onEdit={() => { /* 편집은 일정표 탭의 NewPlanModal 필요 — 모달 닫기만 */ setDetailPlan(null) }}
+                    onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}
                     onToggleVisit={handleToggleVisit}
+                />
+            )}
+
+            {/* Edit plan modal */}
+            {tripId && (
+                <NewPlanModal
+                    tripId={tripId}
+                    isOpen={isEditModalOpen}
+                    onClose={() => { setIsEditModalOpen(false); setEditingPlan(null) }}
+                    onSuccess={refetchPlans}
+                    editData={editingPlan}
+                    tripStartDate={tripStartDate}
+                    tripEndDate={tripEndDate}
                 />
             )}
 
