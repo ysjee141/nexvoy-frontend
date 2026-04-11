@@ -18,7 +18,7 @@
 ### 1. 분석 및 이슈 등록
 - 작업 전 `docs/develop-context/` 문서를 반드시 읽어 컨텍스트를 파악한다
 - 복잡한 작업 시 `implementation_plan.md`를 작성하여 **사용자 승인**을 받는다
-- GitHub MCP를 사용하여 **Issue**를 생성한다
+- `gh` CLI를 사용하여 **Issue**를 생성한다 (`.claude/settings.local.json`의 `GH_TOKEN` 환경변수 필수)
 
 ### 2. 로컬 우선 개발 (LOCAL FIRST)
 - `develop` 브랜치를 최신화 후 이를 기준으로 feature 브랜치를 생성한다
@@ -40,6 +40,7 @@
 - PR 본문에 `Resolves #NN` 또는 `Close #NN`으로 이슈 자동 연동
 - **PR 생성까지만 수행** -- 승인 및 머지는 사용자가 직접 진행한다
 - 별도 요청 없이 절대 머지하지 않는다
+- **GitHub 인증**: `gh` CLI / `git push` 시 `.claude/settings.local.json`의 `GH_TOKEN` 환경변수 필수 (`ysjee141` 계정)
 
 ### 5. 배포 (Release)
 - 배포 시점에 `develop -> main` Release PR을 생성한다
