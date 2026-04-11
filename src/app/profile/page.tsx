@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import TermsModal from '../signup/TermsModal'
 import ProfileSkeleton from './ProfileSkeleton'
+import BugReportModal from '@/components/profile/BugReportModal'
 
 function ProfileContent() {
     const supabase = createClient()
@@ -20,6 +21,7 @@ function ProfileContent() {
     const [isSavingNickname, setIsSavingNickname] = useState(false)
     const [nicknameError, setNicknameError] = useState('')
     const [loading, setLoading] = useState(true)
+    const [isBugModalOpen, setIsBugModalOpen] = useState(false)
 
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -545,8 +547,7 @@ function ProfileContent() {
                     {[
                         { href: '/templates', icon: '📦', label: '준비물 템플릿 관리', desc: '나만의 체크리스트를 미리 구성해 두세요' },
                         { href: '/profile/travel-log', icon: '📖', label: '여행 발자취 (Travel Log)', desc: '지금까지 다녀온 모든 여행의 기록입니다' },
-                        { href: '/feedback', icon: '💬', label: '건의 및 버그 제보', desc: '온여정을 더 좋게 만드는 소중한 의견을 주세요' },
-                    ].map((item, i) => (
+                    ].map((item) => (
                         <Link
                             key={item.href}
                             href={item.href}
@@ -575,7 +576,45 @@ function ProfileContent() {
                             <ChevronRight size={20} className={css({ color: '#CCC', transition: 'all 0.2s' })} />
                         </Link>
                     ))}
+                    {/* 건의 및 버그 제보 — 페이지 이동 대신 모달 */}
+                    <button
+                        onClick={() => setIsBugModalOpen(true)}
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: '24px',
+                            py: '20px',
+                            borderTop: '1px solid #F5F5F5',
+                            bg: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            w: '100%',
+                            textAlign: 'left',
+                            transition: 'all 0.25s ease',
+                            _hover: { bg: 'rgba(37, 99, 235, 0.04)', px: '28px' },
+                            _active: { bg: 'rgba(37, 99, 235, 0.08)' }
+                        })}
+                    >
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
+                            <div className={css({ fontSize: '22px', w: '40px', h: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', bg: 'bg.softCotton', borderRadius: '12px' })}>
+                                💬
+                            </div>
+                            <div>
+                                <div className={css({ fontSize: '16px', fontWeight: '750', color: 'brand.secondary' })}>건의 및 버그 제보</div>
+                                <div className={css({ fontSize: '13px', color: 'brand.muted', mt: '2px', fontWeight: '600' })}>온여정을 더 좋게 만드는 소중한 의견을 주세요</div>
+                            </div>
+                        </div>
+                        <ChevronRight size={20} className={css({ color: '#CCC', transition: 'all 0.2s' })} />
+                    </button>
                 </div>
+
+                {/* 버그 제보 모달 */}
+                <BugReportModal
+                    isOpen={isBugModalOpen}
+                    onClose={() => setIsBugModalOpen(false)}
+                    user={user}
+                />
             </section>
 
             {/* 기타 지원 및 법률 히스토리 */}
