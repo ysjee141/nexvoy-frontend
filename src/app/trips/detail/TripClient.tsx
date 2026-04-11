@@ -229,7 +229,6 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
         }
     }, [isActive, fetchTrip, fetchPlans, fetchUserRole])
 
-    // 드롭다운 외부 클릭 감지를 위한 이벤트 리스너 (심플 버전으로 대체)
 
     const handleDeletePlan = async (planId: string) => {
         if (!confirm('이 일정을 삭제하시겠습니까? (연결된 정보도 함께 삭제됩니다)')) return
@@ -262,6 +261,19 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
 
     const handleModalSuccess = () => {
         fetchPlans()
+    }
+
+    const handleToggleVisit = async (planId: string, isVisited: boolean) => {
+        // 낙관적 UI 업데이트
+        setPlans(prev => prev.map(p => p.id === planId ? { ...p, is_visited: isVisited } : p))
+        // 디테일 모달이 열려 있으면 선택된 plan도 업데이트
+        setSelectedPlanForDetail((prev: any) => prev && prev.id === planId ? { ...prev, is_visited: isVisited } : prev)
+        const { error } = await supabase.from('plans').update({ is_visited: isVisited }).eq('id', planId)
+        if (error) {
+            // 실패 시 롤백
+            setPlans(prev => prev.map(p => p.id === planId ? { ...p, is_visited: !isVisited } : p))
+            setSelectedPlanForDetail((prev: any) => prev && prev.id === planId ? { ...prev, is_visited: !isVisited } : prev)
+        }
     }
 
     const handlePlanDetail = (plan: any) => {
@@ -424,6 +436,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}
                     onDetail={handlePlanDetail}
+                    onToggleVisit={handleToggleVisit}
                 />
             )}
 
@@ -438,6 +451,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     onClose={() => setIsDetailModalOpen(false)}
                     onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}
+                    onToggleVisit={handleToggleVisit}
                 />
             )}
 
