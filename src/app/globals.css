@@ -30,9 +30,9 @@ input[type="datetime-local"] {
     --font-heading: var(--font-system);
 
     /* Safe Area Inset 폴백 변수
-       Capacitor 8.x SystemBars 플러그인이 네이티브 inset 값을 주입합니다.
-       Android WebView에서 env(safe-area-inset-*) = 0px이므로,
-       max(env(), var()) 패턴으로 두 값 중 큰 값을 사용합니다. */
+       Android: MainActivity.java의 WindowInsets 리스너가 실제 값을 주입합니다.
+       iOS: env(safe-area-inset-*)가 정상 작동하므로 이 변수는 0px 유지.
+       CSS에서 max(env(), var()) 패턴으로 두 값 중 큰 값을 사용합니다. */
     --safe-area-inset-top: 0px;
     --safe-area-inset-bottom: 0px;
     --safe-area-inset-left: 0px;
