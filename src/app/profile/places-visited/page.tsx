@@ -157,8 +157,8 @@ export default function PlacesVisitedPage() {
     return (
         <div className={css({ 
             position: 'relative', left: '50%', right: '50%', marginLeft: '-50vw', marginRight: '-50vw', width: '100vw',
-            marginTop: { base: '-calc(64px + env(safe-area-inset-top))', md: '-calc(88px + env(safe-area-inset-top))' },
-            paddingTop: { base: 'calc(64px + env(safe-area-inset-top))', md: 'calc(88px + env(safe-area-inset-top))' },
+            marginTop: { base: '-calc(64px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))', md: '-calc(88px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))' },
+            paddingTop: { base: 'calc(64px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))', md: 'calc(88px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))' },
             minH: 'calc(100vh - 60px)', bg: '#F8FAFC', pb: '60px' 
         })}>
             <div className={css({ maxW: '720px', mx: 'auto' })}>

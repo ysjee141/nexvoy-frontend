@@ -109,7 +109,7 @@ export default function Navbar() {
                 borderBottom: '1px solid',
                 borderBottomColor: 'brand.border',
                 boxShadow: '0 1px 12px rgba(0,0,0,0.08)',
-                paddingTop: 'env(safe-area-inset-top)',
+                paddingTop: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))',
                 transition: 'transform 0.3s ease',
             })}
         >
