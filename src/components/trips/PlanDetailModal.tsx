@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from 'react'
 import { css } from 'styled-system/css'
 import {
     X, ChevronLeft, MapPin, Clock, Wallet, FileText, Globe,
-    Pencil, Trash2, BookOpen, ExternalLink, Link2, Bell
+    Pencil, Trash2, BookOpen, ExternalLink, Link2, Bell,
+    Circle, CheckCircle2
 } from 'lucide-react'
 import { getCurrencyFromTimezone, formatCurrency, formatKRW } from '@/utils/currency'
 import { useNetworkStore } from '@/stores/useNetworkStore'
@@ -22,11 +23,12 @@ interface PlanDetailModalProps {
     onClose: () => void
     onEdit: (plan: any) => void
     onDelete: (id: string) => void
+    onToggleVisit: (planId: string, isVisited: boolean) => void
 }
 
 export default function PlanDetailModal({
     plan, exchangeRates, formatLocalTime, formatKstTime, timeDisplayMode,
-    userRole, onClose, onEdit, onDelete,
+    userRole, onClose, onEdit, onDelete, onToggleVisit,
 }: PlanDetailModalProps) {
     const [tab, setTab] = useState<'info' | 'refs'>('info')
     const [mapError, setMapError] = useState(false)
@@ -207,15 +209,46 @@ export default function PlanDetailModal({
                                 {plan.location || '장소 지정 안됨'}
                             </div>
                         </div>
-                        <h2 className={css({ 
-                            fontSize: { base: '26px', sm: '32px' }, 
-                            fontWeight: '900', 
+                        <h2 className={css({
+                            fontSize: { base: '26px', sm: '32px' },
+                            fontWeight: '900',
                             lineHeight: 1.2,
                             textShadow: '0 2px 15px rgba(0,0,0,0.4)',
                             wordBreak: 'break-word'
                         })}>
                             {plan.title}
                         </h2>
+                        {(userRole === 'owner' || userRole === 'editor') && (
+                            <button
+                                onClick={() => onToggleVisit(plan.id, !plan.is_visited)}
+                                className={css({
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    mt: '10px',
+                                    bg: 'rgba(255,255,255,0.15)',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    color: 'white',
+                                    px: '12px',
+                                    py: '6px',
+                                    borderRadius: '20px',
+                                    backdropFilter: 'blur(10px)',
+                                    fontSize: '13px',
+                                    fontWeight: '700',
+                                    transition: 'all 0.2s',
+                                    opacity: plan.is_visited ? 0.8 : 1,
+                                    _hover: { bg: 'rgba(255,255,255,0.25)' }
+                                })}
+                                aria-label={plan.is_visited ? '방문 취소' : '방문 완료'}
+                            >
+                                {plan.is_visited
+                                    ? <CheckCircle2 size={16} />
+                                    : <Circle size={16} />
+                                }
+                                {plan.is_visited ? '방문 완료' : '방문 전'}
+                            </button>
+                        )}
                     </div>
                 </div>
 

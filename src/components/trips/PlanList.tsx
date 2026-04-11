@@ -24,6 +24,7 @@ interface Plan {
     memo: string
     image_url: string
     is_completed: boolean
+    is_visited: boolean
     timezone_string: string
 }
 
@@ -39,20 +40,22 @@ interface PlanListProps {
     onEdit: (plan: any) => void
     onDelete: (id: string) => void
     onDetail: (plan: any) => void
+    onToggleVisit: (planId: string, isVisited: boolean) => void
 }
 
-export default function PlanList({ 
-    plans, 
+export default function PlanList({
+    plans,
     exchangeRates,
-    activeDropdown, 
-    setActiveDropdown, 
-    userRole, 
-    timeDisplayMode, 
-    formatLocalTime, 
-    formatKstTime, 
-    onEdit, 
+    activeDropdown,
+    setActiveDropdown,
+    userRole,
+    timeDisplayMode,
+    formatLocalTime,
+    formatKstTime,
+    onEdit,
     onDelete,
-    onDetail 
+    onDetail,
+    onToggleVisit
 }: PlanListProps) {
     if (!plans || plans.length === 0) {
         return (
@@ -116,7 +119,7 @@ export default function PlanList({
                                     zIndex: 1,
                                     boxShadow: '0 0 0 1px brand.primary/30'
                                 })} />
-                                <PlanCard 
+                                <PlanCard
                                     plan={plan}
                                     exchangeRates={exchangeRates}
                                     userRole={userRole}
@@ -126,6 +129,7 @@ export default function PlanList({
                                     onEdit={onEdit}
                                     onDelete={onDelete}
                                     onDetail={onDetail}
+                                    onToggleVisit={onToggleVisit}
                                 />
                             </div>
                         ))}
@@ -136,16 +140,17 @@ export default function PlanList({
     )
 }
 
-function PlanCard({ 
-    plan, 
-    exchangeRates, 
-    userRole, 
-    timeDisplayMode, 
-    formatLocalTime, 
-    formatKstTime, 
-    onEdit, 
-    onDelete, 
-    onDetail 
+function PlanCard({
+    plan,
+    exchangeRates,
+    userRole,
+    timeDisplayMode,
+    formatLocalTime,
+    formatKstTime,
+    onEdit,
+    onDelete,
+    onDetail,
+    onToggleVisit
 }: {
     plan: any
     exchangeRates: Record<string, number>
@@ -156,6 +161,7 @@ function PlanCard({
     onEdit: (plan: any) => void
     onDelete: (id: string) => void
     onDetail: (plan: any) => void
+    onToggleVisit: (planId: string, isVisited: boolean) => void
 }) {
     const [isTooltipOpen, setIsTooltipOpen] = useState(false)
     const currency = getCurrencyFromTimezone(plan.timezone_string || 'Asia/Seoul')
@@ -180,7 +186,7 @@ function PlanCard({
                     opacity: 0.95
                 } : {}
             } : {},
-            opacity: plan.is_completed ? 0.7 : 1,
+            opacity: plan.is_completed ? 0.7 : plan.is_visited ? 0.6 : 1,
             cursor: 'pointer',
             // background 처리
             _before: plan.image_url ? {
@@ -209,7 +215,40 @@ function PlanCard({
             <div className={css({ display: 'flex', gap: '14px', position: 'relative', zIndex: 2 })}>
                 <div className={css({ flex: 1, minW: 0 })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: '4px' })}>
-                        <h4 className={css({ fontSize: '17px', fontWeight: '700', color: 'brand.secondary', textDecoration: plan.is_completed ? 'line-through' : 'none' })}>{plan.title}</h4>
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minW: 0 })}>
+                            {(userRole === 'owner' || userRole === 'editor') && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        onToggleVisit(plan.id, !plan.is_visited)
+                                    }}
+                                    className={css({
+                                        bg: 'transparent',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        p: '2px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                        transition: 'all 0.2s',
+                                        _hover: { transform: 'scale(1.15)' }
+                                    })}
+                                    aria-label={plan.is_visited ? '방문 취소' : '방문 완료'}
+                                >
+                                    {plan.is_visited
+                                        ? <CheckCircle2 size={20} className={css({ color: 'brand.primary' })} />
+                                        : <Circle size={20} className={css({ color: 'brand.muted' })} />
+                                    }
+                                </button>
+                            )}
+                            <h4 className={css({
+                                fontSize: '17px',
+                                fontWeight: '700',
+                                color: 'brand.secondary',
+                                textDecoration: plan.is_completed ? 'line-through' : plan.is_visited ? 'line-through' : 'none'
+                            })}>{plan.title}</h4>
+                        </div>
                         {(userRole === 'owner' || userRole === 'editor') && (
                             <div className={css({ display: 'flex', gap: '4px' })}>
                                 <button 
