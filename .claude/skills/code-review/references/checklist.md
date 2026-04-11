@@ -50,7 +50,7 @@
 - [ ] 체크리스트 아이템: 스와이프로만 수정/삭제 노출
 
 ### 모바일 (Capacitor)
-- [ ] Safe Area 패딩 (top: env(safe-area-inset-top), bottom: env(safe-area-inset-bottom))
+- [ ] Safe Area 패딩: `max(env(safe-area-inset-*), var(--safe-area-inset-*))` 폴백 패턴 사용
 - [ ] CapacitorHttp 활용 (CORS 우회 필요 시)
 - [ ] `Capacitor.isNativePlatform()` 분기 처리
 - [ ] Framer Motion 전환 효과 (있는 경우)

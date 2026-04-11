@@ -48,8 +48,9 @@ const Card = ({ children }) => (
 
 ### 2-2. Mobile UI (Safe Area)
 모바일 하이브리드 앱 환경을 위해 상단 노치와 하단 홈 버튼 영역에 대한 패딩 처리가 필수적입니다.
-- **Top**: `padding-top: env(safe-area-inset-top)`
-- **Bottom**: `padding-bottom: env(safe-area-inset-bottom)`
+- **Top**: `padding-top: max(env(safe-area-inset-top), var(--safe-area-inset-top))`
+- **Bottom**: `padding-bottom: max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))`
+- `max(env(), var())` 폴백 패턴을 사용하여 iOS(`env()`)와 Android 15+(`var()`, Capacitor SystemBars 플러그인 주입) 모두 호환합니다.
 - Panda CSS 토큰이나 유틸리티를 사용하여 레이아웃이 시스템 UI에 가려지지 않도록 조절합니다.
 
 ---
