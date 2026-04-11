@@ -21,7 +21,7 @@ export default function BugReportFAB() {
                 style={{
                     position: 'fixed',
                     right: '24px',
-                    bottom: `calc(${bottomOffset} + env(safe-area-inset-bottom, 0px))`,
+                    bottom: `calc(${bottomOffset} + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom)))`,
                     zIndex: 1000,
                 }}
                 className={css({

@@ -56,8 +56,8 @@ export default function RootLayout({
             maxW: '1280px',
             mx: 'auto',
             p: {
-              base: 'calc(64px + env(safe-area-inset-top)) 16px calc(80px + env(safe-area-inset-bottom))',
-              md: 'calc(88px + env(safe-area-inset-top)) 24px 32px'
+              base: 'calc(64px + max(env(safe-area-inset-top), var(--safe-area-inset-top))) 16px calc(80px + max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom)))',
+              md: 'calc(88px + max(env(safe-area-inset-top), var(--safe-area-inset-top))) 24px 32px'
             },
           })}
         >

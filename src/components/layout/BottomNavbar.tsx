@@ -27,7 +27,7 @@ export default function BottomNavbar() {
                 backdropFilter: 'blur(10px)',
                 borderTop: '1px solid',
                 borderTopColor: 'brand.border',
-                paddingBottom: 'env(safe-area-inset-bottom)', // iOS Safe Area 대응
+                paddingBottom: 'max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))', // iOS/Android Safe Area 대응
                 boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
             })}
         >

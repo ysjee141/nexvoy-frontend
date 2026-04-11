@@ -418,7 +418,7 @@ export default function TripSwitcherModal() {
                 {/* 하단 버튼 */}
                 <div className={css({ 
                     p: '20px', 
-                    pb: 'calc(24px + env(safe-area-inset-bottom))',
+                    pb: 'calc(24px + max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom)))',
                     borderTop: '1px solid token(colors.brand.border)', 
                     bg: 'white' 
                 })}>

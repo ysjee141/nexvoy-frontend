@@ -57,7 +57,7 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                     p: '16px 20px',
                     borderBottom: '1px solid',
                     borderColor: 'brand.border',
-                    pt: { base: 'calc(16px + env(safe-area-inset-top))', sm: '24px' },
+                    pt: { base: 'calc(16px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))', sm: '24px' },
                     px: { base: '20px', sm: '24px' },
                     bg: 'white'
                 })}>
@@ -89,7 +89,7 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                     flex: 1,
                     overflowY: 'auto',
                     p: { base: '24px 20px', sm: '32px' },
-                    pb: 'calc(env(safe-area-inset-bottom) + 40px)',
+                    pb: 'calc(max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom)) + 40px)',
                     scrollbarWidth: 'thin',
                     '&::-webkit-scrollbar': { w: '6px' },
                     '&::-webkit-scrollbar-thumb': { bg: 'brand.border', borderRadius: '10px' }

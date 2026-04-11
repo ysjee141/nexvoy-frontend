@@ -106,13 +106,13 @@ export default function TravelLogPage() {
             marginRight: '-50vw',
             width: '100vw',
             // 상단 Header와의 간격을 없애기 위해 부모의 pt 상쇄
-            marginTop: { 
-                base: '-calc(64px + env(safe-area-inset-top))', 
-                md: '-calc(88px + env(safe-area-inset-top))' 
+            marginTop: {
+                base: '-calc(64px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))',
+                md: '-calc(88px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))'
             },
-            paddingTop: { 
-                base: 'calc(64px + env(safe-area-inset-top))', 
-                md: 'calc(88px + env(safe-area-inset-top))' 
+            paddingTop: {
+                base: 'calc(64px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))',
+                md: 'calc(88px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))'
             },
             minH: 'calc(100vh - 60px)', 
             bg: '#F9FAFB', 

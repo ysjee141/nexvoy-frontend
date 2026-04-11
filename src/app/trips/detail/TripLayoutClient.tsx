@@ -130,7 +130,7 @@ export default function TripLayoutClient() {
                     mb: '0',
                     position: 'sticky',
                     top: { 
-                        base: 'calc(56px + env(safe-area-inset-top))', 
+                        base: 'calc(56px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))',
                         sm: '64px' 
                     },
                     bg: 'white',

@@ -89,7 +89,7 @@ export default function WithdrawalPage() {
             {/* Header */}
             <header className={css({ 
                 bg: 'white', h: '56px', display: { base: 'flex', sm: 'none' }, alignItems: 'center', borderBottom: '1px solid #eee', 
-                position: 'sticky', top: 0, zIndex: 10, pt: 'env(safe-area-inset-top)' 
+                position: 'sticky', top: 0, zIndex: 10, pt: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))'
             })}>
                 <div className={css({ display: 'flex', alignItems: 'center', px: '16px', w: '100%', maxW: '720px', mx: 'auto' })}>
                     <button onClick={() => router.back()} className={css({ p: '8px', ml: '-8px', mr: '8px', cursor: 'pointer', bg: 'none', border: 'none' })}>
@@ -99,7 +99,7 @@ export default function WithdrawalPage() {
                 </div>
             </header>
 
-            <main className={css({ maxW: '720px', mx: 'auto', p: '24px 20px', pb: 'calc(24px + env(safe-area-inset-bottom))' })}>
+            <main className={css({ maxW: '720px', mx: 'auto', p: '24px 20px', pb: 'calc(24px + max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom)))' })}>
                 {step === 1 ? (
                     <div className={css({ bg: 'white', borderRadius: '24px', p: { base: '32px 24px', sm: '48px' }, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.04)' })}>
                         <div className={css({ fontSize: '48px', mb: '16px' })}>🥺</div>

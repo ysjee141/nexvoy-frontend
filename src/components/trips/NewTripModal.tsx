@@ -138,7 +138,7 @@ export default function NewTripModal({ isOpen, onClose, onSuccess }: NewTripModa
                 overflowY: 'auto', borderRadius: { base: '0', sm: '32px' },
                 boxShadow: { base: 'none', sm: 'floating' },
                 display: 'flex', flexDirection: 'column',
-                pt: { base: 'env(safe-area-inset-top)', sm: '0' },
+                pt: { base: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))', sm: '0' },
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
             })}>
                 {/* 헤더 */}
