@@ -287,7 +287,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                     
                                     w: { base: '100%', sm: '320px' },
                                     maxH: { base: '92vh', sm: 'auto' },
-                                    pb: { base: 'env(safe-area-inset-bottom)', sm: 4 },
+                                    pb: { base: 'max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))', sm: 4 },
                                     bg: 'white', 
                                     borderRadius: { base: '24px 24px 0 0', sm: '16px' },
                                     boxShadow: '0 -4px 30px rgba(0,0,0,0.2)', 
@@ -341,7 +341,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                 
                                 <div className={css({ 
                                     p: '16px', 
-                                    pb: { base: 'calc(16px + env(safe-area-inset-bottom))', sm: '16px' },
+                                    pb: { base: 'calc(16px + max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom)))', sm: '16px' },
                                     bg: '#F8F9FA' 
                                 })}>
                                     <button 
@@ -1423,7 +1423,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     onClick={() => setIsAdding(true)}
                     className={css({
                         position: 'fixed', 
-                        bottom: 'calc(90px + env(safe-area-inset-bottom, 0px))', 
+                        bottom: 'calc(90px + max(env(safe-area-inset-bottom, 0px), var(--safe-area-inset-bottom)))',
                         right: '24px',
                         w: '54px', h: '54px', borderRadius: '18px',
                         bg: 'brand.primary', color: 'white',

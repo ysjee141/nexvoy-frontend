@@ -116,7 +116,7 @@ export default function PlanDetailModal({
                     flexDirection: 'column',
                     overflow: 'hidden',
                     animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)',
-                    pt: { base: 'env(safe-area-inset-top)', sm: '0' },
+                    pt: { base: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))', sm: '0' },
                 })}
             >
                 {/* ── 헤더 & 히어로 섹션 ── */}
@@ -147,7 +147,7 @@ export default function PlanDetailModal({
                         position: 'absolute', top: 0, left: 0, right: 0,
                         p: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         zIndex: 20,
-                        pt: { base: 'calc(env(safe-area-inset-top) + 12px)', sm: '20px' },
+                        pt: { base: 'calc(max(env(safe-area-inset-top), var(--safe-area-inset-top)) + 12px)', sm: '20px' },
                     })}>
                         <button
                             onClick={handleClose}

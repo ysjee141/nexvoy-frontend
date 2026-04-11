@@ -185,8 +185,8 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                 borderRadius: { base: '0', sm: '32px' },
                 boxShadow: { base: 'none', sm: 'floating' },
                 display: 'flex', flexDirection: 'column',
-                pt: { base: 'env(safe-area-inset-top)', sm: '0' },
-                pb: { base: 'env(safe-area-inset-bottom)', sm: '0' },
+                pt: { base: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))', sm: '0' },
+                pb: { base: 'max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))', sm: '0' },
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)',
                 overflow: 'hidden'
             })}>
