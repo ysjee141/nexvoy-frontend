@@ -10,6 +10,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { formatDate } from '@/utils/date'
 import { useScrollLock } from '@/hooks/useScrollLock'
+import { useBottomSheetDrag } from '@/hooks/useBottomSheetDrag'
 
 interface Trip {
     id: string
@@ -32,13 +33,8 @@ export default function TripSwitcherModal() {
     const [activeTab, setActiveTab] = useState<'ongoing' | 'upcoming' | 'completed'>('ongoing')
     const [loading, setLoading] = useState(true)
     
-    // 드래그 제스처 상태
-    const [dragY, setDragY] = useState(0)
-    const [startY, setStartY] = useState(0)
-    const [isDragging, setIsDragging] = useState(false)
     const [mounted, setMounted] = useState(false)
     const [closing, setClosing] = useState(false)
-    const [scrollTop, setScrollTop] = useState(0)
 
     const handleClose = () => {
         setClosing(true)
@@ -46,14 +42,14 @@ export default function TripSwitcherModal() {
         setTimeout(() => {
             setIsTripSwitcherOpen(false)
             setClosing(false)
-            setDragY(0)
         }, 200)
     }
+
+    const { handleRef: dragHandleRef, dragY, isDragging } = useBottomSheetDrag(handleClose)
 
     useEffect(() => {
         if (isTripSwitcherOpen) {
             setClosing(false)
-            setDragY(0)
             const timer = setTimeout(() => setMounted(true), 10)
             return () => clearTimeout(timer)
         } else {
@@ -158,41 +154,6 @@ export default function TripSwitcherModal() {
 
     const currentList = activeTab === 'ongoing' ? ongoing : activeTab === 'upcoming' ? upcoming : completed
 
-    const handleTouchStart = (e: React.TouchEvent) => {
-        // 드래그 시작 시점 기록
-        setStartY(e.touches[0].clientY)
-        setIsDragging(true)
-    }
-
-    const handleTouchMove = (e: React.TouchEvent) => {
-        if (!isDragging) return
-        const deltaY = e.touches[0].clientY - startY
-        
-        // 스크롤 가드: 리스트가 맨 위가 아니거나, 위로 드래그하는 경우 무시
-        if (scrollTop > 5 && deltaY > 0) return
-        
-        if (deltaY > 0) {
-            // 드래그 중인 경우 기본 스크롤 방지
-            if (e.cancelable) e.preventDefault()
-            setDragY(deltaY)
-        }
-    }
-
-    const handleTouchEnd = () => {
-        if (!isDragging) return
-        setIsDragging(false)
-        
-        if (dragY > 100) {
-            handleClose()
-        } else {
-            setDragY(0)
-        }
-    }
-
-    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-        setScrollTop(e.currentTarget.scrollTop)
-    }
-
     return (
         <div className={css({
             position: 'fixed',
@@ -207,10 +168,7 @@ export default function TripSwitcherModal() {
             justifyContent: 'center',
             animation: closing ? 'fadeOut 0.2s ease-in forwards' : 'fadeIn 0.2s ease-out',
         })}>
-            <div 
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
+            <div
                 className={css({
                     bg: 'white',
                     w: '100%',
@@ -221,17 +179,19 @@ export default function TripSwitcherModal() {
                     flexDirection: 'column',
                     boxShadow: '0 -10px 40px rgba(0,0,0,0.1)',
                     position: 'relative',
-                    // 진입/퇴장/드래그 상태에 따른 애니메이션 처리
-                    animation: closing ? 'slideDown 0.2s cubic-bezier(0.2, 0, 0, 1) forwards' : 
+                    // 진입/퇴장 애니메이션
+                    animation: closing ? 'slideDown 0.2s cubic-bezier(0.2, 0, 0, 1) forwards' :
                               !mounted ? 'slideUp 0.3s cubic-bezier(0.2, 0, 0, 1)' : 'none',
                     overflow: 'hidden',
+                })}
+                style={{
                     transform: `translateY(${dragY}px)`,
                     transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                })}
+                }}
             >
                 {/* 상단 드래그 핸들 영역 */}
-                <div className={css({ 
-                    w: '100%', py: '14px', display: 'flex', justifyContent: 'center', 
+                <div ref={dragHandleRef} className={css({
+                    w: '100%', py: '14px', display: 'flex', justifyContent: 'center',
                     cursor: 'ns-resize',
                     touchAction: 'none' // 핸들바는 즉시 반응하도록
                 })}>
@@ -312,15 +272,13 @@ export default function TripSwitcherModal() {
                 </div>
 
                 {/* 리스트 영역 */}
-                <div 
-                    onScroll={handleScroll}
-                    className={css({ 
-                        flex: 1, 
-                        overflowY: 'auto', 
-                        px: '20px', 
+                <div
+                    className={css({
+                        flex: 1,
+                        overflowY: 'auto',
+                        px: '20px',
                         py: '10px',
-                        // 스크롤 최상단일 때만 터치 이벤트 전파 방지
-                        touchAction: scrollTop === 0 ? 'pan-x' : 'auto'
+                        overscrollBehavior: 'contain',
                     })}
                 >
                     {loading ? (

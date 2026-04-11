@@ -3,36 +3,43 @@
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
-import { ArrowLeft, Calendar, ListChecks } from 'lucide-react'
+import { ArrowLeft, Calendar, ListChecks, MapPin } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import TripHeaderActions from '@/components/trips/TripHeaderActions'
 import { useEffect, useState } from 'react'
 import { analytics } from '@/services/AnalyticsService'
+import dynamic from 'next/dynamic'
 import TripClient from './TripClient'
 import ChecklistClient from '../checklist/ChecklistClient'
+
+const RouteMapView = dynamic(() => import('@/components/trips/RouteMapView'), { ssr: false })
 import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/utils/cache'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
     const id = searchParams.get('id')
-    const initialTab = searchParams.get('tab') === 'checklist' ? 'checklist' : 'plans'
+    const initialTab = (() => {
+        const tab = searchParams.get('tab')
+        if (tab === 'checklist' || tab === 'plans' || tab === 'map') return tab
+        return 'plans'
+    })()
     const router = useRouter()
     const supabase = createClient()
 
     const [trip, setTrip] = useState<any>(null)
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<'plans' | 'checklist'>(initialTab)
+    const [activeTab, setActiveTab] = useState<'plans' | 'checklist' | 'map'>(initialTab)
     const { setMobileTitle } = useUIStore()
 
     useEffect(() => {
         const urlTab = searchParams.get('tab')
-        if (urlTab === 'checklist' || urlTab === 'plans') {
+        if (urlTab === 'checklist' || urlTab === 'plans' || urlTab === 'map') {
             setActiveTab(urlTab)
         }
     }, [searchParams])
 
-    const handleTabChange = (tab: 'plans' | 'checklist') => {
+    const handleTabChange = (tab: 'plans' | 'checklist' | 'map') => {
         if (tab !== activeTab) {
             analytics.logTabSwitch(activeTab, tab)
             // 탭 전환 시 페이지 최상단으로 부드럽게 스크롤
@@ -196,6 +203,31 @@ export default function TripLayoutClient() {
                     >
                         <ListChecks size={18} strokeWidth={activeTab === 'checklist' ? 2.5 : 2} /> 준비물
                     </button>
+                    <button
+                        onClick={() => handleTabChange('map')}
+                        className={css({
+                            display: 'flex', alignItems: 'center', gap: '8px', px: '4px', h: '48px',
+                            cursor: 'pointer', border: 'none', bg: 'transparent',
+                            color: activeTab === 'map' ? 'brand.primary' : 'brand.muted',
+                            fontWeight: '700',
+                            fontSize: '15px',
+                            position: 'relative',
+                            transition: 'all 0.2s',
+                            _after: {
+                                content: '""',
+                                position: 'absolute',
+                                bottom: '0',
+                                left: '0',
+                                right: '0',
+                                h: '3px',
+                                bg: activeTab === 'map' ? 'brand.primary' : 'transparent',
+                                borderRadius: '3px 3px 0 0'
+                            },
+                            _active: { transform: 'scale(0.96)' },
+                        })}
+                    >
+                        <MapPin size={18} strokeWidth={activeTab === 'map' ? 2.5 : 2} /> 지도
+                    </button>
                 </div>
             </div>
 
@@ -206,6 +238,13 @@ export default function TripLayoutClient() {
                 </div>
                 <div style={{ display: activeTab === 'checklist' ? 'block' : 'none' }}>
                     <ChecklistClient isActive={activeTab === 'checklist'} />
+                </div>
+                <div style={{ display: activeTab === 'map' ? 'block' : 'none' }}>
+                    <RouteMapView
+                        tripStartDate={trip?.start_date || ''}
+                        tripEndDate={trip?.end_date || ''}
+                        isActive={activeTab === 'map'}
+                    />
                 </div>
             </div>
         </div>
