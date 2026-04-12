@@ -23,9 +23,34 @@ async function deploy() {
 
   console.log(`Starting OTA deployment for version ${VERSION}...${isDryRun ? ' (DRY RUN)' : ''}`);
 
+  // out/ 디렉토리 존재 및 내용 확인
+  const outDir = path.join(process.cwd(), 'out');
+  if (!fs.existsSync(outDir)) {
+    console.error('ERROR: "out/" directory does not exist. Run "pnpm build:mobile" first.');
+    process.exit(1);
+  }
+  const outFiles = fs.readdirSync(outDir);
+  if (outFiles.length === 0) {
+    console.error('ERROR: "out/" directory is empty. Build may have failed.');
+    process.exit(1);
+  }
+  if (!fs.existsSync(path.join(outDir, 'index.html'))) {
+    console.error('ERROR: "out/index.html" not found. Build output is invalid.');
+    process.exit(1);
+  }
+  console.log(`Found ${outFiles.length} entries in out/ directory.`);
+
   output.on('close', async () => {
-    console.log(`${archive.pointer()} total bytes`);
+    const totalBytes = archive.pointer();
+    console.log(`${totalBytes} total bytes`);
     console.log('Archive has been finalized.');
+
+    // ZIP 크기 검증 — 정상 빌드는 최소 수 MB
+    if (totalBytes < 10000) {
+      console.error(`ERROR: ZIP file is too small (${totalBytes} bytes). The 'out/' directory may be empty or the build failed.`);
+      fs.unlinkSync(zipPath);
+      process.exit(1);
+    }
 
     if (isDryRun) {
       console.log('Dry run: Skipping upload and database update.');
