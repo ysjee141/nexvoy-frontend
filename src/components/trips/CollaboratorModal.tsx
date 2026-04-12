@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { X, UserPlus, Mail, Shield, Trash2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { X, UserPlus, Mail, Shield, Eye, Pencil, Trash2, Loader2, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react'
 import { CollaborationService } from '@/services/ExternalApiService'
+import { collaboration } from '@/utils/collaboration'
 import { useScrollLock } from '@/hooks/useScrollLock'
 
 interface CollaboratorModalProps {
@@ -15,20 +16,39 @@ interface CollaboratorModalProps {
     ownerId?: string
 }
 
+type MemberRole = 'owner' | 'editor' | 'viewer'
+
 interface Collaborator {
-    id: string
+    memberId: string
+    userId: string | null
+    nickname: string | null
     email: string
-    role: 'owner' | 'editor'
+    role: MemberRole
     joined_at: string
+    status: string
+}
+
+const ROLE_LABELS: Record<MemberRole, string> = {
+    owner: '관리자',
+    editor: '편집자',
+    viewer: '뷰어',
+}
+
+const ROLE_ICONS: Record<MemberRole, React.ReactNode> = {
+    owner: <Shield size={10} />,
+    editor: <Pencil size={10} />,
+    viewer: <Eye size={10} />,
 }
 
 export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, ownerId }: CollaboratorModalProps) {
     const supabase = createClient()
     const [email, setEmail] = useState('')
+    const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor')
     const [loading, setLoading] = useState(false)
     const [collaborators, setCollaborators] = useState<Collaborator[]>([])
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
+    const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
 
     useScrollLock(isOpen)
 
@@ -41,13 +61,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
 
     const fetchCollaborators = async () => {
         const { data, error } = await supabase
-            .from('trip_collaborators')
-            .select(`
-                user_id,
-                role,
-                created_at,
-                profiles:user_id (email)
-            `)
+            .from('trip_members')
+            .select('*, profiles(nickname, email)')
             .eq('trip_id', tripId)
 
         if (error) {
@@ -55,11 +70,14 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             return
         }
 
-        const formatted: Collaborator[] = data.map((item: any) => ({
-            id: item.user_id,
-            email: item.profiles?.email || 'Unknown',
+        const formatted: Collaborator[] = (data || []).map((item: any) => ({
+            memberId: item.id,
+            userId: item.user_id || null,
+            nickname: item.profiles?.nickname || null,
+            email: item.profiles?.email || item.invited_email || '',
             role: item.role,
-            joined_at: item.created_at
+            joined_at: item.created_at,
+            status: item.status || 'accepted',
         }))
 
         setCollaborators(formatted)
@@ -77,19 +95,23 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('로그인이 필요합니다.')
 
-            const result = await CollaborationService.createInvite({
+            // 1. DB에 멤버 레코드 생성 (role 포함)
+            const { error: memberError } = await collaboration.inviteMember(tripId, email.trim(), inviteRole)
+            if (memberError) {
+                setError(memberError.message || '멤버 추가 중 오류가 발생했습니다.')
+                return
+            }
+
+            // 2. 초대 이메일 발송
+            await CollaborationService.createInvite({
                 tripId,
                 email: email.trim(),
                 tripTitle
             })
 
-            if (result.error) {
-                setError(result.error)
-            } else {
-                setSuccess(`${email}님을 초대했습니다!`)
-                setEmail('')
-                fetchCollaborators()
-            }
+            setSuccess(`${email}님을 ${ROLE_LABELS[inviteRole]}(으)로 초대했습니다!`)
+            setEmail('')
+            fetchCollaborators()
         } catch (err: any) {
             setError(err.message || '초대 중 오류가 발생했습니다.')
         } finally {
@@ -97,17 +119,26 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         }
     }
 
-    const handleRemove = async (userId: string) => {
+    const handleRoleChange = async (memberId: string, newRole: MemberRole) => {
+        if (newRole === 'owner') return
+
+        const { error } = await collaboration.updateMemberRole(memberId, newRole)
+        if (error) {
+            alert('권한 변경 실패: ' + (typeof error === 'string' ? error : error.message))
+        } else {
+            setCollaborators(prev =>
+                prev.map(m => m.memberId === memberId ? { ...m, role: newRole } : m)
+            )
+        }
+        setEditingRoleId(null)
+    }
+
+    const handleRemove = async (memberId: string) => {
         if (!confirm('이 멤버를 제외하시겠습니까?')) return
 
-        const { error } = await supabase
-            .from('trip_collaborators')
-            .delete()
-            .eq('trip_id', tripId)
-            .eq('user_id', userId)
-
+        const { error } = await collaboration.removeMember(memberId)
         if (error) {
-            alert('멤버 삭제 실패: ' + error.message)
+            alert('멤버 삭제 실패')
         } else {
             fetchCollaborators()
         }
@@ -135,7 +166,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                     <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.secondary', display: 'flex', alignItems: 'center', gap: '8px' })}>
                         <UserPlus size={20} className={css({ color: 'brand.primary' })} /> 함께하는 일행 관리
                     </h2>
-                    <button onClick={onClose} className={css({ p: '6px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', cursor: 'pointer', transition: 'all 0.2s', _hover: { bg: 'brand.border', color: 'brand.secondary' } })}>
+                    <button onClick={onClose} className={css({ p: '6px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _hover: { bg: 'brand.border', color: 'brand.secondary' } })}>
                         <X size={20} />
                     </button>
                 </div>
@@ -170,6 +201,28 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                 {loading ? <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} /> : '초대'}
                             </button>
                         </div>
+                        {/* 권한 선택 */}
+                        <div className={css({ display: 'flex', gap: '8px' })}>
+                            {(['editor', 'viewer'] as const).map(role => (
+                                <button
+                                    key={role}
+                                    type="button"
+                                    onClick={() => setInviteRole(role)}
+                                    className={css({
+                                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        py: '8px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
+                                        cursor: 'pointer', transition: 'all 0.2s', border: '1.5px solid',
+                                        bg: inviteRole === role ? 'brand.primary' : 'white',
+                                        color: inviteRole === role ? 'white' : 'brand.secondary',
+                                        borderColor: inviteRole === role ? 'brand.primary' : 'brand.border',
+                                        _active: { transform: 'scale(0.96)' },
+                                    })}
+                                >
+                                    {role === 'editor' ? <Pencil size={13} /> : <Eye size={13} />}
+                                    {ROLE_LABELS[role]}
+                                </button>
+                            ))}
+                        </div>
                         {error && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'brand.error', fontWeight: '600', mt: '4px' })}><AlertCircle size={14} /> {error}</div>}
                         {success && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'brand.primary', fontWeight: '600', mt: '4px' })}><CheckCircle2 size={14} /> {success}</div>}
                     </form>
@@ -189,25 +242,80 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                             touchAction: 'pan-y',
                         })}>
                             {collaborators.map(member => (
-                                <div key={member.id} className={css({
+                                <div key={member.memberId} className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                     p: '12px 16px', bg: 'bg.softCotton', borderRadius: '16px', border: '1px solid', borderColor: 'brand.border'
                                 })}>
-                                    <div className={css({ display: 'flex', flexDirection: 'column' })}>
-                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>{member.email}</span>
-                                        <span className={css({ fontSize: '11px', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '4px' })}>
-                                            {member.role === 'owner' ? <Shield size={10} className={css({ color: 'brand.accent' })} /> : null}
-                                            {member.role === 'owner' ? '관리자' : '편집자'}  •  {new Date(member.joined_at).toLocaleDateString()} 합류
+                                    <div className={css({ display: 'flex', flexDirection: 'column', flex: 1, minW: 0, mr: '8px' })}>
+                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
+                                            {member.nickname || member.email || '초대됨'}
+                                        </span>
+                                        <span className={css({ fontSize: '11px', color: 'brand.muted', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
+                                            {member.nickname && member.email ? member.email : ''}
+                                            {member.status === 'pending' && (member.nickname && member.email ? ' • ' : '') + '수락 대기 중'}
                                         </span>
                                     </div>
+                                    {/* 권한 변경 + 삭제 (owner 제외) */}
                                     {member.role !== 'owner' && (
-                                        <button
-                                            onClick={() => handleRemove(member.id)}
-                                            className={css({ p: '6px', bg: 'transparent', border: 'none', color: 'brand.error', cursor: 'pointer', transition: 'all 0.2s', _hover: { transform: 'scale(1.1)' } })}
-                                            title="추방하기"
-                                        >
-                                            <Trash2 size={16} />
-                                        </button>
+                                        <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', ml: '8px', flexShrink: 0 })}>
+                                            {/* 권한 변경 드롭다운 */}
+                                            <div className={css({ position: 'relative' })}>
+                                                <button
+                                                    onClick={() => setEditingRoleId(editingRoleId === member.memberId ? null : member.memberId)}
+                                                    className={css({
+                                                        display: 'flex', alignItems: 'center', gap: '4px',
+                                                        px: '8px', py: '4px', borderRadius: '8px',
+                                                        fontSize: '11px', fontWeight: '700',
+                                                        bg: 'white', border: '1px solid', borderColor: 'brand.border',
+                                                        color: 'brand.secondary', cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        _hover: { borderColor: 'brand.primary' },
+                                                    })}
+                                                >
+                                                    {ROLE_LABELS[member.role]}
+                                                    <ChevronDown size={12} className={css({
+                                                        transition: 'transform 0.2s',
+                                                        transform: editingRoleId === member.memberId ? 'rotate(180deg)' : 'none',
+                                                    })} />
+                                                </button>
+                                                {editingRoleId === member.memberId && (
+                                                    <>
+                                                        <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setEditingRoleId(null)} />
+                                                        <div className={css({
+                                                            position: 'absolute', top: '100%', right: 0, mt: '4px',
+                                                            bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '10px',
+                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 11, overflow: 'hidden', minW: '100px',
+                                                        })}>
+                                                            {(['editor', 'viewer'] as const).map(role => (
+                                                                <button
+                                                                    key={role}
+                                                                    onClick={() => handleRoleChange(member.memberId, role)}
+                                                                    className={css({
+                                                                        display: 'flex', alignItems: 'center', gap: '6px',
+                                                                        w: '100%', px: '12px', py: '10px',
+                                                                        fontSize: '12px', fontWeight: member.role === role ? '800' : '600',
+                                                                        bg: member.role === role ? 'bg.softCotton' : 'white',
+                                                                        color: member.role === role ? 'brand.primary' : 'brand.secondary',
+                                                                        border: 'none', cursor: 'pointer', textAlign: 'left',
+                                                                        _hover: { bg: 'bg.softCotton' },
+                                                                    })}
+                                                                >
+                                                                    {role === 'editor' ? <Pencil size={12} /> : <Eye size={12} />}
+                                                                    {ROLE_LABELS[role]}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                            <button
+                                                onClick={() => handleRemove(member.memberId)}
+                                                className={css({ p: '6px', bg: 'transparent', border: 'none', color: 'brand.muted', cursor: 'pointer', transition: 'all 0.2s', _hover: { color: 'brand.error' } })}
+                                                title="추방하기"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             ))}
@@ -217,12 +325,12 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
 
                 <div className={css({ p: '16px 24px', bg: 'bg.softCotton', borderTop: '1px solid', borderTopColor: 'brand.border', textAlign: 'center' })}>
                     <p className={css({ fontSize: '12px', color: 'brand.muted', lineHeight: 1.5, wordBreak: 'keep-all' })}>
-                        초대된 멤버는 해당 여행의 일정을 추가, 수정, 삭제할 수 있습니다.<br />
+                        <strong>편집자</strong>는 일정을 추가, 수정, 삭제할 수 있고 <strong>뷰어</strong>는 조회만 가능합니다.<br />
                         멤버 초대를 위해 상대방이 <strong>온여정</strong>에 가입되어 있어야 합니다.
                     </p>
                 </div>
             </div>
-            
+
             <style jsx global>{`
                 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
                 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
