@@ -15,10 +15,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-// [SENTRY] 운영 환경에서만 Sentry를 활성화하여 개발 성능을 보호합니다.
+// [SENTRY] 운영 환경에서만 Sentry를 활성화하며, 모바일 빌드(static export)에서는 비활성화합니다.
+// tunnelRoute 등 서버 전용 기능이 output: 'export'와 충돌하기 때문입니다.
 const isProd = process.env.NODE_ENV === 'production';
+const enableSentry = isProd && !isMobileBuild;
 
-export default isProd ? withSentryConfig(nextConfig, {
+export default enableSentry ? withSentryConfig(nextConfig, {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
