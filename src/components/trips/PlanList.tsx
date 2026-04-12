@@ -1,12 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
-import { Clock, CheckCircle2, Circle, Trash2, Edit3, Wallet, Bell } from 'lucide-react'
+import { Clock, CheckCircle2, Circle, Trash2, Edit3, Wallet, Bell, MapPin, FileText, Link2 } from 'lucide-react'
 import { getCurrencyFromTimezone, formatCurrency } from '@/utils/currency'
-import LocationTooltip from '../common/LocationTooltip'
-import UrlPreviewCard from '../common/UrlPreviewCard'
-import { ExchangeService } from '@/services/ExternalApiService'
 
 interface Plan {
     id: string
@@ -163,177 +159,119 @@ function PlanCard({
     onDetail: (plan: any) => void
     onToggleVisit: (planId: string, isVisited: boolean) => void
 }) {
-    const [isTooltipOpen, setIsTooltipOpen] = useState(false)
     const currency = getCurrencyFromTimezone(plan.timezone_string || 'Asia/Seoul')
     const rate = exchangeRates[currency.code]
+    const hasMemo = !!plan.memo
+    const hasUrls = plan.plan_urls && plan.plan_urls.length > 0
+    const canEdit = userRole === 'owner' || userRole === 'editor'
 
     return (
-        <div 
+        <div
             onClick={() => onDetail(plan)}
-            style={{ 
-                '--plan-image': plan.image_url ? `url("${plan.image_url}")` : 'none'
-            } as any}
             className={css({
-            bg: 'white', p: '20px', borderRadius: '20px', border: '1px solid', borderColor: 'brand.border',
-            display: 'flex', flexDirection: 'column', gap: '14px', position: 'relative',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-            _hover: !isTooltipOpen ? { 
-                boxShadow: '0 12px 24px rgba(0,0,0,0.08)', 
-                borderColor: 'brand.primary/50', 
-                transform: 'translateY(-2px)',
-                _before: plan.image_url ? {
-                    transform: 'scale(1.05)',
-                    opacity: 0.95
-                } : {}
-            } : {},
-            opacity: plan.is_completed ? 0.7 : plan.is_visited ? 0.6 : 1,
-            cursor: 'pointer',
-            // background 처리
-            _before: plan.image_url ? {
-                content: '""',
-                display: 'block',
-                position: 'absolute',
-                inset: 0,
-                backgroundImage: 'var(--plan-image)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                opacity: 0.8,
-                filter: 'brightness(0.9) contrast(1.1)',
-                zIndex: 0,
-                transition: 'all 0.5s ease',
-                borderRadius: '24px',
-            } : {},
-            _after: plan.image_url ? {
-                content: '""',
-                position: 'absolute',
-                inset: 0,
-                background: 'linear-gradient(to right, white 15%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.4) 100%)',
-                zIndex: 1,
-                borderRadius: '24px',
-            } : {}
-        })}>
-            <div className={css({ display: 'flex', gap: '14px', position: 'relative', zIndex: 2 })}>
-                <div className={css({ flex: 1, minW: 0 })}>
-                    <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: '4px' })}>
-                        <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', flex: 1, minW: 0 })}>
-                            {(userRole === 'owner' || userRole === 'editor') && (
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onToggleVisit(plan.id, !plan.is_visited)
-                                    }}
-                                    className={css({
-                                        bg: 'transparent',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        p: '2px',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        flexShrink: 0,
-                                        transition: 'all 0.2s',
-                                        _hover: { transform: 'scale(1.15)' }
-                                    })}
-                                    aria-label={plan.is_visited ? '방문 취소' : '방문 완료'}
-                                >
-                                    {plan.is_visited
-                                        ? <CheckCircle2 size={20} className={css({ color: 'brand.primary' })} />
-                                        : <Circle size={20} className={css({ color: 'brand.muted' })} />
-                                    }
-                                </button>
+                bg: 'white', borderRadius: '16px', border: '1px solid', borderColor: 'brand.border',
+                display: 'flex', gap: '12px', p: '12px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                cursor: 'pointer',
+                transition: 'all 0.2s',
+                opacity: plan.is_visited ? 0.65 : 1,
+                _hover: { boxShadow: '0 8px 20px rgba(0,0,0,0.07)', borderColor: 'brand.primary/40', transform: 'translateY(-1px)' },
+            })}
+        >
+            {/* 왼쪽: 라운드 썸네일 */}
+            {plan.image_url && (
+                <div
+                    className={css({
+                        w: '68px', flexShrink: 0, borderRadius: '12px',
+                        backgroundSize: 'cover', backgroundPosition: 'center',
+                        alignSelf: 'stretch',
+                    })}
+                    style={{ backgroundImage: `url("${plan.image_url}")` }}
+                />
+            )}
+
+            {/* 오른쪽: 콘텐츠 */}
+            <div className={css({ flex: 1, minW: 0, display: 'flex', flexDirection: 'column', gap: '6px' })}>
+                {/* 1행: 제목 + 힌트 아이콘 + 방문 체크 */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
+                    <h4 className={css({
+                        fontSize: '15px', fontWeight: '700', color: 'brand.secondary',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minW: 0,
+                        textDecoration: plan.is_visited ? 'line-through' : 'none',
+                    })}>{plan.title}</h4>
+                    {plan.alarm_minutes_before > 0 && (
+                        <Bell size={13} className={css({ color: 'orange.500', flexShrink: 0 })} fill="currentColor" />
+                    )}
+                    {hasMemo && <FileText size={13} className={css({ color: 'brand.muted', flexShrink: 0 })} />}
+                    {hasUrls && <Link2 size={13} className={css({ color: 'brand.muted', flexShrink: 0 })} />}
+                    {canEdit && (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); onToggleVisit(plan.id, !plan.is_visited) }}
+                            className={css({ bg: 'transparent', border: 'none', cursor: 'pointer', p: '2px', display: 'flex', flexShrink: 0, transition: 'all 0.2s', _hover: { transform: 'scale(1.15)' } })}
+                            aria-label={plan.is_visited ? '방문 취소' : '방문 완료'}
+                        >
+                            {plan.is_visited
+                                ? <CheckCircle2 size={18} className={css({ color: 'brand.primary' })} />
+                                : <Circle size={18} className={css({ color: 'brand.muted' })} />
+                            }
+                        </button>
+                    )}
+                </div>
+
+                {/* 2행: 시간 / 장소 / 알림 */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: 'brand.muted', fontWeight: '600' })}>
+                    <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '3px', flexShrink: 0 })}>
+                        <Clock size={12} />
+                        {timeDisplayMode === 'local' && formatLocalTime(plan.start_datetime_local)}
+                        {timeDisplayMode === 'kst' && formatKstTime(plan.start_datetime_local, plan.timezone_string)}
+                        {timeDisplayMode === 'both' && (
+                            <>
+                                {formatLocalTime(plan.start_datetime_local)}
+                                <span className={css({ color: 'brand.border', mx: '1px' })}>|</span>
+                                <span className={css({ fontSize: '11px' })}>{formatKstTime(plan.start_datetime_local, plan.timezone_string)}</span>
+                            </>
+                        )}
+                    </span>
+                    {plan.location && (
+                        <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minW: 0 })}>
+                            <MapPin size={11} className={css({ flexShrink: 0 })} /> {plan.location}
+                        </span>
+                    )}
+                </div>
+
+                {/* 3행: 금액 + 수정/삭제 */}
+                {(plan.cost > 0 || canEdit) && (
+                    <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
+                        <div>
+                            {plan.cost > 0 && (
+                                <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: '700', color: 'brand.primary' })}>
+                                    <Wallet size={12} /> {formatCurrency(plan.cost, currency)}
+                                    {currency.code !== 'KRW' && rate && (
+                                        <span className={css({ fontWeight: '500', color: 'brand.muted', fontSize: '11px' })}>
+                                            ({Math.round(plan.cost * rate).toLocaleString()}원)
+                                        </span>
+                                    )}
+                                </span>
                             )}
-                            <h4 className={css({
-                                fontSize: '17px',
-                                fontWeight: '700',
-                                color: 'brand.secondary',
-                                textDecoration: plan.is_completed ? 'line-through' : plan.is_visited ? 'line-through' : 'none'
-                            })}>{plan.title}</h4>
                         </div>
-                        {(userRole === 'owner' || userRole === 'editor') && (
-                            <div className={css({ display: 'flex', gap: '4px' })}>
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onEdit(plan)
-                                    }} 
-                                    className={css({ p: '6px', color: 'brand.secondary', _hover: { color: 'brand.primary', bg: 'white/80' }, bg: 'white/40', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' })}
+                        {canEdit && (
+                            <div className={css({ display: 'flex', gap: '2px' })}>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onEdit(plan) }}
+                                    className={css({ p: '4px', color: 'brand.muted', bg: 'transparent', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s', _hover: { color: 'brand.primary', bg: 'bg.softCotton' } })}
                                 >
-                                    <Edit3 size={16} />
+                                    <Edit3 size={14} />
                                 </button>
-                                <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        onDelete(plan.id)
-                                    }} 
-                                    className={css({ p: '6px', color: 'brand.secondary', _hover: { color: 'brand.accent', bg: 'white/80' }, bg: 'white/40', borderRadius: '8px', border: 'none', cursor: 'pointer', transition: 'all 0.2s' })}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onDelete(plan.id) }}
+                                    className={css({ p: '4px', color: 'brand.muted', bg: 'transparent', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s', _hover: { color: 'brand.error', bg: 'bg.softCotton' } })}
                                 >
-                                    <Trash2 size={16} />
+                                    <Trash2 size={14} />
                                 </button>
                             </div>
                         )}
                     </div>
-
-                    <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '10px', mb: '10px' })}>
-                        <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'brand.secondary', fontWeight: '700' })}>
-                            <Clock size={13} />
-                            {timeDisplayMode === 'local' && formatLocalTime(plan.start_datetime_local)}
-                            {timeDisplayMode === 'kst' && `한국 ${formatKstTime(plan.start_datetime_local, plan.timezone_string)}`}
-                            {timeDisplayMode === 'both' && (
-                                <>
-                                    {formatLocalTime(plan.start_datetime_local)}
-                                    <span className={css({ color: 'brand.border', fontWeight: 'normal' })}>|</span>
-                                    <span className={css({ fontSize: '11px', fontWeight: '500' })}>{formatKstTime(plan.start_datetime_local, plan.timezone_string)}(KST)</span>
-                                </>
-                            )}
-                            {plan.alarm_minutes_before > 0 && (
-                                <span className={css({ display: 'inline-flex', alignItems: 'center', ml: '4px' })}>
-                                    <Bell size={13} className={css({ color: 'orange.500' })} fill="currentColor" />
-                                </span>
-                            )}
-                        </div>
-                        <LocationTooltip 
-                            locationName={plan.location} 
-                            lat={plan.location_lat || plan.lat} 
-                            lng={plan.location_lng || plan.lng} 
-                            address={plan.address}
-                            onOpenChange={setIsTooltipOpen}
-                            className={css({ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', color: 'brand.secondary', fontWeight: '600', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}
-                        />
-                    </div>
-
-                    {plan.memo && (
-                        <div className={css({ p: '12px 14px', bg: 'bg.softCotton', borderRadius: '12px', mb: '12px', fontSize: '13px', color: 'brand.secondary', lineHeight: 1.6, borderLeft: '3px solid', borderColor: 'brand.border' })}>
-                            {plan.memo}
-                        </div>
-                    )}
-
-                    {plan.cost > 0 && (
-                        <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '12px' })}>
-                            <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', bg: 'brand.primary/10', color: 'brand.primary', px: '8px', py: '4px', borderRadius: '8px', fontSize: '12px', fontWeight: '700' })}>
-                                <Wallet size={12} /> {formatCurrency(plan.cost, currency)}
-                            </div>
-                            {currency.code !== 'KRW' && rate && (
-                                <span className={css({ fontSize: '11px', color: 'brand.muted', fontWeight: '500' })}>
-                                    (약 {Math.round(plan.cost * rate).toLocaleString()}원)
-                                </span>
-                            )}
-                        </div>
-                    )}
-
-                    {/* URL 미리보기 */}
-                    {(() => {
-                        const urlRegex = /(https?:\/\/[^\s]+)/g
-                        const urls = plan.memo?.match(urlRegex)
-                        if (urls && urls.length > 0) {
-                            return (
-                                <div className={css({ mt: '8px' })}>
-                                    <UrlPreviewCard url={urls[0]} />
-                                </div>
-                            )
-                        }
-                        return null
-                    })()}
-                </div>
+                )}
             </div>
         </div>
     )
