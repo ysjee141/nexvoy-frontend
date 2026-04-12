@@ -29,65 +29,146 @@ const UpdateOverlay: React.FC = () => {
       position: 'fixed',
       inset: 0,
       zIndex: 9999,
-      bg: 'rgba(0, 0, 0, 0.8)',
-      backdropFilter: 'blur(4px)',
+      // Premium Sunset Gradient matching the ultra-premium concept image
+      background: 'linear-gradient(180deg, #1e293b 0%, #334155 30%, #475569 50%, #f97316 85%, #fb923c 100%)',
       display: 'flex',
+      flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'center',
-      p: 6,
+      p: 10,
       color: 'white',
       textAlign: 'center'
     })}>
+      {/* Background Decorative Layer (Semi-transparent cloud-like glow) */}
       <div className={css({
-        bg: 'white',
-        color: '#172554',
-        p: 8,
-        borderRadius: '24px',
-        maxW: '400px',
-        w: '100%',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '100%',
+        height: '100%',
+        background: 'radial-gradient(circle at center, rgba(251, 146, 60, 0.2) 0%, transparent 70%)',
+        pointerEvents: 'none'
+      })} />
+
+      {/* Top half: The REAL Logo & Branding */}
+      <div className={css({ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        gap: 6,
+        zIndex: 1 
+      })}>
+        {/* Real Logo Component */}
+        <div className={css({
+          bg: 'white',
+          p: 6,
+          borderRadius: '40px',
+          boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.3)',
+        })}>
+          <img 
+            src="/assets/logo.png" 
+            alt="온여정 로고" 
+            className={css({ w: '80px', h: '80px', objectFit: 'contain' })} 
+          />
+        </div>
+
+        {/* Branded Text */}
+        <div className={css({ mt: 4 })}>
+           <h1 className={css({ 
+             fontSize: '3xl', 
+             fontWeight: '900', 
+             letterSpacing: '-0.02em',
+             textShadow: '0 2px 4px rgba(0,0,0,0.2)' 
+           })}>온여정</h1>
+           <p className={css({ 
+             fontSize: 'sm', 
+             fontWeight: '500', 
+             opacity: 0.8,
+             mt: 1,
+             letterSpacing: '0.1em'
+           })}>OnVoy: Your Journey, Optimized.</p>
+        </div>
+      </div>
+
+      {/* Bottom half: Loading/Update status */}
+      <div className={css({ 
+        flex: 1, 
+        w: '100%', 
+        maxW: '280px', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        justifyContent: 'center',
+        zIndex: 1
       })}>
         {status === 'checking' && (
-          <p className={css({ fontWeight: 'bold' })}>업데이트 확인 중...</p>
+          <div className={css({ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 })}>
+            <div className={css({
+              w: '32px',
+              h: '32px',
+              border: '2.5px solid rgba(255,255,255,0.3)',
+              borderTopColor: 'white',
+              borderRadius: 'full',
+              animation: 'spin 1s linear infinite'
+            })} />
+            <p className={css({ fontSize: 'sm', fontWeight: '500', opacity: 0.9 })}>여정의 시작을 준비하고 있습니다...</p>
+          </div>
         )}
 
         {status === 'downloading' && (
-          <>
-            <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: 4 })}>신규 업데이트 다운로드</h2>
-            <p className={css({ mb: 6, color: '#64748b' })}>최신 버전으로 앱을 업데이트하고 있습니다.</p>
+          <div className={css({ w: '100%' })}>
+            <p className={css({ fontWeight: '700', fontSize: 'md', mb: 6 })}>더 나은 여행을 위해 업데이트 중</p>
             <div className={css({
               w: '100%',
-              h: '8px',
-              bg: '#e2e8f0',
+              h: '4px',
+              bg: 'rgba(255, 255, 255, 0.2)',
               borderRadius: 'full',
               overflow: 'hidden',
-              mb: 2
+              mb: 3
             })}>
               <div 
-                className={css({ h: '100%', bg: '#3b82f6', transition: 'width 0.3s ease' })} 
+                className={css({ h: '100%', bg: 'white', transition: 'width 0.4s ease-out' })} 
                 style={{ width: `${progress}%` }} 
               />
             </div>
-            <p className={css({ fontSize: 'sm', color: '#64748b' })}>{progress}% 완료</p>
-          </>
+            <p className={css({ fontSize: 'xs', opacity: 0.8 })}>{progress}% 완료</p>
+          </div>
         )}
 
         {status === 'applying' && (
-          <p className={css({ fontWeight: 'bold' })}>업데이트 적용 중... 잠시만 기다려주세요.</p>
+          <div className={css({ 
+            bg: 'rgba(255,255,255,0.1)', 
+            backdropFilter: 'blur(10px)',
+            py: 4, 
+            px: 6, 
+            borderRadius: '16px' 
+          })}>
+            <p className={css({ fontSize: 'sm', fontWeight: '600' })}>
+              곧 새로운 여정이 시작됩니다.
+            </p>
+          </div>
         )}
 
         {status === 'mandatory_update' && (
-          <>
-            <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: 4, color: '#ef4444' })}>업데이트 안내</h2>
-            <p className={css({ mb: 6, color: '#64748b' })}>
-              안정적인 서비스 이용을 위해 새 버전으로 업데이트가 필요합니다. 스토어에서 최신 앱을 확인해 주세요.
+          <div className={css({ 
+            bg: 'white', 
+            p: 8, 
+            borderRadius: '24px', 
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            color: '#1e293b'
+          })}>
+            <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: 3, color: '#ef4444' })}>업데이트가 필요합니다</h2>
+            <p className={css({ mb: 6, color: '#64748b', fontSize: 'sm', lineHeight: 'relaxed' })}>
+              최신 버전의 '온여정'과 함께 즐거운 여행을 이어가세요.
             </p>
             <button
               onClick={handleGoToStore}
               className={css({
                 w: '100%',
-                py: 3,
-                bg: '#172554',
+                py: 3.5,
+                bg: '#3b82f6',
                 color: 'white',
                 borderRadius: '16px',
                 fontWeight: 'bold',
@@ -98,26 +179,32 @@ const UpdateOverlay: React.FC = () => {
             >
               스토어에서 업데이트
             </button>
-          </>
+          </div>
         )}
 
         {status === 'error' && (
-          <>
-             <h2 className={css({ fontSize: 'xl', fontWeight: 'bold', mb: 2, color: '#ef4444' })}>오류 발생</h2>
-             <p className={css({ mb: 4, color: '#64748b' })}>{error || '업데이트 중 오류가 발생했습니다.'}</p>
+          <div className={css({ 
+            bg: 'rgba(255,255,255,1)', 
+            p: 8, 
+            borderRadius: '24px',
+            color: '#1e293b'
+          })}>
+             <p className={css({ mb: 6, color: '#64748b', fontSize: 'sm' })}>{error || '네트워크 연결이 고르지 않습니다.'}</p>
              <button 
               onClick={() => window.location.reload()}
               className={css({
                 w: '100%',
-                py: 2,
+                py: 2.5,
                 bg: '#f1f5f9',
-                borderRadius: '8px',
-                color: '#475569'
+                borderRadius: '12px',
+                color: '#475569',
+                fontSize: 'sm',
+                fontWeight: 'bold'
               })}
             >
-              닫기
+              다시 시도하기
             </button>
-          </>
+          </div>
         )}
       </div>
     </div>
