@@ -44,6 +44,17 @@ jobs:
       - name: Build for Mobile (Standard Export)
         run: pnpm build:mobile
 
+      - name: Verify build output
+        run: |
+          echo "=== out/ directory check ==="
+          ls -la out/ | head -20
+          if [ ! -f out/index.html ]; then
+            echo "ERROR: out/index.html not found. Build may have failed."
+            exit 1
+          fi
+          echo "Build output size: $(du -sh out/ | cut -f1)"
+          echo "File count: $(find out/ -type f | wc -l)"
+
       - name: Deploy to Supabase
         run: node scripts/deploy-ota.mjs --channel=${{ github.event.inputs.channel }}
         env:

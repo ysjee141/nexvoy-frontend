@@ -1,11 +1,26 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useOTAUpdate, UpdateStatus } from '@/hooks/useOTAUpdate';
 import { css } from 'styled-system/css';
+import { Capacitor } from '@capacitor/core';
 
 const UpdateOverlay: React.FC = () => {
   const { status, progress, error } = useOTAUpdate();
+
+  const handleGoToStore = useCallback(() => {
+    const platform = Capacitor.getPlatform()
+    let storeUrl: string
+    if (platform === 'android') {
+      storeUrl = 'https://play.google.com/store/apps/details?id=xyz.nexvoy.app'
+    } else if (platform === 'ios') {
+      // iOS App Store URL (앱 등록 후 실제 ID로 교체 필요)
+      storeUrl = 'https://apps.apple.com/app/id0000000000'
+    } else {
+      storeUrl = 'https://app.nexvoy.xyz'
+    }
+    window.open(storeUrl, '_system')
+  }, []);
 
   if (status === 'idle') return null;
 
@@ -148,18 +163,21 @@ const UpdateOverlay: React.FC = () => {
             <p className={css({ mb: 6, color: '#64748b', fontSize: 'sm', lineHeight: 'relaxed' })}>
               최신 버전의 '온여정'과 함께 즐거운 여행을 이어가세요.
             </p>
-            <button 
-              onClick={() => window.open('https://nexvoy.app', '_blank')}
+            <button
+              onClick={handleGoToStore}
               className={css({
                 w: '100%',
                 py: 3.5,
                 bg: '#3b82f6',
                 color: 'white',
                 borderRadius: '16px',
-                fontWeight: 'bold'
+                fontWeight: 'bold',
+                border: 'none',
+                cursor: 'pointer',
+                _hover: { bg: '#1e3a8a' }
               })}
             >
-              지금 업데이트 하기
+              스토어에서 업데이트
             </button>
           </div>
         )}
