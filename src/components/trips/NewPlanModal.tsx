@@ -157,7 +157,13 @@ export default function NewPlanModal({
                 return
             }
 
-            const photo = place.photos?.[0]?.getUrl({ maxWidth: 400 })
+            // getUrl()은 세션 종속 URL을 반환하여 나중에 로드 시 403 오류 발생
+            // photo_reference를 추출하여 Places Photo REST API 영구 URL 생성
+            const photoRef = (place.photos?.[0] as any)?.photo_reference
+            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+            const photo = photoRef && apiKey
+                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=${apiKey}`
+                : undefined
             
             // 이름과 주소 구분
             const name = place.name || ''
@@ -182,7 +188,13 @@ export default function NewPlanModal({
             const place = detailAutocomplete.getPlace()
             if (!place.geometry || !place.geometry.location) return
 
-            const photo = place.photos?.[0]?.getUrl({ maxWidth: 400 })
+            // getUrl()은 세션 종속 URL을 반환하여 나중에 로드 시 403 오류 발생
+            // photo_reference를 추출하여 Places Photo REST API 영구 URL 생성
+            const photoRef = (place.photos?.[0] as any)?.photo_reference
+            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+            const photo = photoRef && apiKey
+                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=${apiKey}`
+                : undefined
             
             // 이름과 주소 구분 (Google 이 때때로 이름에 주소를 넣는 경우 대응)
             const name = place.name || ''
