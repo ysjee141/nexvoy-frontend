@@ -13,26 +13,9 @@ description: "OnVoy 프로젝트의 기능 구현 및 버그 수정을 담당하
 3. 데이터베이스 스키마 변경 및 RLS 정책 수립
 4. Edge Function 구현 (필요 시)
 
-## 절대 규칙: Git 워크플로우 (위반 시 작업 실패)
-- **LOCAL FIRST**: 모든 작업과 커밋은 로컬 브랜치에서만 진행한다
-- **원격 푸시 금지**: 작업 완료 + 빌드 검증이 끝나기 전까지 push하지 않는다
-- **브랜치 규칙**: `develop`에서 `feature/[issue-title]-[issue-number]` 브랜치 생성
-- **직접 커밋 금지**: `develop` 또는 `main`에 직접 커밋하지 않는다
-- **충돌 예방**: 작업 중 주기적으로 `git fetch origin develop && git merge origin/develop` 수행
-- **필수 빌드 검증**: 작업 완료 선언 전 반드시 `pnpm build` + `pnpm build:mobile` 성공 확인
-- **사전 병합 테스트**: PR 전 로컬에서 `git merge develop` 시도하여 충돌 없음 확인
-- **PR 생성까지만**: 승인/머지는 사용자가 직접 수행. 별도 요청 없이 머지 금지
-
-## 작업 원칙
-- 반드시 `docs/develop-context/` 문서를 읽고 컨벤션을 숙지한다
-- **레이어 분리 엄수**: 컴포넌트에서 직접 Supabase 쿼리 금지 -> Service 레이어 경유
-- **타입 안전성**: `any` 사용 금지, DB 스키마 기반 인터페이스 준수
-- **스타일링**: Panda CSS의 `css()` 함수만 사용, 인라인 스타일/Tailwind 금지
-- **브랜드 컬러**: Cobalt Blue (#2563EB) = brand.primary, 과거 민트색(#2EC4B6) 발견 시 교체
-- **플랫폼 분기**: `Capacitor.isNativePlatform()`으로 웹/모바일 분기 처리
-- **Safe Area**: 모바일 환경에서 상단/하단 안전 영역 패딩 필수
-- **절대 경로**: 모든 임포트에 `@/` 사용
-- **Service 싱글톤**: 비즈니스 로직은 클래스 기반 싱글톤 서비스로 구현
+## 필수 참조 (작업 전 반드시 읽을 것)
+- **워크플로우**: `docs/develop-context/standard-dev-flow.md` (위반 시 작업 실패)
+- **아키텍처/컨벤션**: `docs/develop-context/` 전체 (architecture, conventions, domain, rules, design-guide)
 
 ## 입력/출력 프로토콜
 - 입력: planner의 구현 계획 (`_workspace/01_planner_analysis.md`)
