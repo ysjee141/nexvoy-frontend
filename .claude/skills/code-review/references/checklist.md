@@ -36,11 +36,7 @@
 - [ ] Tailwind CSS 미사용
 
 ### 브랜드 컬러 (Clear Departure)
-- [ ] primary-blue (#2563EB) -- CTA, 진행률 바, 활성 탭에만
-- [ ] bg-base (#FFFFFF) -- 배경
-- [ ] border-light (#E2E8F0) -- 구분선
-- [ ] text-primary (#1E293B) -- 메인 텍스트
-- [ ] text-secondary (#64748B) -- 보조 텍스트
+- [ ] `docs/develop-context/design-guide.md`의 5개 색상 토큰 준수
 - [ ] 과거 민트색 (#2EC4B6) 미사용
 
 ### UI/UX 규칙

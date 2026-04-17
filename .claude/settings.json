@@ -1,5 +1,7 @@
 {
   "enabledPlugins": {
-    "harness@harness-marketplace": true
-  }
+    "harness@harness-marketplace": true,
+    "claude-mem@thedotmack": true
+  },
+  "env": { "ENABLE_TOOL_SEARCH": "true" }
 }

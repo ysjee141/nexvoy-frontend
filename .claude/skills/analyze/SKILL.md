@@ -16,7 +16,7 @@ OnVoy 프로젝트의 요구사항을 분석하고 구현 계획을 수립하는
   - `domain.md` -- Trip/Plan/Checklist/Template/User 도메인 관계
   - `rules.md` -- 개발 워크플로우, RLS 원칙, 디자인 DNA
   - `design-guide.md` -- Clear Departure 테마, 10% Rule
-- 관련 ADR이 있으면 `docs/adrs/` 참조
+- `docs/adrs/`에서 **관련 ADR만** 선택적으로 참조 (전체 로드 금지)
 
 ### 2. 요구사항 분석
 - 사용자 요청을 기술적 명세로 변환
