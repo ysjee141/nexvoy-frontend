@@ -38,6 +38,24 @@ export const LocationService = {
 };
 
 /**
+ * Google Places 사진 서비스
+ */
+export const PlacePhotoService = {
+  getPhotoUrl: async (placeId: string, maxwidth = 400): Promise<string | null> => {
+    try {
+      const response = await apiService.get<{ url: string | null }>('/api/places/photo/', {
+        placeId,
+        maxwidth: String(maxwidth),
+      });
+      return response.data.url || null;
+    } catch (error) {
+      console.error('[PlacePhotoService] Failed to fetch photo URL:', error);
+      return null;
+    }
+  }
+};
+
+/**
  * 협업 및 초대 서비스
  */
 export const CollaborationService = {
