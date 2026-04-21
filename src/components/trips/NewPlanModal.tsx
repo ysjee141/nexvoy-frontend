@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { X, MapPin, Clock, Calendar, Check, Search, ChevronRight, Loader2, Camera, Navigation, Map, Info, Compass, Bell } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
-import { LocationService } from '@/services/ExternalApiService'
+import { LocationService, PlacePhotoService } from '@/services/ExternalApiService'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useScrollLock } from '@/hooks/useScrollLock'
 
@@ -157,29 +157,30 @@ export default function NewPlanModal({
                 return
             }
 
-            // getUrl()은 세션 종속 URL을 반환하여 나중에 로드 시 403 오류 발생
-            // photo_reference를 추출하여 Places Photo REST API 영구 URL 생성
-            const photoRef = (place.photos?.[0] as any)?.photo_reference
-            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-            const photo = photoRef && apiKey
-                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=${apiKey}`
-                : undefined
-            
-            // 이름과 주소 구분
             const name = place.name || ''
             const address = place.formatted_address || ''
+            const placeId = place.place_id
 
             setSelectedPlace({
-                name: name,
-                address: address,
+                name,
+                address,
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng(),
-                photo,
+                photo: undefined,
                 rating: place.rating,
                 type: place.types?.[0],
-                googlePlaceId: place.place_id
+                googlePlaceId: placeId
             })
             setStep(2)
+
+            // 서버사이드 API로 영구 사진 URL 비동기 조회
+            if (placeId) {
+                PlacePhotoService.getPhotoUrl(placeId).then(url => {
+                    if (url) {
+                        setSelectedPlace(prev => prev ? { ...prev, photo: url } : prev)
+                    }
+                })
+            }
         }
     }
 
@@ -188,28 +189,29 @@ export default function NewPlanModal({
             const place = detailAutocomplete.getPlace()
             if (!place.geometry || !place.geometry.location) return
 
-            // getUrl()은 세션 종속 URL을 반환하여 나중에 로드 시 403 오류 발생
-            // photo_reference를 추출하여 Places Photo REST API 영구 URL 생성
-            const photoRef = (place.photos?.[0] as any)?.photo_reference
-            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-            const photo = photoRef && apiKey
-                ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photoRef}&key=${apiKey}`
-                : undefined
-            
-            // 이름과 주소 구분 (Google 이 때때로 이름에 주소를 넣는 경우 대응)
             const name = place.name || ''
             const address = place.formatted_address || ''
+            const placeId = place.place_id
 
             setSelectedPlace({
-                name: name,
-                address: address,
+                name,
+                address,
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng(),
-                photo,
+                photo: undefined,
                 rating: place.rating,
                 type: place.types?.[0],
-                googlePlaceId: place.place_id
+                googlePlaceId: placeId
             })
+
+            // 서버사이드 API로 영구 사진 URL 비동기 조회
+            if (placeId) {
+                PlacePhotoService.getPhotoUrl(placeId).then(url => {
+                    if (url) {
+                        setSelectedPlace(prev => prev ? { ...prev, photo: url } : prev)
+                    }
+                })
+            }
         }
     }
 
