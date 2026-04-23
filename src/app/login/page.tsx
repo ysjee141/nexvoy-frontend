@@ -7,6 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { LogIn, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 
 export default function LoginPage() {
     const router = useRouter()
@@ -15,6 +16,7 @@ export default function LoginPage() {
     const [rememberEmail, setRememberEmail] = useState(false)
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
     const [loading, setLoading] = useState(false)
+    const [socialError, setSocialError] = useState<string | null>(null)
 
     // 페이지 로드 시 저장된 이메일 불러오기
     useEffect(() => {
@@ -259,6 +261,36 @@ export default function LoginPage() {
                         )}
                     </button>
                 </form>
+
+                {/* 소셜 로그인 구분선 */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', mt: '24px' })}>
+                    <div className={css({ flex: 1, h: '1px', bg: 'brand.border' })} />
+                    <span className={css({ fontSize: '13px', color: 'brand.muted', whiteSpace: 'nowrap' })}>또는</span>
+                    <div className={css({ flex: 1, h: '1px', bg: 'brand.border' })} />
+                </div>
+
+                {/* 소셜 로그인 버튼 */}
+                <div className={css({ mt: '16px' })}>
+                    <SocialLoginButtons
+                        onError={(msg) => setSocialError(msg)}
+                    />
+                </div>
+
+                {socialError && (
+                    <div className={css({
+                        p: '12px 14px',
+                        bg: 'brand.errorLight',
+                        color: 'brand.error',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        borderRadius: '12px',
+                        border: '1px solid',
+                        borderColor: 'brand.error',
+                        mt: '8px',
+                    })}>
+                        {socialError}
+                    </div>
+                )}
 
                 <div className={css({
                     mt: '28px',
