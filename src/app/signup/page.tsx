@@ -162,10 +162,15 @@ export default function SignUpPage() {
                     flexDirection: 'column',
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 })}>
-                    {!showEmailForm ? (
-                        <div className={css({
-                            animation: 'fadeIn 0.5s ease-out',
-                        })}>
+                    {/* 이메일로 가입하기 버튼 영역 (폼이 열리면 점진적으로 축소되며 사라짐) */}
+                    <div className={css({
+                        display: 'grid',
+                        gridTemplateRows: !showEmailForm ? '1fr' : '0fr',
+                        opacity: !showEmailForm ? 1 : 0,
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        overflow: 'hidden',
+                    })}>
+                        <div className={css({ minHeight: 0 })}>
                             <button
                                 type="button"
                                 onClick={() => setShowEmailForm(true)}
@@ -194,11 +199,18 @@ export default function SignUpPage() {
                                 이메일로 가입하기
                             </button>
                         </div>
-                    ) : (
-                        <div className={css({
-                            animation: 'slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                            overflow: 'hidden'
-                        })}>
+                    </div>
+
+                    {/* 회원가입 폼 영역 (클릭 시 점진적으로 확장되며 나타남) */}
+                    <div className={css({
+                        display: 'grid',
+                        gridTemplateRows: showEmailForm ? '1fr' : '0fr',
+                        opacity: showEmailForm ? 1 : 0,
+                        transform: showEmailForm ? 'translateY(0)' : 'translateY(-10px)',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        overflow: 'hidden'
+                    })}>
+                        <div className={css({ minHeight: 0 })}>
                             <form onSubmit={handleSignUp} className={css({ display: 'flex', flexDirection: 'column' })}>
                                 <div className={css({ 
                                     display: 'flex', 
@@ -269,7 +281,7 @@ export default function SignUpPage() {
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
-                                                required
+                                                required={showEmailForm}
                                                 className={css({
                                                     w: '100%',
                                                     outline: 'none',
@@ -309,7 +321,7 @@ export default function SignUpPage() {
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
-                                                required
+                                                required={showEmailForm}
                                                 minLength={6}
                                                 className={css({
                                                     w: '100%',
@@ -348,7 +360,7 @@ export default function SignUpPage() {
                                                 value={confirmPassword}
                                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                                 onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
-                                                required
+                                                required={showEmailForm}
                                                 minLength={6}
                                                 className={css({
                                                     w: '100%',
@@ -414,7 +426,7 @@ export default function SignUpPage() {
                                 </button>
                             </form>
                         </div>
-                    )}
+                    </div>
 
                     {!showEmailForm && (
                         <div className={css({ mb: '20px', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' })}>
