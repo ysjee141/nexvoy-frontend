@@ -31,7 +31,8 @@ function buildKakaoAuthUrl(): string {
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'profile_nickname profile_image account_email',
+    // state 파라미터: 카카오가 콜백 시 그대로 반환 → /auth/callback에서 provider 식별에 사용
+    state: 'provider=kakao',
   })
   return `${KAKAO_AUTH_URL}?${params.toString()}`
 }
@@ -39,26 +40,21 @@ function buildKakaoAuthUrl(): string {
 export const AuthService = {
   /**
    * Google OAuth 로그인을 시작합니다.
-   * Supabase 네이티브 지원 방식을 사용합니다.
+   * 서버 API Route(/api/auth/google)로 리다이렉트하여
+   * PKCE verifier를 서버 쿠키에 안전하게 저장합니다.
    */
   async signInWithGoogle(): Promise<void> {
-    const supabase = createClient()
-    const redirectTo = getOAuthRedirectUrl()
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-        queryParams: {
-          access_type: 'offline',
-          prompt: 'consent',
-        },
-      },
-    })
-
-    if (error) {
-      console.error('[AuthService] Google OAuth error:', error.message)
-      throw new Error(error.message)
+    if (typeof window !== 'undefined') {
+      const isNative = Capacitor.isNativePlatform()
+      if (isNative) {
+        // 네이티브 앱에서는 외부 브라우저를 통해 서버 API Route로 접근해야 함
+        // NEXT_PUBLIC_APP_URL이 설정되어 있어야 하며, 없으면 현재 origin을 시도
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+        const authUrl = `${appUrl}/api/auth/google?platform=native`
+        window.location.href = authUrl
+      } else {
+        window.location.href = '/api/auth/google'
+      }
     }
   },
 

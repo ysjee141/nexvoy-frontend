@@ -14,7 +14,8 @@ export async function GET(request: Request) {
     const origin = isLocalEnv ? defaultOrigin : (forwardedHost ? `https://${forwardedHost}` : defaultOrigin)
 
     const code = searchParams.get('code')
-    const provider = searchParams.get('provider') // kakao 콜백 시 provider=kakao 포함
+    const provider = searchParams.get('provider') // Google 등 직접 provider 명시
+    const state = searchParams.get('state')        // 카카오: state=provider=kakao 로 식별
     // if "next" is in param, use it as the redirect URL
     const next = searchParams.get('next') ?? '/'
 
@@ -26,9 +27,12 @@ export async function GET(request: Request) {
     }
 
     // ─── 카카오 OAuth 콜백 처리 ────────────────────────────────────────
-    if (provider === 'kakao' && code) {
+    // provider=kakao (직접 명시) 또는 state=provider=kakao (카카오 state 반환) 감지
+    const isKakaoCallback = provider === 'kakao' || state === 'provider=kakao'
+    if (isKakaoCallback && code) {
         try {
-            const redirectUri = `${origin}/auth/callback?provider=kakao`
+            // 카카오 개발자 콘솔에 등록된 redirect_uri와 동일해야 함 (state 없는 기본 경로)
+            const redirectUri = `${origin}/auth/callback`
 
             const res = await fetch(SUPABASE_FUNCTION_URL, {
                 method: 'POST',
@@ -70,12 +74,27 @@ export async function GET(request: Request) {
         }
     }
 
+    const platform = searchParams.get('platform')
+
     // ─── 기존 이메일 인증 / Google OAuth 콜백 처리 ────────────────────
     if (code) {
         const supabase = await createClient()
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
+            // 네이티브 플랫폼인 경우 딥링크로 세션 전달 (브릿지 방식)
+            if (platform === 'native') {
+                const { data: { session } } = await supabase.auth.getSession()
+                if (session) {
+                    const params = new URLSearchParams()
+                    params.set('access_token', session.access_token)
+                    params.set('refresh_token', session.refresh_token)
+                    
+                    // onvoy://auth/callback#access_token=...&refresh_token=...
+                    return NextResponse.redirect(`onvoy://auth/callback#${params.toString()}`)
+                }
+            }
+            
             return NextResponse.redirect(`${origin}${next}`)
         }
 
