@@ -118,10 +118,15 @@ export default function LoginPage() {
                     flexDirection: 'column',
                     transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 })}>
-                    {!showEmailForm ? (
-                        <div className={css({
-                            animation: 'fadeIn 0.5s ease-out',
-                        })}>
+                    {/* 이메일로 계속하기 버튼 영역 (폼이 열리면 점진적으로 축소되며 사라짐) */}
+                    <div className={css({
+                        display: 'grid',
+                        gridTemplateRows: !showEmailForm ? '1fr' : '0fr',
+                        opacity: !showEmailForm ? 1 : 0,
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        overflow: 'hidden',
+                    })}>
+                        <div className={css({ minHeight: 0 })}>
                             <button
                                 type="button"
                                 onClick={() => setShowEmailForm(true)}
@@ -150,11 +155,18 @@ export default function LoginPage() {
                                 이메일로 계속하기
                             </button>
                         </div>
-                    ) : (
-                        <div className={css({
-                            animation: 'slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-                            overflow: 'hidden'
-                        })}>
+                    </div>
+
+                    {/* 로그인 폼 영역 (클릭 시 점진적으로 확장되며 나타남) */}
+                    <div className={css({
+                        display: 'grid',
+                        gridTemplateRows: showEmailForm ? '1fr' : '0fr',
+                        opacity: showEmailForm ? 1 : 0,
+                        transform: showEmailForm ? 'translateY(0)' : 'translateY(-10px)',
+                        transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                        overflow: 'hidden'
+                    })}>
+                        <div className={css({ minHeight: 0 })}>
                             <form onSubmit={handleLogin} className={css({ display: 'flex', flexDirection: 'column' })}>
                                 <div className={css({ 
                                     display: 'flex', 
@@ -186,7 +198,7 @@ export default function LoginPage() {
                                                 type="email"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
-                                                required
+                                                required={showEmailForm}
                                                 className={css({
                                                     w: '100%',
                                                     outline: 'none',
@@ -218,7 +230,7 @@ export default function LoginPage() {
                                                 type="password"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
-                                                required
+                                                required={showEmailForm}
                                                 className={css({
                                                     w: '100%',
                                                     outline: 'none',
@@ -318,7 +330,7 @@ export default function LoginPage() {
                                 </button>
                             </form>
                         </div>
-                    )}
+                    </div>
 
                     {/* 소셜 로그인 구분선 */}
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '12px' })}>
