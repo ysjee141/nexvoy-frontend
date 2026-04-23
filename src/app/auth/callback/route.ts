@@ -16,6 +16,12 @@ export async function GET(request: Request) {
     const code = searchParams.get('code')
     const provider = searchParams.get('provider') // Google 등 직접 provider 명시
     const state = searchParams.get('state')        // 카카오: state=provider=kakao 로 식별
+    
+    // state 파라미터가 쿼리 스트링 형태인 경우 (예: provider=kakao&platform=native) 파싱
+    const stateParams = new URLSearchParams(state ?? '')
+    const platformFromState = stateParams.get('platform')
+    const providerFromState = stateParams.get('provider')
+
     // if "next" is in param, use it as the redirect URL
     const next = searchParams.get('next') ?? '/'
 
@@ -27,11 +33,11 @@ export async function GET(request: Request) {
     }
 
     // ─── 카카오 OAuth 콜백 처리 ────────────────────────────────────────
-    // provider=kakao (직접 명시) 또는 state=provider=kakao (카카오 state 반환) 감지
-    const isKakaoCallback = provider === 'kakao' || state === 'provider=kakao'
+    // provider=kakao (직접 명시) 또는 state가 provider=kakao 형태인 경우 감지
+    const isKakaoCallback = provider === 'kakao' || providerFromState === 'kakao' || state === 'provider=kakao'
     if (isKakaoCallback && code) {
         try {
-            // 카카오 개발자 콘솔에 등록된 redirect_uri와 동일해야 함 (state 없는 기본 경로)
+            // 카카오 개발자 콘솔에 등록된 redirect_uri와 동일해야 함
             const redirectUri = `${origin}/auth/callback`
 
             const res = await fetch(SUPABASE_FUNCTION_URL, {
@@ -67,6 +73,15 @@ export async function GET(request: Request) {
                 )
             }
 
+            // 네이티브 플랫폼인 경우 딥링크로 세션 전달 (카카오 대응 브릿지)
+            const platform = searchParams.get('platform') ?? platformFromState
+            if (platform === 'native') {
+                const params = new URLSearchParams()
+                params.set('access_token', access_token)
+                params.set('refresh_token', refresh_token)
+                return NextResponse.redirect(`onvoy://auth/callback#${params.toString()}`)
+            }
+
             return NextResponse.redirect(`${origin}${next}`)
         } catch (err) {
             console.error('Kakao OAuth unexpected error:', err)
@@ -74,7 +89,7 @@ export async function GET(request: Request) {
         }
     }
 
-    const platform = searchParams.get('platform')
+    const platform = searchParams.get('platform') ?? platformFromState
 
     // ─── 기존 이메일 인증 / Google OAuth 콜백 처리 ────────────────────
     if (code) {
