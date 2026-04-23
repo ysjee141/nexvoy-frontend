@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
 import { Loader2 } from 'lucide-react'
 import { AuthService } from '@/services/AuthService'
@@ -30,6 +30,17 @@ const KakaoIcon = () => (
 export default function SocialLoginButtons({ disabled = false, onError }: SocialLoginButtonsProps) {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [kakaoLoading, setKakaoLoading] = useState(false)
+
+  // 앱으로 돌아왔을 때 로딩 상태 초기화 (취소 등 대응)
+  // LifecycleService가 앱 복귀 시 dispatch하는 'focus' 이벤트를 활용합니다.
+  useEffect(() => {
+    const handleFocus = () => {
+      setGoogleLoading(false)
+      setKakaoLoading(false)
+    }
+    window.addEventListener('focus', handleFocus)
+    return () => window.removeEventListener('focus', handleFocus)
+  }, [])
 
   const handleGoogle = async () => {
     if (googleLoading || disabled) return
