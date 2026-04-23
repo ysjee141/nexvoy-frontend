@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -17,6 +18,19 @@ export default function LoginPage() {
     const [message, setMessage] = useState<{ type: 'error' | 'success', text: string } | null>(null)
     const [loading, setLoading] = useState(false)
     const [socialError, setSocialError] = useState<string | null>(null)
+
+    // 세션 상태 변화 감지하여 자동 리다이렉트 (모바일 딥링크 대응)
+    useEffect(() => {
+        const supabase = createClient()
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+            if (event === 'SIGNED_IN' && session) {
+                console.log('[Login] Session detected, redirecting to home...')
+                router.push('/')
+                router.refresh()
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [router])
 
     // 페이지 로드 시 저장된 이메일 불러오기
     useEffect(() => {

@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { UserPlus, Mail, Lock, Sparkles, Loader2, CheckCircle2, Eye, EyeOff, Check, ArrowRight } from 'lucide-react'
 import TermsModal from './TermsModal'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
@@ -23,6 +25,20 @@ export default function SignUpPage() {
     const [isSuccess, setIsSuccess] = useState(false)
     const [touched, setTouched] = useState({ email: false, password: false, confirmPassword: false })
     const [socialError, setSocialError] = useState<string | null>(null)
+    const router = useRouter()
+
+    // 세션 상태 변화 감지하여 자동 리다이렉트 (모바일 딥링크 대응)
+    useEffect(() => {
+        const supabase = createClient()
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+            if (event === 'SIGNED_IN' && session) {
+                console.log('[SignUp] Session detected, redirecting to home...')
+                router.push('/')
+                router.refresh()
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [router])
 
     // Inline validations
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
