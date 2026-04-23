@@ -108,7 +108,7 @@ export const LifecycleService = {
             setTimeout(() => {
                 body.style.opacity = originalOpacity || '1';
                 console.log('[Lifecycle] UI Reflow finished');
-            }, 100); island
+            }, 100);
 
             // STEP 2: Supabase 세션 체크 (OS가 완전히 깨어날 수 있도록 500ms 지연)
             console.log('[Lifecycle] STEP 2: Delayed Session Recovery initiated');
@@ -126,7 +126,7 @@ export const LifecycleService = {
         try {
             console.log('[Lifecycle] refreshSession: Resetting Supabase client...');
             // 네이티브에서 싱글톤 클라이언트가 먹통이 되는 경우를 대비해 초기화
-            if (Capaictor.isNativePlatform()) {
+            if (Capacitor.isNativePlatform()) {
                 resetNativeClient();
             }
             
