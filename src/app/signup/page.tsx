@@ -25,6 +25,7 @@ export default function SignUpPage() {
     const [isSuccess, setIsSuccess] = useState(false)
     const [touched, setTouched] = useState({ email: false, password: false, confirmPassword: false })
     const [socialError, setSocialError] = useState<string | null>(null)
+    const [showEmailForm, setShowEmailForm] = useState(false)
     const router = useRouter()
 
     // 세션 상태 변화 감지하여 자동 리다이렉트 (모바일 딥링크 대응)
@@ -156,277 +157,343 @@ export default function SignUpPage() {
                     </p>
                 </div>
 
-                <form onSubmit={handleSignUp} className={css({ display: 'flex', flexDirection: 'column' })}>
-                    <div className={css({ 
-                        display: 'flex', 
-                        flexDirection: 'column', 
-                        border: '1px solid',
-                        borderColor: 'brand.border',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        mb: '16px'
-                    })}>
-                        {/* 닉네임 필드 (선택 사항) */}
-                        <div className={css({ 
-                            borderBottom: '1px solid',
-                            borderColor: 'brand.border',
-                            p: '12px 16px',
-                            transition: 'all 0.2s',
-                            position: 'relative',
-                            _focusWithin: { bg: 'bg.softCotton' }
-                        })}>
-                            <div className={css({ 
-                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
-                                bg: 'brand.primary', 
-                                opacity: 0, 
-                                transition: 'all 0.2s',
-                                '.nick-group:focus-within &': { opacity: 1 } 
-                            })} />
-                            <div className="nick-group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
-                                    닉네임 <span className={css({ fontWeight: '400', color: 'brand.muted', ml: '4px' })}>(선택 사항)</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={nickname}
-                                    onChange={(e) => setNickname(e.target.value)}
-                                    className={css({
-                                        w: '100%',
-                                        outline: 'none',
-                                        fontSize: '15px',
-                                        color: 'brand.secondary',
-                                        bg: 'transparent',
-                                    })}
-                                    placeholder="별명을 입력해 주세요"
-                                />
-                            </div>
-                        </div>
-
-                        <div className={css({ 
-                            borderBottom: '1px solid',
-                            borderColor: 'brand.border',
-                            p: '12px 16px',
-                            transition: 'all 0.2s',
-                            position: 'relative',
-                            _focusWithin: { bg: touched.email && !isEmailValid ? 'brand.errorLight' : 'bg.softCotton' }
-                        })}>
-                            {/* Focus/Error Indicator Bar */}
-                            <div className={css({ 
-                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
-                                bg: touched.email && !isEmailValid ? 'brand.error' : 'brand.primary', 
-                                opacity: (touched.email && !isEmailValid) ? 1 : 0, 
-                                transition: 'all 0.2s',
-                                '.email-group:focus-within &': { opacity: 1 } 
-                            })} />
-                            <div className="email-group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.email && !isEmailValid ? 'brand.error' : 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
-                                    이메일
-                                </label>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
-                                    required
-                                    className={css({
-                                        w: '100%',
-                                        outline: 'none',
-                                        fontSize: '15px',
-                                        color: 'brand.secondary',
-                                        bg: 'transparent',
-                                    })}
-                                    placeholder="you@example.com"
-                                />
-                                {touched.email && !isEmailValid && (
-                                    <p className={css({ fontSize: '11px', color: 'brand.error', mt: '4px', fontWeight: '600' })}>유효한 이메일 주소를 입력해 주세요.</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className={css({ 
-                            borderBottom: '1px solid',
-                            borderColor: 'brand.border',
-                            p: '12px 16px',
-                            transition: 'all 0.2s',
-                            position: 'relative',
-                            _focusWithin: { bg: touched.password && !isPasswordValid ? 'brand.errorLight' : 'bg.softCotton' }
-                        })}>
-                            {/* Focus/Error Indicator Bar */}
-                            <div className={css({ 
-                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
-                                bg: touched.password && !isPasswordValid ? 'brand.error' : 'brand.primary', 
-                                opacity: (touched.password && !isPasswordValid) ? 1 : 0, 
-                                transition: 'all 0.2s',
-                                '.pw-group:focus-within &': { opacity: 1 } 
-                            })} />
-                            <div className="pw-group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.password && !isPasswordValid ? 'brand.error' : 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
-                                    비밀번호
-                                </label>
-                                <input
-                                    type={showPassword ? 'text' : 'password'}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
-                                    required
-                                    minLength={6}
-                                    className={css({
-                                        w: '100%',
-                                        outline: 'none',
-                                        fontSize: '15px',
-                                        color: 'brand.secondary',
-                                        bg: 'transparent',
-                                    })}
-                                    placeholder="6자리 이상 입력해 주세요"
-                                />
-                                {touched.password && !isPasswordValid && (
-                                    <p className={css({ fontSize: '11px', color: 'brand.error', mt: '4px', fontWeight: '600' })}>6자리 이상 입력해 주세요.</p>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className={css({ 
-                            p: '12px 16px',
-                            transition: 'all 0.2s',
-                            position: 'relative',
-                            _focusWithin: { bg: touched.confirmPassword && !isConfirmPasswordValid ? 'brand.errorLight' : 'bg.softCotton' }
-                        })}>
-                            {/* Focus/Error Indicator Bar */}
-                            <div className={css({ 
-                                position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
-                                bg: touched.confirmPassword && !isConfirmPasswordValid ? 'brand.error' : 'brand.primary', 
-                                opacity: (touched.confirmPassword && !isConfirmPasswordValid) ? 1 : 0, 
-                                transition: 'all 0.2s',
-                                '.cpw-group:focus-within &': { opacity: 1 } 
-                            })} />
-                            <div className="cpw-group">
-                                <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.confirmPassword && !isConfirmPasswordValid ? 'brand.error' : 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
-                                    비밀번호 확인
-                                </label>
-                                <input
-                                    type={showConfirmPassword ? 'text' : 'password'}
-                                    value={confirmPassword}
-                                    onChange={(e) => setConfirmPassword(e.target.value)}
-                                    onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
-                                    required
-                                    minLength={6}
-                                    className={css({
-                                        w: '100%',
-                                        outline: 'none',
-                                        fontSize: '15px',
-                                        color: 'brand.secondary',
-                                        bg: 'transparent',
-                                    })}
-                                    placeholder="비밀번호를 다시 한 번 입력해 주세요"
-                                />
-                                {touched.confirmPassword && !isConfirmPasswordValid && (
-                                    <p className={css({ fontSize: '11px', color: 'brand.error', mt: '4px', fontWeight: '600' })}>비밀번호가 일치하지 않습니다.</p>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {message && (
+                <div className={css({
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                })}>
+                    {!showEmailForm ? (
                         <div className={css({
-                            p: '14px',
-                            bg: message.type === 'error' ? '#fdecea' : '#EFF6FF',
-                            color: message.type === 'error' ? '#d93025' : '#1e8e3e',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            borderRadius: '10px',
-                            border: `1px solid ${message.type === 'error' ? '#fbd0cc' : '#ceead6'}`,
-                            display: 'flex',
-                            gap: '8px',
-                            alignItems: 'flex-start'
+                            animation: 'fadeIn 0.5s ease-out',
                         })}>
-                            {message.type === 'success' && <CheckCircle2 size={18} className={css({ flexShrink: 0 })} />}
-                            {message.text}
+                            <button
+                                type="button"
+                                onClick={() => setShowEmailForm(true)}
+                                className={css({
+                                    w: '100%',
+                                    py: '14px',
+                                    bg: 'white',
+                                    color: 'brand.secondary',
+                                    fontWeight: '700',
+                                    fontSize: '16px',
+                                    borderRadius: '12px',
+                                    border: '1.5px solid',
+                                    borderColor: 'brand.border',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '10px',
+                                    _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary', transform: 'translateY(-1px)' },
+                                    _active: { transform: 'scale(0.98)' },
+                                    mb: '20px'
+                                })}
+                            >
+                                <Mail size={20} className={css({ color: 'brand.primary' })} />
+                                이메일로 가입하기
+                            </button>
+                        </div>
+                    ) : (
+                        <div className={css({
+                            animation: 'slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                            overflow: 'hidden'
+                        })}>
+                            <form onSubmit={handleSignUp} className={css({ display: 'flex', flexDirection: 'column' })}>
+                                <div className={css({ 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    border: '1px solid',
+                                    borderColor: 'brand.border',
+                                    borderRadius: '12px',
+                                    overflow: 'hidden',
+                                    mb: '16px'
+                                })}>
+                                    {/* 닉네임 필드 (선택 사항) */}
+                                    <div className={css({ 
+                                        borderBottom: '1px solid',
+                                        borderColor: 'brand.border',
+                                        p: '12px 16px',
+                                        transition: 'all 0.2s',
+                                        position: 'relative',
+                                        _focusWithin: { bg: 'bg.softCotton' }
+                                    })}>
+                                        <div className={css({ 
+                                            position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                            bg: 'brand.primary', 
+                                            opacity: 0, 
+                                            transition: 'all 0.2s',
+                                            '.nick-group:focus-within &': { opacity: 1 } 
+                                        })} />
+                                        <div className="nick-group">
+                                            <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
+                                                닉네임 <span className={css({ fontWeight: '400', color: 'brand.muted', ml: '4px' })}>(선택 사항)</span>
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={nickname}
+                                                onChange={(e) => setNickname(e.target.value)}
+                                                className={css({
+                                                    w: '100%',
+                                                    outline: 'none',
+                                                    fontSize: '15px',
+                                                    color: 'brand.secondary',
+                                                    bg: 'transparent',
+                                                })}
+                                                placeholder="별명을 입력해 주세요"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className={css({ 
+                                        borderBottom: '1px solid',
+                                        borderColor: 'brand.border',
+                                        p: '12px 16px',
+                                        transition: 'all 0.2s',
+                                        position: 'relative',
+                                        _focusWithin: { bg: touched.email && !isEmailValid ? 'brand.errorLight' : 'bg.softCotton' }
+                                    })}>
+                                        <div className={css({ 
+                                            position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                            bg: touched.email && !isEmailValid ? 'brand.error' : 'brand.primary', 
+                                            opacity: (touched.email && !isEmailValid) ? 1 : 0, 
+                                            transition: 'all 0.2s',
+                                            '.email-group:focus-within &': { opacity: 1 } 
+                                        })} />
+                                        <div className="email-group">
+                                            <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.email && !isEmailValid ? 'brand.error' : 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
+                                                이메일
+                                            </label>
+                                            <input
+                                                type="email"
+                                                value={email}
+                                                onChange={(e) => setEmail(e.target.value)}
+                                                onBlur={() => setTouched(prev => ({ ...prev, email: true }))}
+                                                required
+                                                className={css({
+                                                    w: '100%',
+                                                    outline: 'none',
+                                                    fontSize: '15px',
+                                                    color: 'brand.secondary',
+                                                    bg: 'transparent',
+                                                })}
+                                                placeholder="you@example.com"
+                                            />
+                                            {touched.email && !isEmailValid && (
+                                                <p className={css({ fontSize: '11px', color: 'brand.error', mt: '4px', fontWeight: '600' })}>유효한 이메일 주소를 입력해 주세요.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className={css({ 
+                                        borderBottom: '1px solid',
+                                        borderColor: 'brand.border',
+                                        p: '12px 16px',
+                                        transition: 'all 0.2s',
+                                        position: 'relative',
+                                        _focusWithin: { bg: touched.password && !isPasswordValid ? 'brand.errorLight' : 'bg.softCotton' }
+                                    })}>
+                                        <div className={css({ 
+                                            position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                            bg: touched.password && !isPasswordValid ? 'brand.error' : 'brand.primary', 
+                                            opacity: (touched.password && !isPasswordValid) ? 1 : 0, 
+                                            transition: 'all 0.2s',
+                                            '.pw-group:focus-within &': { opacity: 1 } 
+                                        })} />
+                                        <div className="pw-group">
+                                            <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.password && !isPasswordValid ? 'brand.error' : 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
+                                                비밀번호
+                                            </label>
+                                            <input
+                                                type={showPassword ? 'text' : 'password'}
+                                                value={password}
+                                                onChange={(e) => setPassword(e.target.value)}
+                                                onBlur={() => setTouched(prev => ({ ...prev, password: true }))}
+                                                required
+                                                minLength={6}
+                                                className={css({
+                                                    w: '100%',
+                                                    outline: 'none',
+                                                    fontSize: '15px',
+                                                    color: 'brand.secondary',
+                                                    bg: 'transparent',
+                                                })}
+                                                placeholder="6자리 이상 입력해 주세요"
+                                            />
+                                            {touched.password && !isPasswordValid && (
+                                                <p className={css({ fontSize: '11px', color: 'brand.error', mt: '4px', fontWeight: '600' })}>6자리 이상 입력해 주세요.</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className={css({ 
+                                        p: '12px 16px',
+                                        transition: 'all 0.2s',
+                                        position: 'relative',
+                                        _focusWithin: { bg: touched.confirmPassword && !isConfirmPasswordValid ? 'brand.errorLight' : 'bg.softCotton' }
+                                    })}>
+                                        <div className={css({ 
+                                            position: 'absolute', left: 0, top: 0, bottom: 0, w: '4px', 
+                                            bg: touched.confirmPassword && !isConfirmPasswordValid ? 'brand.error' : 'brand.primary', 
+                                            opacity: (touched.confirmPassword && !isConfirmPasswordValid) ? 1 : 0, 
+                                            transition: 'all 0.2s',
+                                            '.cpw-group:focus-within &': { opacity: 1 } 
+                                        })} />
+                                        <div className="cpw-group">
+                                            <label className={css({ display: 'block', fontSize: '11px', fontWeight: '700', color: touched.confirmPassword && !isConfirmPasswordValid ? 'brand.error' : 'brand.secondary', mb: '2px', textTransform: 'uppercase' })}>
+                                                비밀번호 확인
+                                            </label>
+                                            <input
+                                                type={showConfirmPassword ? 'text' : 'password'}
+                                                value={confirmPassword}
+                                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                                onBlur={() => setTouched(prev => ({ ...prev, confirmPassword: true }))}
+                                                required
+                                                minLength={6}
+                                                className={css({
+                                                    w: '100%',
+                                                    outline: 'none',
+                                                    fontSize: '15px',
+                                                    color: 'brand.secondary',
+                                                    bg: 'transparent',
+                                                })}
+                                                placeholder="비밀번호를 다시 한 번 입력해 주세요"
+                                            />
+                                            {touched.confirmPassword && !isConfirmPasswordValid && (
+                                                <p className={css({ fontSize: '11px', color: 'brand.error', mt: '4px', fontWeight: '600' })}>비밀번호가 일치하지 않습니다.</p>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {message && (
+                                    <div className={css({
+                                        p: '14px',
+                                        bg: message.type === 'error' ? '#fdecea' : '#EFF6FF',
+                                        color: message.type === 'error' ? '#d93025' : '#1e8e3e',
+                                        fontSize: '14px',
+                                        fontWeight: '500',
+                                        borderRadius: '10px',
+                                        border: `1px solid ${message.type === 'error' ? '#fbd0cc' : '#ceead6'}`,
+                                        display: 'flex',
+                                        gap: '8px',
+                                        alignItems: 'flex-start',
+                                        mb: '16px'
+                                    })}>
+                                        {message.type === 'success' && <CheckCircle2 size={18} className={css({ flexShrink: 0 })} />}
+                                        {message.text}
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={loading || !termsAgreed || !isEmailValid || !isConfirmPasswordValid}
+                                    className={css({
+                                        w: '100%',
+                                        py: '14px',
+                                        bg: 'brand.primary',
+                                        color: 'white',
+                                        fontWeight: '700',
+                                        fontSize: '16px',
+                                        borderRadius: '10px',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        gap: '8px',
+                                        _hover: { bg: 'brand.primaryDark', boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)' },
+                                        _active: { transform: 'scale(0.96)', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' },
+                                        _disabled: { opacity: 0.5, cursor: 'not-allowed', bg: 'brand.border', transform: 'none', boxShadow: 'none', pointerEvents: 'none' },
+                                        mb: '24px',
+                                    })}
+                                >
+                                    {loading ? <Loader2 size={20} className={css({ animation: 'spin 1s linear infinite' })} /> : (
+                                        <>회원가입하기</>
+                                    )}
+                                </button>
+                            </form>
                         </div>
                     )}
 
-                    <div className={css({ mb: '16px', display: 'flex', alignItems: 'center', gap: '10px' })}>
-                        <input
-                            type="checkbox"
-                            id="terms"
-                            checked={termsAgreed}
-                            onChange={(e) => setTermsAgreed(e.target.checked)}
-                            className={css({ w: '20px', h: '20px', cursor: 'pointer', accentColor: 'brand.secondary', flexShrink: 0 })}
-                        />
-                        <div className={css({ fontSize: '14px', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '4px', flexWrap: 'wrap' })}>
-                            <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: 'brand.secondary', fontWeight: '700', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
-                                이용약관 및 개인정보 처리방침
-                            </button>
-                            <label htmlFor="terms" className={css({ cursor: 'pointer', userSelect: 'none' })}>
-                                에 동의해요 (필수)
-                            </label>
+                    {!showEmailForm && (
+                        <div className={css({ mb: '20px', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' })}>
+                            <input
+                                type="checkbox"
+                                id="terms"
+                                checked={termsAgreed}
+                                onChange={(e) => setTermsAgreed(e.target.checked)}
+                                className={css({ w: '18px', h: '18px', cursor: 'pointer', accentColor: 'brand.secondary', flexShrink: 0 })}
+                            />
+                            <div className={css({ fontSize: '13px', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: 'brand.secondary', fontWeight: '700', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
+                                    이용약관 및 개인정보 동의
+                                </button>
+                                <label htmlFor="terms" className={css({ cursor: 'pointer', userSelect: 'none' })}>
+                                    (필수)
+                                </label>
+                            </div>
                         </div>
+                    )}
+
+                    {/* 소셜 로그인 구분선 */}
+                    <div className={css({ display: 'flex', alignItems: 'center', gap: '12px' })}>
+                        <div className={css({ flex: 1, h: '1px', bg: 'brand.border' })} />
+                        <span className={css({ fontSize: '13px', color: 'brand.muted', whiteSpace: 'nowrap' })}>또는</span>
+                        <div className={css({ flex: 1, h: '1px', bg: 'brand.border' })} />
                     </div>
 
-                    <button
-                        type="submit"
-                        disabled={loading || !termsAgreed || !isEmailValid || !isConfirmPasswordValid}
-                        className={css({
-                            w: '100%',
-                            py: '14px',
-                            bg: 'brand.primary',
-                            color: 'white',
-                            fontWeight: '700',
-                            fontSize: '16px',
-                            borderRadius: '10px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '8px',
-                            _hover: { bg: 'brand.primaryDark', boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)' },
-                            _active: { transform: 'scale(0.96)', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' },
-                            _disabled: { opacity: 0.5, cursor: 'not-allowed', bg: 'brand.border', transform: 'none', boxShadow: 'none', pointerEvents: 'none' },
+                    {/* 소셜 가입/로그인 버튼 */}
+                    <div className={css({ mt: '16px' })}>
+                        <SocialLoginButtons
+                            disabled={!termsAgreed}
+                            onError={(msg) => setSocialError(msg)}
+                        />
+                    </div>
+
+                    {!termsAgreed && (
+                        <p className={css({ fontSize: '12px', color: 'brand.muted', textAlign: 'center', mt: '10px', animation: 'fadeIn 0.3s ease-in' })}>
+                            소셜 로그인을 사용하려면 먼저 이용약관에 동의해 주세요.
+                        </p>
+                    )}
+
+                    {showEmailForm && (
+                        <div className={css({ mt: '20px', display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center' })}>
+                            <input
+                                type="checkbox"
+                                id="terms-revealed"
+                                checked={termsAgreed}
+                                onChange={(e) => setTermsAgreed(e.target.checked)}
+                                className={css({ w: '18px', h: '18px', cursor: 'pointer', accentColor: 'brand.secondary', flexShrink: 0 })}
+                            />
+                            <div className={css({ fontSize: '13px', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '4px' })}>
+                                <button type="button" onClick={() => setIsTermsModalOpen(true)} className={css({ color: 'brand.secondary', fontWeight: '700', textDecoration: 'underline', bg: 'transparent', border: 'none', cursor: 'pointer', p: 0 })}>
+                                    이용약관 및 개인정보 동의
+                                </button>
+                                <label htmlFor="terms-revealed" className={css({ cursor: 'pointer', userSelect: 'none' })}>
+                                    (필수)
+                                </label>
+                            </div>
+                        </div>
+                    )}
+
+                    {socialError && (
+                        <div className={css({
+                            p: '12px 14px',
+                            bg: 'brand.errorLight',
+                            color: 'brand.error',
+                            fontSize: '14px',
+                            fontWeight: '500',
+                            borderRadius: '12px',
+                            border: '1px solid',
+                            borderColor: 'brand.error',
                             mt: '8px',
-                        })}
-                    >
-                        {loading ? <Loader2 size={20} className={css({ animation: 'spin 1s linear infinite' })} /> : (
-                            <>회원가입하기</>
-                        )}
-                    </button>
-                </form>
-
-                {/* 소셜 로그인 구분선 */}
-                <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', mt: '24px' })}>
-                    <div className={css({ flex: 1, h: '1px', bg: 'brand.border' })} />
-                    <span className={css({ fontSize: '13px', color: 'brand.muted', whiteSpace: 'nowrap' })}>또는</span>
-                    <div className={css({ flex: 1, h: '1px', bg: 'brand.border' })} />
+                        })}>
+                            {socialError}
+                        </div>
+                    )}
                 </div>
 
-                {/* 소셜 가입/로그인 버튼 (약관 동의 전 disabled) */}
-                <div className={css({ mt: '16px' })}>
-                    <SocialLoginButtons
-                        disabled={!termsAgreed}
-                        onError={(msg) => setSocialError(msg)}
-                    />
-                </div>
-
-                {!termsAgreed && (
-                    <p className={css({ fontSize: '12px', color: 'brand.muted', textAlign: 'center', mt: '8px' })}>
-                        소셜 로그인을 사용하려면 먼저 이용약관에 동의해 주세요.
-                    </p>
-                )}
-
-                {socialError && (
-                    <div className={css({
-                        p: '12px 14px',
-                        bg: 'brand.errorLight',
-                        color: 'brand.error',
-                        fontSize: '14px',
-                        fontWeight: '500',
-                        borderRadius: '12px',
-                        border: '1px solid',
-                        borderColor: 'brand.error',
-                        mt: '8px',
-                    })}>
-                        {socialError}
-                    </div>
-                )}
 
                 <div className={css({
                     mt: '28px',
