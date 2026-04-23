@@ -1,12 +1,15 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { UserPlus, Mail, Lock, Sparkles, Loader2, CheckCircle2, Eye, EyeOff, Check, ArrowRight } from 'lucide-react'
 import TermsModal from './TermsModal'
+import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 
 export default function SignUpPage() {
     const [email, setEmail] = useState('')
@@ -21,6 +24,21 @@ export default function SignUpPage() {
     const [loading, setLoading] = useState(false)
     const [isSuccess, setIsSuccess] = useState(false)
     const [touched, setTouched] = useState({ email: false, password: false, confirmPassword: false })
+    const [socialError, setSocialError] = useState<string | null>(null)
+    const router = useRouter()
+
+    // 세션 상태 변화 감지하여 자동 리다이렉트 (모바일 딥링크 대응)
+    useEffect(() => {
+        const supabase = createClient()
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+            if (event === 'SIGNED_IN' && session) {
+                console.log('[SignUp] Session detected, redirecting to home...')
+                router.push('/')
+                router.refresh()
+            }
+        })
+        return () => subscription.unsubscribe()
+    }, [router])
 
     // Inline validations
     const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -372,6 +390,43 @@ export default function SignUpPage() {
                         )}
                     </button>
                 </form>
+
+                {/* 소셜 로그인 구분선 */}
+                <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', mt: '24px' })}>
+                    <div className={css({ flex: 1, h: '1px', bg: 'brand.border' })} />
+                    <span className={css({ fontSize: '13px', color: 'brand.muted', whiteSpace: 'nowrap' })}>또는</span>
+                    <div className={css({ flex: 1, h: '1px', bg: 'brand.border' })} />
+                </div>
+
+                {/* 소셜 가입/로그인 버튼 (약관 동의 전 disabled) */}
+                <div className={css({ mt: '16px' })}>
+                    <SocialLoginButtons
+                        disabled={!termsAgreed}
+                        onError={(msg) => setSocialError(msg)}
+                    />
+                </div>
+
+                {!termsAgreed && (
+                    <p className={css({ fontSize: '12px', color: 'brand.muted', textAlign: 'center', mt: '8px' })}>
+                        소셜 로그인을 사용하려면 먼저 이용약관에 동의해 주세요.
+                    </p>
+                )}
+
+                {socialError && (
+                    <div className={css({
+                        p: '12px 14px',
+                        bg: 'brand.errorLight',
+                        color: 'brand.error',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        borderRadius: '12px',
+                        border: '1px solid',
+                        borderColor: 'brand.error',
+                        mt: '8px',
+                    })}>
+                        {socialError}
+                    </div>
+                )}
 
                 <div className={css({
                     mt: '28px',

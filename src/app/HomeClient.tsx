@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/utils/supabase/client'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import { Plus, MapPin, CalendarDays, Luggage, User } from 'lucide-react'
@@ -304,6 +305,19 @@ export default function HomeClient() {
     }
   }, [supabase, processTrips])
 
+  // 인증 상태 실시간 감지 (로그인 직후 세션 반영 대응)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      if (session?.user) {
+        setUser(session.user)
+        fetchNetworkBackground()
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [supabase, fetchNetworkBackground])
+
   useEffect(() => {
     async function loadCacheFirst() {
       // 1. 빠른 로컬 세션 확인 (네트워크 지연 없음)
@@ -362,10 +376,15 @@ export default function HomeClient() {
     }
   }, [loading, activeTab])
 
-  // 최초 체크(세션/캐시 로드) 전까지는 아무것도 그리지 않거나 아주 가벼운 상태 유지
+  // 최초 체크(세션/캐시 로드) 전까지는 스켈레톤 표시
   if (isFirstCheck && ongoing.length === 0 && upcoming.length === 0) {
     return (
-        <div className={css({ w: '100%', minH: '100vh', bg: 'white' })} />
+      <div className={css({ w: '100%', maxW: 'screen-xl', mx: 'auto', p: '24px' })}>
+        <Skeleton height="80px" borderRadius="16px" className={css({ mb: '40px' })} />
+        <div className={css({ display: 'grid', gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }, gap: '16px' })}>
+            {[1, 2, 3, 4].map(i => <Skeleton key={i} height="180px" borderRadius="16px" />)}
+        </div>
+      </div>
     )
   }
 

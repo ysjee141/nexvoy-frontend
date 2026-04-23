@@ -36,8 +36,36 @@ export const LifecycleService = {
                 });
 
                 // URL을 통해 앱이 열렸을 때 (딥링크 등도 포함)
-                App.addListener('appUrlOpen', (data: any) => {
+                App.addListener('appUrlOpen', async (data: any) => {
                     console.log(`[Lifecycle] App opened with URL: ${data.url}`);
+                    
+                    // ─── OAuth 세션 브릿지 처리 ─────────────────────────────
+                    if (data.url.includes('onvoy://auth/callback')) {
+                        try {
+                            const url = new URL(data.url.replace('#', '?')); // URLSearchParams가 fragment를 읽지 못하므로 변환
+                            const access_token = url.searchParams.get('access_token');
+                            const refresh_token = url.searchParams.get('refresh_token');
+                            
+                            if (access_token && refresh_token) {
+                                console.log('[Lifecycle] Auth tokens detected in deep link. Syncing session...');
+                                const supabase = createClient();
+                                const { error } = await supabase.auth.setSession({
+                                    access_token,
+                                    refresh_token
+                                });
+                                
+                                if (error) {
+                                    console.error('[Lifecycle] Sync session error:', error.message);
+                                } else {
+                                    console.log('[Lifecycle] Session synced successfully. Refreshing UI...');
+                                    window.dispatchEvent(new Event('focus')); // UI 갱신 유도
+                                }
+                            }
+                        } catch (err) {
+                            console.error('[Lifecycle] Error parsing deep link URL:', err);
+                        }
+                    }
+
                     this.handleResume('AppUrlOpen');
                 });
 
