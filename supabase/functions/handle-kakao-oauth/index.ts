@@ -18,6 +18,7 @@ Deno.serve(async (req: Request) => {
 
   try {
     const { code, redirect_uri } = await req.json();
+    const authHeader = req.headers.get("Authorization");
 
     if (!code || !redirect_uri) {
       return new Response(
@@ -91,41 +92,92 @@ Deno.serve(async (req: Request) => {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // ─── Step 4: 기존 이메일 계정 검색 및 계정 연결(Merge) / 신규 생성 ─
+    // ─── Step 4: 계정 연동(Linking) 또는 로그인/가입 처리 ─────────────
     let userId: string;
 
-    // 4a. 카카오 provider_id로 이미 소셜 연결된 유저 확인
-    const { data: existingIdentity } = await supabaseAdmin
-      .from("auth.identities")
-      .select("user_id")
-      .eq("provider", "kakao")
-      .eq("provider_id", kakaoId)
-      .maybeSingle();
+    // 4a. 현재 로그인된 유저가 있는지 확인 (연동 모드)
+    if (authHeader) {
+      const userRes = await supabaseAdmin.auth.getUser(authHeader.replace("Bearer ", ""));
+      const currentUser = userRes.data.user;
 
-    if (existingIdentity?.user_id) {
-      // 이미 카카오 연결된 유저
-      userId = existingIdentity.user_id;
-    } else if (kakaoEmail) {
-      // 4b. 이메일로 기존 계정 검색
-      const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-      const matchedUser = existingUsers?.users?.find(
-        (u) => u.email === kakaoEmail
+      if (currentUser) {
+        // 이미 해당 카카오 계정이 다른 유저에게 연결되어 있는지 확인
+        const { data: existingIdentity } = await supabaseAdmin
+          .from("auth.identities")
+          .select("user_id")
+          .eq("provider", "kakao")
+          .eq("provider_id", kakaoId)
+          .maybeSingle();
+
+        // app_metadata도 체크 (수동 매핑 방식 대비)
+        const { data: usersWithKakao } = await supabaseAdmin.auth.admin.listUsers();
+        const conflictUser = usersWithKakao?.users?.find(
+          (u) => u.app_metadata?.kakao_id === kakaoId && u.id !== currentUser.id
+        );
+
+        if (existingIdentity?.user_id || conflictUser) {
+          return new Response(
+            JSON.stringify({ 
+              error: "conflict", 
+              message: "이미 다른 계정에 연동된 카카오 계정입니다." 
+            }),
+            { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        // 현재 유저에 연동 (app_metadata 업데이트)
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(currentUser.id, {
+          app_metadata: {
+            ...currentUser.app_metadata,
+            kakao_id: kakaoId,
+            provider: currentUser.app_metadata.provider || 'email', // 기존 provider 유지 또는 email 설정
+          },
+          user_metadata: {
+            ...currentUser.user_metadata,
+            kakao_nickname: kakaoNickname,
+            kakao_avatar_url: kakaoAvatarUrl,
+          }
+        });
+
+        if (updateError) {
+          console.error("Link account error:", updateError);
+          return new Response(
+            JSON.stringify({ error: "Failed to link account" }),
+            { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+
+        userId = currentUser.id;
+      } else {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized", message: "로그인 세션이 만료되었습니다." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    } else {
+      // 4b. 일반 로그인/가입 모드
+      const { data: existingIdentity } = await supabaseAdmin
+        .from("auth.identities")
+        .select("user_id")
+        .eq("provider", "kakao")
+        .eq("provider_id", kakaoId)
+        .maybeSingle();
+
+      // app_metadata 기반 기존 유저 확인
+      const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
+      const existingUserByMeta = allUsers?.users?.find(
+        (u) => u.app_metadata?.kakao_id === kakaoId
       );
 
-      if (matchedUser) {
-        // 계정 연결(Merge): 기존 계정에 카카오 identity 추가
-        await supabaseAdmin.auth.admin.updateUserById(matchedUser.id, {
-          app_metadata: {
-            ...matchedUser.app_metadata,
-            kakao_id: kakaoId,
-          },
-        });
-        userId = matchedUser.id;
+      if (existingIdentity?.user_id || existingUserByMeta) {
+        userId = existingIdentity?.user_id || existingUserByMeta!.id;
       } else {
-        // 4c. 신규 유저 생성
+        // 동일 이메일 자동 병합은 정책상 제외함 (로그인 상태에서만 허용)
+        // 신규 유저 생성
+        const emailToUse = kakaoEmail || `kakao_${kakaoId}@kakao.onvoy`;
         const { data: newUser, error: createError } =
           await supabaseAdmin.auth.admin.createUser({
-            email: kakaoEmail,
+            email: emailToUse,
             email_confirm: true,
             user_metadata: {
               full_name: kakaoNickname,
@@ -145,30 +197,6 @@ Deno.serve(async (req: Request) => {
         }
         userId = newUser.user.id;
       }
-    } else {
-      // 이메일 없는 카카오 계정: kakaoId를 email 대용으로 생성
-      const syntheticEmail = `kakao_${kakaoId}@kakao.onvoy`;
-      const { data: newUser, error: createError } =
-        await supabaseAdmin.auth.admin.createUser({
-          email: syntheticEmail,
-          email_confirm: true,
-          user_metadata: {
-            full_name: kakaoNickname,
-            avatar_url: kakaoAvatarUrl,
-            kakao_id: kakaoId,
-            provider: "kakao",
-          },
-          app_metadata: { provider: "kakao", kakao_id: kakaoId },
-        });
-
-      if (createError || !newUser.user) {
-        console.error("Create user (no-email) error:", createError);
-        return new Response(
-          JSON.stringify({ error: "Failed to create user" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      userId = newUser.user.id;
     }
 
     // ─── Step 5: 해당 유저의 Supabase 세션 발급 ─────────────────────

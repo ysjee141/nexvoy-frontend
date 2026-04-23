@@ -23,10 +23,9 @@ function getOAuthRedirectUrl(forceWeb = false): string {
 
 /**
  * 카카오 OAuth 인가 코드 요청 URL을 생성합니다.
- * 카카오는 커스텀 스킴(onvoy://)을 허용하지 않으므로 앱에서도 웹 콜백 URL을 사용하고,
- * state 파라미터를 통해 플랫폼 정보를 전달합니다.
+ * @param mode 'login' | 'link' (기본값 'login')
  */
-function buildKakaoAuthUrl(): string {
+function buildKakaoAuthUrl(mode: 'login' | 'link' = 'login'): string {
   const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform()
   const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID ?? ''
   
@@ -35,6 +34,7 @@ function buildKakaoAuthUrl(): string {
   
   const stateParams = new URLSearchParams()
   stateParams.set('provider', 'kakao')
+  stateParams.set('mode', mode)
   if (isNative) {
     stateParams.set('platform', 'native')
   }
@@ -71,11 +71,19 @@ export const AuthService = {
 
   /**
    * 카카오 OAuth 로그인을 시작합니다.
-   * 카카오 인가 URL로 브라우저를 이동시킵니다.
-   * 콜백 처리는 handleKakaoCallback()에서 수행합니다.
    */
   signInWithKakao(): void {
-    const kakaoUrl = buildKakaoAuthUrl()
+    const kakaoUrl = buildKakaoAuthUrl('login')
+    if (typeof window !== 'undefined') {
+      window.location.href = kakaoUrl
+    }
+  },
+
+  /**
+   * 로그인된 상태에서 카카오 계정 연동을 시작합니다.
+   */
+  linkKakaoAccount(): void {
+    const kakaoUrl = buildKakaoAuthUrl('link')
     if (typeof window !== 'undefined') {
       window.location.href = kakaoUrl
     }
@@ -89,18 +97,30 @@ export const AuthService = {
     const supabase = createClient()
     const redirectUri = getOAuthRedirectUrl()
 
+    const { data: { session } } = await supabase.auth.getSession()
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
+    }
+
+    // 세션이 있는 경우 Authorization 헤더 추가 (연동 모드용)
+    if (session?.access_token) {
+      headers['Authorization'] = `Bearer ${session.access_token}`
+    }
+
     const res = await fetch(SUPABASE_FUNCTION_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
-      },
+      headers,
       body: JSON.stringify({ code, redirect_uri: redirectUri }),
     })
 
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}))
       console.error('[AuthService] Kakao callback error:', errBody)
+      
+      if (res.status === 409) {
+        throw new Error('conflict')
+      }
       throw new Error(errBody?.error ?? '카카오 로그인 처리 중 오류가 발생했습니다.')
     }
 
@@ -123,10 +143,14 @@ export const AuthService = {
   normalizeOAuthError(error: unknown): string {
     if (error instanceof Error) {
       const msg = error.message.toLowerCase()
-      if (msg.includes('popup_closed')) return '로그인 창이 닫혔습니다. 다시 시도해 주세요.'
+      if (msg.includes('conflict')) return '이미 다른 계정에 연동된 카카오 계정입니다. 해당 계정에서 연동 해제 후 다시 시도해 주세요.'
+      if (msg.includes('pop_up_closed')) return '로그인 창이 닫혔습니다. 다시 시도해 주세요.'
       if (msg.includes('access_denied')) return '로그인이 취소되었습니다.'
       if (msg.includes('network')) return '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'
       return error.message
+    }
+    if (typeof error === 'string' && error === 'conflict') {
+      return '이미 다른 계정에 연동된 카카오 계정입니다.'
     }
     return '알 수 없는 오류가 발생했습니다.'
   },
