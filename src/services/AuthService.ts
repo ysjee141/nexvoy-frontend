@@ -8,10 +8,11 @@ const SUPABASE_FUNCTION_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 
 /**
  * OAuth 리다이렉트 URL을 플랫폼(Web/Capacitor)에 따라 자동 분기합니다.
+ * @param forceWeb true인 경우 네이티브 플랫폼이어도 웹 URL을 반환합니다. (카카오 등 커스텀 스킴 미지원 대응)
  */
-function getOAuthRedirectUrl(): string {
+function getOAuthRedirectUrl(forceWeb = false): string {
   const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform()
-  if (isNative) {
+  if (isNative && !forceWeb) {
     return 'onvoy://auth/callback'
   }
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? (
@@ -22,17 +23,27 @@ function getOAuthRedirectUrl(): string {
 
 /**
  * 카카오 OAuth 인가 코드 요청 URL을 생성합니다.
- * redirect_uri는 /auth/callback (웹) 또는 onvoy://auth/callback (네이티브)으로 분기됩니다.
+ * 카카오는 커스텀 스킴(onvoy://)을 허용하지 않으므로 앱에서도 웹 콜백 URL을 사용하고,
+ * state 파라미터를 통해 플랫폼 정보를 전달합니다.
  */
 function buildKakaoAuthUrl(): string {
+  const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform()
   const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID ?? ''
-  const redirectUri = getOAuthRedirectUrl()
+  
+  // 카카오는 웹 리다이렉트 URL만 허용함
+  const redirectUri = getOAuthRedirectUrl(true)
+  
+  const stateParams = new URLSearchParams()
+  stateParams.set('provider', 'kakao')
+  if (isNative) {
+    stateParams.set('platform', 'native')
+  }
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: 'code',
-    // state 파라미터: 카카오가 콜백 시 그대로 반환 → /auth/callback에서 provider 식별에 사용
-    state: 'provider=kakao',
+    state: stateParams.toString(),
   })
   return `${KAKAO_AUTH_URL}?${params.toString()}`
 }
