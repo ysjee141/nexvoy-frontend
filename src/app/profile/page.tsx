@@ -9,6 +9,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import TermsModal from '../signup/TermsModal'
 import ProfileSkeleton from './ProfileSkeleton'
 import BugReportModal from '@/components/profile/BugReportModal'
+import AccountLinking from '@/components/profile/AccountLinking'
+import { AuthService } from '@/services/AuthService'
 
 function ProfileContent() {
     const supabase = createClient()
@@ -138,6 +140,21 @@ function ProfileContent() {
 
         if (searchParams.get('edit') === 'nickname') {
             setIsEditingNickname(true)
+        }
+
+        const linked = searchParams.get('linked')
+        const error = searchParams.get('error')
+        
+        if (linked === 'kakao') {
+            alert('카카오 계정 연동이 완료되었습니다! 🎉')
+            // URL 파라미터 제거
+            window.history.replaceState({}, '', window.location.pathname)
+        } else if (error === 'conflict') {
+            alert('이미 다른 계정에 연동된 카카오 계정입니다. 해당 계정에서 탈퇴하거나 연동 해제 후 다시 시도해 주세요.')
+            window.history.replaceState({}, '', window.location.pathname)
+        } else if (error) {
+            alert(AuthService.normalizeOAuthError(new Error(error)))
+            window.history.replaceState({}, '', window.location.pathname)
         }
     }, [supabase, searchParams, router])
 
@@ -413,6 +430,17 @@ function ProfileContent() {
                         </Link>
                     ))}
                 </div>
+            </section>
+
+            {/* 계정 연동 설정 */}
+            <section className={css({ bg: 'white', borderRadius: '32px', p: { base: '24px', sm: '32px' }, boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
+                <h2 className={css({ fontSize: '18px', fontWeight: '850', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '-0.02em' })}>
+                    <div className={css({ w: '36px', h: '36px', bg: 'rgba(37, 99, 235, 0.08)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'brand.primary' })}>
+                        <ShieldCheck size={18} strokeWidth={2.5} />
+                    </div>
+                    계정 연동 설정
+                </h2>
+                <AccountLinking user={user} />
             </section>
 
             {/* 계정 보안 설정 */}

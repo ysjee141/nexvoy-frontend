@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     const stateParams = new URLSearchParams(state ?? '')
     const platformFromState = stateParams.get('platform')
     const providerFromState = stateParams.get('provider')
+    const modeFromState = stateParams.get('mode')
 
     // if "next" is in param, use it as the redirect URL
     const next = searchParams.get('next') ?? '/'
@@ -40,27 +41,39 @@ export async function GET(request: Request) {
             // 카카오 개발자 콘솔에 등록된 redirect_uri와 동일해야 함
             const redirectUri = `${origin}/auth/callback`
 
+            // 서버에서 Supabase 세션 확인 (연동 모드용)
+            const supabase = await createClient()
+            const { data: { session: currentSession } } = await supabase.auth.getSession()
+            
+            const fetchHeaders: Record<string, string> = {
+                'Content-Type': 'application/json',
+                apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
+            }
+            if (currentSession?.access_token) {
+                fetchHeaders['Authorization'] = `Bearer ${currentSession.access_token}`
+            }
+
             const res = await fetch(SUPABASE_FUNCTION_URL, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
-                },
+                headers: fetchHeaders,
                 body: JSON.stringify({ code, redirect_uri: redirectUri }),
             })
 
             if (!res.ok) {
                 const errBody = await res.json().catch(() => ({}))
                 console.error('Kakao callback error:', errBody)
+                const isConflict = res.status === 409
+                const errorMsg = isConflict ? 'conflict' : (errBody?.error ?? '카카오 로그인에 실패했습니다.')
+                
+                const targetPath = (modeFromState === 'link') ? '/profile' : '/auth/error'
                 return NextResponse.redirect(
-                    `${origin}/auth/error?message=${encodeURIComponent(errBody?.error ?? '카카오 로그인에 실패했습니다.')}`
+                    `${origin}${targetPath}?error=${encodeURIComponent(errorMsg)}`
                 )
             }
 
             const { access_token, refresh_token } = await res.json()
 
             // 서버에서 Supabase 세션 설정
-            const supabase = await createClient()
             const { error: sessionError } = await supabase.auth.setSession({
                 access_token,
                 refresh_token,
@@ -80,6 +93,11 @@ export async function GET(request: Request) {
                 params.set('access_token', access_token)
                 params.set('refresh_token', refresh_token)
                 return NextResponse.redirect(`onvoy://auth/callback#${params.toString()}`)
+            }
+
+            // 만약 연동 모드였다면 세션을 다시 설정할 필요 없이 프로필로 이동 (성공 메시지 포함)
+            if (modeFromState === 'link') {
+                return NextResponse.redirect(`${origin}/profile?linked=kakao`)
             }
 
             return NextResponse.redirect(`${origin}${next}`)
