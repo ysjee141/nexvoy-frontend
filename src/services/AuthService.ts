@@ -4,7 +4,7 @@ import { Capacitor } from '@capacitor/core'
 const KAKAO_AUTH_URL = 'https://kauth.kakao.com/oauth/authorize'
 const SUPABASE_FUNCTION_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/handle-kakao-oauth`
-  : ''
+  : 'account_email'
 
 /**
  * OAuth 리다이렉트 URL을 플랫폼(Web/Capacitor)에 따라 자동 분기합니다.
@@ -28,10 +28,10 @@ function getOAuthRedirectUrl(forceWeb = false): string {
 function buildKakaoAuthUrl(mode: 'login' | 'link' = 'login'): string {
   const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform()
   const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID ?? ''
-  
+
   // 카카오는 웹 리다이렉트 URL만 허용함
   const redirectUri = getOAuthRedirectUrl(true)
-  
+
   const stateParams = new URLSearchParams()
   stateParams.set('provider', 'kakao')
   stateParams.set('mode', mode)
@@ -117,7 +117,7 @@ export const AuthService = {
     if (!res.ok) {
       const errBody = await res.json().catch(() => ({}))
       console.error('[AuthService] Kakao callback error:', errBody)
-      
+
       if (res.status === 409) {
         throw new Error('conflict')
       }

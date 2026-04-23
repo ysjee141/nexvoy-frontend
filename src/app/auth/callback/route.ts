@@ -42,21 +42,45 @@ export async function GET(request: Request) {
             const redirectUri = `${origin}/auth/callback`
 
             // 서버에서 Supabase 세션 확인 (연동 모드용)
+            // getSession 대신 getUser를 사용하여 더 정확한 유저 상태 확인
             const supabase = await createClient()
-            const { data: { session: currentSession } } = await supabase.auth.getSession()
+            const { data: { user: currentUser }, error: authUserErr } = await supabase.auth.getUser()
             
+            console.log('[AuthCallback] Mode:', modeFromState)
+            console.log('[AuthCallback] Current User Exists:', !!currentUser)
+            if (authUserErr) console.error('[AuthCallback] getUser Error:', authUserErr)
+
+            // 만약 연동 모드로 진입했는데 세션이 없다면 에러 처리 (로그인 페이지로 유도)
+            if (modeFromState === 'link' && !currentUser) {
+                console.error('[AuthCallback] Link mode but no session found!')
+                return NextResponse.redirect(`${origin}/login?error=session_lost`)
+            }
+
             const fetchHeaders: Record<string, string> = {
                 'Content-Type': 'application/json',
                 apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? '',
             }
+            
+            // 현재 유저의 세션 토큰 가져오기 (getUser로 확인되었으므로 getSession은 안전함)
+            const { data: { session: currentSession } } = await supabase.auth.getSession()
             if (currentSession?.access_token) {
                 fetchHeaders['Authorization'] = `Bearer ${currentSession.access_token}`
+            }
+            
+            // 서버 간 보안 인증을 위한 비밀 키 추가
+            if (process.env.INTERNAL_SECRET) {
+                fetchHeaders['x-internal-secret'] = process.env.INTERNAL_SECRET
             }
 
             const res = await fetch(SUPABASE_FUNCTION_URL, {
                 method: 'POST',
                 headers: fetchHeaders,
-                body: JSON.stringify({ code, redirect_uri: redirectUri }),
+                body: JSON.stringify({ 
+                    code, 
+                    redirect_uri: redirectUri,
+                    mode: modeFromState,
+                    targetUserId: currentUser?.id // 검증된 유저 ID 전달
+                }),
             })
 
             if (!res.ok) {
@@ -71,24 +95,27 @@ export async function GET(request: Request) {
                 )
             }
 
-            const { access_token, refresh_token } = await res.json()
+            const responseData = await res.json()
+            const { access_token, refresh_token } = responseData
 
-            // 서버에서 Supabase 세션 설정
-            const { error: sessionError } = await supabase.auth.setSession({
-                access_token,
-                refresh_token,
-            })
+            // 서버에서 Supabase 세션 설정 (토큰이 있는 경우에만)
+            if (access_token && refresh_token) {
+                const { error: sessionError } = await supabase.auth.setSession({
+                    access_token,
+                    refresh_token,
+                })
 
-            if (sessionError) {
-                console.error('Kakao setSession error:', sessionError.message)
-                return NextResponse.redirect(
-                    `${origin}/auth/error?message=${encodeURIComponent(sessionError.message)}`
-                )
+                if (sessionError) {
+                    console.error('Kakao setSession error:', sessionError.message)
+                    return NextResponse.redirect(
+                        `${origin}/auth/error?message=${encodeURIComponent(sessionError.message)}`
+                    )
+                }
             }
 
             // 네이티브 플랫폼인 경우 딥링크로 세션 전달 (카카오 대응 브릿지)
             const platform = searchParams.get('platform') ?? platformFromState
-            if (platform === 'native') {
+            if (platform === 'native' && access_token && refresh_token) {
                 const params = new URLSearchParams()
                 params.set('access_token', access_token)
                 params.set('refresh_token', refresh_token)
