@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { MessageCircle, CheckCircle2, ChevronRight, Loader2, Link2Off } from 'lucide-react'
 import { AuthService } from '@/services/AuthService'
+import { createClient } from '@/utils/supabase/client'
 import UnlinkConfirmModal from '@/components/common/UnlinkConfirmModal'
 
 interface AccountLinkingProps {
@@ -79,7 +80,9 @@ export default function AccountLinking({ user }: AccountLinkingProps) {
         await AuthService.unlinkKakaoAccount()
       }
       setUnlinkTarget(null)
-      // 연동 상태 갱신을 위해 페이지 새로고침
+      // app_metadata 변경이 클라이언트 JWT에 반영되도록 세션 강제 갱신
+      const supabase = createClient()
+      await supabase.auth.refreshSession()
       router.refresh()
       window.location.reload()
     } catch (err: any) {
