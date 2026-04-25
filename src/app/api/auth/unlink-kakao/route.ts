@@ -19,16 +19,23 @@ export async function POST() {
             { auth: { autoRefreshToken: false, persistSession: false } }
         )
 
-        // 3. app_metadata에서 kakao_id 제거 + provider 'email'로 복원
+        // 3. app_metadata 및 user_metadata에서 kakao_id 제거 (null 명시 필요)
+        //    * Supabase는 메타데이터 업데이트 시 병합(merge)을 수행하므로, 필드를 지우려면 반드시 null을 전달해야 합니다.
         //    카카오 연동 시 provider가 'kakao'로 덮어씌워지므로 원복 필요
-        const updatedMeta = { ...user.app_metadata }
-        delete updatedMeta.kakao_id
-        if (updatedMeta.provider === 'kakao') {
-            updatedMeta.provider = 'email'
+        const appMetadataUpdate = {
+            ...user.app_metadata,
+            kakao_id: null,
+            provider: user.app_metadata.provider === 'kakao' ? 'email' : user.app_metadata.provider
+        }
+
+        const userMetadataUpdate = {
+            ...user.user_metadata,
+            kakao_id: null
         }
 
         const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
-            app_metadata: updatedMeta,
+            app_metadata: appMetadataUpdate,
+            user_metadata: userMetadataUpdate
         })
         if (metaError) {
             console.error('[unlink-kakao] app_metadata update error:', metaError.message)
