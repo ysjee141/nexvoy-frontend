@@ -149,6 +149,10 @@ export default function AccountLinking({ user }: AccountLinkingProps) {
                 해제
               </button>
             </div>
+          ) : isKakaoLinked ? (
+            <div className={css({ fontSize: '13px', color: 'brand.muted', fontWeight: '600', px: '8px' })}>
+              카카오 해제 후 연동 가능
+            </div>
           ) : (
             <button
               onClick={handleLinkGoogle}
@@ -222,6 +226,10 @@ export default function AccountLinking({ user }: AccountLinkingProps) {
                 <Link2Off size={13} />
                 해제
               </button>
+            </div>
+          ) : isGoogleLinked ? (
+            <div className={css({ fontSize: '13px', color: 'brand.muted', fontWeight: '600', px: '8px' })}>
+              구글 해제 후 연동 가능
             </div>
           ) : (
             <button
