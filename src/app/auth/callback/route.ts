@@ -16,6 +16,7 @@ export async function GET(request: Request) {
     const code = searchParams.get('code')
     const provider = searchParams.get('provider') // Google 등 직접 provider 명시
     const state = searchParams.get('state')        // 카카오: state=provider=kakao 로 식별
+    const modeParam = searchParams.get('mode')     // 'link' | null (Google 연동 모드)
     
     // state 파라미터가 쿼리 스트링 형태인 경우 (예: provider=kakao&platform=native) 파싱
     const stateParams = new URLSearchParams(state ?? '')
@@ -142,6 +143,12 @@ export async function GET(request: Request) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
 
         if (!error) {
+            // Google 연동 모드: 코드 교환 성공 후 프로필 페이지로 복귀
+            const isGoogleLinkMode = (provider === 'google' || providerFromState === 'google') && (modeParam === 'link' || modeFromState === 'link')
+            if (isGoogleLinkMode) {
+                return NextResponse.redirect(`${origin}/profile?linked=google`)
+            }
+
             // 네이티브 플랫폼인 경우 딥링크로 세션 전달 (브릿지 방식)
             if (platform === 'native') {
                 const { data: { session } } = await supabase.auth.getSession()
