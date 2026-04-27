@@ -452,7 +452,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     </div>
                     
                     {/* PC 전용 일정 추가 버튼 */}
-                    {(userRole === 'owner' || userRole === 'editor') && isOnline && (
+                    {(userRole === 'owner' || userRole === 'editor') && isOnline && !isOffline && (
                         <button
                             onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                              className={css({
@@ -541,7 +541,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 />
             )}
             {/* 모바일 전용 Sticky CTA (편집 권한 있을 때만) */}
-            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && isOnline && (
+            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && isOnline && !isOffline && (
                 <button
                     onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                     className={css({

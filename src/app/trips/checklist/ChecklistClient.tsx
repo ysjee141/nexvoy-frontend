@@ -676,7 +676,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const ChecklistItem = ({ item }: { item: any }) => {
         const status = getItemStatus(item)
         const isAssignedToMe = item.assignment_type === 'specific' ? item.assigned_user_id === currentUser?.id : true
-        const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline
+        const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline && !isOffline
 
         // Swipe-to-Action State
         const [translateX, setTranslateX] = useState(0);
@@ -727,13 +727,14 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
         return (
             <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'brand.border', bg: 'white' })}>
-                {/* 배경 액션 버튼 (스와이프 시 보임) */}
-                <div className={css({
-                    position: 'absolute', top: 0, right: 0, bottom: 0,
-                    display: { base: 'flex', sm: 'none' }, // 모바일 전용
-                    alignItems: 'center', gap: '0',
-                    zIndex: 1
-                })}>
+                {/* 배경 액션 버튼 (스와이프 시 보임) - 오프라인 모드에서는 숨김 */}
+                {isOnline && !isOffline && (
+                    <div className={css({
+                        position: 'absolute', top: 0, right: 0, bottom: 0,
+                        display: { base: 'flex', sm: 'none' }, // 모바일 전용
+                        alignItems: 'center', gap: '0',
+                        zIndex: 1
+                    })}>
                         <button
                             onClick={(e) => { e.stopPropagation(); setEditingItem(item); setTranslateX(0); }}
                             className={css({ 
@@ -752,7 +753,8 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         >
                             <Trash2 size={20} strokeWidth={2.5} />
                         </button>
-                </div>
+                    </div>
+                )}
 
                 {/* 메인 콘텐츠 영역 */}
                 <div
@@ -1431,8 +1433,8 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     )}
                 </div>
             )}
-            {/* 모바일 하단 플로팅 버튼 - + 항목 추가 */}
-            {isActive && !isAdding && !isTemplateModalOpen && isOnline && (
+            {/* 모바일 하단 플로팅 버튼 - + 항목 추가 - 오프라인 모드에서는 숨김 */}
+            {isActive && !isAdding && !isTemplateModalOpen && isOnline && !isOffline && (
                 <div
                     onClick={() => setIsAdding(true)}
                     className={css({
