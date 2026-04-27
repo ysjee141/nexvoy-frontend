@@ -24,8 +24,9 @@ function getOAuthRedirectUrl(forceWeb = false): string {
 /**
  * 카카오 OAuth 인가 코드 요청 URL을 생성합니다.
  * @param mode 'login' | 'link' (기본값 'login')
+ * @param next 로그인 후 이동할 URL
  */
-function buildKakaoAuthUrl(mode: 'login' | 'link' = 'login'): string {
+function buildKakaoAuthUrl(mode: 'login' | 'link' = 'login', next?: string): string {
   const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform()
   const clientId = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID ?? ''
 
@@ -45,6 +46,16 @@ function buildKakaoAuthUrl(mode: 'login' | 'link' = 'login'): string {
     response_type: 'code',
     state: stateParams.toString(),
   })
+  
+  // redirectUri에 next를 직접 포함하지 못하므로, 콜백 측에서 처리될 수 있도록 redirectUri 또는 다른 방법에 next를 담을 수 있지만
+  // 카카오는 인가 코드 요청시 redirect_uri가 앱 설정과 정확히 일치해야 합니다.
+  // 따라서 next 파라미터가 있다면 state 파라미터에 추가하여 넘겨주는 방식이 일반적입니다.
+  // 이 프로젝트에서는 카카오의 `state` 파라미터를 사용하여 플랫폼이나 모드를 넘기고 있으므로 `next`도 추가합니다.
+  if (next) {
+    stateParams.set('next', next)
+    params.set('state', stateParams.toString())
+  }
+  
   return `${KAKAO_AUTH_URL}?${params.toString()}`
 }
 
@@ -53,27 +64,33 @@ export const AuthService = {
    * Google OAuth 로그인을 시작합니다.
    * 서버 API Route(/api/auth/google)로 리다이렉트하여
    * PKCE verifier를 서버 쿠키에 안전하게 저장합니다.
+   * @param next 로그인 후 이동할 URL
    */
-  async signInWithGoogle(): Promise<void> {
+  async signInWithGoogle(next?: string): Promise<void> {
     if (typeof window !== 'undefined') {
       const isNative = Capacitor.isNativePlatform()
+      let authUrl = ''
       if (isNative) {
-        // 네이티브 앱에서는 외부 브라우저를 통해 서버 API Route로 접근해야 함
-        // NEXT_PUBLIC_APP_URL이 설정되어 있어야 하며, 없으면 현재 origin을 시도
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
-        const authUrl = `${appUrl}/api/auth/google?platform=native`
-        window.location.href = authUrl
+        authUrl = `${appUrl}/api/auth/google?platform=native`
       } else {
-        window.location.href = '/api/auth/google'
+        authUrl = '/api/auth/google'
       }
+      
+      if (next) {
+        authUrl += authUrl.includes('?') ? `&next=${encodeURIComponent(next)}` : `?next=${encodeURIComponent(next)}`
+      }
+      
+      window.location.href = authUrl
     }
   },
 
   /**
    * 카카오 OAuth 로그인을 시작합니다.
+   * @param next 로그인 후 이동할 URL
    */
-  signInWithKakao(): void {
-    const kakaoUrl = buildKakaoAuthUrl('login')
+  signInWithKakao(next?: string): void {
+    const kakaoUrl = buildKakaoAuthUrl('login', next)
     if (typeof window !== 'undefined') {
       window.location.href = kakaoUrl
     }

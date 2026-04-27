@@ -1,17 +1,20 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { LogIn, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
 
-export default function LoginPage() {
+function LoginForm() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const nextUrl = searchParams.get('next') || '/'
+    
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [rememberEmail, setRememberEmail] = useState(false)
@@ -26,12 +29,12 @@ export default function LoginPage() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
             if (event === 'SIGNED_IN' && session) {
                 console.log('[Login] Session detected, redirecting to home...')
-                router.push('/')
+                router.push(nextUrl)
                 router.refresh()
             }
         })
         return () => subscription.unsubscribe()
-    }, [router])
+    }, [router, nextUrl])
 
     // 페이지 로드 시 저장된 이메일 불러오기
     useEffect(() => {
@@ -63,7 +66,7 @@ export default function LoginPage() {
             } else {
                 localStorage.removeItem('rememberedEmail')
             }
-            router.push('/')
+            router.push(nextUrl)
             router.refresh()
         }
     }
@@ -342,6 +345,7 @@ export default function LoginPage() {
                     {/* 소셜 로그인 버튼 */}
                     <div className={css({ mt: '16px' })}>
                         <SocialLoginButtons
+                            next={nextUrl}
                             onError={(msg) => setSocialError(msg)}
                         />
                     </div>
@@ -388,5 +392,17 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={
+            <div className={css({ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', bg: '#f8f9fa' })}>
+                <Loader2 size={32} className={css({ animation: 'spin 1s linear infinite', color: '#4dabf7' })} />
+            </div>
+        }>
+            <LoginForm />
+        </Suspense>
     )
 }

@@ -191,5 +191,32 @@ export const collaboration = {
         if (member) return { data: member.role, error: null }
 
         return { data: null, error: 'No member found' }
+    },
+
+    /**
+     * 초대 링크 생성
+     */
+    async createInvitationLink(tripId: string) {
+        const supabase = createClient()
+        const { data, error } = await supabase.rpc('generate_invitation_link', { p_trip_id: tripId })
+        return { data, error }
+    },
+
+    /**
+     * 초대 링크의 여정 요약 정보 조회
+     */
+    async getTripSummaryByToken(token: string) {
+        const supabase = createClient()
+        const { data, error } = await supabase.rpc('get_trip_summary_by_token', { p_token: token })
+        return { data, error }
+    },
+
+    /**
+     * 초대 링크를 통한 참여
+     */
+    async joinTripViaToken(token: string) {
+        const supabase = createClient()
+        const { data, error } = await supabase.rpc('join_trip_via_token', { p_token: token })
+        return { data, error }
     }
 }

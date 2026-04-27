@@ -7,6 +7,7 @@ import { AuthService } from '@/services/AuthService'
 
 interface SocialLoginButtonsProps {
   disabled?: boolean
+  next?: string
   onError?: (message: string) => void
 }
 
@@ -27,7 +28,7 @@ const KakaoIcon = () => (
   </svg>
 )
 
-export default function SocialLoginButtons({ disabled = false, onError }: SocialLoginButtonsProps) {
+export default function SocialLoginButtons({ disabled = false, next, onError }: SocialLoginButtonsProps) {
   const [googleLoading, setGoogleLoading] = useState(false)
   const [kakaoLoading, setKakaoLoading] = useState(false)
 
@@ -46,7 +47,7 @@ export default function SocialLoginButtons({ disabled = false, onError }: Social
     if (googleLoading || disabled) return
     setGoogleLoading(true)
     try {
-      await AuthService.signInWithGoogle()
+      await AuthService.signInWithGoogle(next)
     } catch (err) {
       const msg = AuthService.normalizeOAuthError(err)
       onError?.(msg)
@@ -58,7 +59,7 @@ export default function SocialLoginButtons({ disabled = false, onError }: Social
     if (kakaoLoading || disabled) return
     setKakaoLoading(true)
     try {
-      AuthService.signInWithKakao()
+      AuthService.signInWithKakao(next)
       // 페이지 이동 후 로딩 해제 불필요 (리다이렉트됨)
     } catch (err) {
       const msg = AuthService.normalizeOAuthError(err)

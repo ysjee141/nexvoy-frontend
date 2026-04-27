@@ -24,10 +24,15 @@ export async function GET(request: Request) {
         }
     )
 
+    const nextUrl = searchParams.get('next')
+
     // 리다이렉트 경로 구성 (플랫폼 정보 포함)
     const callbackUrl = new URL(`${origin}/auth/callback`)
     if (platform) {
         callbackUrl.searchParams.set('platform', platform)
+    }
+    if (nextUrl) {
+        callbackUrl.searchParams.set('next', nextUrl)
     }
 
     // 서버에서 signInWithOAuth 호출 → PKCE verifier가 서버 쿠키에 안전하게 저장됨

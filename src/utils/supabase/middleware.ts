@@ -66,7 +66,10 @@ export async function updateSession(request: NextRequest) {
 
     if (!user) {
         const url = request.nextUrl.clone()
+        const nextUrl = request.nextUrl.pathname + request.nextUrl.search
         url.pathname = '/login'
+        url.search = '' // Clear existing search params before setting next
+        url.searchParams.set('next', nextUrl)
         return NextResponse.redirect(url)
     }
 
