@@ -9,6 +9,7 @@ import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTo
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
+import { DownloadService } from '@/services/DownloadService'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
@@ -401,14 +402,18 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         if (!tripId) return
 
         try {
-            // 1. 캐시에서 로드 (깜빡임 방지)
-            const cachedItems = await CacheUtil.get<any[]>(`offline_checklist_items_${tripId}`)
-            if (cachedItems) {
-                setItems(cachedItems)
-                setIsLoading(false)
+            // 1. 오프라인이거나 캐시 로드가 필요한 경우 번들에서 로드
+            const bundle = await DownloadService.getBundle(tripId)
+            if (bundle) {
+                if (!isOnline || items.length === 0) {
+                    if (bundle.checklistItems) setItems(bundle.checklistItems)
+                    if (bundle.checklistChecks) setUserChecks(bundle.checklistChecks)
+                    if (!isOnline) {
+                        setIsLoading(false)
+                        return
+                    }
+                }
             }
-            const cachedChecks = await CacheUtil.get<any[]>(`offline_checklist_checks_${tripId}`)
-            if (cachedChecks) setUserChecks(cachedChecks)
 
             // 2. 네트워크 확인
             if (!isOnline) {
@@ -452,7 +457,12 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 
                 if (itemsRes.data) {
                     setItems(itemsRes.data)
-                    await CacheUtil.set(`offline_checklist_items_${tripId}`, itemsRes.data)
+                    // 명시적 다운로드 정책에 따라 자동 저장은 제거
+                    
+                    // 이미 다운로드된 여행이라면 백그라운드에서 전체 데이터 동기화
+                    if (bundle) {
+                        DownloadService.downloadTrip(tripId!)
+                    }
                     
                     const itemIds = itemsRes.data.map((i: any) => i.id)
                     if (itemIds.length > 0) {
@@ -462,7 +472,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             .in('item_id', itemIds)
                         if (checks) {
                             setUserChecks(checks)
-                            await CacheUtil.set(`offline_checklist_checks_${tripId}`, checks)
+                            // 명시적 다운로드 정책에 따라 자동 저장은 제거
                         }
                     }
 
