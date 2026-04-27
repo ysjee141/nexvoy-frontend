@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { X, UserPlus, Mail, Shield, Eye, Pencil, Trash2, Loader2, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react'
+import { X, UserPlus, Mail, Shield, Eye, Pencil, Trash2, Loader2, CheckCircle2, AlertCircle, ChevronDown, Link as LinkIcon, Copy, Share2 } from 'lucide-react'
 import { CollaborationService } from '@/services/ExternalApiService'
 import { collaboration } from '@/utils/collaboration'
 import { useScrollLock } from '@/hooks/useScrollLock'
+import { Share } from '@capacitor/share'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -49,11 +50,18 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+    const [generatedLink, setGeneratedLink] = useState<string | null>(null)
 
     useScrollLock(isOpen)
 
     useEffect(() => {
         if (isOpen) {
+            const fetchUser = async () => {
+                const { data: { user } } = await supabase.auth.getUser()
+                setCurrentUserId(user?.id || null)
+            }
+            fetchUser()
             fetchCollaborators()
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -133,14 +141,20 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         setEditingRoleId(null)
     }
 
-    const handleRemove = async (memberId: string) => {
-        if (!confirm('이 멤버를 제외하시겠습니까?')) return
+    const handleRemove = async (memberId: string, isSelf: boolean = false) => {
+        if (!confirm(isSelf ? '정말 이 여정에서 나가시겠습니까?' : '이 멤버를 제외하시겠습니까?')) return
 
         const { error } = await collaboration.removeMember(memberId)
         if (error) {
-            alert('멤버 삭제 실패')
+            alert((isSelf ? '나가기 실패: ' : '멤버 삭제 실패: ') + (typeof error === 'string' ? error : error.message))
         } else {
-            fetchCollaborators()
+            if (isSelf) {
+                // 자신이 나간 경우 모달을 닫고 홈으로 이동
+                onClose()
+                window.location.href = '/'
+            } else {
+                fetchCollaborators()
+            }
         }
     }
 
@@ -227,6 +241,115 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                         {success && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'brand.primary', fontWeight: '600', mt: '4px' })}><CheckCircle2 size={14} /> {success}</div>}
                     </form>
 
+                    {/* 초대 링크 공유 */}
+                    <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px', pt: '16px', borderTop: '1px solid', borderColor: 'brand.border' })}>
+                        <label className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>링크로 초대하기</label>
+                        {!generatedLink ? (
+                            <button
+                                type="button"
+                                onClick={async () => {
+                                    setLoading(true)
+                                    setError('')
+                                    setSuccess('')
+                                    try {
+                                        const { data, error } = await collaboration.createInvitationLink(tripId)
+                                        if (error || !data) throw new Error(error?.message || '링크 생성에 실패했습니다.')
+                                        
+                                        const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+                                        setGeneratedLink(`${appUrl}/join?token=${data}`)
+                                    } catch (err: any) {
+                                        if (err.name !== 'AbortError') {
+                                            setError(err.message || '링크 생성 중 오류가 발생했습니다.')
+                                        }
+                                    } finally {
+                                        setLoading(false)
+                                    }
+                                }}
+                                disabled={loading}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                    w: '100%', p: '12px', bg: 'white', color: 'brand.secondary', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '14px',
+                                    fontSize: '15px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s',
+                                    _hover: { borderColor: 'brand.primary', color: 'brand.primary', bg: 'bg.softCotton' },
+                                    _active: { transform: 'scale(0.98)' },
+                                    _disabled: { opacity: 0.5, cursor: 'not-allowed', transform: 'none' }
+                                })}
+                            >
+                                {loading ? <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} /> : <LinkIcon size={18} />}
+                                초대 링크 생성
+                            </button>
+                        ) : (
+                            <div className={css({ display: 'flex', gap: '8px' })}>
+                                <div className={css({ 
+                                    flex: 1, p: '12px 14px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '14px',
+                                    fontSize: '14px', color: 'brand.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                    display: 'flex', alignItems: 'center'
+                                })}>
+                                    {generatedLink}
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        await navigator.clipboard.writeText(generatedLink)
+                                        setSuccess('초대 링크가 클립보드에 복사되었습니다.')
+                                        setTimeout(() => setSuccess(''), 3000)
+                                    }}
+                                    className={css({
+                                        p: '12px', bg: 'white', color: 'brand.secondary', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '14px',
+                                        cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        _hover: { borderColor: 'brand.primary', color: 'brand.primary', bg: 'bg.softCotton' },
+                                        _active: { transform: 'scale(0.95)' }
+                                    })}
+                                    title="복사하기"
+                                >
+                                    <Copy size={18} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        try {
+                                            const canShare = await Share.canShare();
+                                            if (canShare.value) {
+                                                await Share.share({
+                                                    title: `${tripTitle} 여정에 초대합니다`,
+                                                    text: `함께 여정을 계획해보세요! 링크는 6시간 동안 유효합니다.`,
+                                                    url: generatedLink,
+                                                    dialogTitle: '초대 링크 공유'
+                                                })
+                                                setSuccess('초대 링크가 공유되었습니다.')
+                                                setTimeout(() => setSuccess(''), 3000)
+                                            } else if (navigator.share) {
+                                                await navigator.share({
+                                                    title: `${tripTitle} 여정에 초대합니다`,
+                                                    text: `함께 여정을 계획해보세요! 링크는 6시간 동안 유효합니다.`,
+                                                    url: generatedLink
+                                                })
+                                                setSuccess('초대 링크가 공유되었습니다.')
+                                                setTimeout(() => setSuccess(''), 3000)
+                                            } else {
+                                                await navigator.clipboard.writeText(generatedLink)
+                                                setSuccess('초대 링크가 클립보드에 복사되었습니다.')
+                                                setTimeout(() => setSuccess(''), 3000)
+                                            }
+                                        } catch (err: any) {
+                                            if (err.name !== 'AbortError' && err.message !== 'Share canceled') {
+                                                setError('공유 중 오류가 발생했습니다.')
+                                            }
+                                        }
+                                    }}
+                                    className={css({
+                                        p: '12px', bg: 'brand.primary', color: 'white', border: 'none', borderRadius: '14px',
+                                        cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        _hover: { bg: 'brand.primaryDark' }, _active: { transform: 'scale(0.95)' }
+                                    })}
+                                    title="공유하기"
+                                >
+                                    <Share2 size={18} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
                     {/* 멤버 리스트 */}
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>참여 중인 멤버 ({collaborators.length})</h3>
@@ -258,63 +381,69 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                     {/* 권한 변경 + 삭제 (owner 제외) */}
                                     {member.role !== 'owner' && (
                                         <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', ml: '8px', flexShrink: 0 })}>
-                                            {/* 권한 변경 드롭다운 */}
-                                            <div className={css({ position: 'relative' })}>
+                                            {/* 권한 변경 드롭다운 (오너만 가능) */}
+                                            {currentUserId === ownerId && (
+                                                <div className={css({ position: 'relative' })}>
+                                                    <button
+                                                        onClick={() => setEditingRoleId(editingRoleId === member.memberId ? null : member.memberId)}
+                                                        className={css({
+                                                            display: 'flex', alignItems: 'center', gap: '4px',
+                                                            px: '8px', py: '4px', borderRadius: '8px',
+                                                            fontSize: '11px', fontWeight: '700',
+                                                            bg: 'white', border: '1px solid', borderColor: 'brand.border',
+                                                            color: 'brand.secondary', cursor: 'pointer',
+                                                            transition: 'all 0.2s',
+                                                            _hover: { borderColor: 'brand.primary' },
+                                                        })}
+                                                    >
+                                                        {ROLE_LABELS[member.role]}
+                                                        <ChevronDown size={12} className={css({
+                                                            transition: 'transform 0.2s',
+                                                            transform: editingRoleId === member.memberId ? 'rotate(180deg)' : 'none',
+                                                        })} />
+                                                    </button>
+                                                    {editingRoleId === member.memberId && (
+                                                        <>
+                                                            <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setEditingRoleId(null)} />
+                                                            <div className={css({
+                                                                position: 'absolute', top: '100%', right: 0, mt: '4px',
+                                                                bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '10px',
+                                                                boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 11, overflow: 'hidden', minW: '100px',
+                                                            })}>
+                                                                {(['editor', 'viewer'] as const).map(role => (
+                                                                    <button
+                                                                        key={role}
+                                                                        onClick={() => handleRoleChange(member.memberId, role)}
+                                                                        className={css({
+                                                                            display: 'flex', alignItems: 'center', gap: '6px',
+                                                                            w: '100%', px: '12px', py: '10px',
+                                                                            fontSize: '12px', fontWeight: member.role === role ? '800' : '600',
+                                                                            bg: member.role === role ? 'bg.softCotton' : 'white',
+                                                                            color: member.role === role ? 'brand.primary' : 'brand.secondary',
+                                                                            border: 'none', cursor: 'pointer', textAlign: 'left',
+                                                                            _hover: { bg: 'bg.softCotton' },
+                                                                        })}
+                                                                    >
+                                                                        {role === 'editor' ? <Pencil size={12} /> : <Eye size={12} />}
+                                                                        {ROLE_LABELS[role]}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                            
+                                            {/* 삭제 / 나가기 버튼 (오너이거나 자기 자신일 때만) */}
+                                            {(currentUserId === ownerId || currentUserId === member.userId) && (
                                                 <button
-                                                    onClick={() => setEditingRoleId(editingRoleId === member.memberId ? null : member.memberId)}
-                                                    className={css({
-                                                        display: 'flex', alignItems: 'center', gap: '4px',
-                                                        px: '8px', py: '4px', borderRadius: '8px',
-                                                        fontSize: '11px', fontWeight: '700',
-                                                        bg: 'white', border: '1px solid', borderColor: 'brand.border',
-                                                        color: 'brand.secondary', cursor: 'pointer',
-                                                        transition: 'all 0.2s',
-                                                        _hover: { borderColor: 'brand.primary' },
-                                                    })}
+                                                    onClick={() => handleRemove(member.memberId, currentUserId === member.userId)}
+                                                    className={css({ p: '6px', bg: 'transparent', border: 'none', color: 'brand.muted', cursor: 'pointer', transition: 'all 0.2s', _hover: { color: 'brand.error' } })}
+                                                    title={currentUserId === member.userId ? "나가기" : "추방하기"}
                                                 >
-                                                    {ROLE_LABELS[member.role]}
-                                                    <ChevronDown size={12} className={css({
-                                                        transition: 'transform 0.2s',
-                                                        transform: editingRoleId === member.memberId ? 'rotate(180deg)' : 'none',
-                                                    })} />
+                                                    <Trash2 size={14} />
                                                 </button>
-                                                {editingRoleId === member.memberId && (
-                                                    <>
-                                                        <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setEditingRoleId(null)} />
-                                                        <div className={css({
-                                                            position: 'absolute', top: '100%', right: 0, mt: '4px',
-                                                            bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '10px',
-                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 11, overflow: 'hidden', minW: '100px',
-                                                        })}>
-                                                            {(['editor', 'viewer'] as const).map(role => (
-                                                                <button
-                                                                    key={role}
-                                                                    onClick={() => handleRoleChange(member.memberId, role)}
-                                                                    className={css({
-                                                                        display: 'flex', alignItems: 'center', gap: '6px',
-                                                                        w: '100%', px: '12px', py: '10px',
-                                                                        fontSize: '12px', fontWeight: member.role === role ? '800' : '600',
-                                                                        bg: member.role === role ? 'bg.softCotton' : 'white',
-                                                                        color: member.role === role ? 'brand.primary' : 'brand.secondary',
-                                                                        border: 'none', cursor: 'pointer', textAlign: 'left',
-                                                                        _hover: { bg: 'bg.softCotton' },
-                                                                    })}
-                                                                >
-                                                                    {role === 'editor' ? <Pencil size={12} /> : <Eye size={12} />}
-                                                                    {ROLE_LABELS[role]}
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    </>
-                                                )}
-                                            </div>
-                                            <button
-                                                onClick={() => handleRemove(member.memberId)}
-                                                className={css({ p: '6px', bg: 'transparent', border: 'none', color: 'brand.muted', cursor: 'pointer', transition: 'all 0.2s', _hover: { color: 'brand.error' } })}
-                                                title="추방하기"
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
+                                            )}
                                         </div>
                                     )}
                                 </div>

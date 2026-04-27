@@ -23,9 +23,10 @@ export async function GET(request: Request) {
     const platformFromState = stateParams.get('platform')
     const providerFromState = stateParams.get('provider')
     const modeFromState = stateParams.get('mode')
+    const nextFromState = stateParams.get('next')
 
     // if "next" is in param, use it as the redirect URL
-    const next = searchParams.get('next') ?? '/'
+    const next = searchParams.get('next') ?? nextFromState ?? '/'
 
     // Handle Supabase errors passed via query params (e.g. invalid or expired token)
     const error_description = searchParams.get('error_description')

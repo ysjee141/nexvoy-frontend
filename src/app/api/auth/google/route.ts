@@ -25,10 +25,15 @@ export async function GET(request: Request) {
         }
     )
 
+    const nextUrl = searchParams.get('next')
+
     // 리다이렉트 경로 구성 (플랫폼 정보 포함)
     const callbackUrl = new URL(`${origin}/auth/callback`)
     if (platform) {
         callbackUrl.searchParams.set('platform', platform)
+    }
+    if (nextUrl) {
+        callbackUrl.searchParams.set('next', nextUrl)
     }
     // 연동 모드: 콜백 완료 후 프로필 페이지로 복귀하도록 next 파라미터 설정
     if (mode === 'link') {
