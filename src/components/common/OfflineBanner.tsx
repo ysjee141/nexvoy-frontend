@@ -3,13 +3,19 @@ import { css } from 'styled-system/css'
 import { WifiOff } from 'lucide-react'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { useEffect, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
+import { Capacitor } from '@capacitor/core'
 import { NotificationService } from '@/services/NotificationService'
 import { NativeUIService } from '@/services/NativeUIService'
 import { LifecycleService } from '@/services/LifecycleService'
 
 export default function OfflineBanner() {
-    const { isOnline, initializeNetworkListener } = useNetworkStore()
+    const { isOnline, isOfflineMode, initializeNetworkListener, setOfflineMode } = useNetworkStore()
     const [mounted, setMounted] = useState(false)
+    const router = useRouter()
+    const pathname = usePathname()
+
+    const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform()
 
     useEffect(() => {
         setMounted(true)
@@ -20,27 +26,93 @@ export default function OfflineBanner() {
         LifecycleService.initialize()
     }, [initializeNetworkListener])
 
-    if (!mounted || isOnline) return null
+    const handleSwitchToOffline = () => {
+        setOfflineMode(true)
+        
+        // 현재 경로에 따라 오프라인 전용 페이지로 전환
+        if (pathname.includes('/trips/detail/')) {
+            const id = pathname.split('/').filter(Boolean).pop()
+            router.push(`/offline/trips/detail/?id=${id}&tab=plans`)
+        } else if (pathname.includes('/trips/checklist/')) {
+            const id = pathname.split('/').filter(Boolean).pop()
+            router.push(`/offline/trips/detail/?id=${id}&tab=checklist`)
+        } else {
+            alert('오프라인 모드가 활성화되었습니다. 다운로드된 여행 정보를 확인하실 수 있습니다.')
+        }
+    }
+
+    if (!mounted || (isOnline && !isOfflineMode)) return null
 
     return (
         <div className={css({
-            bg: 'brand.error',
+            bg: isOfflineMode ? 'brand.secondary' : 'brand.error',
             color: 'white',
             px: '20px',
-            py: '10px',
+            py: '12px',
             textAlign: 'center',
             fontSize: '14px',
             fontWeight: '700',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
             animation: 'fadeIn 0.3s ease-out',
             zIndex: 1100,
-            position: 'relative'
+            position: 'relative',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
         })}>
-            <WifiOff size={16} />
-            오프라인 상태입니다. 기능이 일부 제한됩니다.
+            <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
+                <WifiOff size={16} />
+                {isOfflineMode ? '현재 오프라인 모드로 동작 중입니다.' : '네트워크 연결이 끊어졌습니다.'}
+            </div>
+            
+            {/* 네이티브 환경이고, 아직 오프라인 모드가 아니며, 상세/체크리스트 페이지인 경우 버튼 노출 */}
+            {!isOfflineMode && !isOnline && isNative && (pathname.includes('/trips/detail/') || pathname.includes('/trips/checklist/')) && (
+                <button
+                    onClick={handleSwitchToOffline}
+                    className={css({
+                        mt: '4px',
+                        bg: 'white',
+                        color: 'brand.error',
+                        border: 'none',
+                        px: '16px',
+                        py: '6px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        _active: { transform: 'scale(0.95)', bg: '#f0f0f0' }
+                    })}
+                >
+                    오프라인 모드 전환
+                </button>
+            )}
+
+            {isOfflineMode && isOnline && (
+                <button
+                    onClick={() => {
+                        setOfflineMode(false)
+                        // 온라인 복귀 시 새로고침하여 최신 상태 반영
+                        window.location.reload() 
+                    }}
+                    className={css({
+                        mt: '4px',
+                        bg: 'brand.primary',
+                        color: 'white',
+                        border: 'none',
+                        px: '16px',
+                        py: '6px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: '800',
+                        cursor: 'pointer'
+                    })}
+                >
+                    온라인 모드로 복귀
+                </button>
+            )}
         </div>
     )
 }

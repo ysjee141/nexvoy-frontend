@@ -10,7 +10,9 @@ import TermsModal from '../signup/TermsModal'
 import ProfileSkeleton from './ProfileSkeleton'
 import BugReportModal from '@/components/profile/BugReportModal'
 import AccountLinking from '@/components/profile/AccountLinking'
+import DownloadedTripsModal from '@/components/profile/DownloadedTripsModal'
 import { AuthService } from '@/services/AuthService'
+import { CacheUtil } from '@/utils/cache'
 
 function ProfileContent() {
     const supabase = createClient()
@@ -24,6 +26,7 @@ function ProfileContent() {
     const [nicknameError, setNicknameError] = useState('')
     const [loading, setLoading] = useState(true)
     const [isBugModalOpen, setIsBugModalOpen] = useState(false)
+    const [isOfflineModalOpen, setIsOfflineModalOpen] = useState(false)
 
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -229,11 +232,10 @@ function ProfileContent() {
     }
     
     const handleLogout = async () => {
-        const { error } = await supabase.auth.signOut()
-        if (!error) {
-            router.push('/')
-            router.refresh()
-        }
+        await supabase.auth.signOut()
+        await CacheUtil.clear()
+        router.push('/')
+        router.refresh()
     }
     
     if (loading) {
@@ -614,6 +616,38 @@ function ProfileContent() {
                             <ChevronRight size={20} className={css({ color: '#CCC', transition: 'all 0.2s' })} />
                         </Link>
                     ))}
+
+                    {/* 오프라인 여행 관리 메뉴 */}
+                    <button
+                        onClick={() => setIsOfflineModalOpen(true)}
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: '24px',
+                            py: '20px',
+                            borderTop: '1px solid #F5F5F5',
+                            bg: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            w: '100%',
+                            textAlign: 'left',
+                            transition: 'all 0.25s ease',
+                            _hover: { bg: 'rgba(37, 99, 235, 0.04)', px: '28px' },
+                            _active: { bg: 'rgba(37, 99, 235, 0.08)' }
+                        })}
+                    >
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
+                            <div className={css({ fontSize: '22px', w: '40px', h: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', bg: 'bg.softCotton', borderRadius: '12px' })}>
+                                📴
+                            </div>
+                            <div>
+                                <div className={css({ fontSize: '16px', fontWeight: '750', color: 'brand.secondary' })}>오프라인 여행 관리</div>
+                                <div className={css({ fontSize: '13px', color: 'brand.muted', mt: '2px', fontWeight: '600' })}>다운로드된 여행 목록을 관리하고 삭제할 수 있습니다</div>
+                            </div>
+                        </div>
+                        <ChevronRight size={20} className={css({ color: '#CCC', transition: 'all 0.2s' })} />
+                    </button>
                     {/* 건의 및 버그 제보 — 페이지 이동 대신 모달 */}
                     <button
                         onClick={() => setIsBugModalOpen(true)}
@@ -652,6 +686,11 @@ function ProfileContent() {
                     isOpen={isBugModalOpen}
                     onClose={() => setIsBugModalOpen(false)}
                     user={user}
+                />
+                
+                <DownloadedTripsModal
+                    isOpen={isOfflineModalOpen}
+                    onClose={() => setIsOfflineModalOpen(false)}
                 />
             </section>
 

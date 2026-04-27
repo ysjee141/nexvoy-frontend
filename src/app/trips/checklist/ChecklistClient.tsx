@@ -9,6 +9,7 @@ import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTo
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
+import { DownloadService } from '@/services/DownloadService'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
@@ -365,9 +366,9 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
     );
 }
 
-export default function ChecklistPage({ isActive = true }: { isActive?: boolean }) {
+export default function ChecklistPage({ isActive = true, tripId: propsTripId, isOffline = false }: { isActive?: boolean; tripId?: string; isOffline?: boolean }) {
     const searchParams = useSearchParams()
-    const tripId = searchParams.get('id')
+    const tripId = propsTripId || searchParams.get('id')
     const supabase = createClient()
     const { isOnline } = useNetworkStore()
 
@@ -401,17 +402,24 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         if (!tripId) return
 
         try {
-            // 1. 캐시에서 로드 (깜빡임 방지)
-            const cachedItems = await CacheUtil.get<any[]>(`offline_checklist_items_${tripId}`)
-            if (cachedItems) {
-                setItems(cachedItems)
+            if (isOffline) {
+                const bundle = await DownloadService.getBundle(tripId)
+                if (bundle) {
+                    setItems(bundle.checklistItems || [])
+                    setUserChecks(bundle.checklistChecks || [])
+                    setMembers(bundle.members || [])
+                    setTripInfo(bundle.trip)
+                    if (bundle.trip?.user_id) {
+                        setTripOwner({ id: bundle.trip.user_id, profiles: bundle.trip.profiles, email: bundle.trip.profiles?.email })
+                    }
+                }
                 setIsLoading(false)
+                return
             }
-            const cachedChecks = await CacheUtil.get<any[]>(`offline_checklist_checks_${tripId}`)
-            if (cachedChecks) setUserChecks(cachedChecks)
 
             // 2. 네트워크 확인
-            if (!isOnline) {
+            const { isOfflineMode } = useNetworkStore.getState()
+            if (!isOnline || isOfflineMode) {
                 setIsLoading(false)
                 return
             }
@@ -452,7 +460,13 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                 
                 if (itemsRes.data) {
                     setItems(itemsRes.data)
-                    await CacheUtil.set(`offline_checklist_items_${tripId}`, itemsRes.data)
+                    // 명시적 다운로드 정책에 따라 자동 저장은 제거
+                    
+                    // 이미 다운로드된 여행이라면 백그라운드에서 전체 데이터 동기화
+                    const bundle = await DownloadService.getBundle(tripId!)
+                    if (bundle) {
+                        DownloadService.downloadTrip(tripId!)
+                    }
                     
                     const itemIds = itemsRes.data.map((i: any) => i.id)
                     if (itemIds.length > 0) {
@@ -462,7 +476,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                             .in('item_id', itemIds)
                         if (checks) {
                             setUserChecks(checks)
-                            await CacheUtil.set(`offline_checklist_checks_${tripId}`, checks)
+                            // 명시적 다운로드 정책에 따라 자동 저장은 제거
                         }
                     }
 
@@ -662,7 +676,7 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
     const ChecklistItem = ({ item }: { item: any }) => {
         const status = getItemStatus(item)
         const isAssignedToMe = item.assignment_type === 'specific' ? item.assigned_user_id === currentUser?.id : true
-        const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline
+        const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline && !isOffline
 
         // Swipe-to-Action State
         const [translateX, setTranslateX] = useState(0);
@@ -713,13 +727,14 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
 
         return (
             <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'brand.border', bg: 'white' })}>
-                {/* 배경 액션 버튼 (스와이프 시 보임) */}
-                <div className={css({
-                    position: 'absolute', top: 0, right: 0, bottom: 0,
-                    display: { base: 'flex', sm: 'none' }, // 모바일 전용
-                    alignItems: 'center', gap: '0',
-                    zIndex: 1
-                })}>
+                {/* 배경 액션 버튼 (스와이프 시 보임) - 오프라인 모드에서는 숨김 */}
+                {isOnline && !isOffline && (
+                    <div className={css({
+                        position: 'absolute', top: 0, right: 0, bottom: 0,
+                        display: { base: 'flex', sm: 'none' }, // 모바일 전용
+                        alignItems: 'center', gap: '0',
+                        zIndex: 1
+                    })}>
                         <button
                             onClick={(e) => { e.stopPropagation(); setEditingItem(item); setTranslateX(0); }}
                             className={css({ 
@@ -738,7 +753,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                         >
                             <Trash2 size={20} strokeWidth={2.5} />
                         </button>
-                </div>
+                    </div>
+                )}
 
                 {/* 메인 콘텐츠 영역 */}
                 <div
@@ -1417,8 +1433,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
                     )}
                 </div>
             )}
-            {/* 모바일 하단 플로팅 버튼 - + 항목 추가 */}
-            {isActive && !isAdding && !isTemplateModalOpen && isOnline && (
+            {/* 모바일 하단 플로팅 버튼 - + 항목 추가 - 오프라인 모드에서는 숨김 */}
+            {isActive && !isAdding && !isTemplateModalOpen && isOnline && !isOffline && (
                 <div
                     onClick={() => setIsAdding(true)}
                     className={css({
