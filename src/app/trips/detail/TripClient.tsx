@@ -184,7 +184,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             if (bundle?.trip) setTrip(bundle.trip)
             return
         }
-
         const { data } = await supabase.from('trips').select('*').eq('id', tripId).single()
         if (data) setTrip(data)
     }, [tripId, supabase, isOffline])

@@ -421,6 +421,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
             const cachedItems = await CacheUtil.get<any[]>(`offline_checklist_items_${tripId}`)
             if (cachedItems) {
                 setItems(cachedItems)
+                setIsLoading(false)
             }
 
             // 2. 네트워크 확인
