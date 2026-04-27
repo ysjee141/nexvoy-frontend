@@ -11,7 +11,6 @@ import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
 import { DownloadService } from '@/services/DownloadService'
 import { useNetworkStore } from '@/stores/useNetworkStore'
-import { DownloadService } from '@/services/DownloadService'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
 
@@ -470,6 +469,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     // 명시적 다운로드 정책에 따라 자동 저장은 제거
                     
                     // 이미 다운로드된 여행이라면 백그라운드에서 전체 데이터 동기화
+                    const bundle = await DownloadService.getBundle(tripId!)
                     if (bundle) {
                         DownloadService.downloadTrip(tripId!)
                     }

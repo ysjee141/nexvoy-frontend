@@ -120,7 +120,7 @@ export default function OfflineTripPage({ params }: { params: Promise<{ id: stri
                         tripStartDate={bundle.trip?.start_date || ''}
                         tripEndDate={bundle.trip?.end_date || ''}
                         isActive={activeTab === 'map'}
-                        plans={bundle.plans} // 오프라인용 데이터 직접 주입
+                        externalPlans={bundle.plans} // 오프라인용 데이터 직접 주입
                     />
                 </div>
             </div>

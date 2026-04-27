@@ -17,10 +17,7 @@ import { ExchangeService } from '@/services/ExternalApiService'
 import { CacheUtil } from '@/utils/cache'
 import { NotificationService } from '@/services/NotificationService'
 import { DownloadService } from '@/services/DownloadService'
-<<<<<<< HEAD
-=======
 import { Download, CloudDownload, CloudCheck, Loader2 } from 'lucide-react'
->>>>>>> feature/caching-162-offline-download
 import TripDetailSkeleton from './TripDetailSkeleton'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -216,9 +213,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 setIsLoading(false)
                 return
             }
-                setIsLoading(false)
-                return
-            }
 
             const { data, error } = await supabase
                 .from('plans')
@@ -232,6 +226,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 NotificationService.scheduleOfflineReminders(data)
                 
                 // 이미 다운로드된 여행이라면 백그라운드에서 최신 데이터로 동기화
+                const bundle = await DownloadService.getBundle(tripId)
                 if (bundle) {
                     DownloadService.downloadTrip(tripId)
                 }
