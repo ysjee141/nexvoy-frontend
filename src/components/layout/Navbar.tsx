@@ -64,7 +64,7 @@ export default function Navbar() {
             if (networkUser) {
                 await CacheUtil.setAuthUser(networkUser)
             } else {
-                await CacheUtil.remove('auth_last_user')
+                await CacheUtil.clear()
             }
             setLoading(false)
         }
@@ -76,7 +76,7 @@ export default function Navbar() {
             if (currentUser) {
                 await CacheUtil.setAuthUser(currentUser)
             } else {
-                await CacheUtil.remove('auth_last_user')
+                await CacheUtil.clear()
             }
         })
 
@@ -90,7 +90,7 @@ export default function Navbar() {
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
-        await CacheUtil.remove('auth_last_user')
+        await CacheUtil.clear()
         router.push('/')
         router.refresh()
     }

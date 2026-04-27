@@ -12,6 +12,7 @@ import BugReportModal from '@/components/profile/BugReportModal'
 import AccountLinking from '@/components/profile/AccountLinking'
 import DownloadedTripsModal from '@/components/profile/DownloadedTripsModal'
 import { AuthService } from '@/services/AuthService'
+import { CacheUtil } from '@/utils/cache'
 
 function ProfileContent() {
     const supabase = createClient()
@@ -228,11 +229,10 @@ function ProfileContent() {
     }
     
     const handleLogout = async () => {
-        const { error } = await supabase.auth.signOut()
-        if (!error) {
-            router.push('/')
-            router.refresh()
-        }
+        await supabase.auth.signOut()
+        await CacheUtil.clear()
+        router.push('/')
+        router.refresh()
     }
     
     if (loading) {

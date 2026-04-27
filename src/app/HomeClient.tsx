@@ -297,12 +297,6 @@ export default function HomeClient() {
 
     const allTrips = trips || []
     processTrips(allTrips)
-    
-    try {
-      await CacheUtil.set('offline_home_all_trips', allTrips)
-    } catch (e) {
-      console.warn('Cache save failed', e)
-    }
   }, [supabase, processTrips])
 
   // 인증 상태 실시간 감지 (로그인 직후 세션 반영 대응)
@@ -337,15 +331,6 @@ export default function HomeClient() {
             setNickname(cachedProfile.nickname)
         } else {
             setNickname(localUser.email?.split('@')[0] || '여행자')
-        }
-        try {
-          // 캐시된 목록 즉시 적용
-          const cachedTrips = await CacheUtil.get<any[]>('offline_home_all_trips')
-          if (cachedTrips) {
-            processTrips(cachedTrips)
-          }
-        } catch (e) {
-          console.warn('Cache load failed', e)
         }
       }
       // 세션을 확인했든 못 했든 초기 로딩 해제 (화면 진입)

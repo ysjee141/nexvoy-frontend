@@ -417,13 +417,6 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 return
             }
 
-            // 1. 캐시에서 로드 (깜빡임 방지)
-            const cachedItems = await CacheUtil.get<any[]>(`offline_checklist_items_${tripId}`)
-            if (cachedItems) {
-                setItems(cachedItems)
-                setIsLoading(false)
-            }
-
             // 2. 네트워크 확인
             const { isOfflineMode } = useNetworkStore.getState()
             if (!isOnline || isOfflineMode) {

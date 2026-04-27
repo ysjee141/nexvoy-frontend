@@ -98,15 +98,6 @@ export default function TripSwitcherModal() {
             setLoading(true)
             const supabase = createClient()
             
-            // 1. 캐시 시도
-            try {
-                const cached = await CacheUtil.get<Trip[]>('offline_home_all_trips')
-                if (cached) {
-                    processTrips(cached)
-                }
-            } catch (e) {
-                console.warn('Cache load failed', e)
-            }
 
             // 2. 네트워크 페칭
             const { data: { user } } = await supabase.auth.getUser()
@@ -136,7 +127,6 @@ export default function TripSwitcherModal() {
             const { data: trips } = await query.order('start_date', { ascending: true })
             if (trips) {
                 processTrips(trips as Trip[])
-                await CacheUtil.set('offline_home_all_trips', trips)
             }
             setLoading(false)
         }

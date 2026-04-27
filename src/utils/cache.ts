@@ -48,5 +48,16 @@ export const CacheUtil = {
 
     async getProfile() {
         return await this.get<any>('auth_last_profile')
+    },
+
+    async clear() {
+        try {
+            await Preferences.clear()
+            if (typeof window !== 'undefined') {
+                localStorage.clear()
+            }
+        } catch (e) {
+            console.warn('Cache clearing failed', e)
+        }
     }
 }

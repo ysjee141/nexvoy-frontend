@@ -63,12 +63,6 @@ export default function TripLayoutClient() {
             if (!id) return;
             
             try {
-                // 1. 캐시에서 먼저 로드 (화면 깜빡임 방지용)
-                const cachedTrip = await CacheUtil.get<any>(`trip_${id}`)
-                if (cachedTrip) {
-                    setTrip(cachedTrip)
-                    setLoading(false)
-                }
 
                 // 2. 인증 세션 확인 (오프라인 대응)
                 const { data: { session } } = await supabase.auth.getSession()
@@ -96,7 +90,6 @@ export default function TripLayoutClient() {
                     router.replace('/404')
                 } else {
                     setTrip(data)
-                    await CacheUtil.set(`trip_${id}`, data) // 캐시 업데이트
                 }
             } catch (err) {
                 console.error('Failed to fetch trip:', err)
