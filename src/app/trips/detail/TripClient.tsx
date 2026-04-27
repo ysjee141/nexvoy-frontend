@@ -16,6 +16,7 @@ import { getCurrencyFromTimezone } from '@/utils/currency'
 import { ExchangeService } from '@/services/ExternalApiService'
 import { CacheUtil } from '@/utils/cache'
 import { NotificationService } from '@/services/NotificationService'
+import { DownloadService } from '@/services/DownloadService'
 import TripDetailSkeleton from './TripDetailSkeleton'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -75,9 +76,9 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     )
 }
 
-export default function TripPlansPage({ isActive = true }: { isActive?: boolean }) {
+export default function TripPlansPage({ isActive = true, tripId: propsTripId, isOffline = false }: { isActive?: boolean; tripId?: string; isOffline?: boolean }) {
     const searchParams = useSearchParams()
-    const tripId = searchParams.get('id')
+    const tripId = propsTripId || searchParams.get('id')
 
     // Supabase client instance (stable across renders if used carefully, but better kept inside useCallback or useMemo if it's deeply depending on renders, though createClient maps to same client mostly)
     const supabase = createClient()
@@ -174,14 +175,26 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
 
     const fetchTrip = useCallback(async () => {
         if (!tripId) return
+        if (isOffline) {
+            const bundle = await DownloadService.getBundle(tripId)
+            if (bundle?.trip) setTrip(bundle.trip)
+            return
+        }
         const { data } = await supabase.from('trips').select('*').eq('id', tripId).single()
         if (data) setTrip(data)
-    }, [tripId, supabase])
+    }, [tripId, supabase, isOffline])
 
     const fetchPlans = useCallback(async () => {
         if (!tripId) return
 
         try {
+            if (isOffline) {
+                const bundle = await DownloadService.getBundle(tripId)
+                if (bundle?.plans) setPlans(bundle.plans)
+                setIsLoading(false)
+                return
+            }
+
             // 1. Load from cache first
             const cachedPlans = await CacheUtil.get<any[]>(`offline_plans_${tripId}`)
             if (cachedPlans) {
@@ -190,7 +203,8 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
             }
 
             // 2. Network check
-            if (!isOnline) {
+            const { isOfflineMode } = useNetworkStore.getState()
+            if (!isOnline || isOfflineMode) {
                 setIsLoading(false)
                 return
             }

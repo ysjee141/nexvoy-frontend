@@ -10,6 +10,7 @@ import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
 import { useNetworkStore } from '@/stores/useNetworkStore'
+import { DownloadService } from '@/services/DownloadService'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
 
@@ -365,9 +366,9 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
     );
 }
 
-export default function ChecklistPage({ isActive = true }: { isActive?: boolean }) {
+export default function ChecklistPage({ isActive = true, tripId: propsTripId, isOffline = false }: { isActive?: boolean; tripId?: string; isOffline?: boolean }) {
     const searchParams = useSearchParams()
-    const tripId = searchParams.get('id')
+    const tripId = propsTripId || searchParams.get('id')
     const supabase = createClient()
     const { isOnline } = useNetworkStore()
 
@@ -401,6 +402,21 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
         if (!tripId) return
 
         try {
+            if (isOffline) {
+                const bundle = await DownloadService.getBundle(tripId)
+                if (bundle) {
+                    setItems(bundle.checklistItems || [])
+                    setUserChecks(bundle.checklistChecks || [])
+                    setMembers(bundle.members || [])
+                    setTripInfo(bundle.trip)
+                    if (bundle.trip?.user_id) {
+                        setTripOwner({ id: bundle.trip.user_id, profiles: bundle.trip.profiles, email: bundle.trip.profiles?.email })
+                    }
+                }
+                setIsLoading(false)
+                return
+            }
+
             // 1. 캐시에서 로드 (깜빡임 방지)
             const cachedItems = await CacheUtil.get<any[]>(`offline_checklist_items_${tripId}`)
             if (cachedItems) {
@@ -411,7 +427,8 @@ export default function ChecklistPage({ isActive = true }: { isActive?: boolean 
             if (cachedChecks) setUserChecks(cachedChecks)
 
             // 2. 네트워크 확인
-            if (!isOnline) {
+            const { isOfflineMode } = useNetworkStore.getState()
+            if (!isOnline || isOfflineMode) {
                 setIsLoading(false)
                 return
             }
