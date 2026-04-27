@@ -199,13 +199,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 return
             }
 
-            // 1. 캐시에서 로드 (깜빡임 방지 / Fallback)
-            const cachedPlans = await CacheUtil.get<any[]>(`offline_plans_${tripId}`)
-            if (cachedPlans && plans.length === 0) {
-                setPlans(cachedPlans)
-                setIsLoading(false)
-            }
-
             // 2. 네트워크 확인
             const { isOfflineMode } = useNetworkStore.getState()
             if (!isOnline || isOfflineMode) {
