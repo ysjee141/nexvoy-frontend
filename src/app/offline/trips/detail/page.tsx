@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState, use } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 import { css } from 'styled-system/css'
 import { Calendar, ListChecks, MapPin, Wifi } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import TripHeaderActions from '@/components/trips/TripHeaderActions'
 import dynamic from 'next/dynamic'
 import TripClient from '@/app/trips/detail/TripClient'
@@ -14,19 +14,23 @@ import { useNetworkStore } from '@/stores/useNetworkStore'
 
 const RouteMapView = dynamic(() => import('@/components/trips/RouteMapView'), { ssr: false })
 
-export default function OfflineTripPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params)
+function OfflineTripContent() {
     const router = useRouter()
+    const searchParams = useSearchParams()
+    const id = searchParams.get('id')
     const { setMobileTitle } = useUIStore()
     const { isOnline, setOfflineMode } = useNetworkStore()
     
     const [bundle, setBundle] = useState<TripBundle | null>(null)
     const [loading, setLoading] = useState(true)
-    const [activeTab, setActiveTab] = useState<'plans' | 'checklist' | 'map'>('plans')
+    const [activeTab, setActiveTab] = useState<'plans' | 'checklist' | 'map'>((searchParams.get('tab') as any) || 'plans')
 
     useEffect(() => {
         async function loadBundle() {
-            if (!id) return
+            if (!id) {
+                setLoading(false)
+                return
+            }
             const data = await DownloadService.getBundle(id)
             if (data) {
                 setBundle(data)
@@ -47,7 +51,7 @@ export default function OfflineTripPage({ params }: { params: Promise<{ id: stri
         return <div className={css({ w: '100%', py: '40px', textAlign: 'center', color: '#888' })}>오프라인 데이터를 불러오는 중...</div>
     }
 
-    if (!bundle) return null
+    if (!id || !bundle) return null
 
     const handleTabChange = (tab: 'plans' | 'checklist' | 'map') => {
         setActiveTab(tab)
@@ -125,6 +129,14 @@ export default function OfflineTripPage({ params }: { params: Promise<{ id: stri
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function OfflineTripPage() {
+    return (
+        <Suspense fallback={<div className={css({ w: '100%', py: '40px', textAlign: 'center', color: '#888' })}>로딩 중...</div>}>
+            <OfflineTripContent />
+        </Suspense>
     )
 }
 

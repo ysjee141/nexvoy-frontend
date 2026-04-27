@@ -32,10 +32,10 @@ export default function OfflineBanner() {
         // 현재 경로에 따라 오프라인 전용 페이지로 전환
         if (pathname.includes('/trips/detail/')) {
             const id = pathname.split('/').filter(Boolean).pop()
-            router.push(`/offline/trips/detail/${id}/`)
+            router.push(`/offline/trips/detail/?id=${id}&tab=plans`)
         } else if (pathname.includes('/trips/checklist/')) {
             const id = pathname.split('/').filter(Boolean).pop()
-            router.push(`/offline/trips/checklist/${id}/`)
+            router.push(`/offline/trips/detail/?id=${id}&tab=checklist`)
         } else {
             alert('오프라인 모드가 활성화되었습니다. 다운로드된 여행 정보를 확인하실 수 있습니다.')
         }
