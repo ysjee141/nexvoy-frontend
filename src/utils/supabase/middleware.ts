@@ -44,6 +44,7 @@ export async function updateSession(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/auth') ||
         request.nextUrl.pathname.startsWith('/share') ||
         request.nextUrl.pathname.startsWith('/api') ||
+        request.nextUrl.pathname.startsWith('/offline') ||
         request.nextUrl.pathname.startsWith('/_next') ||
         request.nextUrl.pathname.startsWith('/sw.js') ||
         request.nextUrl.pathname.startsWith('/workbox') ||

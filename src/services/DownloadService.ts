@@ -16,6 +16,7 @@ export interface TripBundle {
     checklist: any | null;
     checklistItems: any[];
     checklistChecks: any[];
+    members: any[];
     downloadedAt: string;
 }
 
@@ -78,19 +79,26 @@ export const DownloadService = {
                 }
             }
 
-            // 4. 번들 생성 및 저장
+            // 4. 동행자 정보
+            const { data: members } = await supabase
+                .from('trip_members')
+                .select('*, profiles(*)')
+                .eq('trip_id', tripId)
+
+            // 5. 번들 생성 및 저장
             const bundle: TripBundle = {
                 trip,
                 plans: plans || [],
                 checklist,
                 checklistItems,
                 checklistChecks,
+                members: members || [],
                 downloadedAt: new Date().toISOString()
             }
 
             await CacheUtil.set(`${BUNDLE_PREFIX}${tripId}`, bundle)
 
-            // 5. 레지스트리 업데이트
+            // 6. 레지스트리 업데이트
             await this.addToRegistry({
                 id: trip.id,
                 title: trip.title,

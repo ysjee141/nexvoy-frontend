@@ -77,9 +77,9 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     )
 }
 
-export default function TripPlansPage({ isActive = true }: { isActive?: boolean }) {
+export default function TripPlansPage({ isActive = true, tripId: propsTripId, isOffline = false }: { isActive?: boolean; tripId?: string; isOffline?: boolean }) {
     const searchParams = useSearchParams()
-    const tripId = searchParams.get('id')
+    const tripId = propsTripId || searchParams.get('id')
 
     // Supabase client instance (stable across renders if used carefully, but better kept inside useCallback or useMemo if it's deeply depending on renders, though createClient maps to same client mostly)
     const supabase = createClient()
@@ -179,40 +179,36 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
     const fetchTrip = useCallback(async () => {
         if (!tripId) return
 
-        // 오프라인이면 번들에서 시도
-        if (!isOnline) {
+        if (isOffline) {
             const bundle = await DownloadService.getBundle(tripId)
-            if (bundle?.trip) {
-                setTrip(bundle.trip)
-                return
-            }
+            if (bundle?.trip) setTrip(bundle.trip)
+            return
         }
-
         const { data } = await supabase.from('trips').select('*').eq('id', tripId).single()
         if (data) setTrip(data)
-    }, [tripId, supabase, isOnline])
+    }, [tripId, supabase, isOffline])
 
     const fetchPlans = useCallback(async () => {
         if (!tripId) return
 
         try {
-            // 1. 오프라인이거나 캐시 로드가 필요한 경우 번들에서 로드
-            const bundle = await DownloadService.getBundle(tripId)
-            if (bundle) {
-                setIsDownloaded(true)
-                if (!isOnline || plans.length === 0) {
-                    setPlans(bundle.plans)
-                    if (!isOnline) {
-                        setIsLoading(false)
-                        return
-                    }
-                }
-            } else {
-                setIsDownloaded(false)
+            if (isOffline) {
+                const bundle = await DownloadService.getBundle(tripId)
+                if (bundle?.plans) setPlans(bundle.plans)
+                setIsLoading(false)
+                return
+            }
+
+            // 1. 캐시에서 로드 (깜빡임 방지 / Fallback)
+            const cachedPlans = await CacheUtil.get<any[]>(`offline_plans_${tripId}`)
+            if (cachedPlans && plans.length === 0) {
+                setPlans(cachedPlans)
+                setIsLoading(false)
             }
 
             // 2. 네트워크 확인
-            if (!isOnline) {
+            const { isOfflineMode } = useNetworkStore.getState()
+            if (!isOnline || isOfflineMode) {
                 setIsLoading(false)
                 return
             }
@@ -229,6 +225,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                 NotificationService.scheduleOfflineReminders(data)
                 
                 // 이미 다운로드된 여행이라면 백그라운드에서 최신 데이터로 동기화
+                const bundle = await DownloadService.getBundle(tripId)
                 if (bundle) {
                     DownloadService.downloadTrip(tripId)
                 }

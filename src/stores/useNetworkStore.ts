@@ -4,13 +4,17 @@ import { analytics } from '@/services/AnalyticsService'
 
 interface NetworkState {
     isOnline: boolean
+    isOfflineMode: boolean
     connectionType: ConnectionStatus['connectionType']
     initializeNetworkListener: () => Promise<void>
+    setOfflineMode: (mode: boolean) => void
 }
 
 export const useNetworkStore = create<NetworkState>((set) => ({
     isOnline: true,
+    isOfflineMode: false,
     connectionType: 'unknown',
+    setOfflineMode: (mode: boolean) => set({ isOfflineMode: mode }),
     initializeNetworkListener: async () => {
         try {
             // Get initial status

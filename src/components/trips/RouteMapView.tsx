@@ -42,6 +42,8 @@ interface RouteMapViewProps {
     tripStartDate: string
     tripEndDate: string
     isActive: boolean
+    externalPlans?: any[]
+    isOffline?: boolean
 }
 
 function formatLocalTime(dateString: string): string {
@@ -115,13 +117,15 @@ export default function RouteMapView({
     tripStartDate,
     tripEndDate,
     isActive,
+    externalPlans,
+    isOffline = false,
 }: RouteMapViewProps) {
     const searchParams = useSearchParams()
     const tripId = searchParams.get('id')
     const supabase = createClient()
     const { isOnline } = useNetworkStore()
 
-    const [plans, setPlans] = useState<Plan[]>([])
+    const [plans, setPlans] = useState<Plan[]>(externalPlans || [])
     const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | null>(null)
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
     const [detailPlan, setDetailPlan] = useState<Plan | null>(null)
@@ -150,7 +154,19 @@ export default function RouteMapView({
         setSelectedDate('all')
         setDataLoaded(false)
 
-        if (!isActive || !tripId || !isOnline) return
+        if (!isActive || !tripId) return
+        
+        // 오프라인이거나 외부 데이터가 있는 경우 fetch 생략
+        if (isOffline || externalPlans) {
+            if (externalPlans) {
+                setPlans(externalPlans)
+            }
+            setDataLoaded(true)
+            return
+        }
+
+        if (!isOnline) return
+        
         let cancelled = false
 
         const fetchData = async () => {

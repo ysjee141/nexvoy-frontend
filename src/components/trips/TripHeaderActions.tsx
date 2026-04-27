@@ -4,10 +4,12 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Calendar, Users, Pencil, Trash2, Wallet, Loader2 } from 'lucide-react'
+import { Calendar, Users, Pencil, Trash2, Wallet, Loader2, Download, Check } from 'lucide-react'
 import { getCurrencyFromTimezone, formatKRW } from '@/utils/currency'
 import { formatDate } from '@/utils/date'
 import { ExchangeService } from '@/services/ExternalApiService'
+import { DownloadService } from '@/services/DownloadService'
+import { Capacitor } from '@capacitor/core'
 import EditTripModal from './EditTripModal'
 
 interface TripHeaderActionsProps {
@@ -21,9 +23,10 @@ interface TripHeaderActionsProps {
         user_id: string
     }
     onUpdate?: (updatedFields: Partial<TripHeaderActionsProps['trip']>) => void
+    isOffline?: boolean
 }
 
-export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsProps) {
+export default function TripHeaderActions({ trip, onUpdate, isOffline = false }: TripHeaderActionsProps) {
     const router = useRouter()
     const supabase = createClient()
 
@@ -31,6 +34,10 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [isDownloading, setIsDownloading] = useState(false)
+    const [isDownloaded, setIsDownloaded] = useState(false)
+
+    const isNative = typeof window !== 'undefined' && Capacitor.isNativePlatform()
 
     // 총 비용 요약 상태
     interface CostSummary {
@@ -44,18 +51,47 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
     const end = formatDate(trip.end_date)
 
     useEffect(() => {
+        const checkStatus = async () => {
+            const downloaded = await DownloadService.isDownloaded(trip.id)
+            setIsDownloaded(downloaded)
+        }
+        checkStatus()
+    }, [trip.id])
+
+    const handleDownload = async () => {
+        if (isDownloading) return
+        setIsDownloading(true)
+        try {
+            await DownloadService.downloadTrip(trip.id)
+            setIsDownloaded(true)
+        } catch (error) {
+            console.error('Download failed:', error)
+            alert('다운로드에 실패했습니다.')
+        } finally {
+            setIsDownloading(false)
+        }
+    }
+    useEffect(() => {
         const checkOwner = async () => {
+            if (isOffline) {
+                setIsOwner(false)
+                return
+            }
             const { data: { user } } = await supabase.auth.getUser()
             if (user && user.id === trip.user_id) {
                 setIsOwner(true)
             }
         }
         checkOwner()
-    }, [supabase, trip.user_id])
+    }, [supabase, trip.user_id, isOffline])
 
     // 플랜 비용 합산
     useEffect(() => {
         const fetchCostSummary = async () => {
+            if (isOffline) {
+                setCostSummary({ totalKrw: 0, byCurrency: [], loading: false })
+                return
+            }
             const { data: plans } = await supabase
                 .from('plans')
                 .select('cost, timezone_string')
@@ -113,7 +149,7 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
             })
         }
         fetchCostSummary()
-    }, [supabase, trip.id])
+    }, [supabase, trip.id, isOffline])
 
     const handleDelete = async () => {
         setDeleting(true)
@@ -146,8 +182,32 @@ export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsP
                         {trip.destination} 여행
                     </h1>
 
-                    {isOwner && (
+                    {isOwner && !isOffline && (
                         <div className={css({ display: 'flex', gap: '8px', flexShrink: 0 })}>
+                            {isNative && (
+                                <button
+                                    onClick={handleDownload}
+                                    disabled={isDownloading}
+                                    className={css({
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        p: '8px', bg: isDownloaded ? 'rgba(37, 99, 235, 0.1)' : 'white', 
+                                        color: isDownloaded ? 'brand.primary' : 'brand.muted', 
+                                        border: '1.5px solid', borderColor: isDownloaded ? 'brand.primary' : 'brand.border', 
+                                        borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s',
+                                        _hover: { bg: 'bg.softCotton', color: 'brand.primary', borderColor: 'brand.primary' },
+                                        _active: { transform: 'scale(0.92)' }
+                                    })}
+                                    title={isDownloaded ? "다운로드됨" : "오프라인 다운로드"}
+                                >
+                                    {isDownloading ? (
+                                        <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} />
+                                    ) : isDownloaded ? (
+                                        <Check size={18} />
+                                    ) : (
+                                        <Download size={18} />
+                                    )}
+                                </button>
+                            )}
                             <button
                                 onClick={() => setShowEditModal(true)}
                                 className={css({
