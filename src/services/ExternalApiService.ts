@@ -1,13 +1,40 @@
 import { apiService } from './ApiService';
 import { Capacitor } from '@capacitor/core';
+import { CacheUtil } from '@/utils/cache';
 
 /**
  * 환율 정보 서비스
  */
 export const ExchangeService = {
   getExchangeRate: async (fromCode: string) => {
-    const response = await apiService.get(`/api/exchange/`, { from: fromCode });
-    return response.data;
+    const cacheKey = `exchange_rate_${fromCode}`;
+    const CACHE_TTL = 24 * 60 * 60 * 1000; // 24시간
+
+    try {
+      // 1. 로컬 캐시 확인
+      const cached = await CacheUtil.get<{ rate: number; timestamp: number }>(cacheKey);
+      if (cached && (Date.now() - cached.timestamp < CACHE_TTL)) {
+        return { from: fromCode, to: 'KRW', rate: cached.rate };
+      }
+
+      // 2. 서버 호출
+      const response = await apiService.get(`/api/exchange/`, { from: fromCode });
+      const data = response.data;
+
+      if (data && data.rate) {
+        // 3. 캐시 업데이트
+        await CacheUtil.set(cacheKey, { rate: data.rate, timestamp: Date.now() });
+      }
+      return data;
+    } catch (error) {
+      console.warn('[ExchangeService] Failed to fetch, trying stale cache...', error);
+      // 4. 실패 시 (오프라인 등) 만료된 캐시라도 있다면 반환
+      const stale = await CacheUtil.get<{ rate: number; timestamp: number }>(cacheKey);
+      if (stale) {
+        return { from: fromCode, to: 'KRW', rate: stale.rate, isStale: true };
+      }
+      throw error;
+    }
   }
 };
 
