@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { collaboration } from '@/utils/collaboration';
 import { createClient } from '@/utils/supabase/client';
 
 export default function JoinClient() {
     const router = useRouter();
-    const params = useParams();
-    const token = params.token as string;
+    const searchParams = useSearchParams();
+    const token = searchParams.get('token');
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -17,6 +17,8 @@ export default function JoinClient() {
     useEffect(() => {
         const init = async () => {
             try {
+                if (!token) throw new Error('유효하지 않은 초대 링크입니다.');
+
                 // 1. Fetch trip summary by token
                 const { data: summary, error: summaryError } = await collaboration.getTripSummaryByToken(token);
                 if (summaryError) throw summaryError;
@@ -29,7 +31,7 @@ export default function JoinClient() {
 
                 if (!user) {
                     // Redirect to login with next parameter
-                    router.replace(`/login?next=/join/${token}`);
+                    router.replace(`/login?next=/join?token=${token}`);
                     return;
                 }
 

@@ -7,6 +7,7 @@ import { X, UserPlus, Mail, Shield, Eye, Pencil, Trash2, Loader2, CheckCircle2, 
 import { CollaborationService } from '@/services/ExternalApiService'
 import { collaboration } from '@/utils/collaboration'
 import { useScrollLock } from '@/hooks/useScrollLock'
+import { Share } from '@capacitor/share'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -255,7 +256,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                         if (error || !data) throw new Error(error?.message || '링크 생성에 실패했습니다.')
                                         
                                         const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
-                                        setGeneratedLink(`${appUrl}/join/${data}`)
+                                        setGeneratedLink(`${appUrl}/join?token=${data}`)
                                     } catch (err: any) {
                                         if (err.name !== 'AbortError') {
                                             setError(err.message || '링크 생성 중 오류가 발생했습니다.')
@@ -306,8 +307,18 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                 <button
                                     type="button"
                                     onClick={async () => {
-                                        if (navigator.share) {
-                                            try {
+                                        try {
+                                            const canShare = await Share.canShare();
+                                            if (canShare.value) {
+                                                await Share.share({
+                                                    title: `${tripTitle} 여정에 초대합니다`,
+                                                    text: `함께 여정을 계획해보세요! 링크는 6시간 동안 유효합니다.`,
+                                                    url: generatedLink,
+                                                    dialogTitle: '초대 링크 공유'
+                                                })
+                                                setSuccess('초대 링크가 공유되었습니다.')
+                                                setTimeout(() => setSuccess(''), 3000)
+                                            } else if (navigator.share) {
                                                 await navigator.share({
                                                     title: `${tripTitle} 여정에 초대합니다`,
                                                     text: `함께 여정을 계획해보세요! 링크는 6시간 동안 유효합니다.`,
@@ -315,15 +326,15 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                                 })
                                                 setSuccess('초대 링크가 공유되었습니다.')
                                                 setTimeout(() => setSuccess(''), 3000)
-                                            } catch (err: any) {
-                                                if (err.name !== 'AbortError') {
-                                                    setError('공유 중 오류가 발생했습니다.')
-                                                }
+                                            } else {
+                                                await navigator.clipboard.writeText(generatedLink)
+                                                setSuccess('초대 링크가 클립보드에 복사되었습니다.')
+                                                setTimeout(() => setSuccess(''), 3000)
                                             }
-                                        } else {
-                                            await navigator.clipboard.writeText(generatedLink)
-                                            setSuccess('초대 링크가 클립보드에 복사되었습니다.')
-                                            setTimeout(() => setSuccess(''), 3000)
+                                        } catch (err: any) {
+                                            if (err.name !== 'AbortError' && err.message !== 'Share canceled') {
+                                                setError('공유 중 오류가 발생했습니다.')
+                                            }
                                         }
                                     }}
                                     className={css({
