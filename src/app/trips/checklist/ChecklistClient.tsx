@@ -9,6 +9,7 @@ import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTo
 import Link from 'next/link'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
+import { DownloadService } from '@/services/DownloadService'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { DownloadService } from '@/services/DownloadService'
 import { CATEGORIES } from '@/constants/checklist'
@@ -421,10 +422,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
             const cachedItems = await CacheUtil.get<any[]>(`offline_checklist_items_${tripId}`)
             if (cachedItems) {
                 setItems(cachedItems)
-                setIsLoading(false)
             }
-            const cachedChecks = await CacheUtil.get<any[]>(`offline_checklist_checks_${tripId}`)
-            if (cachedChecks) setUserChecks(cachedChecks)
 
             // 2. 네트워크 확인
             const { isOfflineMode } = useNetworkStore.getState()
@@ -469,7 +467,12 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 
                 if (itemsRes.data) {
                     setItems(itemsRes.data)
-                    await CacheUtil.set(`offline_checklist_items_${tripId}`, itemsRes.data)
+                    // 명시적 다운로드 정책에 따라 자동 저장은 제거
+                    
+                    // 이미 다운로드된 여행이라면 백그라운드에서 전체 데이터 동기화
+                    if (bundle) {
+                        DownloadService.downloadTrip(tripId!)
+                    }
                     
                     const itemIds = itemsRes.data.map((i: any) => i.id)
                     if (itemIds.length > 0) {
@@ -479,7 +482,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                             .in('item_id', itemIds)
                         if (checks) {
                             setUserChecks(checks)
-                            await CacheUtil.set(`offline_checklist_checks_${tripId}`, checks)
+                            // 명시적 다운로드 정책에 따라 자동 저장은 제거
                         }
                     }
 

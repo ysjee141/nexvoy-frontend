@@ -17,6 +17,10 @@ import { ExchangeService } from '@/services/ExternalApiService'
 import { CacheUtil } from '@/utils/cache'
 import { NotificationService } from '@/services/NotificationService'
 import { DownloadService } from '@/services/DownloadService'
+<<<<<<< HEAD
+=======
+import { Download, CloudDownload, CloudCheck, Loader2 } from 'lucide-react'
+>>>>>>> feature/caching-162-offline-download
 import TripDetailSkeleton from './TripDetailSkeleton'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -91,6 +95,8 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
     const [timeDisplayMode, setTimeDisplayMode] = useState<'local' | 'kst' | 'both'>('local')
     const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | null>(null)
     const { isOnline } = useNetworkStore()
+    const [isDownloaded, setIsDownloaded] = useState(false)
+    const [isDownloading, setIsDownloading] = useState(false)
 
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
     const [editingPlan, setEditingPlan] = useState<any>(null)
@@ -175,11 +181,13 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
 
     const fetchTrip = useCallback(async () => {
         if (!tripId) return
+
         if (isOffline) {
             const bundle = await DownloadService.getBundle(tripId)
             if (bundle?.trip) setTrip(bundle.trip)
             return
         }
+
         const { data } = await supabase.from('trips').select('*').eq('id', tripId).single()
         if (data) setTrip(data)
     }, [tripId, supabase, isOffline])
@@ -195,16 +203,19 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 return
             }
 
-            // 1. Load from cache first
+            // 1. 캐시에서 로드 (깜빡임 방지 / Fallback)
             const cachedPlans = await CacheUtil.get<any[]>(`offline_plans_${tripId}`)
-            if (cachedPlans) {
+            if (cachedPlans && plans.length === 0) {
                 setPlans(cachedPlans)
                 setIsLoading(false)
             }
 
-            // 2. Network check
+            // 2. 네트워크 확인
             const { isOfflineMode } = useNetworkStore.getState()
             if (!isOnline || isOfflineMode) {
+                setIsLoading(false)
+                return
+            }
                 setIsLoading(false)
                 return
             }
@@ -217,8 +228,13 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
 
             if (data && !error) {
                 setPlans(data)
-                await CacheUtil.set(`offline_plans_${tripId}`, data)
+                // 명시적 다운로드 정책에 따라 자동 저장은 제거하고 알림만 예약
                 NotificationService.scheduleOfflineReminders(data)
+                
+                // 이미 다운로드된 여행이라면 백그라운드에서 최신 데이터로 동기화
+                if (bundle) {
+                    DownloadService.downloadTrip(tripId)
+                }
             } else {
                 throw new Error("Failed to fetch")
             }
@@ -227,7 +243,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         } finally {
             setIsLoading(false)
         }
-    }, [tripId, supabase, isOnline])
+    }, [tripId, supabase, isOnline, plans.length])
 
     const fetchUserRole = useCallback(async () => {
         if (!tripId) return
@@ -293,6 +309,21 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
     const handlePlanDetail = (plan: any) => {
         setSelectedPlanForDetail(plan)
         setIsDetailModalOpen(true)
+    }
+
+    const handleDownload = async () => {
+        if (!tripId || isDownloading) return
+        
+        setIsDownloading(true)
+        const success = await DownloadService.downloadTrip(tripId)
+        setIsDownloading(false)
+        
+        if (success) {
+            setIsDownloaded(true)
+            alert('여행 정보가 성공적으로 다운로드되었습니다. 오프라인에서도 확인할 수 있습니다!')
+        } else {
+            alert('다운로드에 실패했습니다. 네트워크 상태를 확인해 주세요.')
+        }
     }
 
     // 24시간 이내 가장 가까운 일정 계산
@@ -385,6 +416,31 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                             disabled={!isOnline}
                         >
                             <UserPlus size={16} /> <span>동행자</span>
+                        </button>
+
+                        <button
+                            onClick={handleDownload}
+                            className={css({
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                bg: isDownloaded ? 'rgba(46, 196, 182, 0.05)' : 'white',
+                                color: isDownloaded ? 'brand.primary' : 'brand.secondary',
+                                px: '12px', h: '42px',
+                                borderRadius: '16px', fontWeight: '700', fontSize: '13px',
+                                border: '1px solid', borderColor: isDownloaded ? 'brand.primary' : 'brand.border',
+                                whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' },
+                                _active: { transform: 'scale(0.92)' },
+                                flex: 1
+                            })}
+                        >
+                            {isDownloading ? (
+                                <Loader2 size={16} className={css({ animation: 'spin 1s linear infinite' })} />
+                            ) : isDownloaded ? (
+                                <CloudCheck size={16} />
+                            ) : (
+                                <CloudDownload size={16} />
+                            )}
+                            <span>{isDownloading ? '다운로드 중' : isDownloaded ? '다운로드됨' : '다운로드'}</span>
                         </button>
                         {userRole === 'owner' && (
                             <button
