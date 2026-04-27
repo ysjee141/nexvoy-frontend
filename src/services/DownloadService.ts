@@ -67,7 +67,7 @@ export const DownloadService = {
                 
                 if (items) {
                     checklistItems = items
-                    const itemIds = items.map(i => i.id)
+                    const itemIds = items.map((i: any) => i.id)
                     if (itemIds.length > 0) {
                         const { data: checks } = await supabase
                             .from('checklist_item_user_checks')
