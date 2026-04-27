@@ -107,6 +107,50 @@ export const AuthService = {
   },
 
   /**
+   * 로그인된 상태에서 구글 계정 연동을 시작합니다.
+   * /api/auth/google?mode=link 로 리다이렉트하여 PKCE 흐름을 서버에서 처리합니다.
+   */
+  linkGoogleAccount(): void {
+    if (typeof window !== 'undefined') {
+      const isNative = Capacitor.isNativePlatform()
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+      const base = isNative ? appUrl : ''
+      window.location.href = `${base}/api/auth/google?mode=link`
+    }
+  },
+
+  /**
+   * 구글 계정 연동을 해제합니다.
+   * Supabase native unlinkIdentity API를 사용합니다.
+   */
+  async unlinkGoogleAccount(): Promise<void> {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('로그인이 필요합니다.')
+
+    const googleIdentity = user.identities?.find((id: any) => id.provider === 'google')
+    if (!googleIdentity) throw new Error('연동된 구글 계정이 없습니다.')
+
+    const { error } = await supabase.auth.unlinkIdentity(googleIdentity)
+    if (error) throw new Error(error.message)
+  },
+
+  /**
+   * 카카오 계정 연동을 해제합니다.
+   * 커스텀 API Route(/api/auth/unlink-kakao)를 호출하여 서버 측에서 처리합니다.
+   */
+  async unlinkKakaoAccount(): Promise<void> {
+    const res = await fetch('/api/auth/unlink-kakao', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    })
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body?.error ?? '카카오 연동 해제 중 오류가 발생했습니다.')
+    }
+  },
+
+  /**
    * 카카오 OAuth 콜백에서 인가 코드를 받아 Supabase 세션으로 교환합니다.
    * Edge Function `handle-kakao-oauth`를 호출합니다.
    */

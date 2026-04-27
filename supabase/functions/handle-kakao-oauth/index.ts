@@ -76,7 +76,7 @@ Deno.serve(async (req: Request) => {
       userId = currentUser.id;
       finalEmail = currentUser.email;
       await supabaseAdmin.auth.admin.updateUserById(userId, { 
-        app_metadata: { kakao_id: kakaoId, provider: 'kakao' }, 
+        app_metadata: { ...currentUser.app_metadata, kakao_id: kakaoId }, 
         user_metadata: { ...currentUser.user_metadata, kakao_id: kakaoId } 
       });
     } else {

@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
     const { searchParams, origin } = new URL(request.url)
     const platform = searchParams.get('platform')
+    const mode = searchParams.get('mode') // 'link' | null
     const cookieStore = await cookies()
 
     const supabase = createServerClient(
@@ -33,6 +34,11 @@ export async function GET(request: Request) {
     }
     if (nextUrl) {
         callbackUrl.searchParams.set('next', nextUrl)
+    }
+    // 연동 모드: 콜백 완료 후 프로필 페이지로 복귀하도록 next 파라미터 설정
+    if (mode === 'link') {
+        callbackUrl.searchParams.set('mode', 'link')
+        callbackUrl.searchParams.set('provider', 'google')
     }
 
     // 서버에서 signInWithOAuth 호출 → PKCE verifier가 서버 쿠키에 안전하게 저장됨
