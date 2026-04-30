@@ -23,7 +23,9 @@ export default function WithdrawalPage() {
 
     useEffect(() => {
         const fetchStats = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { user: networkUser } } = await supabase.auth.getUser()
+            const user = networkUser || await CacheUtil.getAuthUser()
+            
             if (!user) {
                 router.push('/login')
                 return

@@ -48,31 +48,42 @@ function ProfileContent() {
     const searchParams = useSearchParams()
 
     useEffect(() => {
+        if (searchParams.get('openDownloads') === 'true') {
+            setIsOfflineModalOpen(true)
+        }
+    }, [searchParams])
+
+    useEffect(() => {
         const fetchData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
+            // 1. 서버 세션 확인 (네트워크 연결된 경우)
+            const { data: { user: networkUser } } = await supabase.auth.getUser()
+            
+            // 2. 서버 세션이 없으면 오프라인 캐시 확인
+            const currentUser = networkUser || await CacheUtil.getAuthUser()
+            
+            if (!currentUser) {
                 router.push('/login')
                 return
             }
-            setUser(user)
+            setUser(currentUser)
 
             // 프로필 가져오기
             const { data: profileData } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', user.id)
+                .eq('id', currentUser.id)
                 .single()
 
             if (profileData) {
                 setProfile(profileData)
-                setNickname(profileData.nickname || user.email?.split('@')[0] || '')
+                setNickname(profileData.nickname || currentUser.email?.split('@')[0] || '')
             }
 
             // 통계 가져오기
             const { data: trips } = await supabase
                 .from('trips')
                 .select('id, start_date, end_date')
-                .eq('user_id', user.id)
+                .eq('user_id', currentUser.id)
 
             const allTrips = trips || []
             const tripIds = allTrips.map((t: any) => t.id)

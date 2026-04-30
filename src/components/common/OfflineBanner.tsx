@@ -26,21 +26,6 @@ export default function OfflineBanner() {
         LifecycleService.initialize()
     }, [initializeNetworkListener])
 
-    const handleSwitchToOffline = () => {
-        setOfflineMode(true)
-        
-        // 현재 경로에 따라 오프라인 전용 페이지로 전환
-        if (pathname.includes('/trips/detail/')) {
-            const id = pathname.split('/').filter(Boolean).pop()
-            router.push(`/offline/trips/detail/?id=${id}&tab=plans`)
-        } else if (pathname.includes('/trips/checklist/')) {
-            const id = pathname.split('/').filter(Boolean).pop()
-            router.push(`/offline/trips/detail/?id=${id}&tab=checklist`)
-        } else {
-            alert('오프라인 모드가 활성화되었습니다. 다운로드된 여행 정보를 확인하실 수 있습니다.')
-        }
-    }
-
     if (!mounted || (isOnline && !isOfflineMode)) return null
 
     return (
@@ -66,29 +51,6 @@ export default function OfflineBanner() {
                 <WifiOff size={16} />
                 {isOfflineMode ? '현재 오프라인 모드로 동작 중입니다.' : '네트워크 연결이 끊어졌습니다.'}
             </div>
-            
-            {/* 네이티브 환경이고, 아직 오프라인 모드가 아니며, 상세/체크리스트 페이지인 경우 버튼 노출 */}
-            {!isOfflineMode && !isOnline && isNative && (pathname.includes('/trips/detail/') || pathname.includes('/trips/checklist/')) && (
-                <button
-                    onClick={handleSwitchToOffline}
-                    className={css({
-                        mt: '4px',
-                        bg: 'white',
-                        color: 'brand.error',
-                        border: 'none',
-                        px: '16px',
-                        py: '6px',
-                        borderRadius: '20px',
-                        fontSize: '12px',
-                        fontWeight: '800',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s',
-                        _active: { transform: 'scale(0.95)', bg: '#f0f0f0' }
-                    })}
-                >
-                    오프라인 모드 전환
-                </button>
-            )}
 
             {isOfflineMode && isOnline && (
                 <button

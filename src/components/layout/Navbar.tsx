@@ -8,6 +8,7 @@ import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
 import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft, ChevronDown, MessageSquareText } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
+import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CacheUtil } from '@/utils/cache'
 import TripSwitcherModal from '@/components/trips/TripSwitcherModal'
 import { useBugReport } from '@/hooks/useBugReport'
@@ -50,6 +51,8 @@ export default function Navbar() {
         isVisible: isBugReportVisible 
     } = useBugReport()
 
+    const { isOnline } = useNetworkStore()
+
     useEffect(() => {
         const fetchUser = async () => {
             // 1. 캐시에서 먼저 로드 (오프라인/즉각 응답)
@@ -58,30 +61,34 @@ export default function Navbar() {
                 setUser(cachedUser)
             }
 
-            // 2. 서버에서 최신 정보 세션 동기화 (SWR)
-            const { data: { user: networkUser } } = await supabase.auth.getUser()
-            setUser(networkUser)
-            if (networkUser) {
-                await CacheUtil.setAuthUser(networkUser)
-            } else {
-                await CacheUtil.clear()
+            // 2. 서버에서 최신 정보 세션 동기화 (온라인일 때만)
+            if (isOnline) {
+                const { data: { user: networkUser } } = await supabase.auth.getUser()
+                setUser(networkUser)
+                if (networkUser) {
+                    await CacheUtil.setAuthUser(networkUser)
+                } else {
+                    // 온라인인데 유저가 없다면 세션 만료로 간주하고 캐시 정리
+                    await CacheUtil.clear()
+                }
             }
             setLoading(false)
         }
         fetchUser()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: any, session: any) => {
             const currentUser = session?.user ?? null
             setUser(currentUser)
             if (currentUser) {
                 await CacheUtil.setAuthUser(currentUser)
-            } else {
+            } else if (event === 'SIGNED_OUT') {
+                // 명시적 로그아웃 시에만 캐시 정리
                 await CacheUtil.clear()
             }
         })
 
         return () => subscription.unsubscribe()
-    }, [supabase])
+    }, [supabase, isOnline])
 
     // 페이지 이동 시 모바일 타이틀 리셋
     useEffect(() => {
