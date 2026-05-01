@@ -860,7 +860,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     </div>
 
                     {/* PC에서만 보이는 우측 버튼 */}
-                    {isOnline && (
+                    {isOnline && !isOffline && (
                         <div className={css({ display: { base: 'none', sm: 'flex' }, gap: '8px' })}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
@@ -1151,7 +1151,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     {totalItems === 0 && <div className={css({ display: { base: 'none', sm: 'block' } })}></div>}
 
                     {/* 액션 및 필터 컨트롤 그룹 (주로 모바일/PC 액션) */}
-                    {isOnline && (
+                    {isOnline && !isOffline && (
                         <div className={css({ 
                             display: 'flex', 
                             flexDirection: { base: 'column', sm: 'row' },
@@ -1375,7 +1375,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         <p className={css({ fontSize: '19px', fontWeight: '700', mb: '12px', color: '#333', letterSpacing: '-0.5px' })}>
                             여행을 완벽하게 해줄 준비물을 등록해 보세요! ✨
                         </p>
-                        {isOnline && (
+                        {isOnline && !isOffline && (
                             <p className={css({ fontSize: '15px', color: '#717171', lineHeight: '1.6', wordBreak: 'keep-all', maxW: '320px', mx: 'auto' })}>
                                 체크리스트로 꼼꼼하게 챙기면 여행의 설렘이 두 배가 됩니다. 🧳
                             </p>

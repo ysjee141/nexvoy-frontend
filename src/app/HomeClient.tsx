@@ -260,7 +260,13 @@ export default function HomeClient() {
     if (!isOnline) return;
 
     try {
-        const { data: { user: networkUser } } = await supabase.auth.getUser()
+        const { data: { user: networkUser }, error } = await supabase.auth.getUser()
+        if (error) {
+            console.warn('HomeClient fetch error:', error)
+            // 에러 발생 시(네트워크 등) 로그인 처리하지 않고 기존 상태 유지 (캐시에 의존)
+            setLoading(false)
+            return
+        }
         if (!networkUser) {
             setUser(null)
             setLoading(false)

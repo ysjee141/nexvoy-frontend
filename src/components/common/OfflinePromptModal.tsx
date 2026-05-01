@@ -35,7 +35,7 @@ export default function OfflinePromptModal() {
             const id = pathname.split('/').filter(Boolean).pop()
             router.push(`/offline/trips/detail/?id=${id}&tab=checklist`)
         } else {
-            router.push('/profile?openDownloads=true')
+            router.push('/offline')
         }
     }
 

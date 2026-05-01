@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { css } from 'styled-system/css'
 import { Download, Trash2, X, MapPin, Calendar, ExternalLink, CloudCheck } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { DownloadService, DownloadedTripMetadata } from '@/services/DownloadService'
 
 interface DownloadedTripsModalProps {
@@ -11,6 +12,7 @@ interface DownloadedTripsModalProps {
 }
 
 export default function DownloadedTripsModal({ isOpen, onClose }: DownloadedTripsModalProps) {
+    const router = useRouter()
     const [trips, setTrips] = useState<DownloadedTripMetadata[]>([])
     const [isLoading, setIsLoading] = useState(true)
 
@@ -94,9 +96,14 @@ export default function DownloadedTripsModal({ isOpen, onClose }: DownloadedTrip
                             {trips.map(trip => (
                                 <div 
                                     key={trip.id}
+                                    onClick={() => {
+                                        onClose()
+                                        router.push(`/offline/trips/detail?id=${trip.id}&tab=plans`)
+                                    }}
                                     className={css({
                                         p: '16px', borderRadius: '20px', border: '1px solid #F0F0F0',
                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        cursor: 'pointer',
                                         transition: 'all 0.2s', _hover: { bg: '#FAFAFA' }
                                     })}
                                 >

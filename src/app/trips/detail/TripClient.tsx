@@ -371,12 +371,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                         >
                             한국 시간
                         </button>
-                        <button
-                            onClick={() => setTimeDisplayMode('both')}
-                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'both' ? '800' : '600', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'both' ? 'brand.primary' : 'brand.secondary', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
-                        >
-                            동시 표기
-                        </button>
                     </div>
 
                     <div className={css({ 
@@ -387,68 +381,71 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                             <CustomTimeDropdown timeDisplayMode={timeDisplayMode} setTimeDisplayMode={setTimeDisplayMode} />
                         </div>
 
-                        <button
-                            onClick={() => setIsCollaboratorModalOpen(true)}
-                             className={css({
-                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                 bg: 'white', color: 'brand.secondary',
-                                 px: '12px', h: '42px',
-                                 borderRadius: '16px', fontWeight: '700', fontSize: '13px',
-                                 border: '1px solid', borderColor: 'brand.border', whiteSpace: 'nowrap',
-                                 transition: 'all 0.2s',
-                                 _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' }, _active: { transform: 'scale(0.92)' },
-                                 opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
-                                 flex: 1
-                             })}
-                            disabled={!isOnline}
-                        >
-                            <UserPlus size={16} /> <span>동행자</span>
-                        </button>
+                        {!isOffline && (
+                            <>
+                                <button
+                                    onClick={() => setIsCollaboratorModalOpen(true)}
+                                    className={css({
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        bg: 'white', color: 'brand.secondary',
+                                        px: '12px', h: '42px',
+                                        borderRadius: '16px', fontWeight: '700', fontSize: '13px',
+                                        border: '1px solid', borderColor: 'brand.border', whiteSpace: 'nowrap',
+                                        transition: 'all 0.2s',
+                                        _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' }, _active: { transform: 'scale(0.92)' },
+                                        opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
+                                        flex: 1
+                                    })}
+                                    disabled={!isOnline}
+                                >
+                                    <UserPlus size={16} /> <span>동행자</span>
+                                </button>
 
-                        <button
-                            onClick={handleDownload}
-                            className={css({
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                bg: isDownloaded ? 'rgba(46, 196, 182, 0.05)' : 'white',
-                                color: isDownloaded ? 'brand.primary' : 'brand.secondary',
-                                px: '12px', h: '42px',
-                                borderRadius: '16px', fontWeight: '700', fontSize: '13px',
-                                border: '1px solid', borderColor: isDownloaded ? 'brand.primary' : 'brand.border',
-                                whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' },
-                                _active: { transform: 'scale(0.92)' },
-                                flex: 1
-                            })}
-                        >
-                            {isDownloading ? (
-                                <Loader2 size={16} className={css({ animation: 'spin 1s linear infinite' })} />
-                            ) : isDownloaded ? (
-                                <CloudCheck size={16} />
-                            ) : (
-                                <CloudDownload size={16} />
-                            )}
-                            <span>{isDownloading ? '다운로드 중' : isDownloaded ? '다운로드됨' : '다운로드'}</span>
-                        </button>
-                        {userRole === 'owner' && (
-                            <button
-                                onClick={() => setIsShareModalOpen(true)}
-                                 className={css({
-                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                     bg: 'white', color: 'brand.secondary',
-                                     px: '12px', h: '42px',
-                                     borderRadius: '16px', fontWeight: '700', fontSize: '13px',
-                                     border: '1px solid', borderColor: 'brand.border', whiteSpace: 'nowrap',
-                                     transition: 'all 0.2s',
-                                     _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' }, _active: { transform: 'scale(0.92)' },
-                                     opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
-                                     flex: 1
-                                 })}
-                                disabled={!isOnline}
-                            >
-                                <Share2 size={16} /> <span>공유</span>
-                            </button>
+                                <button
+                                    onClick={handleDownload}
+                                    className={css({
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                        bg: isDownloaded ? 'rgba(46, 196, 182, 0.05)' : 'white',
+                                        color: isDownloaded ? 'brand.primary' : 'brand.secondary',
+                                        px: '12px', h: '42px',
+                                        borderRadius: '16px', fontWeight: '700', fontSize: '13px',
+                                        border: '1px solid', borderColor: isDownloaded ? 'brand.primary' : 'brand.border',
+                                        whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                        _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' },
+                                        _active: { transform: 'scale(0.92)' },
+                                        flex: 1
+                                    })}
+                                >
+                                    {isDownloading ? (
+                                        <Loader2 size={16} className={css({ animation: 'spin 1s linear infinite' })} />
+                                    ) : isDownloaded ? (
+                                        <CloudCheck size={16} />
+                                    ) : (
+                                        <CloudDownload size={16} />
+                                    )}
+                                    <span>{isDownloading ? '다운로드 중' : isDownloaded ? '다운로드됨' : '다운로드'}</span>
+                                </button>
+                                {userRole === 'owner' && (
+                                    <button
+                                        onClick={() => setIsShareModalOpen(true)}
+                                        className={css({
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                                            bg: 'white', color: 'brand.secondary',
+                                            px: '12px', h: '42px',
+                                            borderRadius: '16px', fontWeight: '700', fontSize: '13px',
+                                            border: '1px solid', borderColor: 'brand.border', whiteSpace: 'nowrap',
+                                            transition: 'all 0.2s',
+                                            _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' }, _active: { transform: 'scale(0.92)' },
+                                            opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
+                                            flex: 1
+                                        })}
+                                        disabled={!isOnline}
+                                    >
+                                        <Share2 size={16} /> <span>공유</span>
+                                    </button>
+                                )}
+                            </>
                         )}
-
                     </div>
                     
                     {/* PC 전용 일정 추가 버튼 */}
@@ -486,7 +483,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     exchangeRates={exchangeRates}
                     activeDropdown={activeDropdown}
                     setActiveDropdown={setActiveDropdown}
-                    userRole={userRole}
+                    userRole={isOffline ? null : userRole}
                     timeDisplayMode={timeDisplayMode}
                     formatLocalTime={formatLocalTime}
                     formatKstTime={formatKstTime}
@@ -504,7 +501,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     formatLocalTime={formatLocalTime}
                     formatKstTime={formatKstTime}
                     timeDisplayMode={timeDisplayMode}
-                    userRole={userRole}
+                    userRole={isOffline ? null : userRole}
                     onClose={() => setIsDetailModalOpen(false)}
                     onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}

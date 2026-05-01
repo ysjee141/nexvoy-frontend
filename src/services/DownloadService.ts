@@ -98,6 +98,12 @@ export const DownloadService = {
 
             await CacheUtil.set(`${BUNDLE_PREFIX}${tripId}`, bundle)
 
+            // 방금 저장한 번들이 정상적으로 읽히는지 (용량 초과 등으로 인한 silent fail 검증)
+            const verify = await CacheUtil.get(`${BUNDLE_PREFIX}${tripId}`)
+            if (!verify) {
+                throw new Error('용량 초과 또는 캐시 저장 실패로 번들이 저장되지 않았습니다.')
+            }
+
             // 6. 레지스트리 업데이트
             await this.addToRegistry({
                 id: trip.id,

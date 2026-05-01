@@ -63,12 +63,16 @@ export default function Navbar() {
 
             // 2. 서버에서 최신 정보 세션 동기화 (온라인일 때만)
             if (isOnline) {
-                const { data: { user: networkUser } } = await supabase.auth.getUser()
-                setUser(networkUser)
-                if (networkUser) {
+                const { data: { user: networkUser }, error } = await supabase.auth.getUser()
+                
+                if (error) {
+                    console.warn('Navbar fetchUser error:', error)
+                } else if (networkUser) {
+                    setUser(networkUser)
                     await CacheUtil.setAuthUser(networkUser)
                 } else {
-                    // 온라인인데 유저가 없다면 세션 만료로 간주하고 캐시 정리
+                    // 온라인이며 에러가 없고 유저도 없다면 세션 만료로 간주하고 캐시 정리
+                    setUser(null)
                     await CacheUtil.clear()
                 }
             }
