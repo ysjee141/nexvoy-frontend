@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
         // Frankfurter API: 1 {from} = ? KRW
         const res = await fetch(
             `https://api.frankfurter.app/latest?from=${from}&to=KRW`,
-            { next: { revalidate: 3600 } } // 1시간 캐싱
+            { next: { revalidate: 86400 } } // 1일(24시간) 캐싱
         )
 
         if (!res.ok) {

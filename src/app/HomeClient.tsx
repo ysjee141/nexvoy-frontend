@@ -20,6 +20,7 @@ import { isBetaTester } from '@/constants/testers'
 import TesterNoticeModal from '@/components/layout/TesterNoticeModal'
 import Skeleton from '@/components/ui/Skeleton'
 import { useUIStore } from '@/stores/useUIStore'
+import { useNetworkStore } from '@/stores/useNetworkStore'
 
 // ── 주요 기능 카드 (Guide에서 이식) ──
 const FEATURES = [
@@ -252,58 +253,71 @@ export default function HomeClient() {
     setHasAnyTrip(allTrips.length > 0)
   }, [])
 
+  const { isOnline } = useNetworkStore()
+
   const fetchNetworkBackground = useCallback(async () => {
-    const { data: { user: networkUser } } = await supabase.auth.getUser()
-    if (!networkUser) {
-      setUser(null)
-      setLoading(false)
-      return
-    }
-    setUser(networkUser)
+    // 오프라인 상태라면 네트워크 동기화 스킵 (기존 캐시 유지)
+    if (!isOnline) return;
 
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('nickname')
-      .eq('id', networkUser.id)
-      .single()
-
-    setNickname(profile?.nickname || networkUser.email?.split('@')[0] || '여행자')
-    if (profile) {
-      await CacheUtil.setProfile(profile)
-    }
-    setShowNicknamePrompt(!profile?.nickname)
-
-    // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
-    const { data: memberTripData } = await supabase
-      .from('trip_members')
-      .select('trip_id')
-      .eq('user_id', networkUser.id)
-      .eq('status', 'accepted')
-
-    const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
-
-    // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
-    let query = supabase
-      .from('trips')
-      .select('*, checklists(id, checklist_items(id, is_checked))')
-
-    if (memberTripIds.length > 0) {
-      query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
-    } else {
-      query = query.eq('user_id', networkUser.id)
-    }
-
-    const { data: trips } = await query.order('start_date', { ascending: true })
-
-    const allTrips = trips || []
-    processTrips(allTrips)
-    
     try {
-      await CacheUtil.set('offline_home_all_trips', allTrips)
+        const { data: { user: networkUser }, error } = await supabase.auth.getUser()
+        if (error) {
+            console.warn('HomeClient fetch error:', error)
+            // 에러 발생 시(네트워크 등) 로그인 처리하지 않고 기존 상태 유지 (캐시에 의존)
+            setLoading(false)
+            return
+        }
+        if (!networkUser) {
+            setUser(null)
+            setLoading(false)
+            return
+        }
+        setUser(networkUser)
+        // 오프라인 UI 판정을 위해 유저 정보 캐싱
+        await CacheUtil.setAuthUser(networkUser)
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('nickname')
+            .eq('id', networkUser.id)
+            .single()
+
+        setNickname(profile?.nickname || networkUser.email?.split('@')[0] || '여행자')
+        if (profile) {
+            await CacheUtil.setProfile(profile)
+        }
+        setShowNicknamePrompt(!profile?.nickname)
+
+        // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
+        const { data: memberTripData } = await supabase
+            .from('trip_members')
+            .select('trip_id')
+            .eq('user_id', networkUser.id)
+            .eq('status', 'accepted')
+
+        const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
+
+        // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
+        let query = supabase
+            .from('trips')
+            .select('*, checklists(id, checklist_items(id, is_checked))')
+
+        if (memberTripIds.length > 0) {
+            query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
+        } else {
+            query = query.eq('user_id', networkUser.id)
+        }
+
+        const { data: trips } = await query.order('start_date', { ascending: true })
+
+        const allTrips = trips || []
+        processTrips(allTrips)
     } catch (e) {
-      console.warn('Cache save failed', e)
+        console.warn('Network sync failed, keeping local/cached state', e)
+    } finally {
+        setLoading(false)
     }
-  }, [supabase, processTrips])
+  }, [supabase, processTrips, isOnline])
 
   // 인증 상태 실시간 감지 (로그인 직후 세션 반영 대응)
   useEffect(() => {
@@ -337,15 +351,6 @@ export default function HomeClient() {
             setNickname(cachedProfile.nickname)
         } else {
             setNickname(localUser.email?.split('@')[0] || '여행자')
-        }
-        try {
-          // 캐시된 목록 즉시 적용
-          const cachedTrips = await CacheUtil.get<any[]>('offline_home_all_trips')
-          if (cachedTrips) {
-            processTrips(cachedTrips)
-          }
-        } catch (e) {
-          console.warn('Cache load failed', e)
         }
       }
       // 세션을 확인했든 못 했든 초기 로딩 해제 (화면 진입)

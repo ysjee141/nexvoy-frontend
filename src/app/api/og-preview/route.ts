@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
                 'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
             },
             signal: AbortSignal.timeout(5000),
+            next: { revalidate: 3600 }
         })
 
         if (!res.ok) {
