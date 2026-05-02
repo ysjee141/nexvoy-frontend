@@ -7,6 +7,7 @@ import { analytics } from '@/services/AnalyticsService'
 import { css } from 'styled-system/css'
 import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle, LayoutGrid, List, Download, Lock } from 'lucide-react'
 import Link from 'next/link'
+import { motion, useAnimation, PanInfo, AnimatePresence } from 'framer-motion'
 import TemplateModal from '@/components/trips/TemplateModal'
 import { CacheUtil } from '@/utils/cache'
 import { DownloadService } from '@/services/DownloadService'
@@ -37,23 +38,23 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '6px',
-                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px',
-                    px: '16px', h: '42px', fontSize: '13px', fontWeight: '700', color: '#222', cursor: 'pointer',
-                    transition: 'all 0.2s', _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                    bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px',
+                    px: '16px', h: '42px', fontSize: '13px', fontWeight: '700', color: 'brand.ink', cursor: 'pointer',
+                    transition: 'all 0.2s', _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.ink' },
                     _active: { transform: 'scale(0.98)' }
                 })}
             >
                 {selected.icon}
                 <span className={css({ display: { base: 'none', sm: 'inline' } })}>{selected.label}</span>
-                <ChevronDown size={14} className={css({ ml: '2px', color: '#888' })} />
+                <ChevronDown size={14} className={css({ ml: '2px', color: 'brand.muted' })} />
             </button>
             {isOpen && (
                 <>
                     <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
                     <div className={css({
                         position: 'absolute', top: '100%', left: 0, mt: '4px',
-                        bg: 'white', border: '1px solid #eee', borderRadius: '12px',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '130px',
+                        bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
+                        boxShadow: 'airbnbHover', zIndex: 11, minW: '130px',
                         overflow: 'hidden'
                     })}>
                         {options.map(opt => (
@@ -62,10 +63,10 @@ const SortDropdown = ({ sortBy, setSortBy }: any) => {
                                 onClick={() => { setSortBy(opt.value); setIsOpen(false); }}
                                 className={css({
                                     display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
-                                    bg: sortBy === opt.value ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
-                                    color: sortBy === opt.value ? 'brand.primary' : '#2C3A47',
+                                    bg: sortBy === opt.value ? 'brand.primary/5' : 'transparent',
+                                    color: sortBy === opt.value ? 'brand.primary' : 'brand.body',
                                     fontWeight: sortBy === opt.value ? '700' : '500',
-                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
+                                    border: 'none', cursor: 'pointer', _hover: { bg: 'bg.surfaceSoft' }
                                 })}
                             >
                                 {opt.icon}
@@ -94,25 +95,25 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '6px',
-                    bg: 'white', border: '1px solid #DDDDDD', borderRadius: '12px',
+                    bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
                     px: { base: '12px', sm: '16px' }, 
                     h: '42px', 
-                    fontSize: '13px', fontWeight: '700', color: '#222', cursor: 'pointer',
-                    transition: 'all 0.2s', _hover: { bg: '#F7F7F7', borderColor: '#222' },
+                    fontSize: '13px', fontWeight: '700', color: 'brand.ink', cursor: 'pointer',
+                    transition: 'all 0.2s', _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.ink' },
                     _active: { transform: 'scale(0.98)' }
                 })}
             >
                 {selected.icon}
                 <span className={css({ display: { base: 'none', sm: 'inline' } })}>{selected.label}</span>
-                <ChevronDown size={14} className={css({ ml: '2px', color: '#888' })} />
+                <ChevronDown size={14} className={css({ ml: '2px', color: 'brand.muted' })} />
             </button>
             {isOpen && (
                 <>
                     <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
                     <div className={css({
                         position: 'absolute', top: '100%', left: 0, mt: '4px',
-                        bg: 'white', border: '1px solid #eee', borderRadius: '12px',
-                        boxShadow: '0 4px 16px rgba(0,0,0,0.1)', zIndex: 11, minW: '140px',
+                        bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
+                        boxShadow: 'airbnbHover', zIndex: 11, minW: '140px',
                         overflow: 'hidden'
                     })}>
                         {options.map(opt => (
@@ -121,10 +122,10 @@ const CustomViewDropdown = ({ groupBy, setGroupBy }: any) => {
                                 onClick={() => { setGroupBy(opt.value); setIsOpen(false); }}
                                 className={css({
                                     display: 'flex', alignItems: 'center', gap: '8px', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
-                                    bg: groupBy === opt.value ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
-                                    color: groupBy === opt.value ? 'brand.primary' : '#2C3A47',
+                                    bg: groupBy === opt.value ? 'brand.primary/5' : 'transparent',
+                                    color: groupBy === opt.value ? 'brand.primary' : 'brand.body',
                                     fontWeight: groupBy === opt.value ? '700' : '500',
-                                    border: 'none', cursor: 'pointer', _hover: { bg: '#f9f9f9' }
+                                    border: 'none', cursor: 'pointer', _hover: { bg: 'bg.surfaceSoft' }
                                 })}
                             >
                                 {opt.icon}
@@ -216,8 +217,8 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                     px: '14px', py: '8px', borderRadius: '20px',
                     fontSize: '13px', fontWeight: '700',
                     flexShrink: 0,
-                    bg: filterMode === 'all' ? '#222' : '#F1F3F4',
-                    color: filterMode === 'all' ? 'white' : '#666',
+                    bg: filterMode === 'all' ? 'brand.ink' : 'bg.softCotton',
+                    color: filterMode === 'all' ? 'white' : 'brand.muted',
                     border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                 })}
             >
@@ -232,8 +233,8 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                     px: '14px', py: '8px', borderRadius: '20px',
                     fontSize: '13px', fontWeight: '700',
                     flexShrink: 0,
-                    bg: filterMode === 'me' ? 'brand.primary' : '#F1F3F4',
-                    color: filterMode === 'me' ? 'white' : '#666',
+                    bg: filterMode === 'me' ? 'brand.primary' : 'bg.softCotton',
+                    color: filterMode === 'me' ? 'white' : 'brand.muted',
                     border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                 })}
             >
@@ -249,8 +250,8 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                             display: 'flex', alignItems: 'center', gap: '4px',
                             px: '14px', py: '8px', borderRadius: '20px',
                             fontSize: '13px', fontWeight: '700',
-                            bg: selectedOther ? 'brand.primary' : '#F1F3F4',
-                            color: selectedOther ? 'white' : '#666',
+                            bg: selectedOther ? 'brand.primary' : 'bg.softCotton',
+                            color: selectedOther ? 'white' : 'brand.muted',
                             border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                         })}
                     >
@@ -265,7 +266,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                         <>
                             {/* Backdrop */}
                             <div 
-                                className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' })} 
+                                className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'bg.scrim/40', backdropFilter: 'blur(4px)' })} 
                                 onClick={() => setIsOthersOpen(false)} 
                             />
                             
@@ -291,7 +292,7 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                     pb: { base: 'max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))', sm: 4 },
                                     bg: 'white', 
                                     borderRadius: { base: '24px 24px 0 0', sm: '16px' },
-                                    boxShadow: '0 -4px 30px rgba(0,0,0,0.2)', 
+                                    boxShadow: 'airbnbHover', 
                                     zIndex: 101,
                                     overflow: 'hidden',
                                     animation: { base: 'slideUp 0.3s ease-out', sm: 'fadeIn 0.2s ease-out' }
@@ -306,11 +307,11 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                     cursor: 'ns-resize',
                                     touchAction: 'none' 
                                 })}>
-                                    <div className={css({ w: '40px', h: '5px', bg: '#E0E0E0', borderRadius: '10px' })} />
+                                    <div className={css({ w: '40px', h: '5px', bg: 'brand.hairline', borderRadius: '10px' })} />
                                 </div>
 
-                                <div className={css({ px: '24px', py: '18px', borderBottom: '1px solid #F0F0F0' })}>
-                                    <h3 className={css({ fontSize: '17px', fontWeight: '700', color: '#222' })}>동행자 선택</h3>
+                                <div className={css({ px: '24px', py: '18px', borderBottom: '1px solid', borderColor: 'brand.hairline' })}>
+                                    <h3 className={css({ fontSize: '17px', fontWeight: '700', color: 'brand.ink' })}>동행자 선택</h3>
                                 </div>
                                 
                                 <div className={css({ maxHeight: { base: '60vh', sm: '400px' }, overflowY: 'auto' })}>
@@ -323,15 +324,15 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                                 className={css({
                                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', 
                                                     px: '24px', py: { base: '18px', sm: '14px' }, fontSize: '15px',
-                                                    bg: filterMode === p.user_id ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
-                                                    color: filterMode === p.user_id ? 'brand.primary' : '#444',
+                                                    bg: filterMode === p.user_id ? 'brand.primary/5' : 'transparent',
+                                                    color: filterMode === p.user_id ? 'brand.primary' : 'brand.body',
                                                     fontWeight: filterMode === p.user_id ? '700' : '500',
-                                                    border: 'none', cursor: 'pointer', _hover: { bg: '#F8F9FA' },
+                                                    border: 'none', cursor: 'pointer', _hover: { bg: 'bg.surfaceSoft' },
                                                     transition: 'all 0.15s'
                                                 })}
                                             >
                                                 <span className={css({ display: 'flex', alignItems: 'center', gap: '10px' })}>
-                                                    <div className={css({ w: '8px', h: '8px', borderRadius: '50%', bg: filterMode === p.user_id ? 'brand.primary' : 'transparent', border: filterMode === p.user_id ? 'none' : '1px solid #DDD' })} />
+                                                    <div className={css({ w: '8px', h: '8px', borderRadius: '50%', bg: filterMode === p.user_id ? 'brand.primary' : 'transparent', border: filterMode === p.user_id ? 'none' : '1px solid', borderColor: 'brand.hairline' })} />
                                                     {label}
                                                 </span>
                                                 {filterMode === p.user_id && <Check size={18} className={css({ color: 'brand.primary' })} />}
@@ -343,15 +344,15 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                 <div className={css({ 
                                     p: '16px', 
                                     pb: { base: 'calc(16px + max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom)))', sm: '16px' },
-                                    bg: '#F8F9FA' 
+                                    bg: 'bg.surfaceSoft' 
                                 })}>
                                     <button 
                                         onClick={() => setIsOthersOpen(false)}
                                         className={css({ 
                                             w: '100%', py: '14px', borderRadius: '12px',
-                                            fontSize: '15px', color: '#666', fontWeight: '700', 
-                                            bg: 'white', border: '1px solid #DDD',
-                                            _active: { transform: 'scale(0.98)', bg: '#F0F0F0' } 
+                                            fontSize: '15px', color: 'brand.muted', fontWeight: '700', 
+                                            bg: 'white', border: '1px solid', borderColor: 'brand.hairline',
+                                            _active: { transform: 'scale(0.98)', bg: 'bg.surfaceSoft' } 
                                         })}
                                     >
                                         닫기
@@ -391,6 +392,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const [editingItem, setEditingItem] = useState<any | null>(null)
     const [filterMode, setFilterMode] = useState<'all' | 'me' | string>('all')
     const [sortBy, setSortBy] = useState<'status' | 'alphabetical' | 'latest'>('status')
+    const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
 
     const [showTemplateModal, setShowTemplateModal] = useState(false)
 
@@ -678,43 +680,23 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         const isAssignedToMe = item.assignment_type === 'specific' ? item.assigned_user_id === currentUser?.id : true
         const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline && !isOffline
 
-        // Swipe-to-Action State
-        const [translateX, setTranslateX] = useState(0);
+        const controls = useAnimation();
         const [isSwiping, setIsSwiping] = useState(false);
-        const [swipeLock, setSwipeLock] = useState(false);
-        const startX = useRef(0);
-        const currentX = useRef(0);
-        const handleTouchStart = (e: React.TouchEvent) => {
-            if (typeof window !== 'undefined' && window.innerWidth > 768) return;
-            startX.current = e.touches[0].clientX;
-            setIsSwiping(true);
-        };
 
-        const handleTouchMove = (e: React.TouchEvent) => {
-            if (!isSwiping || (typeof window !== 'undefined' && window.innerWidth > 768)) return;
-            currentX.current = e.touches[0].clientX;
-            const diff = currentX.current - startX.current;
-            
-            // 왼쪽으로만 스와이프 허용 (0 ~ -150px)
-            if (diff < 0) {
-                setTranslateX(Math.max(diff, -150));
-            } else if (swipeLock && diff > 0) {
-                setTranslateX(Math.min(-120 + diff, 0));
-            }
-        };
-
-        const handleTouchEnd = () => {
-            if (typeof window !== 'undefined' && window.innerWidth > 768) return;
+        const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
             setIsSwiping(false);
-            const diff = currentX.current - startX.current;
+            if (typeof window !== 'undefined' && window.innerWidth > 768) return;
 
-            if (diff < -60) {
-                setTranslateX(-120); // 버튼 노출 위치
-                setSwipeLock(true);
+            if (info.offset.x < -60) {
+                controls.start({ x: -120 });
             } else {
-                setTranslateX(0); // 원위치 (bounce 효과는 CSS transition으로 처리)
-                setSwipeLock(false);
+                controls.start({ x: 0 });
             }
+        };
+
+        const handleDragStart = () => {
+            if (typeof window !== 'undefined' && window.innerWidth > 768) return;
+            setIsSwiping(true);
         };
 
         const getAssignedUserLabel = () => {
@@ -726,45 +708,47 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         const assignedUser = item.assignment_type === 'specific' ? getAssignedUserLabel() : null
 
         return (
-            <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'brand.border', bg: 'white' })}>
+            <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'brand.hairlineSoft', bg: 'white' })}>
                 {/* 배경 액션 버튼 (스와이프 시 보임) - 오프라인 모드에서는 숨김 */}
                 {isOnline && !isOffline && (
                     <div className={css({
                         position: 'absolute', top: 0, right: 0, bottom: 0,
                         display: { base: 'flex', sm: 'none' }, // 모바일 전용
-                        alignItems: 'center', gap: '0',
+                        alignItems: 'stretch', gap: '0',
                         zIndex: 1
                     })}>
                         <button
-                            onClick={(e) => { e.stopPropagation(); setEditingItem(item); setTranslateX(0); }}
+                            onClick={(e) => { e.stopPropagation(); setEditingItem(item); controls.start({ x: 0 }); }}
                             className={css({ 
-                                h: '100%', px: '24px', bg: 'brand.primary', color: 'white', 
-                                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                h: '100%', w: '60px', bg: 'brand.primary', color: 'white', 
+                                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer'
                             })}
                         >
-                            <Settings size={20} strokeWidth={2.5} />
+                            <Settings size={22} strokeWidth={2.5} />
                         </button>
                         <button
-                            onClick={(e) => { deleteItem(e, item.id); setTranslateX(0); }}
+                            onClick={(e) => { deleteItem(e, item.id); controls.start({ x: 0 }); }}
                             className={css({ 
-                                h: '100%', px: '24px', bg: '#F43F5E', color: 'white', 
-                                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                h: '100%', w: '60px', bg: 'brand.error', color: 'white', 
+                                border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                cursor: 'pointer'
                             })}
                         >
-                            <Trash2 size={20} strokeWidth={2.5} />
+                            <Trash2 size={22} strokeWidth={2.5} />
                         </button>
                     </div>
                 )}
 
                 {/* 메인 콘텐츠 영역 */}
-                <div
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
-                    style={{ 
-                        transform: `translateX(${translateX}px)`,
-                        transition: isSwiping ? 'none' : 'transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)' // Bounce effect
-                    }}
+                <motion.div
+                    drag={typeof window !== 'undefined' && window.innerWidth <= 768 ? "x" : false}
+                    dragConstraints={{ left: -120, right: 0 }}
+                    dragElastic={0.1}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                    animate={controls}
+                    style={{ touchAction: 'pan-y' }}
                     className={css({
                         display: 'flex',
                         alignItems: 'center',
@@ -773,9 +757,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         bg: 'white',
                         position: 'relative',
                         zIndex: 2,
-                        transition: 'background 0.2s',
-                        _active: { bg: '#F8FAFC' },
-                        _hover: { bg: { base: 'white', sm: '#FBFCFE' } }
+                        transition: isSwiping ? 'none' : 'background 0.2s',
+                        _active: { bg: 'bg.surfaceSoft' },
+                        _hover: { bg: { base: 'white', sm: 'bg.softCotton' } }
                     })}
                 >
                     <div 
@@ -786,13 +770,13 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         <div className={css({ 
                             w: '26px', h: '26px', 
                             border: '2px solid', 
-                            borderColor: status.is_checked ? '#94A3B8' : (status.is_my_checked ? 'brand.primary' : 'brand.border'),
+                            borderColor: status.is_checked ? 'brand.muted' : (status.is_my_checked ? 'brand.primary' : 'brand.hairline'),
                             borderRadius: '8px',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            bg: status.is_checked ? '#94A3B8' : (status.is_my_checked ? 'brand.primary' : 'transparent'),
+                            bg: status.is_checked ? 'brand.muted' : (status.is_my_checked ? 'brand.primary' : 'transparent'),
                             transition: 'all 0.2s',
                             opacity: !canCheck ? 0.3 : 1,
-                            boxShadow: status.is_my_checked ? '0 2px 6px rgba(37, 99, 235, 0.2)' : 'none'
+                            boxShadow: status.is_my_checked ? '0 2px 6px rgba(37, 99, 235, 0.15)' : 'none'
                         })}>
                             {(status.is_checked || status.is_my_checked) && <Check size={18} color="white" strokeWidth={3} />}
                         </div>
@@ -800,9 +784,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '2px' })}>
                             <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
                                 <span className={css({ 
-                                    fontSize: '16px', 
+                                    fontSize: '15px', 
                                     fontWeight: '600', 
-                                    color: status.is_checked ? '#94A3B8' : 'brand.secondary', 
+                                    color: status.is_checked ? 'brand.muted' : 'brand.ink', 
                                     textDecoration: status.is_checked ? 'line-through' : 'none',
                                     transition: 'color 0.2s'
                                 })}>
@@ -813,8 +797,8 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                 {item.assignment_type === 'specific' && (
                                     <span className={css({ 
                                         fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
-                                        bg: isAssignedToMe ? 'rgba(37, 99, 235, 0.05)' : '#F1F5F9',
-                                        color: isAssignedToMe ? 'brand.primary' : '#94A3B8',
+                                        bg: isAssignedToMe ? 'brand.primary/5' : 'bg.softCotton',
+                                        color: isAssignedToMe ? 'brand.primary' : 'brand.muted',
                                         fontWeight: '700',
                                         display: 'flex', alignItems: 'center', gap: '4px'
                                     })}>
@@ -831,8 +815,8 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                         }}
                                         className={css({ 
                                             fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
-                                            bg: status.is_checked ? '#F1F3F4' : 'rgba(37, 99, 235, 0.08)',
-                                            color: status.is_checked ? '#828D99' : 'brand.primary',
+                                            bg: status.is_checked ? 'bg.softCotton' : 'brand.primary/8',
+                                            color: status.is_checked ? 'brand.muted' : 'brand.primary',
                                             fontWeight: '700', border: 'none', cursor: 'pointer',
                                             display: 'flex', alignItems: 'center', gap: '4px',
                                             transition: 'transform 0.2s',
@@ -846,12 +830,12 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
                             <div className={css({ display: 'flex', gap: '8px', alignItems: 'center' })}>
                                 {item.source_template_name && (
-                                    <span className={css({ fontSize: '11px', color: '#828D99', fontWeight: '500' })}>
+                                    <span className={css({ fontSize: '11px', color: 'brand.muted', fontWeight: '500' })}>
                                         {item.source_template_name}
                                     </span>
                                 )}
                                 {item.category && groupBy === 'template' && (
-                                    <span className={css({ fontSize: '11px', color: '#828D99', bg: '#F1F3F4', px: '8px', py: '1px', borderRadius: '10px' })}>
+                                    <span className={css({ fontSize: '11px', color: 'brand.muted', bg: 'bg.surfaceSoft', px: '8px', py: '1px', borderRadius: '10px' })}>
                                         {item.category}
                                     </span>
                                 )}
@@ -864,19 +848,19 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         <div className={css({ display: { base: 'none', sm: 'flex' }, gap: '8px' })}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
-                                className={css({ bg: 'transparent', border: 'none', color: '#828D99', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: 'brand.primary', bg: 'rgba(37, 99, 235, 0.08)' } })}
+                                className={css({ bg: 'transparent', border: 'none', color: 'brand.muted', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: 'brand.primary', bg: 'brand.primary/8' } })}
                             >
                                 <Settings size={18} />
                             </button>
                             <button
                                 onClick={(e) => deleteItem(e, item.id)}
-                                className={css({ bg: 'transparent', border: 'none', color: '#828D99', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: '#FF9F87', bg: '#FFF5F2' } })}
+                                className={css({ bg: 'transparent', border: 'none', color: 'brand.muted', cursor: 'pointer', p: '10px', borderRadius: '12px', _hover: { color: 'brand.error', bg: 'brand.error/8' } })}
                             >
                                 <Trash2 size={18} />
                             </button>
                         </div>
                     )}
-                </div>
+                </motion.div>
             </li>
         )
     }
@@ -889,24 +873,24 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         const checkedUserIds = userChecks.filter(c => c.item_id === item.id).map(c => c.user_id)
         
         return (
-            <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setShowChecksModal(null)}>
-                <div className={css({ bg: 'white', w: '100%', maxW: '400px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' })} onClick={e => e.stopPropagation()}>
-                    <div className={css({ p: '20px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                        <h3 className={css({ fontSize: '18px', fontWeight: '700', color: '#2C3A47' })}>체크 현황</h3>
-                        <button onClick={() => setShowChecksModal(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer', color: '#666' })}><X size={20} /></button>
+            <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'bg.scrim/50', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setShowChecksModal(null)}>
+                <div className={css({ bg: 'white', w: '100%', maxW: '400px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.15)' })} onClick={e => e.stopPropagation()}>
+                    <div className={css({ p: '20px', borderBottom: '1px solid', borderColor: 'brand.hairlineSoft', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+                        <h3 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.ink' })}>체크 현황</h3>
+                        <button onClick={() => setShowChecksModal(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer', color: 'brand.muted' })}><X size={20} /></button>
                     </div>
                     <div className={css({ p: '20px', maxHeight: '300px', overflowY: 'auto' })}>
-                        <div className={css({ mb: '16px', fontSize: '14px', color: '#666', fontWeight: '700' })}>
+                        <div className={css({ mb: '16px', fontSize: '14px', color: 'brand.muted', fontWeight: '700' })}>
                             "{item.item_name}" 준비 완료 인원 ({checkedUserIds.length}/{totalMembersCount})
                         </div>
                         <ul className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                             {participants.map(p => {
                                 return (
                                     <li key={p.user_id} className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
-                                        <span className={css({ fontSize: '15px', fontWeight: '500', color: '#2C3A47' })}>
+                                        <span className={css({ fontSize: '15px', fontWeight: '500', color: 'brand.ink' })}>
                                             {getMemberDisplayName(p, p.user_id === currentUser?.id)}
                                         </span>
-                                        {checkedUserIds.includes(p.user_id) ? <Check size={18} color="#2563EB" strokeWidth={3} /> : <div className={css({ w: '18px' })} />}
+                                        {checkedUserIds.includes(p.user_id) ? <Check size={18} color="var(--colors-brand-primary)" strokeWidth={3} /> : <div className={css({ w: '18px' })} />}
                                     </li>
                                 )
                             })}
@@ -927,24 +911,24 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         const [assignedTo, setAssignedTo] = useState(editingItem.assigned_user_id || '')
 
         return (
-            <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setEditingItem(null)}>
-                <div className={css({ bg: 'white', w: '100%', maxW: '450px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.2)' })} onClick={e => e.stopPropagation()}>
-                    <div className={css({ p: '24px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                        <h3 className={css({ fontSize: '20px', fontWeight: '700' })}>항목 수정</h3>
-                        <button onClick={() => setEditingItem(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer', color: '#666' })}><X size={24} /></button>
+            <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'bg.scrim/50', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setEditingItem(null)}>
+                <div className={css({ bg: 'white', w: '100%', maxW: '450px', borderRadius: '24px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.15)' })} onClick={e => e.stopPropagation()}>
+                    <div className={css({ p: '24px', borderBottom: '1px solid', borderColor: 'brand.hairlineSoft', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+                        <h3 className={css({ fontSize: '20px', fontWeight: '700', color: 'brand.ink' })}>준비물 수정</h3>
+                        <button onClick={() => setEditingItem(null)} className={css({ border: 'none', bg: 'transparent', cursor: 'pointer', color: 'brand.muted' })}><X size={24} /></button>
                     </div>
                     <div className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '20px' })}>
                         <div>
-                            <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>항목 이름</label>
+                            <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.muted' })}>항목 이름</label>
                             <input 
                                 type="text" value={name} onChange={(e) => setName(e.target.value)}
-                                className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 2px rgba(37, 99, 235, 0.1)' } })}
+                                className={css({ w: '100%', p: '12px', border: '1px solid', borderColor: 'brand.hairlineSoft', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 2px rgba(37, 99, 235, 0.1)' } })}
                             />
                         </div>
                         <div className={css({ display: 'flex', gap: '12px' })}>
                             <div className={css({ flex: 1 })}>
-                                <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: '#444' })}>카테고리</label>
-                                <select value={category} onChange={(e) => setCategory(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid #DDDDDD', borderRadius: '12px', bg: 'white', outline: 'none', _focus: { borderColor: 'brand.primary' } })}>
+                                <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.muted' })}>카테고리</label>
+                                <select value={category} onChange={(e) => setCategory(e.target.value)} className={css({ w: '100%', p: '12px', border: '1px solid', borderColor: 'brand.hairlineSoft', borderRadius: '12px', bg: 'white', outline: 'none', _focus: { borderColor: 'brand.primary' } })}>
                                     {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                                 </select>
                             </div>
@@ -966,15 +950,15 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     className={css({ accentColor: 'brand.primary', w: '18px', h: '18px' })}
                                 />
                                 <div className={css({ display: 'flex', flexDirection: 'column' })}>
-                                    <span className={css({ fontSize: '15px', fontWeight: '700', color: '#2C3A47' })}>나만 보기</span>
-                                    <span className={css({ fontSize: '12px', color: '#717171' })}>담당자가 본인으로 고정되며, 다른 일행에게는 보이지 않아요.</span>
+                                    <span className={css({ fontSize: '15px', fontWeight: '700', color: 'brand.ink' })}>나만 보기</span>
+                                    <span className={css({ fontSize: '12px', color: 'brand.muted' })}>담당자가 본인으로 고정되며, 다른 일행에게는 보이지 않아요.</span>
                                 </div>
                             </label>
                         </div>
 
                         {/* 담당자 설정 */}
                         <div className={css({ mb: '24px', opacity: isPrivate ? 0.6 : 1, pointerEvents: isPrivate ? 'none' : 'auto' })}>
-                            <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '12px', color: '#2C3A47' })}>누가 챙길까요?</label>
+                            <label className={css({ display: 'block', fontSize: '15px', fontWeight: '700', mb: '12px', color: 'brand.ink' })}>누가 챙길까요?</label>
                             <select
                                 value={type}
                                 onChange={e => {
@@ -983,7 +967,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                         setAssignedTo(currentUser?.id || '')
                                     }
                                 }}
-                                className={css({ w: '100%', p: '14px', bg: '#F9F9F9', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', fontSize: '15px', fontWeight: '600' })}
+                                className={css({ w: '100%', p: '14px', bg: 'bg.surfaceSoft', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px', outline: 'none', fontSize: '15px', fontWeight: '600' })}
                             >
                                 <option value="anyone">한 명이라도 챙기기 (함께 준비)</option>
                                 <option value="specific">담당자 지정하기</option>
@@ -994,7 +978,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                 <select
                                     value={assignedTo}
                                     onChange={e => setAssignedTo(e.target.value)}
-                                    className={css({ w: '100%', mt: '12px', p: '14px', bg: '#F9F9F9', border: '1px solid #EEEEEE', borderRadius: '12px', outline: 'none', fontSize: '15px' })}
+                                    className={css({ w: '100%', mt: '12px', p: '14px', bg: 'bg.surfaceSoft', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px', outline: 'none', fontSize: '15px' })}
                                 >
                                     {participants.map(p => (
                                         <option key={p.user_id} value={p.user_id}>
@@ -1005,14 +989,14 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                             )}
                         </div>
                     </div>
-                    <div className={css({ p: '24px', bg: '#F9F9F9', display: 'flex', gap: '12px' })}>
+                    <div className={css({ p: '24px', bg: 'bg.surfaceSoft', display: 'flex', gap: '12px' })}>
                         <button 
                             onClick={() => updateItem({ item_name: name, category, is_private: isPrivate, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null })}
-                            className={css({ flex: 1, py: '14px', bg: 'brand.primary', color: 'white', borderRadius: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: '0 8px 20px rgba(37, 99, 235, 0.2)', _hover: { bg: '#1D4ED8', transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
+                            className={css({ flex: 1, py: '14px', bg: 'brand.primary', color: 'white', borderRadius: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: 'shadow.primary', _hover: { opacity: 0.9, transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
                         >
                             저장하기
                         </button>
-                        <button onClick={() => setEditingItem(null)} className={css({ flex: 1, py: '14px', bg: 'white', color: '#555', border: '1px solid #DDDDDD', borderRadius: '16px', fontWeight: '700', cursor: 'pointer', _hover: { bg: '#f9f9f9', borderColor: '#828D99' } })}>
+                        <button onClick={() => setEditingItem(null)} className={css({ flex: 1, py: '14px', bg: 'white', color: 'brand.muted', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '16px', fontWeight: '700', cursor: 'pointer', _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.muted' } })}>
                             취소
                         </button>
                     </div>
@@ -1106,17 +1090,17 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
 
     return (
-        <div className={css({ bg: 'white', p: { base: '0', sm: '24px' }, borderRadius: { base: 0, sm: '16px' }, boxShadow: { base: 'none', sm: '0 4px 12px rgba(0,0,0,0.03)' }, pb: { base: '80px', sm: '24px' } })}>
+        <div className={css({ bg: 'white', p: { base: '0', sm: '24px' }, borderRadius: { base: 0, sm: '16px' }, boxShadow: { base: 'none', sm: '0 4px 12px rgba(0,0,0,0.02)' }, pb: { base: '80px', sm: '24px' } })}>
             
             {/* 1. 타이틀 & 보기 모드, 버튼 영역 (반응형 다중 구조) */}
             <div className={css({ display: 'flex', flexDirection: 'column', gap: '16px', mb: '20px', px: { base: '20px', sm: 0 }, pt: { base: '20px', sm: 0 } })}>
                 
                 {/* 상단 라인: 타이틀 + 모바일 필터(드롭다운) */}
                 <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                    <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '700', color: '#222' })}>
+                    <h2 className={css({ fontSize: { base: '18px', sm: '22px' }, fontWeight: '700', color: 'brand.ink' })}>
                         {filterMode === 'all' ? '전체' : (filterMode === 'me' ? '내' : (getMemberDisplayName(participants.find(p => p.user_id === filterMode), filterMode === currentUser?.id)))} 준비물 {filterMode !== 'all' ? (
                             <span className={css({ color: 'brand.primary', ml: '8px', fontWeight: '700' })}>
-                                {filteredProgressPercent}% <span className={css({ fontSize: '12px', fontWeight: '700', color: '#828D99' })}>(전체 {progressPercent}%)</span>
+                                {filteredProgressPercent}% <span className={css({ fontSize: '12px', fontWeight: '700', color: 'brand.muted' })}>(전체 {progressPercent}%)</span>
                             </span>
                         ) : (
                             totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>
@@ -1129,16 +1113,16 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     
                     {/* PC 좌측: 그룹핑 + 정렬 컨트롤 그룹 */}
                     <div className={css({ display: { base: 'none', sm: 'flex' }, alignItems: 'center', gap: '12px' })}>
-                        <div className={css({ display: totalItems > 0 ? 'inline-flex' : 'none', bg: '#f1f3f4', p: '4px', borderRadius: '8px' })}>
+                        <div className={css({ display: totalItems > 0 ? 'inline-flex' : 'none', bg: 'bg.surfaceSoft', p: '4px', borderRadius: '8px' })}>
                             <button
                                 onClick={() => setGroupBy('category')}
-                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? '700' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'category' ? '700' : 'normal', bg: groupBy === 'category' ? 'white' : 'transparent', color: groupBy === 'category' ? 'brand.ink' : 'brand.muted', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'category' ? 'shadow.sm' : 'none', transition: 'all 0.2s' })}
                             >
                                 카테고리별 보기
                             </button>
                             <button
                                 onClick={() => setGroupBy('template')}
-                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? '700' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? '#111' : '#666', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' })}
+                                className={css({ px: '16px', py: '6px', fontSize: '14px', fontWeight: groupBy === 'template' ? '700' : 'normal', bg: groupBy === 'template' ? 'white' : 'transparent', color: groupBy === 'template' ? 'brand.ink' : 'brand.muted', borderRadius: '6px', border: 'none', cursor: 'pointer', boxShadow: groupBy === 'template' ? 'shadow.sm' : 'none', transition: 'all 0.2s' })}
                             >
                                 템플릿별 보기
                             </button>
@@ -1174,15 +1158,15 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     className={css({
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                                         px: '12px', h: '42px',
-                                        bg: 'white', color: '#2C3A47', border: '1px solid #DDDDDD', borderRadius: '12px',
+                                        bg: 'white', color: 'brand.ink', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
                                         fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                         flex: '1',
                                         whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                        _hover: { bg: '#F7F7F7', borderColor: 'brand.primary' },
+                                        _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.primary' },
                                         _active: { transform: 'scale(0.98)' }
                                     })}
                                 >
-                                    <ListTodo size={14} color="#2563EB" /> 템플릿
+                                    <ListTodo size={14} color="var(--colors-brand-primary)" /> 템플릿
                                 </button>
                             </div>
 
@@ -1192,9 +1176,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     onClick={() => setIsAdding(!isAdding)}
                                     className={css({
                                         display: { base: 'none', sm: 'flex' }, alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                        bg: '#2C3A47', color: 'white', px: '16px', h: '42px',
+                                        bg: 'brand.ink', color: 'white', px: '16px', h: '42px',
                                         borderRadius: '12px', fontWeight: '700', fontSize: '14px', cursor: 'pointer', border: 'none',
-                                        _hover: { bg: '#1a252f' }, whiteSpace: 'nowrap'
+                                        _hover: { opacity: 0.9 }, whiteSpace: 'nowrap'
                                     })}
                                 >
                                     <Plus size={16} /> 항목 추가
@@ -1205,16 +1189,16 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     className={css({
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
                                         px: '16px', h: '42px',
-                                        bg: 'white', color: '#2C3A47', border: '1px solid #DDDDDD', borderRadius: '12px',
+                                        bg: 'white', color: 'brand.ink', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
                                         fontSize: '13px', fontWeight: '700', cursor: 'pointer',
                                         w: { base: '100%', sm: 'auto' }, flex: { base: '1', sm: 'none' },
                                         flexShrink: '0',
                                         whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                        _hover: { bg: '#F7F7F7', borderColor: 'brand.primary' },
+                                        _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.primary' },
                                         _active: { transform: 'scale(0.98)' }
                                     })}
                                 >
-                                    <ListTodo size={14} color="#2563EB" /> 템플릿 불러오기
+                                    <ListTodo size={14} color="var(--colors-brand-primary)" /> 템플릿 불러오기
                                 </button>
                             </div>
                         </div>
@@ -1223,9 +1207,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
             </div>
 
             {totalItems > 0 && (
-                <div className={css({ w: '100%', bg: '#EEEEEE', h: '12px', borderRadius: '16px', mb: '24px', overflow: 'hidden', border: '1px solid #EEEEEE' })}>
+                <div className={css({ w: '100%', bg: 'bg.surfaceSoft', h: '12px', borderRadius: '16px', mb: '24px', overflow: 'hidden', border: '1px solid', borderColor: 'brand.hairlineSoft' })}>
                     <div
-                        className={css({ h: '100%', bg: 'brand.primary', borderRadius: '16px', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                        className={css({ h: '100%', bg: 'linear-gradient(90deg, #2563eb, #4f46e5, #6366f1)', borderRadius: '16px', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
                         style={{ width: `${filterMode !== 'all' ? filteredProgressPercent : progressPercent}%` }}
                     />
                 </div>
@@ -1245,10 +1229,10 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     <div className={css({ 
                         display: 'flex', 
                         flexDirection: 'column',
-                        bg: '#F7F7F7',
+                        bg: 'bg.surfaceSoft',
                         p: '16px',
                         borderRadius: '16px',
-                        border: '1px solid #DDDDDD'
+                        border: '1px solid', borderColor: 'brand.hairline'
                     })}>
                         <div className={css({ display: 'flex', gap: '8px', mb: '12px' })}>
                                 <input
@@ -1257,7 +1241,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     value={newItemName}
                                     onChange={e => setNewItemName(e.target.value)}
                                     placeholder="어떤 준비물인가요?"
-                                    className={css({ flex: 1, p: '12px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '15px' })}
+                                    className={css({ flex: 1, p: '12px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', outline: 'none', fontSize: '15px' })}
                                 />
                         </div>
 
@@ -1282,8 +1266,8 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     className={css({ accentColor: 'brand.primary', w: '18px', h: '18px' })}
                                 />
                                 <div className={css({ display: 'flex', flexDirection: 'column' })}>
-                                    <span className={css({ fontSize: '14px', fontWeight: '700', color: '#2C3A47' })}>나만 보기</span>
-                                    <span className={css({ fontSize: '11px', color: '#828D99' })}>담당자가 나로 지정되고, 일행에게는 안 보여요.</span>
+                                    <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>나만 보기</span>
+                                    <span className={css({ fontSize: '11px', color: 'brand.muted' })}>담당자가 나로 지정되고, 일행에게는 안 보여요.</span>
                                 </div>
                             </label>
                         </div>
@@ -1301,7 +1285,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                             setNewItemAssignedUserId(currentUser?.id || '')
                                         }
                                     }}
-                                    className={css({ p: '8px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '13px', fontWeight: '700' })}
+                                    className={css({ p: '8px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', outline: 'none', fontSize: '13px', fontWeight: '700' })}
                                 >
                                     <option value="anyone">함께 준비해요</option>
                                     <option value="specific">담당자를 정해요</option>
@@ -1312,7 +1296,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     <select
                                         value={newItemAssignedUserId}
                                         onChange={e => setNewItemAssignedUserId(e.target.value)}
-                                        className={css({ p: '8px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '13px' })}
+                                        className={css({ p: '8px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', outline: 'none', fontSize: '13px' })}
                                     >
                                         {participants.map(p => {
                                             const isMe = p.user_id === currentUser?.id
@@ -1326,7 +1310,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     </select>
                                 )}
                                 
-                                <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', color: '#717171', fontSize: '12px' })}>
+                                <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', color: 'brand.muted', fontSize: '12px' })}>
                                     <Info size={14} />
                                     {newItemIsPrivate ? '나만 보기 설정 중에는 담당자가 "나"로 고정돼요.' : (
                                         <>
@@ -1343,7 +1327,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                              <select
                                 value={newItemCategory}
                                 onChange={e => setNewItemCategory(e.target.value)}
-                                className={css({ flex: 1, p: '10px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '8px', outline: 'none', fontSize: '14px' })}
+                                className={css({ flex: 1, p: '10px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', outline: 'none', fontSize: '14px' })}
                             >
                                 {CATEGORIES.map((cat: any) => (
                                     <option key={cat} value={cat}>{cat}</option>
@@ -1352,14 +1336,14 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                             <button
                                 type="submit"
                                 disabled={!newItemName.trim()}
-                                className={css({ py: '10px', px: '20px', bg: 'brand.primary', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' })}
+                                className={css({ py: '10px', px: '20px', bg: 'brand.primary', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: 'shadow.primary' })}
                             >
                                 추가
                             </button>
                             <button
                                 type="button"
                                 onClick={() => { setIsAdding(false); setNewItemName(''); }}
-                                className={css({ py: '10px', px: '16px', bg: 'white', color: '#222', border: '1px solid #DDDDDD', borderRadius: '8px', fontWeight: '700' })}
+                                className={css({ py: '10px', px: '16px', bg: 'white', color: 'brand.ink', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', fontWeight: '700' })}
                             >
                                 취소
                             </button>
@@ -1371,27 +1355,27 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
             {isLoading ? (
                 <ChecklistSkeleton />
             ) : totalItems === 0 && !isAdding ? (
-                <div className={css({ textAlign: 'center', py: '80px', color: '#666', px: '20px' })}>
-                        <p className={css({ fontSize: '19px', fontWeight: '700', mb: '12px', color: '#333', letterSpacing: '-0.5px' })}>
+                <div className={css({ textAlign: 'center', py: '80px', color: 'brand.muted', px: '20px' })}>
+                        <p className={css({ fontSize: '19px', fontWeight: '700', mb: '12px', color: 'brand.ink', letterSpacing: '-0.5px' })}>
                             여행을 완벽하게 해줄 준비물을 등록해 보세요! ✨
                         </p>
                         {isOnline && !isOffline && (
-                            <p className={css({ fontSize: '15px', color: '#717171', lineHeight: '1.6', wordBreak: 'keep-all', maxW: '320px', mx: 'auto' })}>
+                            <p className={css({ fontSize: '15px', color: 'brand.muted', lineHeight: '1.6', wordBreak: 'keep-all', maxW: '320px', mx: 'auto' })}>
                                 체크리스트로 꼼꼼하게 챙기면 여행의 설렘이 두 배가 됩니다. 🧳
                             </p>
                         )}
                 </div>
             ) : totalItems > 0 && sortedFilteredItems.length === 0 ? (
-                <div className={css({ textAlign: 'center', py: '60px', color: '#666' })}>
-                        <p className={css({ fontSize: '16px', fontWeight: '700', mb: '8px', color: '#222' })}>
+                <div className={css({ textAlign: 'center', py: '60px', color: 'brand.muted' })}>
+                        <p className={css({ fontSize: '16px', fontWeight: '700', mb: '8px', color: 'brand.ink' })}>
                             해당하는 준비물이 없어요 🕵️‍♂️
                         </p>
-                        <p className={css({ fontSize: '14px', color: '#888' })}>
+                        <p className={css({ fontSize: '14px', color: 'brand.muted' })}>
                             {filterMode === 'me' ? '내가 챙길 짐이 없습니다.' : '다른 필터를 선택해 보세요.'}
                         </p>
                         <button 
                             onClick={() => setFilterMode('all')}
-                            className={css({ mt: '20px', bg: 'white', border: '1px solid #DDDDDD', borderRadius: '12px', px: '20px', py: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', _hover: { bg: '#F7F7F7' }, transition: 'all 0.2s' })}
+                            className={css({ mt: '20px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px', px: '20px', py: '10px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', _hover: { bg: 'bg.surfaceSoft' }, transition: 'all 0.2s' })}
                         >
                             전체 준비물 보기
                         </button>
@@ -1399,37 +1383,85 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
             ) : (
                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '24px' })}>
                     {groupBy === 'category' ? (
-                        CATEGORIES.map((cat: any) => {
-                            const categoryItems = sortedFilteredItems.filter((item: any) => item.category === cat || (!item.category && cat === '기타'))
+                        CATEGORIES.map(cat => {
+                            const categoryItems = sortedFilteredItems.filter((i: any) => i.category === cat)
                             if (categoryItems.length === 0) return null
+                            const isExpanded = expandedGroups[cat] !== false // Default to true
 
                             return (
-                                <div key={cat} className={css({ display: 'flex', flexDirection: 'column' })}>
-                                    <h3 className={css({ px: '20px', fontSize: '14px', fontWeight: '700', color: '#222', bg: '#F7F7F7', py: '10px', borderBottom: '1px solid #EEEEEE' })}>
-                                        {cat} <span className={css({ color: '#717171', fontWeight: 'normal', fontSize: '12px', ml: '4px' })}>{categoryItems.length}</span>
-                                    </h3>
-                                    <ul className={css({ display: 'flex', flexDirection: 'column' })}>
-                                        {categoryItems.map((item) => (
-                                            <ChecklistItem key={item.id} item={item} />
-                                        ))}
-                                    </ul>
+                                <div key={cat} className={css({ 
+                                    w: '100%', bg: 'white', border: '1px solid', borderColor: 'brand.hairlineSoft', borderRadius: '16px', overflow: 'hidden', mb: '16px' 
+                                })}>
+                                    <button 
+                                        onClick={() => setExpandedGroups(prev => ({ ...prev, [cat]: !isExpanded }))}
+                                        className={css({ 
+                                            w: '100%', px: '20px', py: '14px', bg: 'bg.surfaceSoft', border: 'none', borderBottom: isExpanded ? '1px solid' : 'none', borderColor: 'brand.hairlineSoft',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left',
+                                            transition: 'background 0.2s', _hover: { bg: 'bg.softCotton' }
+                                        })}
+                                    >
+                                        <h3 className={css({ fontSize: '15px', fontWeight: '800', color: 'brand.ink', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                                            {cat} <span className={css({ color: 'brand.muted', fontWeight: '600', fontSize: '13px' })}>{categoryItems.length}</span>
+                                        </h3>
+                                        <ChevronDown size={18} className={css({ color: 'brand.muted', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' })} />
+                                    </button>
+                                    <AnimatePresence initial={false}>
+                                        {isExpanded && (
+                                            <motion.ul 
+                                                initial={{ height: 0 }}
+                                                animate={{ height: 'auto' }}
+                                                exit={{ height: 0 }}
+                                                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                                className={css({ w: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' })}
+                                            >
+                                                {categoryItems.map((item) => (
+                                                    <ChecklistItem key={item.id} item={item} />
+                                                ))}
+                                            </motion.ul>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             )
                         })
                     ) : (
-                        Object.entries(templateGroups).map(([grpName, grpItems]) => (
-                            <div key={grpName} className={css({ display: 'flex', flexDirection: 'column' })}>
-                                <h3 className={css({ px: '20px', fontSize: '14px', fontWeight: '700', color: '#222', bg: '#F7F7F7', py: '10px', borderBottom: '1px solid #EEEEEE', display: 'flex', alignItems: 'center', gap: '6px' })}>
-                                    {grpName === '직접 추가함' ? '✍️ 직접 추가함' : `📦 ${grpName}`}
-                                    <span className={css({ color: '#717171', fontWeight: 'normal', fontSize: '12px', ml: '4px' })}>{grpItems.length}</span>
-                                </h3>
-                                <ul className={css({ display: 'flex', flexDirection: 'column' })}>
-                                    {grpItems.map((item) => (
-                                        <ChecklistItem key={item.id} item={item} />
-                                    ))}
-                                </ul>
-                            </div>
-                        ))
+                        Object.entries(templateGroups).map(([grpName, grpItems]) => {
+                            const isExpanded = expandedGroups[grpName] !== false // Default to true
+                            return (
+                                <div key={grpName} className={css({ 
+                                    w: '100%', bg: 'white', border: '1px solid', borderColor: 'brand.hairlineSoft', borderRadius: '16px', overflow: 'hidden', mb: '16px' 
+                                })}>
+                                    <button 
+                                        onClick={() => setExpandedGroups(prev => ({ ...prev, [grpName]: !isExpanded }))}
+                                        className={css({ 
+                                            w: '100%', px: '20px', py: '14px', bg: 'bg.surfaceSoft', border: 'none', borderBottom: isExpanded ? '1px solid' : 'none', borderColor: 'brand.hairlineSoft',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', textAlign: 'left',
+                                            transition: 'background 0.2s', _hover: { bg: 'bg.softCotton' }
+                                        })}
+                                    >
+                                        <h3 className={css({ fontSize: '15px', fontWeight: '800', color: 'brand.ink', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                                            {grpName === '직접 추가함' ? '✍️ 직접 추가함' : `📦 ${grpName}`}
+                                            <span className={css({ color: 'brand.muted', fontWeight: '600', fontSize: '13px' })}>{grpItems.length}</span>
+                                        </h3>
+                                        <ChevronDown size={18} className={css({ color: 'brand.muted', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' })} />
+                                    </button>
+                                    <AnimatePresence initial={false}>
+                                        {isExpanded && (
+                                            <motion.ul 
+                                                initial={{ height: 0 }}
+                                                animate={{ height: 'auto' }}
+                                                exit={{ height: 0 }}
+                                                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                                                className={css({ w: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' })}
+                                            >
+                                                {grpItems.map((item) => (
+                                                    <ChecklistItem key={item.id} item={item} />
+                                                ))}
+                                            </motion.ul>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            )
+                        })
                     )}
                 </div>
             )}
@@ -1445,10 +1477,10 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         bg: 'brand.primary', color: 'white',
                         display: { base: 'flex', sm: 'none' }, 
                         alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 8px 32px rgba(37, 99, 235, 0.3)',
+                        boxShadow: 'shadow.primary',
                         cursor: 'pointer', zIndex: 100,
                         transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                        _hover: { transform: 'translateY(-2px)', bg: '#1D4ED8' },
+                        _hover: { transform: 'translateY(-2px)', opacity: 0.9 },
                         _active: { transform: 'scale(0.9)' }
                     })}
                 >

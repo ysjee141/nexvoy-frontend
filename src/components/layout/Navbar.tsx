@@ -116,10 +116,9 @@ export default function Navbar() {
                 zIndex: 1000,
                 w: '100%',
                 display: 'block',
-                bg: 'white',
+                bg: 'bg.canvas',
                 borderBottom: '1px solid',
-                borderBottomColor: 'brand.border',
-                boxShadow: '0 1px 12px rgba(0,0,0,0.08)',
+                borderBottomColor: 'brand.hairline',
                 paddingTop: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))',
                 transition: 'transform 0.3s ease',
             })}
@@ -138,7 +137,7 @@ export default function Navbar() {
             >
                 {/* 왼쪽: 로고 + 가이드 */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '20px' })}>
-                    <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: 'brand.secondary' })}>
+                    <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: 'brand.ink' })}>
                         <Image src="/logo.png" alt="온여정 로고" width={28} height={28} priority />
                         <span>온여정</span>
                     </Link>
@@ -150,15 +149,15 @@ export default function Navbar() {
                         <>
                             {user ? (
                                 <>
-                                    <Link href="/" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.secondary' } })}>
+                                    <Link href="/" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.ink' } })}>
                                         <Home size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>홈</span>
                                     </Link>
-                                    <Link href="/templates" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.secondary' } })}>
+                                    <Link href="/templates" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.ink' } })}>
                                         <ListTodo size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>템플릿</span>
                                     </Link>
-                                    <Link href="/profile" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.secondary' } })}>
+                                    <Link href="/profile" className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500', color: 'brand.muted', _hover: { color: 'brand.ink' } })}>
                                         <User size={18} />
                                         <span className={css({ display: { base: 'none', md: 'inline' } })}>마이페이지</span>
                                     </Link>
@@ -169,10 +168,10 @@ export default function Navbar() {
                                 </>
                             ) : (
                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '12px' })}>
-                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'transparent', color: 'brand.secondary', px: '12px', py: '10px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', _hover: { bg: 'bg.softCotton' } })}>
+                                    <Link href="/signup" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'transparent', color: 'brand.ink', px: '12px', py: '10px', borderRadius: '24px', fontSize: '14px', fontWeight: '600', _hover: { bg: 'bg.surfaceSoft' } })}>
                                         회원가입
                                     </Link>
-                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'brand.primary', color: 'white', px: '24px', py: '12px', borderRadius: '32px', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s ease', _hover: { transform: 'scale(1.02)', boxShadow: '0 6px 20px rgba(59, 130, 246, 0.3)' } })}>
+                                    <Link href="/login" className={css({ display: 'flex', alignItems: 'center', gap: '8px', bg: 'brand.primary', color: 'white', px: '24px', py: '12px', borderRadius: '8px', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s ease', _hover: { transform: 'scale(0.96)' } })}>
                                         로그인
                                     </Link>
                                 </div>
@@ -203,7 +202,7 @@ export default function Navbar() {
                             p: '8px',
                             bg: 'transparent',
                             border: 'none',
-                            color: 'brand.secondary',
+                            color: 'brand.ink',
                             cursor: 'pointer',
                         })}
                     >
@@ -231,17 +230,17 @@ export default function Navbar() {
                         {pageTitle === '온여정' && (
                             <Image src="/logo.png" alt="온여정 로고" width={20} height={20} priority />
                         )}
-                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.secondary', letterSpacing: '-0.01em' })}>
+                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.ink', letterSpacing: '-0.01em' })}>
                             {pageTitle}
                         </h1>
-                        <ChevronDown size={18} className={css({ color: 'brand.secondary' })} />
+                        <ChevronDown size={18} className={css({ color: 'brand.ink' })} />
                     </button>
                 ) : (
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
                         {pageTitle === '온여정' && (
                             <Image src="/logo.png" alt="온여정 로고" width={20} height={20} priority />
                         )}
-                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.secondary', letterSpacing: '-0.01em' })}>
+                        <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.ink', letterSpacing: '-0.01em' })}>
                             {pageTitle}
                         </h1>
                     </div>

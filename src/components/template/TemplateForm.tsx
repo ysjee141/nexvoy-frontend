@@ -62,7 +62,7 @@ export default function TemplateForm({
             <div className={css({ flex: 1, overflowY: 'auto', p: { base: '20px', sm: '32px' } })}>
                 {/* 템플릿 기본 정보 지정 */}
                 <div className={css({ mb: '32px' })}>
-                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '800', mb: '12px', color: 'brand.secondary' })}>
+                    <label className={css({ display: 'block', fontSize: '15px', fontWeight: '800', mb: '12px', color: 'brand.ink' })}>
                         템플릿 이름
                     </label>
                     <input
@@ -73,28 +73,28 @@ export default function TemplateForm({
                         className={css({ 
                             w: '100%', 
                             p: '18px 20px', 
-                            border: '2px solid',
-                            borderColor: 'brand.border',
-                            borderRadius: '20px', 
+                            border: '1px solid',
+                            borderColor: 'brand.hairline',
+                            borderRadius: '8px', 
                             outline: 'none', 
-                            bg: 'bg.softCotton',
+                            bg: 'white',
                             fontSize: '16px', 
                             fontWeight: '600', 
-                            color: 'brand.secondary', 
+                            color: 'brand.ink', 
                             transition: 'all 0.3s', 
                             _placeholder: { color: 'brand.muted', fontWeight: '400' }, 
-                            _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 5px rgba(var(--colors-brand-primary-rgb), 0.1)' } 
+                            _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 5px rgba(var(--colors-brand-primary-rgb), 0.1)' } 
                         })}
                         required
                     />
                 </div>
 
-                <hr className={css({ border: 'none', borderTop: '1px solid', borderTopColor: 'brand.border', mb: '32px' })} />
+                <hr className={css({ border: 'none', borderTop: '1px solid', borderTopColor: 'brand.hairline', mb: '32px' })} />
 
                 {/* 템플릿 항목 지정 */}
                 <div className={css({ mb: '32px' })}>
                     <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '16px' })}>
-                        <h4 className={css({ fontSize: '15px', fontWeight: '800', color: 'brand.secondary' })}>
+                        <h4 className={css({ fontSize: '15px', fontWeight: '800', color: 'brand.ink' })}>
                             {isEdit ? '준비물 항목을 다듬어 보세요' : '어떤 항목을 준비할까요?'}
                         </h4>
                         <span className={css({ fontSize: '13px', color: 'brand.muted', fontWeight: '600', bg: 'bg.softCotton', px: '10px', py: '4px', borderRadius: '10px' })}>
@@ -104,7 +104,7 @@ export default function TemplateForm({
 
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px' })}>
                         {items.length === 0 ? (
-                            <div className={css({ p: '32px', textAlign: 'center', color: 'brand.muted', bg: 'bg.softCotton', borderRadius: '24px', fontSize: '14px', border: '1px dashed', borderColor: 'brand.border' })}>
+                            <div className={css({ p: '32px', textAlign: 'center', color: 'brand.muted', bg: 'bg.softCotton', borderRadius: '16px', fontSize: '14px', border: '1px dashed', borderColor: 'brand.hairline' })}>
                                 아직 등록된 준비물이 없어요. 새로운 항목을 추가해 보세요!
                             </div>
                         ) : (
@@ -114,9 +114,9 @@ export default function TemplateForm({
                                     flexDirection: { base: 'column', sm: 'row' },
                                     alignItems: { base: 'stretch', sm: 'center' },
                                     bg: 'white',
-                                    borderRadius: '22px',
-                                    border: '2px solid',
-                                    borderColor: 'brand.border',
+                                    borderRadius: '12px',
+                                    border: '1px solid',
+                                    borderColor: 'brand.hairline',
                                     overflow: 'hidden',
                                     transition: 'all 0.3s',
                                     _focusWithin: { borderColor: 'brand.primary', boxShadow: '0 8px 20px rgba(46,196,182,0.08)' }
@@ -124,18 +124,18 @@ export default function TemplateForm({
                                     {/* 카테고리 선택 */}
                                     <div className={css({ 
                                         position: 'relative', 
-                                        borderRight: { base: 'none', sm: '2px solid' }, 
-                                        borderRightColor: { base: 'none', sm: 'brand.border' },
-                                        borderBottom: { base: '2px solid', sm: 'none' }, 
-                                        borderBottomColor: { base: 'brand.border', sm: 'none' },
+                                        borderRight: { base: 'none', sm: '1px solid' }, 
+                                        borderRightColor: { base: 'none', sm: 'brand.hairline' },
+                                        borderBottom: { base: '1px solid', sm: 'none' }, 
+                                        borderBottomColor: { base: 'brand.hairline', sm: 'none' },
                                         w: { base: '100%', sm: '130px' }, 
                                         flexShrink: 0, 
-                                        bg: 'bg.softCotton' 
+                                        bg: 'white' 
                                     })}>
                                         <select
                                             value={item.category}
                                             onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
-                                            className={css({ w: '100%', p: '14px 36px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '700', color: 'brand.secondary', cursor: 'pointer', appearance: 'none' })}
+                                            className={css({ w: '100%', p: '14px 36px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '700', color: 'brand.ink', cursor: 'pointer', appearance: 'none' })}
                                         >
                                             {CATEGORIES.map((cat: any) => (
                                                 <option key={cat} value={cat}>{cat}</option>
@@ -152,7 +152,7 @@ export default function TemplateForm({
                                             value={item.item_name}
                                             onChange={(e) => handleItemChange(item.id, 'item_name', e.target.value)}
                                             placeholder={`${index + 1}번째 준비물`}
-                                            className={css({ flex: 1, minW: 0, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', fontWeight: '600', bg: 'transparent', color: 'brand.secondary', _placeholder: { color: 'brand.muted', fontWeight: '400' } })}
+                                            className={css({ flex: 1, minW: 0, p: '14px 16px', border: 'none', outline: 'none', fontSize: '15px', fontWeight: '600', bg: 'transparent', color: 'brand.ink', _placeholder: { color: 'brand.muted', fontWeight: '400' } })}
                                             required
                                         />
 
@@ -161,7 +161,7 @@ export default function TemplateForm({
                                             px: { base: '8px', sm: '12px' }, py: '6px', mr: '4px', borderRadius: '12px',
                                             bg: item.is_private ? 'brand.primary/5' : 'transparent',
                                             transition: 'all 0.2s',
-                                            _hover: { bg: 'bg.softCotton' }
+                                            _hover: { bg: 'rgba(0,0,0,0.02)' }
                                         })}>
                                             <input
                                                 type="checkbox"
@@ -195,8 +195,8 @@ export default function TemplateForm({
                         onClick={handleAddItem}
                         className={css({ 
                             w: '100%', mt: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                            gap: '10px', p: '18px', bg: 'bg.softCotton', color: 'brand.secondary', 
-                            borderRadius: '22px', border: '2px dashed', borderColor: 'brand.border', 
+                            gap: '10px', p: '18px', bg: 'white', color: 'brand.ink', 
+                            borderRadius: '8px', border: '1px dashed', borderColor: 'brand.hairline', 
                             cursor: 'pointer', fontSize: '15px', fontWeight: '800', transition: 'all 0.3s', 
                             _hover: { bg: 'brand.primary/5', color: 'brand.primary', borderColor: 'brand.primary' }, 
                             _active: { transform: 'scale(0.98)' } 
@@ -213,7 +213,7 @@ export default function TemplateForm({
             <div className={css({ 
                 p: { base: '20px 24px', sm: '24px 32px' }, 
                 borderTop: '1px solid',
-                borderTopColor: 'brand.border',
+                borderTopColor: 'brand.hairline',
                 bg: 'white'
             })}>
                 <button
@@ -223,11 +223,11 @@ export default function TemplateForm({
                         w: '100%',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', 
                         py: '18px', bg: 'brand.primary', color: 'white', 
-                        borderRadius: '22px', fontWeight: '800', fontSize: '17px',
+                        borderRadius: '8px', fontWeight: '800', fontSize: '16px',
                         border: 'none', cursor: loading ? 'not-allowed' : 'pointer', 
                         opacity: loading ? 0.7 : 1, transition: 'all 0.3s', 
-                        boxShadow: '0 8px 20px rgba(46, 196, 182, 0.15)', 
-                        _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(46, 196, 182, 0.25)' },
+                        boxShadow: 'none', 
+                        _hover: { bg: 'brand.primaryActive', boxShadow: 'airbnbHover' },
                         _active: { transform: 'scale(0.97)' }
                     })}
                 >
