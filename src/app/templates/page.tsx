@@ -10,6 +10,7 @@ import CommonListSkeleton from '@/components/common/CommonListSkeleton'
 import { formatDate } from '@/utils/date'
 
 import { useUIStore } from '@/stores/useUIStore'
+import { CacheUtil } from '@/utils/cache'
 
 export default function TemplatesPage() {
     const supabase = createClient()
@@ -25,7 +26,9 @@ export default function TemplatesPage() {
 
     useEffect(() => {
         async function fetchTemplates() {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { user: networkUser } } = await supabase.auth.getUser()
+            const user = networkUser || await CacheUtil.getAuthUser()
+            
             if (!user) {
                 router.push('/login')
                 return

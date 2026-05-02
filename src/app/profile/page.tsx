@@ -10,7 +10,9 @@ import TermsModal from '../signup/TermsModal'
 import ProfileSkeleton from './ProfileSkeleton'
 import BugReportModal from '@/components/profile/BugReportModal'
 import AccountLinking from '@/components/profile/AccountLinking'
+import DownloadedTripsModal from '@/components/profile/DownloadedTripsModal'
 import { AuthService } from '@/services/AuthService'
+import { CacheUtil } from '@/utils/cache'
 
 function ProfileContent() {
     const supabase = createClient()
@@ -24,6 +26,7 @@ function ProfileContent() {
     const [nicknameError, setNicknameError] = useState('')
     const [loading, setLoading] = useState(true)
     const [isBugModalOpen, setIsBugModalOpen] = useState(false)
+    const [isOfflineModalOpen, setIsOfflineModalOpen] = useState(false)
 
     const [currentPassword, setCurrentPassword] = useState('')
     const [newPassword, setNewPassword] = useState('')
@@ -45,31 +48,42 @@ function ProfileContent() {
     const searchParams = useSearchParams()
 
     useEffect(() => {
+        if (searchParams.get('openDownloads') === 'true') {
+            setIsOfflineModalOpen(true)
+        }
+    }, [searchParams])
+
+    useEffect(() => {
         const fetchData = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
+            // 1. 서버 세션 확인 (네트워크 연결된 경우)
+            const { data: { user: networkUser } } = await supabase.auth.getUser()
+            
+            // 2. 서버 세션이 없으면 오프라인 캐시 확인
+            const currentUser = networkUser || await CacheUtil.getAuthUser()
+            
+            if (!currentUser) {
                 router.push('/login')
                 return
             }
-            setUser(user)
+            setUser(currentUser)
 
             // 프로필 가져오기
             const { data: profileData } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', user.id)
+                .eq('id', currentUser.id)
                 .single()
 
             if (profileData) {
                 setProfile(profileData)
-                setNickname(profileData.nickname || user.email?.split('@')[0] || '')
+                setNickname(profileData.nickname || currentUser.email?.split('@')[0] || '')
             }
 
             // 통계 가져오기
             const { data: trips } = await supabase
                 .from('trips')
                 .select('id, start_date, end_date')
-                .eq('user_id', user.id)
+                .eq('user_id', currentUser.id)
 
             const allTrips = trips || []
             const tripIds = allTrips.map((t: any) => t.id)
@@ -149,6 +163,9 @@ function ProfileContent() {
             alert('카카오 계정 연동이 완료되었습니다! 🎉')
             // URL 파라미터 제거
             window.history.replaceState({}, '', window.location.pathname)
+        } else if (linked === 'google') {
+            alert('구글 계정 연동이 완료되었습니다! 🎉')
+            window.history.replaceState({}, '', window.location.pathname)
         } else if (error === 'conflict') {
             alert('이미 다른 계정에 연동된 카카오 계정입니다. 해당 계정에서 탈퇴하거나 연동 해제 후 다시 시도해 주세요.')
             window.history.replaceState({}, '', window.location.pathname)
@@ -226,11 +243,10 @@ function ProfileContent() {
     }
     
     const handleLogout = async () => {
-        const { error } = await supabase.auth.signOut()
-        if (!error) {
-            router.push('/')
-            router.refresh()
-        }
+        await supabase.auth.signOut()
+        await CacheUtil.clear()
+        router.push('/')
+        router.refresh()
     }
     
     if (loading) {
@@ -432,16 +448,23 @@ function ProfileContent() {
                 </div>
             </section>
 
-            {/* 계정 연동 설정 */}
-            <section className={css({ bg: 'white', borderRadius: '32px', p: { base: '24px', sm: '32px' }, boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
-                <h2 className={css({ fontSize: '18px', fontWeight: '850', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '-0.02em' })}>
-                    <div className={css({ w: '36px', h: '36px', bg: 'rgba(37, 99, 235, 0.08)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'brand.primary' })}>
-                        <ShieldCheck size={18} strokeWidth={2.5} />
-                    </div>
-                    계정 연동 설정
-                </h2>
-                <AccountLinking user={user} />
-            </section>
+            {/* 계정 연동 설정 — 이메일 가입 계정에서만 노출 */}
+            {(() => {
+                const primaryProvider = user?.app_metadata?.provider ?? 'email'
+                const isSocialSignup = primaryProvider === 'google' || primaryProvider === 'kakao'
+                if (isSocialSignup) return null
+                return (
+                    <section className={css({ bg: 'white', borderRadius: '32px', p: { base: '24px', sm: '32px' }, boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
+                        <h2 className={css({ fontSize: '18px', fontWeight: '850', mb: '24px', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '10px', letterSpacing: '-0.02em' })}>
+                            <div className={css({ w: '36px', h: '36px', bg: 'rgba(37, 99, 235, 0.08)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'brand.primary' })}>
+                                <ShieldCheck size={18} strokeWidth={2.5} />
+                            </div>
+                            계정 연동 설정
+                        </h2>
+                        <AccountLinking user={user} />
+                    </section>
+                )
+            })()}
 
             {/* 계정 보안 설정 */}
             <section className={css({ bg: 'white', borderRadius: '32px', p: { base: '24px', sm: '32px' }, boxShadow: '0 8px 30px rgba(0,0,0,0.03)', border: '1px solid #F0F0F0' })}>
@@ -604,6 +627,38 @@ function ProfileContent() {
                             <ChevronRight size={20} className={css({ color: '#CCC', transition: 'all 0.2s' })} />
                         </Link>
                     ))}
+
+                    {/* 오프라인 여행 관리 메뉴 */}
+                    <button
+                        onClick={() => setIsOfflineModalOpen(true)}
+                        className={css({
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            px: '24px',
+                            py: '20px',
+                            borderTop: '1px solid #F5F5F5',
+                            bg: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            w: '100%',
+                            textAlign: 'left',
+                            transition: 'all 0.25s ease',
+                            _hover: { bg: 'rgba(37, 99, 235, 0.04)', px: '28px' },
+                            _active: { bg: 'rgba(37, 99, 235, 0.08)' }
+                        })}
+                    >
+                        <div className={css({ display: 'flex', alignItems: 'center', gap: '16px' })}>
+                            <div className={css({ fontSize: '22px', w: '40px', h: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', bg: 'bg.softCotton', borderRadius: '12px' })}>
+                                📴
+                            </div>
+                            <div>
+                                <div className={css({ fontSize: '16px', fontWeight: '750', color: 'brand.secondary' })}>오프라인 여행 관리</div>
+                                <div className={css({ fontSize: '13px', color: 'brand.muted', mt: '2px', fontWeight: '600' })}>다운로드된 여행 목록을 관리하고 삭제할 수 있습니다</div>
+                            </div>
+                        </div>
+                        <ChevronRight size={20} className={css({ color: '#CCC', transition: 'all 0.2s' })} />
+                    </button>
                     {/* 건의 및 버그 제보 — 페이지 이동 대신 모달 */}
                     <button
                         onClick={() => setIsBugModalOpen(true)}
@@ -642,6 +697,11 @@ function ProfileContent() {
                     isOpen={isBugModalOpen}
                     onClose={() => setIsBugModalOpen(false)}
                     user={user}
+                />
+                
+                <DownloadedTripsModal
+                    isOpen={isOfflineModalOpen}
+                    onClose={() => setIsOfflineModalOpen(false)}
                 />
             </section>
 

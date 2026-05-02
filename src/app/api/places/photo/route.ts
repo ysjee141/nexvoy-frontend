@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     try {
         // 1. Places Details REST API로 photo_reference 조회
         const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${encodeURIComponent(placeId)}&fields=photos&key=${apiKey}`
-        const detailsRes = await fetch(detailsUrl)
+        const detailsRes = await fetch(detailsUrl, { next: { revalidate: 3600 } })
         const detailsData = await detailsRes.json()
 
         if (detailsData.status !== 'OK' || !detailsData.result?.photos?.length) {
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
         // 2. Places Photo URL로 리다이렉트를 따라가 영구 CDN URL 획득
         const photoApiUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxwidth}&photo_reference=${photoRef}&key=${apiKey}`
-        const photoRes = await fetch(photoApiUrl, { redirect: 'manual' })
+        const photoRes = await fetch(photoApiUrl, { redirect: 'manual', next: { revalidate: 3600 } })
         const finalUrl = photoRes.headers.get('location')
 
         return NextResponse.json({ url: finalUrl || photoApiUrl })

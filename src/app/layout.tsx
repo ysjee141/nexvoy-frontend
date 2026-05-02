@@ -4,6 +4,8 @@ import Navbar from '@/components/layout/Navbar'
 import BottomNavbar from '@/components/layout/BottomNavbar'
 import NotificationBanner from '@/components/layout/NotificationBanner'
 import OfflineBanner from '@/components/common/OfflineBanner'
+import OfflinePromptModal from '@/components/common/OfflinePromptModal'
+import OnlinePromptModal from '@/components/common/OnlinePromptModal'
 import { css } from 'styled-system/css'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import NativeAnalytics from '@/components/common/NativeAnalytics'
@@ -47,6 +49,8 @@ export default function RootLayout({
         */}
         <SpeedInsights />
         <OfflineBanner />
+        <OfflinePromptModal />
+        <OnlinePromptModal />
         <Navbar />
         <NotificationBanner />
         <main

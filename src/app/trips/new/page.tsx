@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
 import { Plus, ArrowLeft, ChevronLeft, Minus } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
+import { CacheUtil } from '@/utils/cache'
 
 const libraries: ("places")[] = ["places"]
 
@@ -31,7 +32,8 @@ export default function NewTripPage() {
     useEffect(() => {
         async function checkAuth() {
             const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { user: networkUser } } = await supabase.auth.getUser()
+            const user = networkUser || await CacheUtil.getAuthUser()
             if (!user) {
                 router.push('/login')
             }
@@ -58,7 +60,8 @@ export default function NewTripPage() {
         }
 
         const supabase = createClient()
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { user: networkUser } } = await supabase.auth.getUser()
+        const user = networkUser || await CacheUtil.getAuthUser()
 
         if (!user) {
             router.push('/login')

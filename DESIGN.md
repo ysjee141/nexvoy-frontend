@@ -456,6 +456,11 @@ For grouped content (e.g., checklist categories), use the Accordion Card pattern
 - **Header**: `15px` Bold (`title-sub`), with a rotating `ChevronDown` (16px).
 - **Animation**: Use `framer-motion` for `height` and `opacity` transitions.
 
+### Gradient Progress Bars
+- **Track**: `bg.softCotton` or `brand.hairline` (8px height, 4px radius).
+- **Fill**: Linear gradient from `brand.primary` (#2563eb) to Indigo (#4f46e5).
+- **Micro-animation**: Smooth width transition using `framer-motion`.
+
 Depth comes from the white-on-white surface separation, rounded-corner clipping, and these strategic shadow tiers.
 
 ## Components
