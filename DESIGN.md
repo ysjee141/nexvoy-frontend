@@ -1,7 +1,7 @@
 ---
 version: alpha
-name: Airbnb
-description: A warm, generous consumer marketplace anchored on a clean white canvas and Cobalt Blue (#2563eb), the single brand voltage that carries every primary CTA, search-button orb, and rating dot. Type runs Airbnb Cereal VF at modest weights — display sits at 22–28px in weight 500/600 rather than the heavy 700+ that fintech and enterprise systems use; the brand trusts photography and generous whitespace over typographic muscle. Three product entries (Homes, Experiences, Services) sit in the top nav with hand-illustrated 32-icon glyphs and "NEW" badges, signaling a marketplace expansion rather than a feature dump. Pill-shaped search bars (`{rounded.full}`), softly rounded property cards (`{rounded.lg}` ~14px), and 32px button radii read as friendly and human — there is no hard corner anywhere except the body grid.
+name: OnVoy
+description: A warm, generous consumer marketplace anchored on a clean white canvas and Cobalt Blue (#2563eb), the single brand voltage that carries every primary CTA and key UI moments. Type runs on a clean system stack — display sits at 22–28px in weight 500/600 to maintain a friendly, human feel. The brand identity "Excitement" (설렘) is delivered through generous whitespace, soft 16px corner radii, and ultra-thin hairline borders (#E2E8F0) that provide structure without visual weight. There is no hard corner except the body grid.
 
 colors:
   primary: "#2563eb"
@@ -57,6 +57,12 @@ typography:
     fontFamily: "'Airbnb Cereal VF', Circular, sans-serif"
     fontSize: 16px
     fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: 0
+  title-sub:
+    fontFamily: "'Airbnb Cereal VF', Circular, sans-serif"
+    fontSize: 15px
+    fontWeight: 700
     lineHeight: 1.25
     letterSpacing: 0
   title-sm:
@@ -328,21 +334,17 @@ components:
 
 ## Overview
 
-Airbnb is the canonical example of a generous, photography-led consumer marketplace. The base canvas is **pure white** (`{colors.canvas}` — #ffffff) with deep slate ink (`{colors.ink}` — #1e293b) for headlines and body, and a single voltage of **Cobalt Blue** (`{colors.primary}` — #2563eb) carrying every primary CTA, the search-button orb, the heart save state, and inline brand links. There is no secondary brand color in mainline marketing — the **Luxe purple** (`{colors.luxe}` — #460479) and **Plus magenta** (`{colors.plus}` — #92174d) tokens are sub-brand accents that only appear inside Airbnb Luxe / Plus contexts.
+OnVoy is designed to evoke a sense of "Excitement" (설렘) through a generous, photography-led travel planning experience. The base canvas is **pure white** (`{colors.canvas}` — #ffffff) with deep slate ink (`{colors.ink}` — #1e293b) for headlines and body, and a single voltage of **Cobalt Blue** (`{colors.primary}` — #2563eb) carrying every primary CTA and active state.
 
-Type runs **Airbnb Cereal VF** (a custom variable font Airbnb licenses), with **Circular** as the historic in-house fallback and a system stack underneath. Cereal sits at modest weights — display headlines render at 22–28px in weight 500–600, not the heavy 700+ weights that financial or enterprise systems lean on. The hero h1 ("Inspiration for future getaways") on the homepage is just 28px / 700, which would feel small on a typical SaaS page; here it works because the layout leans on photography (city collage, property cards) for visual weight rather than typographic muscle.
-
-The shape language is **soft**. Buttons are 8px radius (`{rounded.sm}`), property cards are ~14px (`{rounded.md}`), the search bar is fully pill-shaped (`{rounded.full}`), wishlist hearts and search orbs are circles (`{rounded.full}`), and category strip rounded corners run at 32px (`{rounded.xl}`). There is essentially no hard corner anywhere except the body grid itself — every interactive element is rounded.
+The shape language is **exceptionally soft**. Main containers and modals use a 16px radius, while internal cards use 12px and inputs/buttons use 8px. There is essentially no hard corner anywhere — every interactive element is rounded to feel approachable and premium.
 
 **Key Characteristics:**
-- Single accent color: `{colors.primary}` (#2563eb — "Cobalt Blue") carries every primary CTA, the search orb, the heart save state, and the brand wordmark. Used scarcely — most pages are 90% white + ink with one or two Cobalt Blue moments.
-- Custom variable type: `Airbnb Cereal VF`. Display weights sit at 500–700, body at 400. Modest weight is intentional — the system trusts photography for visual heft.
-- Three-product top nav: Homes, Experiences, Services — each with a hand-illustrated 32px icon and "NEW" badges (`{component.new-tag}`) on the two newer products. Active tab uses an underline rule (`{component.product-tab-active}`).
-- Pill-shaped global search bar: white surface, fully rounded (`{rounded.full}`), divided by 1px hairlines into Where / When / Who segments, terminated by a circular Rausch search orb (`{component.search-orb}`).
-- Property cards are photo-first: aspect-ratio rectangles with `{rounded.md}` corner clipping, swipeable image carousel, "Guest favorite" floating badge top-left, heart icon top-right, then 4–5 lines of meta beneath.
-- Editorial dropdowns (footer, language picker) are clean text columns over the white canvas — no card surface, no shadow.
-- The design system caps elevation at one shadow tier (`box-shadow: rgba(0,0,0,0.02) 0 0 0 1px, rgba(0,0,0,0.04) 0 2px 6px, rgba(0,0,0,0.1) 0 4px 8px`) — used on hover-floated cards and search/account dropdowns.
-- 8px base spacing system, with major sections at `{spacing.section}` (64px) — generous but not airy enough to feel editorial-magazine; the marketplace density wants more cards per scroll.
+- **Single accent color**: `{colors.brand.primary}` (#2563eb — "Cobalt Blue") carries every primary CTA and active interaction state.
+- **Hairline Borders**: Structure is provided by 1px solid borders in `{colors.brand.hairline}` (#E2E8F0). Avoid high-contrast or thick borders to maintain a light, airy feel.
+- **Premium Softness**: Generous whitespace and consistent rounding (16px/12px/8px) are core to the brand's human-centric design.
+- **Elevation**: The system caps elevation at one shadow tier (`boxShadow: 'airbnbHover'`) — used to lift modals, active cards, and floating elements over the white canvas.
+- **Typography**: Clean hierarchy with modest weights (500-600 for headlines) to avoid an overbearing "enterprise" look.
+- **10% Rule**: Color and decoration are used sparingly—only for 10% of the screen to guide the user's attention to the next action.
 
 ## Colors
 
@@ -359,9 +361,9 @@ The shape language is **soft**. Buttons are 8px radius (`{rounded.sm}`), propert
 - **Surface Strong** (`{colors.surface-strong}` — #f2f2f2): Slightly heavier fill — circular icon-button surface (e.g., the breadcrumb back-arrow and listing toolbar buttons).
 
 ### Hairlines & Borders
-- **Hairline** (`{colors.hairline}` — #dddddd): The default 1px border tone — search bar dividers, table separators, footer column splitters, card 1px borders.
-- **Hairline Soft** (`{colors.hairline-soft}` — #ebebeb): A lighter divider used on long-scrolling editorial body separators.
-- **Border Strong** (`{colors.border-strong}` — #c1c1c1): A heavier stroke used on disabled outline buttons and form input outlines after focus.
+- **Hairline** (`{colors.brand.hairline}` — #E2E8F0): The default 1px border tone. Used for all structural dividers, card borders, and input outlines to provide "Soft Structure".
+- **Hairline Soft** (`{colors.brand.hairlineSoft}` — #F1F5F9): An even lighter divider used for subtle background sections or nested separators.
+- **Border Strong** (`{colors.brand.borderStrong}` — #CBD5E1): A heavier stroke used sparingly for focus states or high-emphasis structural elements.
 
 ### Text
 - **Ink** (`{colors.ink}` — #1e293b): The dominant text color on light surfaces. Display headlines, body paragraphs, primary nav links, and most inline link text. Never pure black.
@@ -437,13 +439,24 @@ The system gives editorial bands 64px of vertical breathing room but compresses 
 
 ## Elevation
 
-The system has essentially **one shadow tier** plus the flat baseline.
+The system uses a **tiered shadow strategy** to manage depth:
 
-- **Flat (no shadow):** Body, hero, footer, all editorial bands — 95% of surfaces.
-- **Card hover float:** `box-shadow: rgba(0, 0, 0, 0.02) 0 0 0 1px, rgba(0, 0, 0, 0.04) 0 2px 6px 0, rgba(0, 0, 0, 0.1) 0 4px 8px 0` — applied to property cards on pointer hover, the search bar at rest, and the dropdown menus (account menu, language picker, date picker). This is the single shadow definition in the entire system.
-- **Modal scrim:** `{colors.scrim}` rendered at 50% opacity — the global modal backdrop. Used on date pickers, login dialogs, language picker.
+- **Flat (no shadow):** Body, hero, footer, all editorial bands — 95% of surfaces. Depth is achieved via `brand.hairline` borders.
+- **shadow.sm:** Subtle elevation for buttons and view switches.
+- **shadow.md:** Standard modal and hover state elevation.
+- **shadow.primary:** Vibrant blue shadow for primary actions and active states.
+- **airbnbHover**: The signature multi-layered elevation tier — used to lift modals, active cards, and floating elements over the white canvas.
 
-There are no progressive elevation tiers — the system either has the one shadow or none. Depth comes from photography, the white-on-white surface separation, and rounded-corner clipping rather than from layered shadows.
+## Interactive Patterns
+
+### Accordion Cards
+For grouped content (e.g., checklist categories), use the Accordion Card pattern:
+- **Surface**: White background with `brand.hairline` border or `bg.surfaceSoft` fill.
+- **Radius**: `16px` for the container.
+- **Header**: `15px` Bold (`title-sub`), with a rotating `ChevronDown` (16px).
+- **Animation**: Use `framer-motion` for `height` and `opacity` transitions.
+
+Depth comes from the white-on-white surface separation, rounded-corner clipping, and these strategic shadow tiers.
 
 ## Components
 

@@ -141,7 +141,7 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
     return (
         <div className={css({
             position: 'fixed', inset: 0, zIndex: 3000,
-            bg: 'black/50',
+            bg: 'rgba(0,0,0,0.5)',
             backdropFilter: 'blur(10px)',
             display: 'flex', alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center', p: { base: '0', sm: '20px' },
@@ -150,8 +150,8 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
             <div className={css({
                 bg: 'white', w: '100%', maxW: { base: '100%', sm: '520px' },
                 h: { base: '100dvh', sm: 'auto' }, maxH: { base: '100dvh', sm: '90vh' },
-                overflowY: 'auto', borderRadius: { base: '0', sm: '32px' },
-                boxShadow: { base: 'none', sm: 'floating' },
+                overflowY: 'auto', borderRadius: { base: '0', sm: '16px' },
+                boxShadow: { base: 'none', sm: 'airbnbHover' },
                 display: 'flex', flexDirection: 'column',
                 pb: { base: 'max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))', sm: '0' },
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
@@ -160,16 +160,16 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                 <div className={css({
                     p: '22px 24px',
                     pt: { base: 'calc(22px + max(env(safe-area-inset-top), var(--safe-area-inset-top)))', sm: '22px' },
-                    borderBottom: '1px solid', borderBottomColor: 'brand.border', display: 'flex',
+                    borderBottom: '1px solid', borderBottomColor: 'brand.hairline', display: 'flex',
                     justifyContent: 'space-between', alignItems: 'center', position: 'sticky', top: 0, bg: 'white', zIndex: 10
                 })}>
                     <div style={{ width: '40px' }} />
-                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em', position: 'absolute', left: '50%', transform: 'translateX(-50%)' })}>
+                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.ink', letterSpacing: '-0.02em', position: 'absolute', left: '50%', transform: 'translateX(-50%)' })}>
                         여행 정보 수정
                     </h2>
                     <button
                         onClick={handleClose}
-                        className={css({ p: '8px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', transition: 'all 0.2s', _hover: { bg: 'brand.border', color: 'brand.secondary', transform: 'rotate(90deg)' } })}
+                        className={css({ p: '8px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', transition: 'all 0.2s', _hover: { bg: 'rgba(0,0,0,0.05)', color: 'brand.ink', transform: 'rotate(90deg)' } })}
                     >
                         <X size={20} strokeWidth={2.5} />
                     </button>
@@ -179,16 +179,16 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                     <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '28px' })}>
                         
                         <div className={css({ textAlign: 'center', mb: '4px' })}>
-                            <div className={css({ w: '60px', h: '60px', bg: 'brand.primary/10', borderRadius: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 16px' })}>
+                            <div className={css({ w: '60px', h: '60px', bg: 'brand.primary/10', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 16px' })}>
                                 <Sparkles size={28} className={css({ color: 'brand.primary' })} strokeWidth={2.2} />
                             </div>
-                            <h3 className={css({ fontSize: '22px', fontWeight: '800', color: 'brand.secondary', mb: '6px', letterSpacing: '-0.03em' })}>기존 계획을 수정할까요?</h3>
+                            <h3 className={css({ fontSize: '22px', fontWeight: '800', color: 'brand.ink', mb: '6px', letterSpacing: '-0.03em' })}>기존 계획을 수정할까요?</h3>
                             <p className={css({ color: 'brand.muted', fontSize: '15px', fontWeight: '500' })}>변경된 일정이나 인원을 업데이트하세요.</p>
                         </div>
 
                         {/* 목적지 */}
                         <div>
-                            <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.secondary' })}>
+                            <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.ink' })}>
                                 <MapPin size={16} className={css({ color: 'brand.primary' })} /> 여행지 (국가/도시) *
                             </label>
                             {isLoaded ? (
@@ -200,14 +200,14 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                                         onChange={e => setDestination(e.target.value)}
                                         placeholder="공항, 도시, 또는 명소를 검색하세요"
                                         className={css({
-                                            w: '100%', p: '18px 20px', bg: 'bg.softCotton', border: '2px solid', borderColor: 'brand.border',
-                                            borderRadius: '20px', fontSize: '16px', fontWeight: '600', outline: 'none',
-                                            transition: 'all 0.3s', _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 5px rgba(var(--colors-brand-primary-rgb), 0.1)' }
+                                            w: '100%', p: '18px 20px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline',
+                                            borderRadius: '8px', fontSize: '16px', fontWeight: '600', outline: 'none',
+                                            transition: 'all 0.3s', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 5px rgba(var(--colors-brand-primary-rgb), 0.1)' }
                                         })}
                                     />
                                 </Autocomplete>
                             ) : (
-                                <div className={css({ w: '100%', p: '18px 20px', bg: 'bg.softCotton', borderRadius: '20px', border: '2px solid', borderColor: 'brand.border', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '10px' })}>
+                                <div className={css({ w: '100%', p: '18px 20px', bg: 'white', borderRadius: '8px', border: '1px solid', borderColor: 'brand.hairline', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '10px' })}>
                                     <Loader2 size={18} className={css({ animation: 'spin 1.5s linear infinite' })} /> 지도 정보를 불러오는 중...
                                 </div>
                             )}
@@ -216,7 +216,7 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                         {/* 날짜 */}
                         <div className={css({ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' })}>
                             <div>
-                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.secondary' })}>
+                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.ink' })}>
                                     <Calendar size={16} className={css({ color: 'brand.primary' })} /> 시작일 *
                                 </label>
                                 <input
@@ -224,11 +224,11 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                                     required
                                     value={startDate}
                                     onChange={e => setStartDate(e.target.value)}
-                                    className={css({ w: '100%', p: '16px', bg: 'bg.softCotton', border: '2px solid', borderColor: 'brand.border', borderRadius: '18px', outline: 'none', fontSize: '15px', fontWeight: '600', transition: 'all 0.2s', _focus: { borderColor: 'brand.primary', bg: 'white' } })}
+                                    className={css({ w: '100%', p: '16px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', outline: 'none', fontSize: '15px', fontWeight: '600', transition: 'all 0.2s', _focus: { borderColor: 'brand.primary' } })}
                                 />
                             </div>
                             <div>
-                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.secondary' })}>
+                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.ink' })}>
                                     <Calendar size={16} className={css({ color: 'brand.primary' })} /> 종료일 *
                                 </label>
                                 <input
@@ -236,7 +236,7 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                                     required
                                     value={endDate}
                                     onChange={e => setEndDate(e.target.value)}
-                                    className={css({ w: '100%', p: '16px', bg: 'bg.softCotton', border: '2px solid', borderColor: 'brand.border', borderRadius: '18px', outline: 'none', fontSize: '15px', fontWeight: '600', transition: 'all 0.2s', _focus: { borderColor: 'brand.primary', bg: 'white' } })}
+                                    className={css({ w: '100%', p: '16px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', outline: 'none', fontSize: '15px', fontWeight: '600', transition: 'all 0.2s', _focus: { borderColor: 'brand.primary' } })}
                                 />
                             </div>
                         </div>
@@ -244,33 +244,33 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                         {/* 인원 */}
                         <div className={css({ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' })}>
                             <div>
-                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.secondary' })}>
+                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.ink' })}>
                                     <Users size={16} className={css({ color: 'brand.primary' })} /> 성인
                                 </label>
                                 <div className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    p: '8px', border: '2px solid', borderColor: 'brand.border', borderRadius: '18px', bg: 'white'
+                                    p: '8px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', bg: 'white'
                                 })}>
                                     <button
                                         type="button"
                                         disabled={adults <= 1}
                                         onClick={() => setAdults(v => v - 1)}
                                         className={css({
-                                            w: '36px', h: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            bg: adults <= 1 ? 'bg.softCotton' : 'brand.primary/10', color: adults <= 1 ? 'brand.border' : 'brand.primary',
-                                            cursor: adults <= 1 ? 'not-allowed' : 'pointer', transition: 'all 0.2s', _hover: { bg: adults <= 1 ? 'bg.softCotton' : 'brand.primary/20' }
+                                            w: '36px', h: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            bg: adults <= 1 ? 'rgba(0,0,0,0.05)' : 'brand.primary/10', color: adults <= 1 ? 'brand.muted' : 'brand.primary',
+                                            cursor: adults <= 1 ? 'not-allowed' : 'pointer', transition: 'all 0.2s', _hover: { bg: adults <= 1 ? 'rgba(0,0,0,0.05)' : 'brand.primary/20' }
                                         })}
                                     >
                                         <Minus size={18} strokeWidth={3} />
                                     </button>
-                                    <span className={css({ fontSize: '16px', fontWeight: '700', color: 'brand.secondary' })}>{adults}</span>
+                                    <span className={css({ fontSize: '16px', fontWeight: '700', color: 'brand.ink' })}>{adults}</span>
                                     <button
                                         type="button"
                                         onClick={() => setAdults(v => v + 1)}
                                         className={css({
-                                            w: '36px', h: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            w: '36px', h: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             bg: 'brand.primary', color: 'white', cursor: 'pointer', transition: 'all 0.2s',
-                                            _hover: { bg: 'brand.primaryDark', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' }
+                                            _hover: { bg: 'brand.primaryActive', boxShadow: 'airbnbHover' }
                                         })}
                                     >
                                         <Plus size={18} strokeWidth={3} />
@@ -278,33 +278,33 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                                 </div>
                             </div>
                             <div>
-                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.secondary' })}>
+                                <label className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '700', mb: '10px', color: 'brand.ink' })}>
                                     <Users size={16} className={css({ color: 'brand.primary' })} /> 아이
                                 </label>
                                 <div className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    p: '8px', border: '2px solid', borderColor: 'brand.border', borderRadius: '18px', bg: 'white'
+                                    p: '8px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', bg: 'white'
                                 })}>
                                     <button
                                         type="button"
                                         disabled={childrenCount <= 0}
                                         onClick={() => setChildren(v => v - 1)}
                                         className={css({
-                                            w: '36px', h: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            bg: childrenCount <= 0 ? 'bg.softCotton' : 'brand.primary/10', color: childrenCount <= 0 ? 'brand.border' : 'brand.primary',
-                                            cursor: childrenCount <= 0 ? 'not-allowed' : 'pointer', transition: 'all 0.2s', _hover: { bg: childrenCount <= 0 ? 'bg.softCotton' : 'brand.primary/20' }
+                                            w: '36px', h: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            bg: childrenCount <= 0 ? 'rgba(0,0,0,0.05)' : 'brand.primary/10', color: childrenCount <= 0 ? 'brand.muted' : 'brand.primary',
+                                            cursor: childrenCount <= 0 ? 'not-allowed' : 'pointer', transition: 'all 0.2s', _hover: { bg: childrenCount <= 0 ? 'rgba(0,0,0,0.05)' : 'brand.primary/20' }
                                         })}
                                     >
                                         <Minus size={18} strokeWidth={3} />
                                     </button>
-                                    <span className={css({ fontSize: '16px', fontWeight: '700', color: 'brand.secondary' })}>{childrenCount}</span>
+                                    <span className={css({ fontSize: '16px', fontWeight: '700', color: 'brand.ink' })}>{childrenCount}</span>
                                     <button
                                         type="button"
                                         onClick={() => setChildren(v => v + 1)}
                                         className={css({
-                                            w: '36px', h: '36px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            w: '36px', h: '36px', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             bg: 'brand.primary', color: 'white', cursor: 'pointer', transition: 'all 0.2s',
-                                            _hover: { bg: 'brand.primaryDark', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' }
+                                            _hover: { bg: 'brand.primaryActive', boxShadow: 'airbnbHover' }
                                         })}
                                     >
                                         <Plus size={18} strokeWidth={3} />
@@ -323,11 +323,11 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
                             type="submit"
                             disabled={loading}
                             className={css({
-                                w: '100%', py: '20px', bg: 'brand.primary', color: 'white', borderRadius: '22px', fontWeight: '800',
-                                fontSize: '17px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
-                                justifyContent: 'center', gap: '10px', boxShadow: '0 10px 25px rgba(46, 196, 182, 0.25)',
+                                w: '100%', py: '18px', bg: 'brand.primary', color: 'white', borderRadius: '8px', fontWeight: '800',
+                                fontSize: '16px', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', gap: '10px',
                                 transition: 'all 0.3s', _disabled: { opacity: 0.6 },
-                                _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 15px 30px rgba(46, 196, 182, 0.35)' }, 
+                                _hover: { bg: 'brand.primaryActive', boxShadow: 'airbnbHover' }, 
                                 _active: { transform: 'scale(0.97)' }
                             })}
                         >

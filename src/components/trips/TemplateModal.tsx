@@ -124,15 +124,15 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
     return (
         <div className={css({
             position: 'fixed', inset: 0,
-            bg: 'rgba(0,0,0,0.5)', zIndex: 2000,
+            bg: 'bg.scrim/50', zIndex: 2000,
             display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px',
             backdropFilter: 'blur(10px)',
             animation: 'fadeIn 0.3s ease-out'
         })}>
             <div className={css({
-                bg: 'white', borderRadius: '24px', w: '100%', maxW: '440px', p: '32px', position: 'relative',
+                bg: 'white', borderRadius: '16px', w: '100%', maxW: '440px', p: '32px', position: 'relative',
                 maxH: '85vh', display: 'flex', flexDirection: 'column',
-                boxShadow: '0 30px 80px rgba(0,0,0,0.2)',
+                boxShadow: 'airbnbHover',
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)'
             })}>
                 <button
@@ -143,13 +143,13 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         bg: 'bg.softCotton', border: 'none', cursor: 'pointer', color: 'brand.muted',
                         transition: 'all 0.2s',
-                        _hover: { bg: 'brand.border', color: 'brand.secondary', transform: 'rotate(90deg)' }
+                        _hover: { bg: 'bg.scrim/5', color: 'brand.ink', transform: 'rotate(90deg)' }
                     })}
                 >
                     <X size={20} strokeWidth={2.5} />
                 </button>
 
-                <h3 className={css({ fontSize: '22px', fontWeight: '700', mb: '24px', color: 'brand.secondary', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
+                <h3 className={css({ fontSize: '22px', fontWeight: '700', mb: '24px', color: 'brand.ink', letterSpacing: '-0.02em' })}>템플릿 불러오기</h3>
 
                 <div className={css({ maxHeight: '400px', overflowY: 'auto', pr: '8px' })}>
                     {loading ? (
@@ -167,21 +167,21 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
                                 <div
                                     key={template.id}
                                     className={css({
-                                        p: '18px', border: '1px solid', borderColor: 'brand.border', borderRadius: '18px',
+                                        p: '18px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
                                         transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
                                         _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary', transform: 'translateY(-2px)' }
                                     })}
                                 >
-                                    <span className={css({ fontWeight: '700', fontSize: '15px', color: 'brand.secondary', flex: 1 })}>{template.title}</span>
+                                    <span className={css({ fontWeight: '700', fontSize: '15px', color: 'brand.ink', flex: 1 })}>{template.title}</span>
                                     <button
                                         onClick={() => handleApplyTemplate(template.id)}
                                         disabled={loadingTemplateId === template.id}
                                         className={css({
-                                            bg: 'brand.primary', color: 'white', borderRadius: '14px', border: 'none',
+                                            bg: 'brand.primary', color: 'white', borderRadius: '8px', border: 'none',
                                             px: '14px', py: '10px', fontSize: '13px', fontWeight: '700',
                                             cursor: 'pointer', transition: 'all 0.2s',
-                                            _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: 'dimensional' },
+                                            _hover: { bg: 'brand.primaryActive', transform: 'translateY(-2px)', boxShadow: 'airbnbHover' },
                                             _active: { transform: 'scale(0.95)' },
                                             _disabled: { opacity: 0.5, cursor: 'not-allowed' }
                                         })}

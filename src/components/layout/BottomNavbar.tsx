@@ -26,9 +26,8 @@ export default function BottomNavbar() {
                 bg: 'white/90',
                 backdropFilter: 'blur(10px)',
                 borderTop: '1px solid',
-                borderTopColor: 'brand.border',
+                borderTopColor: 'brand.hairline',
                 paddingBottom: 'max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom))', // iOS/Android Safe Area 대응
-                boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
             })}
         >
             <div
@@ -58,7 +57,7 @@ export default function BottomNavbar() {
                                 color: isActive ? 'brand.primary' : 'brand.muted',
                                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                                 _active: { transform: 'scale(0.92)' },
-                                _hover: { color: isActive ? 'brand.primary' : 'brand.secondary' },
+                                _hover: { color: isActive ? 'brand.primary' : 'brand.ink' },
                             })}
                         >
                             <Icon size={24} strokeWidth={isActive ? 2.8 : 2} />

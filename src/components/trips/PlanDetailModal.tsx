@@ -112,8 +112,8 @@ export default function PlanDetailModal({
                     maxW: { base: '100%', sm: '620px' },
                     h: { base: '100dvh', sm: 'auto' },
                     maxH: { base: '100dvh', sm: '92vh' },
-                    borderRadius: { base: '0', sm: '24px' },
-                    boxShadow: { base: 'none', sm: '0 25px 70px rgba(0,0,0,0.18)' },
+                    borderRadius: { base: '0', sm: '16px' },
+                    boxShadow: { base: 'none', sm: 'airbnbHover' },
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
@@ -255,7 +255,7 @@ export default function PlanDetailModal({
                 {/* ── 탭 바 ── */}
                 <div className={css({
                     display: 'flex', flexShrink: 0,
-                    borderBottom: '1px solid', borderColor: 'brand.border',
+                    borderBottom: '1px solid', borderColor: 'brand.hairline',
                     bg: 'white',
                     px: '8px',
                 })}>
@@ -282,9 +282,9 @@ export default function PlanDetailModal({
                                         left: '50%',
                                         transform: 'translateX(-50%)',
                                         width: isActive ? '40%' : '0%',
-                                        height: '2px',
+                                        height: '3px',
                                         bg: 'brand.primary',
-                                        borderRadius: '2px',
+                                        borderRadius: '3px 3px 0 0',
                                         transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
                                     }
                                 })}
@@ -294,7 +294,7 @@ export default function PlanDetailModal({
                                 {t === 'refs' && hasRefs && (
                                     <span className={css({
                                         bg: 'brand.primary',
-                                        color: isActive ? 'white' : 'brand.secondary',
+                                        color: 'white',
                                         fontSize: '10px', fontWeight: '700',
                                         px: '6px', py: '1.5px', borderRadius: '8px',
                                         ml: '2px',
@@ -399,11 +399,11 @@ export default function PlanDetailModal({
                                                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '4px' })}>
                                                     {mapUrl ? (
                                                         <a href={mapUrl} target="_blank" rel="noopener noreferrer"
-                                                            className={css({ fontSize: '15.5px', color: 'brand.secondary', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '5px', textDecoration: 'none', wordBreak: 'break-word', _hover: { textDecoration: 'underline' } })}>
+                                                            className={css({ fontSize: '15.5px', color: 'brand.ink', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '5px', textDecoration: 'none', wordBreak: 'break-word', _hover: { textDecoration: 'underline' } })}>
                                                             {plan.location}<ExternalLink size={13} style={{ flexShrink: 0 }} />
                                                         </a>
                                                     ) : (
-                                                        <span className={css({ fontSize: '15.5px', color: 'brand.secondary', fontWeight: '700' })}>{plan.location}</span>
+                                                        <span className={css({ fontSize: '15.5px', color: 'brand.ink', fontWeight: '700' })}>{plan.location}</span>
                                                     )}
                                                     {plan.address && (
                                                         <span className={css({ fontSize: '13px', color: 'brand.muted', fontWeight: '500' })}>{plan.address}</span>
@@ -423,12 +423,12 @@ export default function PlanDetailModal({
                                                 <div className={css({ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
                                                     <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '5px' })}>
                                                         <span className={css({ fontSize: '12px', color: 'brand.muted', fontWeight: '600' })}>현지</span>
-                                                        <span className={css({ fontSize: '14px', fontWeight: '600', color: 'brand.secondary', bg: 'bg.softCotton', px: '10px', py: '5px', borderRadius: '12px' })}>{localTime}</span>
+                                                        <span className={css({ fontSize: '14px', fontWeight: '600', color: 'brand.ink', bg: 'bg.softCotton', px: '10px', py: '5px', borderRadius: '8px', border: '1px solid', borderColor: 'brand.hairline' })}>{localTime}</span>
                                                     </span>
-                                                    <span className={css({ color: 'brand.border', fontSize: '12px' })}>|</span>
+                                                    <span className={css({ color: 'brand.hairline', fontSize: '12px' })}>|</span>
                                                     <span className={css({ display: 'inline-flex', alignItems: 'center', gap: '5px' })}>
                                                         <span className={css({ fontSize: '12px', color: 'brand.muted', fontWeight: '600' })}>한국</span>
-                                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary', bg: 'rgba(37, 99, 235, 0.08)', px: '10px', py: '5px', borderRadius: '12px' })}>{kstTime}</span>
+                                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.primary', bg: 'brand.primary/5', px: '10px', py: '5px', borderRadius: '8px', border: '1px solid', borderColor: 'brand.primary/10' })}>{kstTime}</span>
                                                     </span>
                                                 </div>
                                                 {plan.end_datetime_local && (
@@ -453,7 +453,7 @@ export default function PlanDetailModal({
                                             label="알림 설정"
                                             bgColor="rgba(245, 158, 11, 0.05)"
                                             value={
-                                                <span className={css({ fontSize: '14px', fontWeight: '600', color: 'brand.secondary' })}>
+                                                <span className={css({ fontSize: '14px', fontWeight: '600', color: 'brand.ink' })}>
                                                     {plan.alarm_minutes_before === 0 ? '알림 없음' : 
                                                      plan.alarm_minutes_before >= 1440 ? `${Math.floor(plan.alarm_minutes_before / 1440)}일 전` :
                                                      plan.alarm_minutes_before >= 60 ? `${Math.floor(plan.alarm_minutes_before / 60)}시간 전` :
@@ -484,12 +484,12 @@ export default function PlanDetailModal({
                                             bgColor="rgba(16, 185, 129, 0.05)"
                                             value={
                                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>
-                                                    <span className={css({ fontSize: '15.5px', fontWeight: '600', color: 'brand.secondary', letterSpacing: '-0.01em' })}>{localAmount}</span>
+                                                    <span className={css({ fontSize: '15.5px', fontWeight: '600', color: 'brand.ink', letterSpacing: '-0.01em' })}>{localAmount}</span>
                                                     {currency.code !== 'KRW' && krwAmount !== null && (
-                                                        <span className={css({ fontSize: '14px', color: 'brand.muted', bg: 'bg.softCotton', px: '8px', py: '4px', borderRadius: '10px' })}>≈ {formatKRW(krwAmount)}</span>
+                                                        <span className={css({ fontSize: '14px', color: 'brand.muted', bg: 'bg.softCotton', px: '8px', py: '4px', borderRadius: '8px', border: '1px solid', borderColor: 'brand.hairline' })}>≈ {formatKRW(krwAmount)}</span>
                                                     )}
                                                     {currency.code !== 'KRW' && !krwAmount && (
-                                                        <span className={css({ fontSize: '13px', color: 'brand.border' })}>환율 로딩 중...</span>
+                                                        <span className={css({ fontSize: '13px', color: 'brand.hairline' })}>환율 로딩 중...</span>
                                                     )}
                                                 </div>
                                             }
@@ -503,7 +503,7 @@ export default function PlanDetailModal({
                                             label="메모"
                                             bgColor="bg.softCotton"
                                             value={
-                                                <p className={css({ fontSize: '14px', color: 'brand.secondary', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', bg: 'bg.softCotton', p: '12px', borderRadius: '12px', m: '0' })}>
+                                                <p className={css({ fontSize: '14px', color: 'brand.ink', lineHeight: 1.7, whiteSpace: 'pre-wrap', wordBreak: 'break-word', bg: 'bg.softCotton', p: '12px', borderRadius: '8px', border: '1px solid', borderColor: 'brand.hairline', m: '0' })}>
                                                     {plan.memo}
                                                 </p>
                                             }
@@ -527,7 +527,7 @@ export default function PlanDetailModal({
                                     ))}
                                 </>
                             ) : (
-                                <div className={css({ py: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'brand.border' })}>
+                                <div className={css({ py: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '12px', color: 'brand.hairline' })}>
                                     <Link2 size={32} />
                                     <p className={css({ m: '0', fontSize: '14px', textAlign: 'center', lineHeight: 1.5, color: 'brand.muted' })}>
                                         참고할 자료가 아직 없네요. 📂<br />
@@ -545,28 +545,28 @@ export default function PlanDetailModal({
                     <div className={css({
                         display: { base: 'none', sm: 'flex' },
                         gap: '12px', p: '20px 24px',
-                        borderTop: '1px solid', borderColor: 'brand.border', flexShrink: 0,
+                        borderTop: '1px solid', borderColor: 'brand.hairline', flexShrink: 0,
                         bg: 'white'
                     })}>
                         <button onClick={() => { onEdit(plan); handleClose() }} disabled={!isOnline}
                             className={css({ 
                                 flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', py: '14px', 
-                                bg: 'brand.primary', color: 'white', borderRadius: '14px', fontWeight: '700', fontSize: '15px', 
+                                bg: 'brand.primary', color: 'white', borderRadius: '8px', fontWeight: '700', fontSize: '15px', 
                                 border: 'none', cursor: isOnline ? 'pointer' : 'not-allowed', 
                                 opacity: isOnline ? 1 : 0.5,
                                 transition: 'all 0.25s cubic-bezier(0.2, 0, 0, 1)',
-                                _hover: { transform: 'translateY(-1px)', bg: 'brand.primaryDark', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' } 
+                                _hover: { bg: 'brand.primaryActive', boxShadow: 'airbnbHover' } 
                             })}>
                             <Pencil size={16} strokeWidth={2.5} /> 수정하기
                         </button>
                         <button onClick={() => { onDelete(plan.id); handleClose() }} disabled={!isOnline}
                             className={css({ 
                                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', py: '14px', 
-                                bg: 'white', color: '#94A3B8', border: '1px solid', borderColor: 'brand.border', borderRadius: '14px', 
+                                bg: 'white', color: '#94A3B8', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', 
                                 fontWeight: '700', fontSize: '15px', cursor: isOnline ? 'pointer' : 'not-allowed', 
                                 opacity: isOnline ? 1 : 0.5,
                                 transition: 'all 0.2s',
-                                _hover: { bg: '#F8FAFC', color: '#F43F5E', borderColor: '#F43F5E/30' } 
+                                _hover: { bg: '#F8FAFC', color: '#F43F5E', borderColor: '#F43F5E/30', boxShadow: 'airbnbHover' } 
                             })}>
                             <Trash2 size={16} strokeWidth={2.5} /> 삭제
                         </button>
@@ -597,8 +597,9 @@ function InfoRow({ icon, label, value, bgColor = 'bg.softCotton' }: { icon: Reac
     return (
         <div className={css({ display: 'flex', gap: '16px', alignItems: 'flex-start' })}>
             <div className={css({ 
-                w: '42px', h: '42px', borderRadius: '14px', bg: bgColor, 
+                w: '42px', h: '42px', borderRadius: '12px', bg: bgColor, 
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                border: '1px solid', borderColor: 'rgba(0,0,0,0.03)',
                 mt: '2px' // 텍스트 첫 줄과 높이를 맞추기 위한 미세 조정
             })}>
                 {icon}
@@ -606,7 +607,7 @@ function InfoRow({ icon, label, value, bgColor = 'bg.softCotton' }: { icon: Reac
             <div className={css({ flex: 1, minW: 0 })}>
                 <p className={css({ fontSize: '11px', fontWeight: '800', color: 'brand.muted', textTransform: 'uppercase', letterSpacing: '0.08em', m: '0 0 4px 0' })}>{label}</p>
                 <div className={css({ display: 'flex', flexDirection: 'column', justifyContent: 'center' })}>{typeof value === 'string'
-                    ? <span className={css({ fontSize: '15.5px', color: 'brand.secondary', fontWeight: '700', wordBreak: 'break-word', lineHeight: 1.5 })}>{value}</span>
+                    ? <span className={css({ fontSize: '15.5px', color: 'brand.ink', fontWeight: '700', wordBreak: 'break-word', lineHeight: 1.5 })}>{value}</span>
                     : value}
                 </div>
             </div>

@@ -16,31 +16,53 @@ export default defineConfig({
       tokens: {
         colors: {
           brand: {
-            primary: { value: '#2563EB' },   // primary-blue (Cobalt)
-            primaryDark: { value: '#1D4ED8' }, 
-            secondary: { value: '#1E293B' }, // text-primary (Deep Slate)
-            muted: { value: '#64748B' },     // text-secondary (Cool Slate)
-            light: { value: '#FFFFFF' },     // bg-base (Pure White)
-            border: { value: '#E2E8F0' },    // Thin Blue Gray
-            accent: { value: '#3B82F6' },    // accent-blue-light
+            primary: { value: '#2563EB' },
+            primaryActive: { value: '#1D4ED8' },
+            primaryDisabled: { value: '#BFDBFE' },
             error: { value: '#EF4444' },
-            errorLight: { value: '#FEF2F2' },
+            errorHover: { value: '#DC2626' },
+            ink: { value: '#1E293B' },
+            body: { value: '#334155' },
+            muted: { value: '#64748B' },
+            mutedSoft: { value: '#94A3B8' },
+            hairline: { value: '#E2E8F0' },
+            hairlineSoft: { value: '#F1F5F9' },
+            border: { value: '#E2E8F0' },
+            borderStrong: { value: '#CBD5E1' },
             success: { value: '#10B981' },
-            warning: { value: '#F59E0B' },
           },
           bg: {
-            surface: { value: '#FFFFFF' },
-            card: { value: '#FFFFFF' },
-            input: { value: '#FFFFFF' },
-            light: { value: '#FFFFFF' },
-            softCotton: { value: '#F8FAFF' }, // Very light blue tint for subtle grouping
             canvas: { value: '#FFFFFF' },
+            surfaceSoft: { value: '#F8FAFF' },
+            surfaceStrong: { value: '#F1F5F9' },
+            scrim: { value: '#000000' }
           }
         },
+        radii: {
+          none: { value: '0px' },
+          xs: { value: '4px' },
+          sm: { value: '8px' },
+          md: { value: '14px' },
+          lg: { value: '20px' },
+          xl: { value: '32px' },
+          full: { value: '9999px' },
+        },
+        spacing: {
+          xxs: { value: '2px' },
+          xs: { value: '4px' },
+          sm: { value: '8px' },
+          md: { value: '12px' },
+          base: { value: '16px' },
+          lg: { value: '24px' },
+          xl: { value: '32px' },
+          xxl: { value: '48px' },
+          section: { value: '64px' },
+        },
         shadows: {
-          airbnb: { value: '0 6px 16px rgba(0,0,0,0.12)' },
-          floating: { value: '0 12px 20px rgba(0,0,0,0.08), 0 4px 6px rgba(0,0,0,0.05)' },
-          dimensional: { value: '0 1px 2px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.05)' },
+          airbnbHover: { value: 'rgba(0,0,0,0.02) 0 0 0 1px, rgba(0,0,0,0.04) 0 2px 6px, rgba(0,0,0,0.1) 0 4px 8px' },
+          'shadow.sm': { value: '0 1px 2px rgba(0,0,0,0.05)' },
+          'shadow.md': { value: '0 4px 12px rgba(0,0,0,0.08)' },
+          'shadow.primary': { value: '0 8px 20px rgba(37, 99, 235, 0.2)' },
         }
       }
     },
