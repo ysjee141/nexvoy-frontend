@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { CapacitorUpdater } from '@capgo/capacitor-updater';
 import { App } from '@capacitor/app';
 import { SplashScreen } from '@capacitor/splash-screen';
+import { Network } from '@capacitor/network';
 import { createClient } from '@/utils/supabase/client';
 
 const supabase = createClient();
@@ -16,7 +17,15 @@ export function useOTAUpdate() {
   useEffect(() => {
     const checkUpdate = async () => {
       try {
-        // 1. Notify that the current app is ready (prevent rollback)
+        // 1. Check network status - skip if offline
+        const networkStatus = await Network.getStatus();
+        if (!networkStatus.connected) {
+          console.log('Offline: Skipping OTA update check');
+          setStatus('idle');
+          return;
+        }
+
+        // 2. Notify that the current app is ready (prevent rollback)
         await CapacitorUpdater.notifyAppReady();
 
         setStatus('checking');

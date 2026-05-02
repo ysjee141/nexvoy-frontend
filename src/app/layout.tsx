@@ -13,6 +13,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 import BugReportFAB from '@/components/layout/BugReportFAB'
 import UpdateOverlay from '@/components/layout/UpdateOverlay'
 import GlobalModals from '@/components/layout/GlobalModals'
+import ToastContainer from '@/components/common/ToastContainer'
 
 export const metadata: Metadata = {
   title: '온여정 - 당신의 따뜻한 여행 동반자',
@@ -75,6 +76,7 @@ export default function RootLayout({
         )}
         <NativeAnalytics />
         <GlobalModals />
+        <ToastContainer />
       </body>
     </html>
   )

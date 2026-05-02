@@ -39,7 +39,7 @@ function OfflineTripContent() {
                 }
             } else {
                 alert('해당 여행의 오프라인 데이터가 없습니다.')
-                router.replace('/')
+                router.replace('/offline')
             }
             setLoading(false)
         }
