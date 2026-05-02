@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { css } from 'styled-system/css'
 import { createClient } from '@/utils/supabase/client'
-import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft, ChevronDown, MessageSquareText } from 'lucide-react'
+import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft, ChevronDown, MessageSquareText, WifiOff } from 'lucide-react'
 import { useUIStore } from '@/stores/useUIStore'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CacheUtil } from '@/utils/cache'
@@ -51,7 +51,8 @@ export default function Navbar() {
         isVisible: isBugReportVisible 
     } = useBugReport()
 
-    const { isOnline } = useNetworkStore()
+    const { isOnline, isOfflineMode } = useNetworkStore()
+    const isOffline = !isOnline || isOfflineMode
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -141,6 +142,23 @@ export default function Navbar() {
                         <Image src="/logo.png" alt="온여정 로고" width={28} height={28} priority />
                         <span>온여정</span>
                     </Link>
+                    {isOffline && (
+                        <div className={css({ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '4px', 
+                            bg: isOfflineMode ? 'brand.secondary' : 'brand.error', 
+                            color: 'white', 
+                            px: '10px', 
+                            py: '4px', 
+                            borderRadius: '12px', 
+                            fontSize: '11px', 
+                            fontWeight: '700' 
+                        })}>
+                            <WifiOff size={12} />
+                            {isOfflineMode ? '오프라인 모드' : '연결 끊김'}
+                        </div>
+                    )}
                 </div>
 
                 {/* 오른쪽: 메뉴 */}
@@ -243,6 +261,24 @@ export default function Navbar() {
                         <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.ink', letterSpacing: '-0.01em' })}>
                             {pageTitle}
                         </h1>
+                        {isOffline && (
+                            <div className={css({ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '4px', 
+                                bg: isOfflineMode ? 'brand.secondary' : 'brand.error', 
+                                color: 'white', 
+                                px: '8px', 
+                                py: '3px', 
+                                borderRadius: '10px', 
+                                fontSize: '10px', 
+                                fontWeight: '700',
+                                ml: '4px'
+                            })}>
+                                <WifiOff size={10} />
+                                {isOfflineMode ? '오프라인' : '연결 끊김'}
+                            </div>
+                        )}
                     </div>
                 )}
 

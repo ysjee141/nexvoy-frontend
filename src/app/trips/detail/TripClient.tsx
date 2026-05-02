@@ -407,30 +407,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                                     <UserPlus size={16} /> <span>동행자</span>
                                 </button>
 
-                                <button
-                                    onClick={handleDownload}
-                                    className={css({
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                        bg: isDownloaded ? 'rgba(46, 196, 182, 0.05)' : 'white',
-                                        color: isDownloaded ? 'brand.primary' : 'brand.ink',
-                                        px: '12px', h: '42px',
-                                        borderRadius: '8px', fontWeight: '700', fontSize: '13px',
-                                        border: '1px solid', borderColor: isDownloaded ? 'brand.primary' : 'brand.hairline',
-                                        whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                        _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' },
-                                        _active: { transform: 'scale(0.92)' },
-                                        flex: 1
-                                    })}
-                                >
-                                    {isDownloading ? (
-                                        <Loader2 size={16} className={css({ animation: 'spin 1s linear infinite' })} />
-                                    ) : isDownloaded ? (
-                                        <CloudCheck size={16} />
-                                    ) : (
-                                        <CloudDownload size={16} />
-                                    )}
-                                    <span>{isDownloading ? '다운로드 중' : isDownloaded ? '다운로드됨' : '다운로드'}</span>
-                                </button>
+
 
                                 {userRole === 'owner' && (
                                     <button
