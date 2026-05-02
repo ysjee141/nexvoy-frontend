@@ -4,13 +4,14 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client'
 import { css } from 'styled-system/css'
-import { Calendar, Users, Pencil, Trash2, Wallet, Loader2, Download, Check } from 'lucide-react'
+import { Calendar, Users, Pencil, Trash2, Wallet, Loader2, CloudDownload, CloudCheck } from 'lucide-react'
 import { getCurrencyFromTimezone, formatKRW } from '@/utils/currency'
 import { formatDate } from '@/utils/date'
 import { ExchangeService } from '@/services/ExternalApiService'
 import { DownloadService } from '@/services/DownloadService'
 import { Capacitor } from '@capacitor/core'
 import EditTripModal from './EditTripModal'
+import { useToastStore } from '@/stores/useToastStore'
 
 interface TripHeaderActionsProps {
     trip: {
@@ -29,6 +30,7 @@ interface TripHeaderActionsProps {
 export default function TripHeaderActions({ trip, onUpdate, isOffline = false }: TripHeaderActionsProps) {
     const router = useRouter()
     const supabase = createClient()
+    const toast = useToastStore()
 
     const [isOwner, setIsOwner] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
@@ -61,12 +63,16 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
     const handleDownload = async () => {
         if (isDownloading) return
         setIsDownloading(true)
+        const loadingId = toast.loading('여행 정보를 다운로드하는 중입니다...')
         try {
             await DownloadService.downloadTrip(trip.id)
             setIsDownloaded(true)
+            toast.removeToast(loadingId)
+            toast.success('여행 정보가 성공적으로 다운로드되었습니다. 이제 오프라인에서도 확인할 수 있습니다!')
         } catch (error) {
             console.error('Download failed:', error)
-            alert('다운로드에 실패했습니다.')
+            toast.removeToast(loadingId)
+            toast.error('다운로드에 실패했습니다. 네트워크 상태를 확인해 주세요.')
         } finally {
             setIsDownloading(false)
         }
@@ -182,56 +188,59 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
                         {trip.destination} 여행
                     </h1>
 
-                    {isOwner && !isOffline && (
+                    {!isOffline && (
                         <div className={css({ display: 'flex', gap: '8px', flexShrink: 0 })}>
-                            {isNative && (
-                                <button
-                                    onClick={handleDownload}
-                                    disabled={isDownloading}
-                                    className={css({
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        p: '8px', bg: isDownloaded ? 'rgba(37, 99, 235, 0.1)' : 'white', 
-                                        color: isDownloaded ? 'brand.primary' : 'brand.muted', 
-                                        border: '1.5px solid', borderColor: isDownloaded ? 'brand.primary' : 'brand.border', 
-                                        borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s',
-                                        _hover: { bg: 'bg.softCotton', color: 'brand.primary', borderColor: 'brand.primary' },
-                                        _active: { transform: 'scale(0.92)' }
-                                    })}
-                                    title={isDownloaded ? "다운로드됨" : "오프라인 다운로드"}
-                                >
-                                    {isDownloading ? (
-                                        <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} />
-                                    ) : isDownloaded ? (
-                                        <Check size={18} />
-                                    ) : (
-                                        <Download size={18} />
-                                    )}
-                                </button>
+                            <button
+                                onClick={handleDownload}
+                                disabled={isDownloading}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    p: '8px', bg: isDownloaded ? 'rgba(46, 196, 182, 0.05)' : 'white', 
+                                    color: isDownloaded ? 'brand.primary' : 'brand.muted', 
+                                    border: '1.5px solid', borderColor: isDownloaded ? 'brand.primary' : 'brand.border', 
+                                    borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s',
+                                    _hover: { bg: 'bg.softCotton', color: 'brand.primary', borderColor: 'brand.primary' },
+                                    _active: { transform: 'scale(0.92)' }
+                                })}
+                                title={isDownloaded ? "다운로드됨" : "오프라인 다운로드"}
+                            >
+                                {isDownloading ? (
+                                    <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} />
+                                ) : isDownloaded ? (
+                                    <CloudCheck size={18} />
+                                ) : (
+                                    <CloudDownload size={18} />
+                                )}
+                            </button>
+
+                            {isOwner && (
+                                <>
+                                    <button
+                                        onClick={() => setShowEditModal(true)}
+                                        className={css({
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            p: '8px', bg: 'white', color: 'brand.muted', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', 
+                                            _hover: { bg: 'bg.softCotton', color: 'brand.primary', borderColor: 'brand.primary' }, 
+                                            _active: { transform: 'scale(0.92)' }
+                                        })}
+                                        title="여행 수정"
+                                    >
+                                        <Pencil size={18} />
+                                    </button>
+                                    <button
+                                        onClick={() => setShowDeleteConfirm(true)}
+                                        className={css({
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            p: '8px', bg: 'white', color: 'brand.muted', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', 
+                                            _hover: { bg: 'brand.errorLight', color: 'brand.error', borderColor: 'brand.error' }, 
+                                            _active: { transform: 'scale(0.92)' }
+                                        })}
+                                        title="여행 삭제"
+                                    >
+                                        <Trash2 size={18} />
+                                    </button>
+                                </>
                             )}
-                            <button
-                                onClick={() => setShowEditModal(true)}
-                                className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    p: '8px', bg: 'white', color: 'brand.muted', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', 
-                                    _hover: { bg: 'bg.softCotton', color: 'brand.primary', borderColor: 'brand.primary' }, 
-                                    _active: { transform: 'scale(0.92)' }
-                                })}
-                                title="여행 수정"
-                            >
-                                <Pencil size={18} />
-                            </button>
-                            <button
-                                onClick={() => setShowDeleteConfirm(true)}
-                                className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    p: '8px', bg: 'white', color: 'brand.muted', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', 
-                                    _hover: { bg: 'brand.errorLight', color: 'brand.error', borderColor: 'brand.error' }, 
-                                    _active: { transform: 'scale(0.92)' }
-                                })}
-                                title="여행 삭제"
-                            >
-                                <Trash2 size={18} />
-                            </button>
                         </div>
                     )}
                 </div>
