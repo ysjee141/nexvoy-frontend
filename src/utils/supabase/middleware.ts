@@ -44,6 +44,7 @@ export async function updateSession(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/auth') ||
         request.nextUrl.pathname.startsWith('/share') ||
         request.nextUrl.pathname.startsWith('/api') ||
+        request.nextUrl.pathname.startsWith('/offline') ||
         request.nextUrl.pathname.startsWith('/_next') ||
         request.nextUrl.pathname.startsWith('/sw.js') ||
         request.nextUrl.pathname.startsWith('/workbox') ||
@@ -66,7 +67,10 @@ export async function updateSession(request: NextRequest) {
 
     if (!user) {
         const url = request.nextUrl.clone()
+        const nextUrl = request.nextUrl.pathname + request.nextUrl.search
         url.pathname = '/login'
+        url.search = '' // Clear existing search params before setting next
+        url.searchParams.set('next', nextUrl)
         return NextResponse.redirect(url)
     }
 

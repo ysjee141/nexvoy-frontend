@@ -324,7 +324,7 @@ export default function PlanDetailModal({
                             {/* 지도 */}
                             {plan.location && (
                                 <div className={css({ flexShrink: 0 })}>
-                                    {embedUrl && !mapError ? (
+                                    {embedUrl && !mapError && isOnline ? (
                                         <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
                                             {/* 스켈레톤: 지도 로드 전 shimmer 플레이스홀더 */}
                                             {!mapLoaded && (
@@ -397,7 +397,7 @@ export default function PlanDetailModal({
                                             bgColor="bg.softCotton"
                                             value={
                                                 <div className={css({ display: 'flex', flexDirection: 'column', gap: '4px' })}>
-                                                    {mapUrl ? (
+                                                    {mapUrl && isOnline ? (
                                                         <a href={mapUrl} target="_blank" rel="noopener noreferrer"
                                                             className={css({ fontSize: '15.5px', color: 'brand.ink', fontWeight: '700', display: 'inline-flex', alignItems: 'center', gap: '5px', textDecoration: 'none', wordBreak: 'break-word', _hover: { textDecoration: 'underline' } })}>
                                                             {plan.location}<ExternalLink size={13} style={{ flexShrink: 0 }} />

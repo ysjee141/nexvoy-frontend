@@ -6,6 +6,7 @@ import { css } from 'styled-system/css'
 import { ChevronLeft, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { CacheUtil } from '@/utils/cache'
 
 export default function WithdrawalPage() {
     const router = useRouter()
@@ -22,7 +23,9 @@ export default function WithdrawalPage() {
 
     useEffect(() => {
         const fetchStats = async () => {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { user: networkUser } } = await supabase.auth.getUser()
+            const user = networkUser || await CacheUtil.getAuthUser()
+            
             if (!user) {
                 router.push('/login')
                 return
@@ -67,9 +70,7 @@ export default function WithdrawalPage() {
         await supabase.auth.signOut()
         
         // 3. Clear local storage cache
-        if (typeof window !== 'undefined') {
-            localStorage.clear()
-        }
+        await CacheUtil.clear()
 
         router.push('/')
     }

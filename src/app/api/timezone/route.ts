@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
     try {
         const url = `https://maps.googleapis.com/maps/api/timezone/json?location=${lat},${lng}&timestamp=${timestamp}&key=${apiKey}`
-        const res = await fetch(url)
+        const res = await fetch(url, { next: { revalidate: 3600 } })
         const data = await res.json()
 
         if (data.status !== 'OK') {
