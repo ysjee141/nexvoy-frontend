@@ -156,17 +156,17 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             touchAction: 'none',
         })}>
             <div className={css({
-                bg: 'white', w: '100%', maxW: '480px', borderRadius: '24px', overflow: 'hidden',
-                boxShadow: '0 25px 70px rgba(0,0,0,0.2)',
+                bg: 'white', w: '100%', maxW: '480px', borderRadius: '16px', overflow: 'hidden',
+                boxShadow: 'airbnbHover',
                 animation: 'slideUp 0.4s cubic-bezier(0.2, 0, 0, 1)',
                 overscrollBehavior: 'contain',
             })}>
                 {/* 헤더 */}
-                <div className={css({ p: '20px 24px', borderBottom: '1px solid', borderBottomColor: 'brand.border', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
-                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.secondary', display: 'flex', alignItems: 'center', gap: '8px' })}>
+                <div className={css({ p: '20px 24px', borderBottom: '1px solid', borderBottomColor: 'brand.hairline', display: 'flex', justifyContent: 'space-between', alignItems: 'center' })}>
+                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.ink', display: 'flex', alignItems: 'center', gap: '8px' })}>
                         <UserPlus size={20} className={css({ color: 'brand.primary' })} /> 함께하는 일행 관리
                     </h2>
-                    <button onClick={onClose} className={css({ p: '6px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _hover: { bg: 'brand.border', color: 'brand.secondary' } })}>
+                    <button onClick={onClose} className={css({ p: '6px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _hover: { bg: 'rgba(0,0,0,0.05)', color: 'brand.ink' } })}>
                         <X size={20} />
                     </button>
                 </div>
@@ -174,7 +174,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                 <div className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '24px' })}>
                     {/* 초대 폼 */}
                     <form onSubmit={handleInvite} className={css({ display: 'flex', flexDirection: 'column', gap: '10px' })}>
-                        <label className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>이메일로 초대하기</label>
+                        <label className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>이메일로 초대하기</label>
                         <div className={css({ display: 'flex', gap: '8px' })}>
                             <div className={css({ position: 'relative', flex: 1 })}>
                                 <Mail size={16} className={css({ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'brand.muted' })} />
@@ -184,8 +184,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                     onChange={e => setEmail(e.target.value)}
                                     placeholder="friend@example.com"
                                     className={css({
-                                        w: '100%', p: '12px 12px 12px 40px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.border', borderRadius: '14px',
-                                        fontSize: '15px', outline: 'none', transition: 'all 0.2s', _focus: { borderColor: 'brand.primary', bg: 'white' }
+                                        w: '100%', p: '12px 12px 12px 40px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px',
+                                        fontSize: '15px', outline: 'none', transition: 'all 0.2s', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 4px rgba(var(--colors-brand-primary-rgb), 0.1)' }
                                     })}
                                 />
                             </div>
@@ -193,9 +193,9 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                 type="submit"
                                 disabled={loading || !email}
                                 className={css({
-                                    p: '0 20px', bg: 'brand.primary', color: 'white', border: 'none', borderRadius: '14px',
+                                    p: '0 20px', bg: 'brand.primary', color: 'white', border: 'none', borderRadius: '8px',
                                     fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s', _disabled: { opacity: 0.5 },
-                                    _hover: { bg: 'brand.primaryDark' }, _active: { transform: 'scale(0.95)' }
+                                    _hover: { bg: 'brand.primaryActive', boxShadow: 'airbnbHover' }, _active: { transform: 'scale(0.95)' }
                                 })}
                             >
                                 {loading ? <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} /> : '초대'}
@@ -210,11 +210,11 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                     onClick={() => setInviteRole(role)}
                                     className={css({
                                         flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                        py: '8px', borderRadius: '10px', fontSize: '13px', fontWeight: '700',
-                                        cursor: 'pointer', transition: 'all 0.2s', border: '1.5px solid',
+                                        py: '8px', borderRadius: '8px', fontSize: '13px', fontWeight: '700',
+                                        cursor: 'pointer', transition: 'all 0.2s', border: '1px solid',
                                         bg: inviteRole === role ? 'brand.primary' : 'white',
-                                        color: inviteRole === role ? 'white' : 'brand.secondary',
-                                        borderColor: inviteRole === role ? 'brand.primary' : 'brand.border',
+                                        color: inviteRole === role ? 'white' : 'brand.ink',
+                                        borderColor: inviteRole === role ? 'brand.primary' : 'brand.hairline',
                                         _active: { transform: 'scale(0.96)' },
                                     })}
                                 >
@@ -229,7 +229,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
 
                     {/* 멤버 리스트 */}
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                        <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary' })}>참여 중인 멤버 ({collaborators.length})</h3>
+                        <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>참여 중인 멤버 ({collaborators.length})</h3>
                         <div className={css({
                             display: 'flex',
                             flexDirection: 'column',
@@ -244,10 +244,10 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                             {collaborators.map(member => (
                                 <div key={member.memberId} className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    p: '12px 16px', bg: 'bg.softCotton', borderRadius: '16px', border: '1px solid', borderColor: 'brand.border'
+                                    p: '12px 16px', bg: 'white', borderRadius: '12px', border: '1px solid', borderColor: 'brand.hairline'
                                 })}>
                                     <div className={css({ display: 'flex', flexDirection: 'column', flex: 1, minW: 0, mr: '8px' })}>
-                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
+                                        <span className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
                                             {member.nickname || member.email || '초대됨'}
                                         </span>
                                         <span className={css({ fontSize: '11px', color: 'brand.muted', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>
@@ -266,10 +266,10 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                                         display: 'flex', alignItems: 'center', gap: '4px',
                                                         px: '8px', py: '4px', borderRadius: '8px',
                                                         fontSize: '11px', fontWeight: '700',
-                                                        bg: 'white', border: '1px solid', borderColor: 'brand.border',
-                                                        color: 'brand.secondary', cursor: 'pointer',
+                                                        bg: 'white', border: '1px solid', borderColor: 'brand.hairline',
+                                                        color: 'brand.ink', cursor: 'pointer',
                                                         transition: 'all 0.2s',
-                                                        _hover: { borderColor: 'brand.primary' },
+                                                        _hover: { borderColor: 'brand.primary', boxShadow: 'airbnbHover' },
                                                     })}
                                                 >
                                                     {ROLE_LABELS[member.role]}
@@ -283,8 +283,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                                         <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setEditingRoleId(null)} />
                                                         <div className={css({
                                                             position: 'absolute', top: '100%', right: 0, mt: '4px',
-                                                            bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '10px',
-                                                            boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 11, overflow: 'hidden', minW: '100px',
+                                                            bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px',
+                                                            boxShadow: 'airbnbHover', zIndex: 11, overflow: 'hidden', minW: '100px',
                                                         })}>
                                                             {(['editor', 'viewer'] as const).map(role => (
                                                                 <button
@@ -295,7 +295,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                                                         w: '100%', px: '12px', py: '10px',
                                                                         fontSize: '12px', fontWeight: member.role === role ? '800' : '600',
                                                                         bg: member.role === role ? 'bg.softCotton' : 'white',
-                                                                        color: member.role === role ? 'brand.primary' : 'brand.secondary',
+                                                                        color: member.role === role ? 'brand.primary' : 'brand.ink',
                                                                         border: 'none', cursor: 'pointer', textAlign: 'left',
                                                                         _hover: { bg: 'bg.softCotton' },
                                                                     })}
@@ -323,7 +323,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                     </div>
                 </div>
 
-                <div className={css({ p: '16px 24px', bg: 'bg.softCotton', borderTop: '1px solid', borderTopColor: 'brand.border', textAlign: 'center' })}>
+                <div className={css({ p: '16px 24px', bg: 'bg.softCotton', borderTop: '1px solid', borderTopColor: 'brand.hairline', textAlign: 'center' })}>
                     <p className={css({ fontSize: '12px', color: 'brand.muted', lineHeight: 1.5, wordBreak: 'keep-all' })}>
                         <strong>편집자</strong>는 일정을 추가, 수정, 삭제할 수 있고 <strong>뷰어</strong>는 조회만 가능합니다.<br />
                         멤버 초대를 위해 상대방이 <strong>온여정</strong>에 가입되어 있어야 합니다.

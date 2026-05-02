@@ -32,7 +32,7 @@ const FEATURES = [
   },
   {
       icon: <CalendarDays size={28} />,
-      bg: 'bg.softCotton', color: 'brand.primaryDark',
+      bg: 'bg.softCotton', color: 'brand.primaryActive',
       title: '세부 일정 완벽 관리',
       desc: '장소·시간·예산·메모·참고 URL까지. 일정을 탭하면 구글 맵 미리보기와 함께 모든 정보를 확인할 수 있습니다.',
       badge: '일정',
@@ -66,7 +66,7 @@ const STEPS = [
   {
       num: '02',
       icon: <CalendarDays size={22} />,
-      color: 'brand.primaryDark',
+      color: 'brand.primaryActive',
       title: '일정을 채우세요',
       desc: '장소를 검색해 일정에 추가하면 현지 통화·타임존이 자동으로 설정됩니다. 시차 계산은 저한테 맡기세요.',
       highlight: '현지 통화 & 한화 동시 표시',
@@ -157,7 +157,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
   const [open, setOpen] = useState(false)
   return (
       <div className={css({
-          border: '1px solid', borderColor: 'brand.border', borderRadius: '12px',
+          border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
           overflow: 'hidden', transition: 'box-shadow 0.2s',
           _hover: { boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
       })}>
@@ -169,11 +169,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
                   textAlign: 'left', gap: '12px',
               })}
           >
-              <span className={css({ fontWeight: '600', fontSize: '15px', color: 'brand.secondary', lineHeight: 1.4 })}>{q}</span>
+              <span className={css({ fontWeight: '600', fontSize: '15px', color: 'brand.ink', lineHeight: 1.4 })}>{q}</span>
               {open ? <ChevronUp size={18} color="brand.muted" style={{ flexShrink: 0 }} /> : <ChevronDown size={18} color="brand.muted" style={{ flexShrink: 0 }} />}
           </button>
           {open && (
-              <div className={css({ p: '16px 20px', fontSize: '14px', color: 'brand.muted', lineHeight: 1.7, bg: 'bg.softCotton', borderTop: '1px solid', borderTopColor: 'brand.border' })}>
+              <div className={css({ p: '16px 20px', fontSize: '14px', color: 'brand.muted', lineHeight: 1.7, bg: 'bg.softCotton', borderTop: '1px solid', borderTopColor: 'brand.hairline' })}>
                   {a}
               </div>
           )}
@@ -193,7 +193,7 @@ function SectionTitle({ badge, title, sub }: { badge: string; title: string; sub
           </span>
           <h2 className={css({
               fontSize: { base: '22px', md: '32px' }, fontWeight: '700',
-              color: 'brand.secondary', letterSpacing: '-0.02em', mb: '10px',
+              color: 'brand.ink', letterSpacing: '-0.02em', mb: '10px',
           })}>
               {title}
           </h2>
@@ -418,7 +418,7 @@ export default function HomeClient() {
 
               <h1 className={css({
                   fontSize: { base: '30px', md: '48px' }, fontWeight: '700',
-                  color: 'brand.secondary', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
+                  color: 'brand.ink', mb: '20px', letterSpacing: '-0.03em', lineHeight: 1.15,
               })}>
                   여행 계획, 가이드 없이도<br />
                   <span className={css({ color: 'brand.primary' })}>더 쉽고 즐겁게</span> 세워 보세요
@@ -434,20 +434,19 @@ export default function HomeClient() {
                   <Link href="/signup" className={css({
                       display: 'inline-flex', alignItems: 'center', gap: '8px',
                       bg: 'brand.primary', color: 'white', fontWeight: '700', fontSize: '15px',
-                       px: '28px', py: '14px', borderRadius: '16px', textDecoration: 'none',
-                      boxShadow: '0 6px 20px rgba(37, 99, 235, 0.25)',
+                       px: '28px', py: '14px', borderRadius: '8px', textDecoration: 'none',
                       transition: 'all 0.2s',
-                      _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 10px 28px rgba(37, 99, 235, 0.35)' },
+                      _hover: { bg: 'brand.primaryActive', transform: 'translateY(-2px)' },
                   })}>
                       지금 바로 시작하기 <ArrowRight size={17} />
                   </Link>
                   <Link href="/login" className={css({
                       display: 'inline-flex', alignItems: 'center', gap: '6px',
-                      bg: 'white', color: 'brand.secondary', fontWeight: '600', fontSize: '15px',
-                      px: '24px', py: '14px', borderRadius: '14px', textDecoration: 'none',
-                      border: '1px solid', borderColor: 'brand.border',
+                      bg: 'white', color: 'brand.ink', fontWeight: '600', fontSize: '15px',
+                      px: '24px', py: '14px', borderRadius: '8px', textDecoration: 'none',
+                      border: '1px solid', borderColor: 'brand.hairline',
                       transition: 'all 0.2s',
-                      _hover: { bg: 'bg.softCotton', borderColor: 'brand.muted' },
+                      _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.muted' },
                   })}>
                       로그인하기
                   </Link>
@@ -464,10 +463,10 @@ export default function HomeClient() {
               })}>
                   {FEATURES.map(f => (
                       <div key={f.title} className={css({
-                          bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '18px',
+                          bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '18px',
                           p: '24px', display: 'flex', flexDirection: 'column', gap: '14px',
                           transition: 'all 0.2s',
-                          _hover: { transform: 'translateY(-4px)', boxShadow: 'floating', borderColor: 'transparent' },
+                          _hover: { transform: 'translateY(-4px)', boxShadow: 'airbnbHover', borderColor: 'transparent' },
                       })}>
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                               <div className={css({ width: '52px', height: '52px', borderRadius: '14px', background: 'bg.softCotton', color: 'brand.primary', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
@@ -475,7 +474,7 @@ export default function HomeClient() {
                               </div>
                               <span className={css({ fontSize: '11px', fontWeight: '700', color: 'brand.primary', background: 'bg.softCotton', padding: '3px 8px', borderRadius: '20px' })}>{f.badge}</span>
                           </div>
-                          <h3 className={css({ fontWeight: '700', fontSize: '16px', color: 'brand.secondary', lineHeight: 1.3 })}>{f.title}</h3>
+                          <h3 className={css({ fontWeight: '700', fontSize: '16px', color: 'brand.ink', lineHeight: 1.3 })}>{f.title}</h3>
                           <p className={css({ fontSize: '13px', color: 'brand.muted', lineHeight: 1.7 })}>{f.desc}</p>
                       </div>
                   ))}
@@ -488,22 +487,22 @@ export default function HomeClient() {
               <div className={css({ display: 'flex', flexDirection: 'column', gap: '14px' })}>
                   {STEPS.map((s, i) => (
                       <div key={s.num} className={css({
-                          bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '16px',
+                          bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '16px',
                           p: { base: '20px', md: '22px 28px' },
                           display: 'flex', gap: '18px', alignItems: 'flex-start',
                           transition: 'all 0.2s',
-                          _hover: { boxShadow: '0 6px 20px rgba(0,0,0,0.07)', borderColor: 'brand.border' },
+                          _hover: { boxShadow: '0 6px 20px rgba(0,0,0,0.07)', borderColor: 'brand.hairline' },
                       })}>
                           <div className={css({ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' })}>
                               <div className={css({ width: '48px', height: '48px', borderRadius: '14px', background: 'bg.softCotton', color: 'brand.primary', display: 'flex', alignItems: 'center', justifyContent: 'center' })}>
                                   {s.icon}
                               </div>
-                              {i < STEPS.length - 1 && <div className={css({ width: '2px', height: '20px', background: 'brand.border', borderRadius: '2px' })} />}
+                              {i < STEPS.length - 1 && <div className={css({ width: '2px', height: '20px', background: 'brand.hairline', borderRadius: '2px' })} />}
                           </div>
                           <div className={css({ flex: 1, pt: '4px' })}>
                               <div className={css({ display: 'flex', alignItems: 'center', gap: '10px', mb: '5px', flexWrap: 'wrap' })}>
                                   <span className={css({ fontSize: '11px', fontWeight: '700', color: 'brand.muted', letterSpacing: '1px' })}>{s.num}</span>
-                                  <h3 className={css({ fontWeight: '700', fontSize: '16px', color: 'brand.secondary' })}>{s.title}</h3>
+                                  <h3 className={css({ fontWeight: '700', fontSize: '16px', color: 'brand.ink' })}>{s.title}</h3>
                                   <span className={css({ fontSize: '11px', fontWeight: '700', color: 'brand.primary', background: 'bg.softCotton', padding: '2px 8px', borderRadius: '20px' })}>
                                       ✓ {s.highlight}
                                   </span>
@@ -525,16 +524,16 @@ export default function HomeClient() {
               })}>
                   {ADVANCED.map(a => (
                       <div key={a.title} className={css({
-                          bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '14px',
+                          bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '14px',
                           p: '20px', display: 'flex', gap: '14px', alignItems: 'flex-start',
                           transition: 'all 0.2s',
-                          _hover: { boxShadow: '0 4px 14px rgba(0,0,0,0.07)', borderColor: 'brand.border' },
+                          _hover: { boxShadow: '0 4px 14px rgba(0,0,0,0.07)', borderColor: 'brand.hairline' },
                       })}>
                           <div className={css({ width: '40px', height: '40px', borderRadius: '11px', flexShrink: 0, background: 'bg.softCotton', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'brand.primary' })}>
                               {a.icon}
                           </div>
                           <div>
-                              <h4 className={css({ fontWeight: '700', fontSize: '14px', color: 'brand.secondary', mb: '5px' })}>{a.title}</h4>
+                              <h4 className={css({ fontWeight: '700', fontSize: '14px', color: 'brand.ink', mb: '5px' })}>{a.title}</h4>
                               <p className={css({ fontSize: '13px', color: 'brand.muted', lineHeight: 1.65 })}>{a.desc}</p>
                           </div>
                       </div>
@@ -574,11 +573,10 @@ export default function HomeClient() {
               </p>
               <Link href="/signup" className={css({
                   display: 'inline-flex', alignItems: 'center', gap: '8px',
-                  bg: 'white', color: 'brand.primaryDark', fontWeight: '700', fontSize: '16px',
-                  px: '36px', py: '16px', borderRadius: '14px', textDecoration: 'none',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+                  bg: 'white', color: 'brand.primaryActive', fontWeight: '700', fontSize: '16px',
+                  px: '36px', py: '16px', borderRadius: '8px', textDecoration: 'none',
                   transition: 'all 0.2s',
-                  _hover: { transform: 'translateY(-3px)', boxShadow: '0 10px 32px rgba(0,0,0,0.22)' },
+                  _hover: { transform: 'translateY(-3px)' },
               })}>
                   지금 바로 시작하기 <ArrowRight size={18} />
               </Link>
@@ -602,10 +600,10 @@ export default function HomeClient() {
           gap: '24px',
           pb: '24px',
           borderBottom: '1px solid',
-          borderColor: 'brand.border'
+          borderColor: 'brand.hairline'
         })}>
           <div>
-            <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '700', color: 'brand.secondary', letterSpacing: '-1px' })}>
+            <h1 className={css({ fontSize: { base: '28px', sm: '36px' }, fontWeight: '700', color: 'brand.ink', letterSpacing: '-1px' })}>
                 안녕하세요, {nickname}님! 👋
             </h1>
             <p className={css({ color: 'brand.muted', mt: '12px', fontSize: { base: '16px', sm: '20px' }, fontWeight: '500', letterSpacing: '-0.4px' })}>
@@ -621,11 +619,10 @@ export default function HomeClient() {
             className={css({
               display: 'flex', alignItems: 'center', gap: '8px',
               bg: 'brand.primary', color: 'white', px: '24px', py: '14px',
-              borderRadius: '16px', fontWeight: '700', transition: 'all 0.2s',
-              boxShadow: '0 8px 20px rgba(37, 99, 235, 0.25)',
+              borderRadius: '8px', fontWeight: '700', transition: 'all 0.2s',
               w: { base: '100%', sm: 'auto' }, justifyContent: 'center',
               border: 'none', cursor: 'pointer',
-              _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)', boxShadow: '0 12px 28px rgba(37, 99, 235, 0.35)' },
+              _hover: { bg: 'brand.primaryActive', transform: 'translateY(-2px)' },
               _active: { transform: 'scale(0.96)' }
             })}
           >
@@ -645,10 +642,10 @@ export default function HomeClient() {
           ) : (
             <div className={css({
               bg: 'white', borderRadius: '16px', p: { base: '40px 20px', sm: '60px' },
-              textAlign: 'center', border: '2px dashed', borderColor: 'brand.border',
+              textAlign: 'center', border: '2px dashed', borderColor: 'brand.hairline',
             })}>
-              <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: 'brand.border' })} />
-              <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: 'brand.secondary' })}>
+              <Luggage size={48} className={css({ mx: 'auto', mb: '16px', color: 'brand.hairline' })} />
+              <p className={css({ fontSize: '18px', fontWeight: '500', mb: '8px', color: 'brand.ink' })}>
                 아직 계획된 여행이 없네요.
               </p>
               <p className={css({ fontSize: '14px', color: 'brand.muted' })}>새로운 설렘을 위해 첫 여정을 만들어 볼까요? 🗺️</p>

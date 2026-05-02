@@ -106,7 +106,7 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
     return (
         <div className={css({
             position: 'fixed', inset: 0, zIndex: 3000,
-            bg: 'black/50',
+            bg: 'rgba(0,0,0,0.5)',
             backdropFilter: 'blur(10px)',
             display: 'flex', alignItems: { base: 'flex-start', sm: 'center' },
             justifyContent: 'center', p: { base: '0', sm: '20px' },
@@ -115,7 +115,7 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
             <div className={css({
                 bg: 'white', w: '100%', maxW: { base: '100%', sm: '600px' },
                 h: { base: '100dvh', sm: 'auto' }, maxH: { base: '100dvh', sm: '90vh' },
-                borderRadius: { base: '0', sm: '32px' },
+                borderRadius: { base: '0', sm: '16px' },
                 boxShadow: { base: 'none', sm: 'floating' },
                 display: 'flex', flexDirection: 'column',
                 pt: { base: 'max(env(safe-area-inset-top), var(--safe-area-inset-top))', sm: '0' },
@@ -125,11 +125,11 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
             })}>
                 {/* 헤더 */}
                 <div className={css({
-                    p: '22px 24px', borderBottom: '1px solid', borderBottomColor: 'brand.border', display: 'flex',
+                    p: '22px 24px', borderBottom: '1px solid', borderBottomColor: 'brand.hairline', display: 'flex',
                     justifyContent: 'space-between', alignItems: 'center', bg: 'white', zIndex: 10
                 })}>
                     <div style={{ width: '40px' }} />
-                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em', position: 'absolute', left: '50%', transform: 'translateX(-50%)' })}>
+                    <h2 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.ink', letterSpacing: '-0.02em', position: 'absolute', left: '50%', transform: 'translateX(-50%)' })}>
                         나만의 새 템플릿 만들기
                     </h2>
                     <button
@@ -137,7 +137,7 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
                         className={css({ 
                             p: '8px', borderRadius: '50%', bg: 'bg.softCotton', color: 'brand.muted', 
                             transition: 'all 0.2s', 
-                            _hover: { bg: 'brand.border', color: 'brand.secondary', transform: 'rotate(90deg)' } 
+                            _hover: { bg: 'rgba(0,0,0,0.05)', color: 'brand.ink', transform: 'rotate(90deg)' } 
                         })}
                     >
                         <X size={20} strokeWidth={2.5} />
@@ -147,13 +147,13 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
                 <div className={css({ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' })}>
                     <div className={css({ p: { base: '32px 24px 20px', sm: '40px 32px 32px' }, textAlign: 'center', flexShrink: 0 })}>
                         <div className={css({ 
-                            w: '64px', h: '64px', bg: 'brand.primary/10', borderRadius: '24px', 
+                            w: '64px', h: '64px', bg: 'brand.primary/10', borderRadius: '16px', 
                             display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 20px',
-                            boxShadow: '0 8px 16px rgba(46, 196, 182, 0.1)'
+                            boxShadow: 'none'
                         })}>
                             <Sparkles size={28} className={css({ color: 'brand.primary' })} strokeWidth={2.2} />
                         </div>
-                        <h3 className={css({ fontSize: '24px', fontWeight: '800', color: 'brand.secondary', mb: '8px', letterSpacing: '-0.03em' })}>어떤 준비물들을 모아둘까요?</h3>
+                        <h3 className={css({ fontSize: '24px', fontWeight: '800', color: 'brand.ink', mb: '8px', letterSpacing: '-0.03em' })}>어떤 준비물들을 모아둘까요?</h3>
                         <p className={css({ color: 'brand.muted', fontSize: '15px', fontWeight: '500' })}>자주 쓰는 준비물들을 만들어 두면 계획이 더 편해져요. ✨</p>
                     </div>
 

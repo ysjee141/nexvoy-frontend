@@ -32,8 +32,8 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
                 onClick={() => setIsOpen(!isOpen)}
                 className={css({
                     display: 'flex', alignItems: 'center', gap: '4px',
-                    bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '12px',
-                    px: '12px', h: '42px', fontSize: '13px', fontWeight: '700', color: 'brand.secondary', cursor: 'pointer',
+                    bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
+                    px: '12px', h: '42px', fontSize: '13px', fontWeight: '700', color: 'brand.ink', cursor: 'pointer',
                     transition: 'all 0.2s', _active: { transform: 'scale(0.95)' },
                     _hover: { borderColor: 'brand.primary', bg: 'bg.softCotton' }
                 })}
@@ -47,8 +47,8 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
                     <div className={css({ position: 'fixed', inset: 0, zIndex: 10 })} onClick={() => setIsOpen(false)} />
                     <div className={css({
                         position: 'absolute', top: '100%', left: 0, mt: '4px',
-                        bg: 'white', border: '1px solid', borderColor: 'brand.border', borderRadius: '12px',
-                        boxShadow: 'floating', zIndex: 11, minW: '120px',
+                        bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
+                        boxShadow: 'airbnbHover', zIndex: 11, minW: '120px',
                         overflow: 'hidden'
                     })}>
                         {options.map(opt => (
@@ -58,7 +58,7 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'space-between', w: '100%', textAlign: 'left', px: '14px', py: '12px', fontSize: '13px',
                                     bg: timeDisplayMode === opt.value ? 'bg.softCotton' : 'transparent',
-                                    color: timeDisplayMode === opt.value ? 'brand.primary' : 'brand.secondary',
+                                    color: timeDisplayMode === opt.value ? 'brand.primary' : 'brand.ink',
                                     fontWeight: timeDisplayMode === opt.value ? '800' : '600',
                                     border: 'none', cursor: 'pointer', _hover: { bg: 'bg.softCotton', color: 'brand.primary' },
                                     transition: 'all 0.2s'
@@ -303,11 +303,11 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
     }, [plans])
 
     return (
-        <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, pb: { base: '80px', sm: '24px' }, borderRadius: '24px', boxShadow: '0 4px 20px rgba(0,0,0,0.04)' })}>
+        <div className={css({ bg: 'white', p: { base: '12px', sm: '24px' }, pb: { base: '80px', sm: '24px' } })}>
             <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: { base: 'center', sm: 'flex-start' }, mb: { base: '16px', sm: '24px' }, flexDirection: { base: 'column', sm: 'row' }, gap: '16px' })}>
                 {/* 1. 요약 정보 영역 (PC/모바일 공통) */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
-                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', color: 'brand.secondary' })}>
+                    <h2 className={css({ fontSize: { base: '18px', sm: '20px' }, fontWeight: 'bold', color: 'brand.ink' })}>
                         {nextPlanInfo ? (
                             <>
                                 <span className={css({ color: 'brand.error' })}>●</span> {nextPlanInfo}
@@ -329,19 +329,19 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                     <div className={css({ display: { base: 'none', sm: 'inline-flex' }, bg: 'bg.softCotton', p: '4px', borderRadius: '16px', gap: '4px', w: 'auto', h: '46px', alignItems: 'center' })}>
                         <button
                             onClick={() => setTimeDisplayMode('local')}
-                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'local' ? '800' : '600', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'local' ? 'brand.primary' : 'brand.secondary', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'local' ? '800' : '600', bg: timeDisplayMode === 'local' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'local' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'local' ? 'brand.primary' : 'brand.ink', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             현지 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('kst')}
-                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'kst' ? '800' : '600', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'kst' ? 'brand.primary' : 'brand.secondary', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'kst' ? '800' : '600', bg: timeDisplayMode === 'kst' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'kst' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'kst' ? 'brand.primary' : 'brand.ink', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             한국 시간
                         </button>
                         <button
                             onClick={() => setTimeDisplayMode('both')}
-                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'both' ? '800' : '600', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'both' ? 'brand.primary' : 'brand.secondary', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
+                            className={css({ h: '38px', px: '16px', fontSize: '13px', fontWeight: timeDisplayMode === 'both' ? '800' : '600', bg: timeDisplayMode === 'both' ? 'white' : 'transparent', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: timeDisplayMode === 'both' ? '0 2px 8px rgba(0,0,0,0.06)' : 'none', color: timeDisplayMode === 'both' ? 'brand.primary' : 'brand.ink', whiteSpace: 'nowrap', transition: 'all 0.2s' })}
                         >
                             동시 표기
                         </button>
@@ -359,10 +359,10 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                             onClick={() => setIsCollaboratorModalOpen(true)}
                              className={css({
                                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                 bg: 'white', color: 'brand.secondary',
+                                 bg: 'white', color: 'brand.ink',
                                  px: '12px', h: '42px',
-                                 borderRadius: '16px', fontWeight: '700', fontSize: '13px',
-                                 border: '1px solid', borderColor: 'brand.border', whiteSpace: 'nowrap',
+                                 borderRadius: '8px', fontWeight: '700', fontSize: '13px',
+                                 border: '1px solid', borderColor: 'brand.hairline', whiteSpace: 'nowrap',
                                  transition: 'all 0.2s',
                                  _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' }, _active: { transform: 'scale(0.92)' },
                                  opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
@@ -377,10 +377,10 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                 onClick={() => setIsShareModalOpen(true)}
                                  className={css({
                                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                     bg: 'white', color: 'brand.secondary',
+                                     bg: 'white', color: 'brand.ink',
                                      px: '12px', h: '42px',
-                                     borderRadius: '16px', fontWeight: '700', fontSize: '13px',
-                                     border: '1px solid', borderColor: 'brand.border', whiteSpace: 'nowrap',
+                                     borderRadius: '8px', fontWeight: '700', fontSize: '13px',
+                                     border: '1px solid', borderColor: 'brand.hairline', whiteSpace: 'nowrap',
                                      transition: 'all 0.2s',
                                      _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary' }, _active: { transform: 'scale(0.92)' },
                                      opacity: !isOnline ? 0.5 : 1, cursor: !isOnline ? 'not-allowed' : 'pointer',
@@ -402,10 +402,10 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                                  display: { base: 'none', sm: 'flex' },
                                  w: '100%', h: '42px',
                                  alignItems: 'center', justifyContent: 'center', gap: '6px',
-                                 bg: 'brand.primary', color: 'white', px: '16px', borderRadius: '16px',
+                                 bg: 'brand.primary', color: 'white', px: '16px', borderRadius: '8px',
                                  fontWeight: '700', fontSize: '15px', cursor: 'pointer', border: 'none', whiteSpace: 'nowrap',
                                  transition: 'all 0.2s',
-                                 _hover: { bg: 'brand.primaryDark', boxShadow: '0 4px 12px rgba(46,196,182,0.2)' }, _active: { transform: 'scale(0.96)' }
+                                 _hover: { bg: 'brand.primaryActive', transform: 'translateY(-2px)' }, _active: { transform: 'scale(0.96)' }
                              })}
                         >
                             <Plus size={18} /> 일정 추가
@@ -418,7 +418,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                 <TripDetailSkeleton />
             ) : (!plans || plans.length === 0) ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: 'brand.muted' })}>
-                    <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: 'brand.secondary' })}>아직 등록된 여정이 없어요. 🗺️</p>
+                    <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: 'brand.ink' })}>아직 등록된 여정이 없어요. 🗺️</p>
                     {(userRole === 'owner' || userRole === 'editor') && isOnline && (
                         <p className={css({ fontSize: '15px', color: 'brand.muted', lineHeight: '1.6' })}>새로운 일정을 추가해서 설레는 여정을 완성해 볼까요?</p>
                     )}
@@ -502,7 +502,7 @@ export default function TripPlansPage({ isActive = true }: { isActive?: boolean 
                         boxShadow: '0 8px 32px rgba(46,196,182,0.3)',
                         zIndex: 40,
                         transition: 'all 0.2s cubic-bezier(0.2, 0, 0, 1)',
-                        _hover: { bg: 'brand.primaryDark', transform: 'translateY(-2px)' },
+                        _hover: { bg: 'brand.primaryActive', transform: 'translateY(-2px)' },
                         _active: { transform: 'scale(0.9)' }
                     })}
                     aria-label="일정 추가"

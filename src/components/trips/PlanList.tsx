@@ -55,9 +55,9 @@ export default function PlanList({
 }: PlanListProps) {
     if (!plans || plans.length === 0) {
         return (
-            <div className={css({ textAlign: 'center', py: '80px', bg: 'bg.softCotton', borderRadius: '24px', border: '2px dashed', borderColor: 'brand.border' })}>
+            <div className={css({ textAlign: 'center', py: '80px', bg: 'bg.softCotton', borderRadius: '12px', border: '2px dashed', borderColor: 'brand.hairline' })}>
                 <div className={css({ fontSize: '48px', mb: '16px' })}>🗺️</div>
-                <h3 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.secondary', mb: '8px' })}>아직 일정이 없어요</h3>
+                <h3 className={css({ fontSize: '18px', fontWeight: '700', color: 'brand.ink', mb: '8px' })}>아직 일정이 없어요</h3>
                 <p className={css({ color: 'brand.muted', fontSize: '14px' })}>상단의 + 버튼을 눌러 첫 일정을 추가해보세요!</p>
             </div>
         )
@@ -79,7 +79,7 @@ export default function PlanList({
                         <div className={css({ bg: 'brand.primary', color: 'white', px: '10px', py: '3px', borderRadius: '8px', fontSize: '12px', fontWeight: '800' })}>
                             DAY {idx + 1}
                         </div>
-                        <h3 className={css({ fontSize: '16px', fontWeight: '700', color: 'brand.secondary' })}>
+                        <h3 className={css({ fontSize: '16px', fontWeight: '700', color: 'brand.ink' })}>
                             {new Date(date).toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' })}
                         </h3>
                     </div>
@@ -97,7 +97,7 @@ export default function PlanList({
                             bottom: '12px',
                             left: '7px',
                             w: '1px',
-                            bg: 'brand.border',
+                            bg: 'brand.hairline',
                             zIndex: 0
                         }
                     })}>
@@ -169,13 +169,12 @@ function PlanCard({
         <div
             onClick={() => onDetail(plan)}
             className={css({
-                bg: 'white', borderRadius: '16px', border: '1px solid', borderColor: 'brand.border',
+                bg: 'white', borderRadius: '12px', border: '1px solid', borderColor: 'brand.hairline',
                 display: 'flex', gap: '12px', p: '12px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
                 cursor: 'pointer',
                 transition: 'all 0.2s',
                 opacity: plan.is_visited ? 0.65 : 1,
-                _hover: { boxShadow: '0 8px 20px rgba(0,0,0,0.07)', borderColor: 'brand.primary/40', transform: 'translateY(-1px)' },
+                _hover: { boxShadow: 'airbnbHover', borderColor: 'transparent', transform: 'translateY(-2px)' },
             })}
         >
             {/* 왼쪽: 라운드 썸네일 */}
@@ -195,7 +194,7 @@ function PlanCard({
                 {/* 1행: 제목 + 힌트 아이콘 + 방문 체크 */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
                     <h4 className={css({
-                        fontSize: '15px', fontWeight: '700', color: 'brand.secondary',
+                        fontSize: '15px', fontWeight: '700', color: 'brand.ink',
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minW: 0,
                         textDecoration: plan.is_visited ? 'line-through' : 'none',
                     })}>{plan.title}</h4>
@@ -227,7 +226,7 @@ function PlanCard({
                         {timeDisplayMode === 'both' && (
                             <>
                                 {formatLocalTime(plan.start_datetime_local)}
-                                <span className={css({ color: 'brand.border', mx: '1px' })}>|</span>
+                                <span className={css({ color: 'brand.hairline', mx: '1px' })}>|</span>
                                 <span className={css({ fontSize: '11px' })}>{formatKstTime(plan.start_datetime_local, plan.timezone_string)}</span>
                             </>
                         )}
