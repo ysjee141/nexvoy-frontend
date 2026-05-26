@@ -28,12 +28,15 @@
 
 **목표:** 1인 개발자를 위한 가상 개발 팀 -- 분석/구현/리뷰/QA 파이프라인과 피드백 루프로 최고 품질 코드 생산
 
-**에이전트 팀:**
+**에이전트 팀 (7명):**
 
 | 에이전트 | 역할 |
 |---------|------|
 | planner | 요구사항 분석, 영향 범위 파악, 구현 계획 수립 |
-| developer | 기능 구현, 버그 수정, 컨벤션 준수 코딩 |
+| ux-designer | UX 플로우 설계, 와이어프레임, 디자인 시스템(Clear Departure) 점검, a11y/반응형 가이드 |
+| ui-developer | UI 컴포넌트 구현, Panda CSS 스타일링, 디자인 토큰, Framer Motion 인터랙션 |
+| frontend-developer | Next.js 페이지/라우팅, Zustand 상태, 데이터 페칭, Capacitor 플랫폼 분기 |
+| backend-developer | Supabase 스키마/RLS, Service 레이어, Next.js API Routes, Resend 이메일, 인증 |
 | reviewer | 코드 리뷰, 아키텍처 검증, 디자인 시스템 감사 |
 | qa-engineer | 빌드 검증, 통합 정합성 검사, 플랫폼 호환성 확인 |
 
@@ -43,6 +46,8 @@
 |------|------|-------------|
 | onvoy-develop | 개발 팀 오케스트레이터 (전체 파이프라인 조율) | 리더 (메인) |
 | analyze | 요구사항 분석 및 구현 계획 수립 | planner |
+| ux-design | UX 플로우·와이어프레임·디자인 시스템 점검·a11y | ux-designer |
+| backend-develop | Supabase RLS·API Routes·Resend 패턴 | backend-developer |
 | code-review | 코드 리뷰 및 UX 감사 | reviewer |
 | qa-verify | 빌드 및 통합 정합성 검증 | qa-engineer |
 
@@ -55,10 +60,20 @@
 
 **파이프라인 및 피드백 루프:**
 ```
-[planner] --> [developer] <--> [reviewer] --> [qa-engineer] <--> [developer]
-                            피드백 루프 1                    피드백 루프 2
-                                          --> [사용자 피드백] --> 해당 Phase 재실행
-                                                              피드백 루프 3
+[planner] --> [ux-designer] --> [backend-developer] ──┐
+                            │                          │
+                            ├──> [ui-developer] ───────┤
+                            │                          │
+                            └──> [frontend-developer] ─┤
+                                                       ↓
+                                                  [reviewer]
+                                            (피드백 루프 1: dev 재호출)
+                                                       ↓
+                                                 [qa-engineer]
+                                            (피드백 루프 2: dev 재호출)
+                                                       ↓
+                                              [사용자 피드백] --> 해당 Phase 재실행
+                                                              (피드백 루프 3)
 ```
 
 **디렉토리 구조:**
@@ -66,22 +81,32 @@
 .claude/
 ├── agents/
 │   ├── planner.md
-│   ├── developer.md
+│   ├── ux-designer.md
+│   ├── ui-developer.md
+│   ├── frontend-developer.md
+│   ├── backend-developer.md
 │   ├── reviewer.md
 │   └── qa-engineer.md
 └── skills/
-    ├── onvoy-develop/
-    │   └── SKILL.md
-    ├── analyze/
-    │   └── SKILL.md
-    ├── code-review/
+    ├── onvoy-develop/SKILL.md
+    ├── analyze/SKILL.md
+    ├── ux-design/
     │   ├── SKILL.md
     │   └── references/
-    │       └── checklist.md
+    │       ├── design-system-checklist.md
+    │       └── a11y-checklist.md
+    ├── backend-develop/
+    │   ├── SKILL.md
+    │   └── references/
+    │       ├── rls-patterns.md
+    │       ├── api-route-template.md
+    │       └── resend-integration.md
+    ├── code-review/
+    │   ├── SKILL.md
+    │   └── references/checklist.md
     └── qa-verify/
         ├── SKILL.md
-        └── references/
-            └── integration-checklist.md
+        └── references/integration-checklist.md
 ```
 
 **변경 이력:**
@@ -92,3 +117,4 @@
 | 2026-04-10 | 절대 규칙 추가 | CLAUDE.md, developer, orchestrator | standard-dev-flow.md 기반 워크플로우 통합 |
 | 2026-04-10 | 참조 경로 수정 | CLAUDE.md, orchestrator | standard-dev-flow.md를 docs/develop-context/로 이동 |
 | 2026-04-17 | 토큰 최적화 | 전체 | SSOT 원칙 적용: 중복 규칙 참조화, 오케스트레이터 경량화(262→85줄), 에이전트 경량화 |
+| 2026-05-12 | 팀 확장 4→7명 | agents/{ux-designer,ui-developer,frontend-developer,backend-developer}.md, skills/{ux-design,backend-develop}, onvoy-develop, CLAUDE.md | UX/UI 전문 영역 분리, developer를 frontend/backend로 분할하여 Supabase·Resend·디자인 시스템 도메인을 명확화. 기존 developer.md 제거. |
