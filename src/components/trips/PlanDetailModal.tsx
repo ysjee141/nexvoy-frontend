@@ -12,6 +12,7 @@ import { useNetworkStore } from '@/stores/useNetworkStore'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import UrlPreviewCard from '@/components/common/UrlPreviewCard'
+import PlanImage from '@/components/common/PlanImage'
 // ── Main Modal ──
 interface PlanDetailModalProps {
     plan: any
@@ -24,11 +25,14 @@ interface PlanDetailModalProps {
     onEdit: (plan: any) => void
     onDelete: (id: string) => void
     onToggleVisit: (planId: string, isVisited: boolean) => void
+    /** PlanImage 복구 성공 시 호출. 부모(TripClient/RouteMapView) plans 동기화. */
+    onPlanImageRecovered?: (planId: string, newImageUrl: string) => void
 }
 
 export default function PlanDetailModal({
     plan, exchangeRates, formatLocalTime, formatKstTime, timeDisplayMode,
     userRole, onClose, onEdit, onDelete, onToggleVisit,
+    onPlanImageRecovered,
 }: PlanDetailModalProps) {
     const [tab, setTab] = useState<'info' | 'refs'>('info')
     const [mapError, setMapError] = useState(false)
@@ -123,24 +127,38 @@ export default function PlanDetailModal({
                 })}
             >
                 {/* ── 헤더 & 히어로 섹션 ── */}
-                <div className={css({ 
-                    position: 'relative', 
-                    h: plan.image_url ? { base: '240px', sm: '260px' } : { base: '140px', sm: '160px' },
+                <div className={css({
+                    position: 'relative',
+                    h: (plan.image_url || plan.photo_reference)
+                        ? { base: '240px', sm: '260px' }
+                        : { base: '140px', sm: '160px' },
                     flexShrink: 0,
                     overflow: 'hidden',
-                    bg: 'brand.primary',
+                    bg: 'bg.surfaceSoft',
                 })}>
-                    {plan.image_url && (
+                    {(plan.image_url || plan.photo_reference) && (
                         <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img 
-                                src={plan.image_url} 
-                                alt={plan.title} 
-                                className={css({ w: '100%', h: '100%', objectFit: 'cover' })} 
+                            <PlanImage
+                                planId={plan.id}
+                                tripId={plan.trip_id}
+                                placeId={plan.google_place_id}
+                                imageUrl={plan.image_url}
+                                photoReference={plan.photo_reference}
+                                createdAt={plan.created_at}
+                                variant="hero"
+                                alt={plan.title}
+                                onRecovered={(newUrl) => {
+                                    try {
+                                        onPlanImageRecovered?.(plan.id, newUrl)
+                                    } catch (err) {
+                                        console.warn('[PlanDetailModal] onPlanImageRecovered failed', err)
+                                    }
+                                }}
                             />
-                            <div className={css({ 
-                                position: 'absolute', inset: 0, 
-                                background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%)' 
+                            <div className={css({
+                                position: 'absolute', inset: 0,
+                                background: 'linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0) 50%, rgba(0,0,0,0.7) 100%)',
+                                pointerEvents: 'none',
                             })} />
                         </>
                     )}

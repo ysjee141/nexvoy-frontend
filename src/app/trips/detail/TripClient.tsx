@@ -17,6 +17,7 @@ import { ExchangeService } from '@/services/ExternalApiService'
 import { CacheUtil } from '@/utils/cache'
 import { NotificationService } from '@/services/NotificationService'
 import { DownloadService } from '@/services/DownloadService'
+import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
 import { Download, CloudDownload, CloudCheck, Loader2 } from 'lucide-react'
 import TripDetailSkeleton from './TripDetailSkeleton'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
@@ -250,6 +251,15 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
     const handleDeletePlan = async (planId: string) => {
         if (!confirm('이 일정을 삭제하시겠습니까? (연결된 정보도 함께 삭제됩니다)')) return
 
+        // Storage cleanup은 best-effort: 실패해도 plan DELETE는 계속 진행
+        if (tripId) {
+            try {
+                await PlanPhotoStorageService.cleanupPlanPhotos({ tripId, planId })
+            } catch (cleanupErr) {
+                console.warn('[TripClient] cleanupPlanPhotos failed (ignored)', cleanupErr)
+            }
+        }
+
         const { error } = await supabase.from('plans').delete().eq('id', planId)
         if (error) {
             alert('삭제에 실패했습니다.')
@@ -258,6 +268,16 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             fetchPlans() // 목록 리프레시
         }
     }
+
+    /** 백그라운드/on-demand 업로드 성공 시 plans 리스트 image_url 동기화 */
+    const handlePlanImageRecovered = useCallback((planId: string, newImageUrl: string) => {
+        setPlans(prev => prev.map(p => (
+            p.id === planId ? { ...p, image_url: newImageUrl } : p
+        )))
+        setSelectedPlanForDetail((cur: any) => (
+            cur && cur.id === planId ? { ...cur, image_url: newImageUrl } : cur
+        ))
+    }, [])
 
     const handleEditPlan = async (plan: any) => {
         // 편집을 위해, 해당 Plan에 연결된 url들도 같이 가져옵니다
@@ -475,6 +495,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     onDelete={handleDeletePlan}
                     onDetail={handlePlanDetail}
                     onToggleVisit={handleToggleVisit}
+                    onPlanImageRecovered={handlePlanImageRecovered}
                 />
             )}
 
@@ -490,6 +511,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}
                     onToggleVisit={handleToggleVisit}
+                    onPlanImageRecovered={handlePlanImageRecovered}
                 />
             )}
 
@@ -502,6 +524,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     editData={editingPlan}
                     tripStartDate={trip?.start_date}
                     tripEndDate={trip?.end_date}
+                    onPlanImageUpdated={handlePlanImageRecovered}
                 />
             )}
             {tripId && (

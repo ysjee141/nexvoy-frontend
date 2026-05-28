@@ -41,12 +41,16 @@ export const DownloadService = {
             if (tripErr || !trip) throw new Error('Trip not found')
 
             // 2. 일정 정보 (Plan + PlanURLs)
+            //    NOTE: plans.image_url 은 영구 저장 전환(이슈 #184) 이후 Supabase Storage publicUrl만 들어간다.
+            //          만료 가능한 Google CDN URL 은 더 이상 image_url 에 저장되지 않으므로 캐시 안전.
+            //          단, photo_reference 만 있고 백그라운드 업로드가 미완료인 plan 은 image_url=null로 캐시되며
+            //          오프라인에서는 PlanImage 가 placeholder로 표시된다 (정상 동작).
             const { data: plans, error: plansErr } = await supabase
                 .from('plans')
                 .select('*, plan_urls(*)')
                 .eq('trip_id', tripId)
                 .order('start_datetime_local', { ascending: true })
-            
+
             if (plansErr) throw new Error('Plans fetch failed')
 
             // 3. 체크리스트 정보
