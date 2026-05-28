@@ -21,17 +21,21 @@ export async function GET(request: Request) {
         const detailsData = await detailsRes.json()
 
         if (detailsData.status !== 'OK' || !detailsData.result?.photos?.length) {
-            return NextResponse.json({ url: null })
+            return NextResponse.json({ url: null, photoReference: null })
         }
 
-        const photoRef = detailsData.result.photos[0].photo_reference
+        const photoRef: string = detailsData.result.photos[0].photo_reference
 
-        // 2. Places Photo URL로 리다이렉트를 따라가 영구 CDN URL 획득
+        // 2. Places Photo URL로 리다이렉트를 따라가 영구 CDN URL 획득 (미리보기용)
         const photoApiUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxwidth}&photo_reference=${photoRef}&key=${apiKey}`
         const photoRes = await fetch(photoApiUrl, { redirect: 'manual', next: { revalidate: 3600 } })
         const finalUrl = photoRes.headers.get('location')
 
-        return NextResponse.json({ url: finalUrl || photoApiUrl })
+        // photoReference는 클라이언트가 plans INSERT 시 함께 저장해야 함 (영구 저장 키)
+        return NextResponse.json({
+            url: finalUrl || photoApiUrl,
+            photoReference: photoRef,
+        })
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error'
         console.error('[places/photo] Error:', message)
