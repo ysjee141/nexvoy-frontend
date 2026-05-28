@@ -66,18 +66,35 @@ export const LocationService = {
 
 /**
  * Google Places 사진 서비스
+ *
+ * `getPhoto`: 미리보기 URL과 영구 저장에 필요한 `photoReference`를 동시에 반환.
  */
+export interface PlacePhotoResponse {
+  url: string | null;
+  photoReference: string | null;
+}
+
 export const PlacePhotoService = {
-  getPhotoUrl: async (placeId: string, maxwidth = 400): Promise<string | null> => {
+  /**
+   * 미리보기 URL + photoReference 동시 조회.
+   * NewPlanModal이 plans INSERT 시 `photo_reference` 컬럼에 저장하기 위한 용도.
+   */
+  getPhoto: async (
+    placeId: string,
+    maxwidth = 400,
+  ): Promise<PlacePhotoResponse> => {
     try {
-      const response = await apiService.get<{ url: string | null }>('/api/places/photo/', {
+      const response = await apiService.get<PlacePhotoResponse>('/api/places/photo/', {
         placeId,
         maxwidth: String(maxwidth),
       });
-      return response.data.url || null;
+      return {
+        url: response.data?.url ?? null,
+        photoReference: response.data?.photoReference ?? null,
+      };
     } catch (error) {
-      console.error('[PlacePhotoService] Failed to fetch photo URL:', error);
-      return null;
+      console.error('[PlacePhotoService] Failed to fetch photo metadata:', error);
+      return { url: null, photoReference: null };
     }
   }
 };

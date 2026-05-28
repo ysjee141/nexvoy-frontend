@@ -10,6 +10,7 @@ import { useNetworkStore } from '@/stores/useNetworkStore'
 import { collaboration } from '@/utils/collaboration'
 import { getCurrencyFromTimezone } from '@/utils/currency'
 import { ExchangeService } from '@/services/ExternalApiService'
+import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
 import RouteMapInfoModal from '@/components/trips/RouteMapInfoModal'
 import PlanDetailModal from '@/components/trips/PlanDetailModal'
 import NewPlanModal from '@/components/trips/NewPlanModal'
@@ -25,6 +26,7 @@ const MAP_CONTAINER_STYLE = { width: '100%', height: '100%' }
 
 interface Plan {
     id: string
+    trip_id?: string
     title: string
     location?: string
     address?: string
@@ -36,6 +38,9 @@ interface Plan {
     location_lng?: number
     google_place_id?: string
     timezone_string?: string
+    image_url?: string | null
+    photo_reference?: string | null
+    created_at?: string | null
 }
 
 interface RouteMapViewProps {
@@ -364,14 +369,32 @@ export default function RouteMapView({
     const handleDeletePlan = useCallback(
         async (planId: string) => {
             if (!confirm('이 일정을 삭제하시겠습니까?')) return
+            if (tripId) {
+                // best-effort: Storage cleanup 실패해도 plan DELETE는 계속 진행
+                try {
+                    await PlanPhotoStorageService.cleanupPlanPhotos({ tripId, planId })
+                } catch (cleanupErr) {
+                    console.warn('[RouteMapView] cleanupPlanPhotos failed (ignored)', cleanupErr)
+                }
+            }
             const { error } = await supabase.from('plans').delete().eq('id', planId)
             if (!error) {
                 setPlans(prev => prev.filter(p => p.id !== planId))
                 setDetailPlan(null)
             }
         },
-        [supabase]
+        [supabase, tripId]
     )
+
+    /** 백그라운드/on-demand 업로드 성공 시 plans 동기화 */
+    const handlePlanImageRecovered = useCallback((planId: string, newImageUrl: string) => {
+        setPlans(prev => prev.map(p => (
+            p.id === planId ? ({ ...p, image_url: newImageUrl } as Plan) : p
+        )))
+        setDetailPlan(cur => (
+            cur && cur.id === planId ? ({ ...cur, image_url: newImageUrl } as Plan) : cur
+        ))
+    }, [])
 
     // Offline fallback
     if (!isOnline) {
@@ -567,6 +590,7 @@ export default function RouteMapView({
                     onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}
                     onToggleVisit={handleToggleVisit}
+                    onPlanImageRecovered={handlePlanImageRecovered}
                 />
             )}
 
@@ -580,6 +604,7 @@ export default function RouteMapView({
                     editData={editingPlan}
                     tripStartDate={tripStartDate}
                     tripEndDate={tripEndDate}
+                    onPlanImageUpdated={handlePlanImageRecovered}
                 />
             )}
 

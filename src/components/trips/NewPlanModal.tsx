@@ -6,8 +6,16 @@ import { css } from 'styled-system/css'
 import { X, MapPin, Clock, Calendar, Check, Search, ChevronRight, Loader2, Camera, Navigation, Map, Info, Compass, Bell } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { LocationService, PlacePhotoService } from '@/services/ExternalApiService'
+import { uploadInBackground as uploadPlacePhotoInBackground } from '@/services/PlacePhotoService'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useScrollLock } from '@/hooks/useScrollLock'
+import type { Plan } from './PlanList'
+
+/**
+ * 편집 모드에서 NewPlanModal로 전달되는 plan 스냅샷.
+ * Plan의 부분 집합 + 옵셔널한 id를 허용한다.
+ */
+type EditDraft = Partial<Plan> & { id?: string }
 
 const libraries: ("places")[] = ["places"]
 
@@ -18,7 +26,12 @@ interface NewPlanModalProps {
     tripId: string
     tripStartDate?: string
     tripEndDate?: string
-    editData?: any
+    editData?: EditDraft
+    /**
+     * 백그라운드 업로드 완료 시 호출. (planId, newImageUrl).
+     * 부모가 plans 리스트의 해당 항목 image_url을 패치할 때 사용.
+     */
+    onPlanImageUpdated?: (planId: string, imageUrl: string) => void
 }
 
 // ── 핵심 타입 정의 ──
@@ -27,20 +40,24 @@ interface PlaceOption {
     address: string
     lat: number
     lng: number
+    /** 미리보기 URL (DB에 저장하지 않음) */
     photo?: string
+    /** Google photo_reference (영구 저장 키) */
+    photoReference?: string | null
     rating?: number
     type?: string
     googlePlaceId?: string
 }
 
-export default function NewPlanModal({ 
-    isOpen, 
-    onClose, 
-    onSuccess, 
-    tripId, 
-    tripStartDate = '', 
-    tripEndDate = '', 
-    editData 
+export default function NewPlanModal({
+    isOpen,
+    onClose,
+    onSuccess,
+    tripId,
+    tripStartDate = '',
+    tripEndDate = '',
+    editData,
+    onPlanImageUpdated,
 }: NewPlanModalProps) {
     const supabase = createClient()
     const [step, setStep] = useState(1) // 1: 장소검색, 2: 상세입력
@@ -118,6 +135,7 @@ export default function NewPlanModal({
                 lat: editData.location_lat || 0,
                 lng: editData.location_lng || 0,
                 photo: editData.image_url || undefined,
+                photoReference: editData.photo_reference ?? null,
                 googlePlaceId: editData.google_place_id || undefined,
             })
             
@@ -167,18 +185,23 @@ export default function NewPlanModal({
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng(),
                 photo: undefined,
+                photoReference: null,
                 rating: place.rating,
                 type: place.types?.[0],
                 googlePlaceId: placeId
             })
             setStep(2)
 
-            // 서버사이드 API로 영구 사진 URL 비동기 조회
+            // 서버사이드 API로 미리보기 URL + photoReference(영구 저장 키) 동시 조회
             if (placeId) {
-                PlacePhotoService.getPhotoUrl(placeId).then(url => {
-                    if (url) {
-                        setSelectedPlace(prev => prev ? { ...prev, photo: url } : prev)
-                    }
+                PlacePhotoService.getPhoto(placeId).then(({ url, photoReference }) => {
+                    setSelectedPlace(prev => prev ? {
+                        ...prev,
+                        photo: url || prev.photo,
+                        photoReference: photoReference ?? prev.photoReference ?? null,
+                    } : prev)
+                }).catch(error => {
+                    console.warn('[NewPlanModal] photo metadata fetch failed', error)
                 })
             }
         }
@@ -199,17 +222,22 @@ export default function NewPlanModal({
                 lat: place.geometry.location.lat(),
                 lng: place.geometry.location.lng(),
                 photo: undefined,
+                photoReference: null,
                 rating: place.rating,
                 type: place.types?.[0],
                 googlePlaceId: placeId
             })
 
-            // 서버사이드 API로 영구 사진 URL 비동기 조회
+            // 서버사이드 API로 미리보기 URL + photoReference 조회
             if (placeId) {
-                PlacePhotoService.getPhotoUrl(placeId).then(url => {
-                    if (url) {
-                        setSelectedPlace(prev => prev ? { ...prev, photo: url } : prev)
-                    }
+                PlacePhotoService.getPhoto(placeId).then(({ url, photoReference }) => {
+                    setSelectedPlace(prev => prev ? {
+                        ...prev,
+                        photo: url || prev.photo,
+                        photoReference: photoReference ?? prev.photoReference ?? null,
+                    } : prev)
+                }).catch(error => {
+                    console.warn('[NewPlanModal] photo metadata fetch failed', error)
                 })
             }
         }
@@ -223,6 +251,7 @@ export default function NewPlanModal({
             lat: 0,
             lng: 0,
             photo: undefined,
+            photoReference: null,
             googlePlaceId: undefined
         })
         setStep(2)
@@ -258,7 +287,10 @@ export default function NewPlanModal({
             const locationToSave = customTitle.trim() ? selectedPlace.name : selectedPlace.address;
             const addressToSave = selectedPlace.address;
 
-            const planData = {
+            // 신규 흐름: image_url은 백그라운드 업로드 완료 시점에 채워짐.
+            // INSERT 시점에는 photo_reference(영구 저장 키)만 저장한다.
+            // 단, edit 모드에서 기존 image_url이 이미 Storage URL(영구)인 경우 보존한다.
+            const planData: Record<string, unknown> = {
                 trip_id: tripId,
                 title: titleToSave,
                 location: locationToSave,
@@ -266,7 +298,8 @@ export default function NewPlanModal({
                 location_lat: selectedPlace.lat || 0,
                 location_lng: selectedPlace.lng || 0,
                 google_place_id: selectedPlace.googlePlaceId,
-                image_url: selectedPlace.photo,
+                image_url: editData?.id ? editData.image_url ?? null : null,
+                photo_reference: selectedPlace.photoReference ?? null,
                 start_datetime_local: startStr,
                 end_datetime_local: endStr,
                 cost: cost ? parseFloat(cost) : 0,
@@ -275,19 +308,70 @@ export default function NewPlanModal({
                 timezone_string: tzData.timeZoneId || 'Asia/Seoul'
             }
 
-            let result;
+            let savedPlanId: string | null = null
             if (editData?.id) {
-                result = await supabase.from('plans').update(planData).eq('id', editData.id)
+                const result = await supabase
+                    .from('plans')
+                    .update(planData)
+                    .eq('id', editData.id)
+                    .select('id')
+                    .single()
+                if (result.error) throw result.error
+                savedPlanId = (result.data as { id?: string } | null)?.id ?? editData.id
             } else {
-                result = await supabase.from('plans').insert(planData)
+                const result = await supabase
+                    .from('plans')
+                    .insert(planData)
+                    .select('id')
+                    .single()
+                if (result.error) throw result.error
+                savedPlanId = (result.data as { id?: string } | null)?.id ?? null
             }
 
-            if (result.error) throw result.error
+            // 백그라운드 업로드 (fire-and-forget). photo_reference + placeId 모두 있을 때만 시도.
+            // 모달 close 이전에 시작해야 try/catch/finally가 의도대로 동작한다.
+            if (
+                savedPlanId &&
+                selectedPlace.photoReference &&
+                selectedPlace.googlePlaceId
+            ) {
+                try {
+                    uploadPlacePhotoInBackground(
+                        {
+                            planId: savedPlanId,
+                            tripId,
+                            placeId: selectedPlace.googlePlaceId,
+                            photoReference: selectedPlace.photoReference,
+                        },
+                        (imageUrl) => {
+                            // Zustand store가 plan-level에 없어, 부모에게 콜백으로 통지
+                            try {
+                                onPlanImageUpdated?.(savedPlanId as string, imageUrl)
+                            } catch (cbErr) {
+                                console.warn(
+                                    '[NewPlanModal] onPlanImageUpdated callback failed',
+                                    cbErr,
+                                )
+                            }
+                        },
+                    )
+                } catch (bgErr) {
+                    // Zero Noise: 백그라운드 업로드 실패는 토스트 없이 콘솔만
+                    console.warn('[NewPlanModal] background upload start failed', bgErr)
+                }
+            }
 
+            // 모든 sync 호출이 정상 종료된 뒤 모달을 닫는다.
+            // 이렇게 해야 INSERT/UPDATE 직후 발생할 수 있는 예외도 catch 블록에 도달하여
+            // 사용자에게 에러 메시지를 노출할 수 있다.
             onSuccess()
             onClose()
-        } catch (err: any) {
-            setError(err.message || '일정을 저장하는 중 오류가 발생했습니다.')
+        } catch (err: unknown) {
+            const message =
+                err instanceof Error
+                    ? err.message
+                    : '일정을 저장하는 중 오류가 발생했습니다.'
+            setError(message)
         } finally {
             setLoading(false)
         }

@@ -3,14 +3,18 @@
 import { css } from 'styled-system/css'
 import { Clock, CheckCircle2, Circle, Trash2, Edit3, Wallet, Bell, MapPin, FileText, Link2 } from 'lucide-react'
 import { getCurrencyFromTimezone, formatCurrency } from '@/utils/currency'
+import PlanImage from '@/components/common/PlanImage'
 
-interface Plan {
+export interface Plan {
     id: string
+    trip_id: string
     title: string
     location: string
     address: string
     lat: number
     lng: number
+    location_lat?: number
+    location_lng?: number
     visit_date?: string
     visit_time?: string
     start_datetime_local: string
@@ -18,14 +22,18 @@ interface Plan {
     alarm_minutes_before?: number
     cost: number
     memo: string
-    image_url: string
+    image_url: string | null
+    photo_reference?: string | null
+    google_place_id?: string | null
+    created_at?: string | null
     is_completed: boolean
     is_visited: boolean
     timezone_string: string
+    plan_urls?: Array<{ id?: string; url: string; title?: string | null }>
 }
 
 interface PlanListProps {
-    plans: any[]
+    plans: Plan[]
     exchangeRates: Record<string, number>
     activeDropdown: string | null
     setActiveDropdown: (id: string | null) => void
@@ -33,10 +41,12 @@ interface PlanListProps {
     timeDisplayMode: 'local' | 'kst' | 'both'
     formatLocalTime: (date: string) => string
     formatKstTime: (date: string, tz: string) => string
-    onEdit: (plan: any) => void
+    onEdit: (plan: Plan) => void
     onDelete: (id: string) => void
-    onDetail: (plan: any) => void
+    onDetail: (plan: Plan) => void
     onToggleVisit: (planId: string, isVisited: boolean) => void
+    /** PlanImage 복구 성공 시 호출. 부모가 plans 리스트 image_url을 동기화. */
+    onPlanImageRecovered?: (planId: string, newImageUrl: string) => void
 }
 
 export default function PlanList({
@@ -51,7 +61,8 @@ export default function PlanList({
     onEdit,
     onDelete,
     onDetail,
-    onToggleVisit
+    onToggleVisit,
+    onPlanImageRecovered,
 }: PlanListProps) {
     if (!plans || plans.length === 0) {
         return (
@@ -64,7 +75,7 @@ export default function PlanList({
     }
 
     // 날짜별 그룹화 (start_datetime_local 기준)
-    const groupedPlans = plans.reduce((groups: Record<string, any[]>, plan) => {
+    const groupedPlans = plans.reduce<Record<string, Plan[]>>((groups, plan) => {
         const date = plan.start_datetime_local.split('T')[0]
         if (!groups[date]) groups[date] = []
         groups[date].push(plan)
@@ -126,6 +137,7 @@ export default function PlanList({
                                     onDelete={onDelete}
                                     onDetail={onDetail}
                                     onToggleVisit={onToggleVisit}
+                                    onPlanImageRecovered={onPlanImageRecovered}
                                 />
                             </div>
                         ))}
@@ -146,18 +158,20 @@ function PlanCard({
     onEdit,
     onDelete,
     onDetail,
-    onToggleVisit
+    onToggleVisit,
+    onPlanImageRecovered,
 }: {
-    plan: any
+    plan: Plan
     exchangeRates: Record<string, number>
     userRole: 'owner' | 'editor' | 'viewer' | null
     timeDisplayMode: 'local' | 'kst' | 'both'
     formatLocalTime: (date: string) => string
     formatKstTime: (date: string, tz: string) => string
-    onEdit: (plan: any) => void
+    onEdit: (plan: Plan) => void
     onDelete: (id: string) => void
-    onDetail: (plan: any) => void
+    onDetail: (plan: Plan) => void
     onToggleVisit: (planId: string, isVisited: boolean) => void
+    onPlanImageRecovered?: (planId: string, newImageUrl: string) => void
 }) {
     const currency = getCurrencyFromTimezone(plan.timezone_string || 'Asia/Seoul')
     const rate = exchangeRates[currency.code]
@@ -177,17 +191,33 @@ function PlanCard({
                 _hover: { boxShadow: 'airbnbHover', borderColor: 'transparent', transform: 'translateY(-2px)' },
             })}
         >
-            {/* 왼쪽: 라운드 썸네일 */}
-            {plan.image_url && (
-                <div
-                    className={css({
-                        w: '68px', flexShrink: 0, borderRadius: '12px',
-                        backgroundSize: 'cover', backgroundPosition: 'center',
-                        alignSelf: 'stretch',
-                    })}
-                    style={{ backgroundImage: `url("${plan.image_url}")` }}
+            {/* 왼쪽: 라운드 썸네일 (PlanImage가 6개 상태 모두 처리) */}
+            <div
+                className={css({
+                    w: '68px',
+                    flexShrink: 0,
+                    alignSelf: 'stretch',
+                    minH: '68px',
+                })}
+            >
+                <PlanImage
+                    planId={plan.id}
+                    tripId={plan.trip_id}
+                    placeId={plan.google_place_id}
+                    imageUrl={plan.image_url}
+                    photoReference={plan.photo_reference}
+                    createdAt={plan.created_at}
+                    variant="thumbnail"
+                    alt={`${plan.title} 장소 사진`}
+                    onRecovered={(newUrl) => {
+                        try {
+                            onPlanImageRecovered?.(plan.id, newUrl)
+                        } catch (err) {
+                            console.warn('[PlanList] onPlanImageRecovered failed', err)
+                        }
+                    }}
                 />
-            )}
+            </div>
 
             {/* 오른쪽: 콘텐츠 */}
             <div className={css({ flex: 1, minW: 0, display: 'flex', flexDirection: 'column', gap: '6px' })}>
@@ -198,7 +228,7 @@ function PlanCard({
                         overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, minW: 0,
                         textDecoration: plan.is_visited ? 'line-through' : 'none',
                     })}>{plan.title}</h4>
-                    {plan.alarm_minutes_before > 0 && (
+                    {(plan.alarm_minutes_before ?? 0) > 0 && (
                         <Bell size={13} className={css({ color: 'orange.500', flexShrink: 0 })} fill="currentColor" />
                     )}
                     {hasMemo && <FileText size={13} className={css({ color: 'brand.muted', flexShrink: 0 })} />}
