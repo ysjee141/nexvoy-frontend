@@ -17,8 +17,8 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    // E2E 전용 dev 서버: .env.local 대신 .env.e2e를 사용
-    // pnpm e2e:dev 스크립트가 .env.e2e를 .env.local로 교체하고 실행
+    // E2E 전용 dev 서버: .env.test.local을 process.env로 주입 후 next dev 실행
+    // .env.local은 절대 수정하지 않음 (rules.md §5)
     command: 'pnpm dev:e2e',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
