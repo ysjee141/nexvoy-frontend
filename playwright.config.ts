@@ -7,17 +7,17 @@ config({ path: '.env.test.local' });
 export default defineConfig({
   testDir: './e2e',
   globalTeardown: './e2e/global-teardown.ts',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
   reporter: 'html',
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
   },
   webServer: {
-    // E2E 전용 dev 서버: .env.test.local을 process.env로 주입 후 next dev 실행
+    // E2E 전용 dev 서버: NODE_ENV=test로 next dev 실행 → .env.test.local 자동 로드
     // .env.local은 절대 수정하지 않음 (rules.md §5)
     command: 'pnpm dev:e2e',
     url: 'http://localhost:3000',
