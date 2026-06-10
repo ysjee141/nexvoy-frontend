@@ -1,6 +1,6 @@
 import { test as base, type BrowserContext } from '@playwright/test';
 import { createBrowserClient } from '@supabase/ssr';
-import { createTestUser, deleteTestUser, type TestUser } from '../helpers/supabase';
+import { createTestUser, type TestUser } from '../helpers/supabase';
 
 const TEST_USER_EMAIL = process.env.E2E_TEST_USER_EMAIL ?? 'e2e-test@onvoy.local';
 const TEST_USER_PASSWORD = process.env.E2E_TEST_USER_PASSWORD ?? 'E2eTestPassword1!';
@@ -58,7 +58,9 @@ export const test = base.extend<AuthFixtures>({
   testUser: async ({}, use) => {
     const user = await createTestUser(TEST_USER_EMAIL, TEST_USER_PASSWORD);
     await use(user);
-    await deleteTestUser(TEST_USER_EMAIL);
+    // 유저 삭제 대신 데이터만 cleanup: deleteTestUser는 병렬 실행 시
+    // 다른 테스트의 createTestUser와 충돌하고 profiles cascade 삭제로
+    // seed FK 오류를 유발한다.
   },
 
   authenticatedContext: async ({ browser, testUser }, use) => {

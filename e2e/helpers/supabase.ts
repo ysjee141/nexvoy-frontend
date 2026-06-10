@@ -1,5 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
+// handle_new_user trigger가 비동기로 profiles row를 생성하므로
+// seed FK 오류 방지를 위해 row가 생길 때까지 최대 5초 폴링한다.
+async function waitForProfile(userId: string, url: string, serviceKey: string): Promise<void> {
+  const client = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
+  const deadline = Date.now() + 5000;
+  while (Date.now() < deadline) {
+    const { data } = await client.from('profiles').select('id').eq('id', userId).maybeSingle();
+    if (data?.id) return;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  throw new Error(`profiles row 생성 타임아웃: userId=${userId}`);
+}
+
 function getEnv(key: string): string {
   const val = process.env[key];
   if (!val) throw new Error(`환경변수 누락: ${key}`);
@@ -60,6 +73,9 @@ export async function createTestUser(email: string, password: string): Promise<T
   } else {
     throw new Error(`테스트 유저 생성 실패: ${JSON.stringify(createBody)}`);
   }
+
+  // 1-b. profiles trigger 완료 대기
+  await waitForProfile(userId, url, serviceKey);
 
   // 2. 세션 발급 (anon key로 signInWithPassword)
   const signInRes = await fetch(`${url}/auth/v1/token?grant_type=password`, {
