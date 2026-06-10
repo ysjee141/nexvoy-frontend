@@ -232,3 +232,197 @@ export async function cleanupTripsByUser(userId: string): Promise<void> {
     throw new Error(`cleanupTripsByUser 실패: ${error.message}`);
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 템플릿 시드/정리/검증 헬퍼
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SeededTemplate {
+  id: string;
+  title: string;
+}
+
+type TemplateOverrides = Partial<{
+  title: string;
+}>;
+
+/**
+ * checklist_templates 테이블에 직접 템플릿을 시드한다.
+ * @param userId 소유자 user_id (RLS 정합성을 위해 반드시 인자로 받음)
+ */
+export async function seedTemplate(
+  userId: string,
+  overrides: TemplateOverrides = {}
+): Promise<SeededTemplate> {
+  const client = getServiceClient();
+
+  const payload = {
+    user_id: userId,
+    title: overrides.title ?? 'E2E 테스트 템플릿',
+  };
+
+  const { data, error } = await client
+    .from('checklist_templates')
+    .insert(payload)
+    .select('id, title')
+    .single();
+
+  if (error || !data) {
+    throw new Error(`seedTemplate 실패: ${error?.message ?? '데이터 없음'}`);
+  }
+
+  return data as SeededTemplate;
+}
+
+/**
+ * 검증용: 해당 유저의 템플릿 중 title로 단건을 조회한다.
+ * UI로 생성된 템플릿의 DB 반영 여부를 검증할 때 사용한다.
+ */
+export async function getTemplateByTitle(
+  userId: string,
+  title: string
+): Promise<{ id: string; title: string } | null> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .from('checklist_templates')
+    .select('id, title')
+    .eq('user_id', userId)
+    .eq('title', title)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`getTemplateByTitle 실패: ${error.message}`);
+  }
+
+  return (data as { id: string; title: string } | null) ?? null;
+}
+
+export interface SeededTemplateItem {
+  id: string;
+  item_name: string;
+}
+
+type TemplateItemOverrides = Partial<{
+  category: string;
+  is_private: boolean;
+}>;
+
+/**
+ * checklist_template_items 테이블에 항목을 시드한다.
+ */
+export async function seedTemplateItem(
+  templateId: string,
+  itemName: string,
+  overrides: TemplateItemOverrides = {}
+): Promise<SeededTemplateItem> {
+  const client = getServiceClient();
+
+  const payload = {
+    template_id: templateId,
+    item_name: itemName,
+    category: overrides.category ?? '기타',
+    is_private: overrides.is_private ?? false,
+  };
+
+  const { data, error } = await client
+    .from('checklist_template_items')
+    .insert(payload)
+    .select('id, item_name')
+    .single();
+
+  if (error || !data) {
+    throw new Error(`seedTemplateItem 실패: ${error?.message ?? '데이터 없음'}`);
+  }
+
+  return data as SeededTemplateItem;
+}
+
+/**
+ * 검증용: template_id로 템플릿 항목 목록을 조회한다.
+ */
+export async function getTemplateItems(
+  templateId: string
+): Promise<{ id: string; item_name: string }[]> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .from('checklist_template_items')
+    .select('id, item_name')
+    .eq('template_id', templateId)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    throw new Error(`getTemplateItems 실패: ${error.message}`);
+  }
+
+  return (data as { id: string; item_name: string }[] | null) ?? [];
+}
+
+/**
+ * 검증용: template_id + item_name으로 템플릿 항목 단건을 조회한다.
+ * UI로 추가된 항목의 DB 반영 여부를 검증할 때 사용한다.
+ */
+export async function getTemplateItemByName(
+  templateId: string,
+  itemName: string
+): Promise<{ id: string; item_name: string } | null> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .from('checklist_template_items')
+    .select('id, item_name')
+    .eq('template_id', templateId)
+    .eq('item_name', itemName)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`getTemplateItemByName 실패: ${error.message}`);
+  }
+
+  return (data as { id: string; item_name: string } | null) ?? null;
+}
+
+/**
+ * 검증용: 체크리스트 내 source_template_name 기준으로 항목 목록을 조회한다.
+ * 템플릿 불러오기 적용 결과를 검증할 때 사용한다.
+ */
+export async function getChecklistItemBySourceTemplate(
+  checklistId: string,
+  sourceTemplateName: string
+): Promise<{ id: string; item_name: string; source_template_name: string }[]> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .from('checklist_items')
+    .select('id, item_name, source_template_name')
+    .eq('checklist_id', checklistId)
+    .eq('source_template_name', sourceTemplateName);
+
+  if (error) {
+    throw new Error(`getChecklistItemBySourceTemplate 실패: ${error.message}`);
+  }
+
+  return (
+    (data as { id: string; item_name: string; source_template_name: string }[] | null) ?? []
+  );
+}
+
+/**
+ * 해당 유저의 모든 템플릿을 삭제한다.
+ * checklist_templates → checklist_template_items는 on delete cascade로 함께 정리된다.
+ */
+export async function cleanupTemplatesByUser(userId: string): Promise<void> {
+  const client = getServiceClient();
+
+  const { error } = await client
+    .from('checklist_templates')
+    .delete()
+    .eq('user_id', userId);
+
+  if (error) {
+    throw new Error(`cleanupTemplatesByUser 실패: ${error.message}`);
+  }
+}
