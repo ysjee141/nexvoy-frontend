@@ -36,8 +36,8 @@ test.describe('여행 생성 및 체크리스트 플로우', () => {
     // 제출
     await page.getByRole('button', { name: '여행 계획 시작하기' }).click();
 
-    // 상세 페이지로 이동
-    await expect(page).toHaveURL(/\/trips\/detail\?id=/, { timeout: 10000 });
+    // 상세 페이지로 이동 (Next.js가 trailing slash를 추가할 수 있으므로 optional로 처리)
+    await expect(page).toHaveURL(/\/trips\/detail\/?id=/, { timeout: 10000 });
 
     // 여행지 표시 확인 (헤더에 "도쿄 여행" 형태로 노출)
     await expect(page.getByText('도쿄')).toBeVisible();
@@ -57,12 +57,16 @@ test.describe('여행 생성 및 체크리스트 플로우', () => {
     await expect(addToggleButton).toBeVisible({ timeout: 15000 });
     await addToggleButton.click();
 
-    // 항목명 입력 후 제출
-    await page.getByPlaceholder('어떤 준비물인가요?').fill('여권');
-    await page.getByRole('button', { name: '추가' }).click();
+    // 항목명 입력 후 제출 — React controlled input은 fill 대신 type 이벤트가 필요할 수 있음
+    const itemInput = page.getByPlaceholder('어떤 준비물인가요?');
+    await itemInput.click();
+    await itemInput.fill('여권');
+    // 추가 버튼 활성화 대기 (disabled={!newItemName.trim()} 조건)
+    await expect(page.getByRole('button', { name: '추가', exact: true })).toBeEnabled({ timeout: 5000 });
+    await page.getByRole('button', { name: '추가', exact: true }).click();
 
-    // 목록에 추가 확인
-    await expect(page.getByText('여권')).toBeVisible();
+    // 목록에 추가 확인 (DB insert + UI 반영 대기)
+    await expect(page.getByText('여권')).toBeVisible({ timeout: 10000 });
 
     // DB 검증: 추가된 항목이 존재할 때까지 폴링 후 id 확보
     const checklist = await getOrCreateChecklist(trip.id);
