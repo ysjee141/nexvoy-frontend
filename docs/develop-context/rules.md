@@ -47,5 +47,42 @@ OnVoy의 디자인 가치와 브랜드 아이デン티티를 훼손하지 마십
 
 ---
 
+---
+
+## 5. 🧪 E2E 테스트 환경 규칙
+
+E2E 테스트 실행 및 인프라 작업 시 다음 규칙을 **절대적으로** 준수한다.
+
+### 5.1 환경변수 파일 보호 (절대 규칙)
+
+- **`.env.local`은 스크립트나 코드로 절대 수정·덮어쓰기·이동·삭제하지 않는다.**
+  - 이 파일에는 운영 API 키, Supabase 키, 카카오/구글 키 등 복구 불가능한 민감 정보가 포함된다.
+  - 백업 후 교체 방식(`rename` → `copyFile` → 복원)도 금지한다. 프로세스 비정상 종료 시 복원이 보장되지 않는다.
+- **E2E 전용 환경변수는 `process.env`에 직접 주입하는 방식으로만 처리한다.**
+  - Next.js 우선순위: `process.env` > `.env.local` — 이미 주입된 값은 `.env.local`이 덮어쓰지 않는다.
+  - 구현체: `scripts/dev-e2e.mjs` — `.env.test.local`을 읽어 `process.env`에 assign 후 `next dev` 실행.
+- `.env.test.local`은 `.gitignore`로 보호되며, 예시 구조는 `.env.test.local.example`에 유지한다.
+
+### 5.2 로컬 Supabase 인스턴스
+
+- E2E 테스트는 **반드시 로컬 Supabase 인스턴스**(`supabase start`)를 사용한다. 운영 DB 절대 금지.
+- 마이그레이션은 `supabase/migrations/`에 날짜순으로 관리하며, `supabase db reset --local`로 재현 가능해야 한다.
+- 운영 URL·키가 마이그레이션 파일에 하드코딩되지 않도록 한다 (`app.supabase_functions_url` 설정 참조 방식 사용).
+
+### 5.3 테스트 유저 관리
+
+- 테스트 유저는 `e2e/helpers/supabase.ts`의 `createTestUser` / `deleteTestUser`로만 생성·삭제한다.
+- 실제 고객·임직원 정보를 테스트 데이터로 사용하지 않는다.
+- 테스트 유저 이메일은 `*.onvoy.local` 도메인을 사용한다 (운영 도메인과 명확히 구분).
+
+### 5.4 @supabase/ssr 쿠키 주입
+
+- 인증 픽스처(`e2e/fixtures/auth.ts`)는 `createBrowserClient`의 `setSession()`을 통해 쿠키를 생성한다.
+  - 쿠키 이름은 SDK가 자동 결정한다 — 직접 계산하거나 하드코딩하지 않는다.
+  - 로컬 인스턴스(`127.0.0.1`)의 쿠키 이름은 `sb-127-auth-token`으로 생성된다.
+- 쿠키 주입 후 보호 경로 접근 가능 여부를 스모크 테스트로 반드시 검증한다.
+
+---
+
 > [!WARNING]
 > 본 가이드라인을 어기는 것은 프로젝트의 일관성을 해치는 심각한 위험으로 간주됩니다. 불확실할 경우 항상 질문하십시오.

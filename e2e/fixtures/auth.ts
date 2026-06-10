@@ -1,0 +1,72 @@
+import { test as base, type BrowserContext } from '@playwright/test';
+import { createBrowserClient } from '@supabase/ssr';
+import { createTestUser, deleteTestUser, type TestUser } from '../helpers/supabase';
+
+const TEST_USER_EMAIL = process.env.E2E_TEST_USER_EMAIL ?? 'e2e-test@onvoy.local';
+const TEST_USER_PASSWORD = process.env.E2E_TEST_USER_PASSWORD ?? 'E2eTestPassword1!';
+
+export type AuthFixtures = {
+  authenticatedContext: BrowserContext;
+  testUser: TestUser;
+};
+
+/**
+ * @supabase/ssr의 createBrowserClient를 사용해 실제 쿠키 이름과 인코딩 방식을
+ * 그대로 재현한다. 쿠키 이름은 Supabase URL의 호스트명 첫 세그먼트에서 결정되므로
+ * 직접 계산하지 않고 SDK에 위임한다.
+ */
+async function injectSession(context: BrowserContext, user: TestUser) {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  const baseURL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const domain = new URL(baseURL).hostname;
+
+  const collectedCookies: Array<{ name: string; value: string }> = [];
+
+  const client = createBrowserClient(supabaseUrl, anonKey, {
+    cookies: {
+      getAll: () => collectedCookies,
+      setAll: (toSet) => {
+        toSet.forEach(({ name, value }) => {
+          const idx = collectedCookies.findIndex((c) => c.name === name);
+          if (idx >= 0) collectedCookies[idx].value = value;
+          else collectedCookies.push({ name, value });
+        });
+      },
+    },
+  });
+
+  // SDK가 세션을 설정하면서 올바른 쿠키 이름/인코딩으로 collectedCookies에 저장한다
+  await client.auth.setSession({
+    access_token: user.accessToken,
+    refresh_token: user.refreshToken,
+  });
+
+  await context.addCookies(
+    collectedCookies.map(({ name, value }) => ({
+      name,
+      value,
+      domain,
+      path: '/',
+      httpOnly: false,
+      sameSite: 'Lax' as const,
+    }))
+  );
+}
+
+export const test = base.extend<AuthFixtures>({
+  testUser: async ({}, use) => {
+    const user = await createTestUser(TEST_USER_EMAIL, TEST_USER_PASSWORD);
+    await use(user);
+    await deleteTestUser(TEST_USER_EMAIL);
+  },
+
+  authenticatedContext: async ({ browser, testUser }, use) => {
+    const context = await browser.newContext();
+    await injectSession(context, testUser);
+    await use(context);
+    await context.close();
+  },
+});
+
+export { expect } from '@playwright/test';
