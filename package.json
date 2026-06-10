@@ -8,7 +8,11 @@
     "build:mobile": "mv src/app/api src/app_api_tmp && mv src/app/auth src/app_auth_tmp && mv src/app/share src/app_share_tmp && BUILD_TARGET=mobile next build; BS=$?; mv src/app_api_tmp src/app/api; mv src/app_auth_tmp src/app/auth; mv src/app_share_tmp src/app/share; exit $BS",
     "start": "NODE_OPTIONS='--dns-result-order=ipv4first' next start",
     "lint": "eslint",
-    "prepare": "panda codegen"
+    "prepare": "panda codegen",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "dev:e2e": "node scripts/dev-e2e.mjs"
   },
   "dependencies": {
     "@capacitor-community/firebase-analytics": "^8.0.0",
@@ -43,6 +47,7 @@
   "devDependencies": {
     "@capacitor/cli": "^8.2.0",
     "@pandacss/dev": "^1.8.2",
+    "@playwright/test": "^1.60.0",
     "@types/archiver": "^6.0.3",
     "@types/google.maps": "^3.58.1",
     "@types/node": "^20.19.33",
@@ -50,6 +55,8 @@
     "@types/react-dom": "^19",
     "archiver": "^7.0.1",
     "babel-plugin-react-compiler": "1.0.0",
+    "dotenv": "^17.4.2",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "postcss": "^8.5.6",
