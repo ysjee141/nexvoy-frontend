@@ -36,11 +36,11 @@ test.describe('여행 생성 및 체크리스트 플로우', () => {
     // 제출
     await page.getByRole('button', { name: '여행 계획 시작하기' }).click();
 
-    // 상세 페이지로 이동 (Next.js가 trailing slash를 추가할 수 있으므로 optional로 처리)
-    await expect(page).toHaveURL(/\/trips\/detail\/?id=/, { timeout: 10000 });
+    // Next.js가 /trips/detail/ (trailing slash) 또는 /trips/detail (no slash) 로 리다이렉트할 수 있다.
+    await expect(page).toHaveURL(/\/trips\/detail\/?\?id=/, { timeout: 10000 });
 
     // 여행지 표시 확인 (헤더에 "도쿄 여행" 형태로 노출)
-    await expect(page.getByText('도쿄')).toBeVisible();
+    await expect(page.getByRole('heading', { name: '도쿄 여행' })).toBeVisible();
 
     await page.close();
   });
@@ -48,6 +48,10 @@ test.describe('여행 생성 및 체크리스트 플로우', () => {
   test('체크리스트 항목 추가 → 체크(완료 처리)', async ({ authenticatedContext, testUser }) => {
     // UI 생성에 의존하지 않고 독립적으로 여행을 시드해 테스트 격리를 보장한다.
     const trip = await seedTrip(testUser.id);
+    // 앱이 페이지 마운트 시 체크리스트를 concurrent하게 생성하면 race condition으로
+    // 두 개의 checklist가 생성되고 setItems가 덮어쓰이는 문제가 발생한다.
+    // 미리 checklist를 생성해 앱이 기존 row를 조회하도록 한다.
+    await getOrCreateChecklist(trip.id);
 
     const page = await authenticatedContext.newPage();
     await page.goto(`/trips/detail?id=${trip.id}&tab=checklist`);

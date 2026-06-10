@@ -15,10 +15,12 @@ import { CacheUtil } from '@/utils/cache'
 export default function TemplatesPage() {
     const supabase = createClient()
     const router = useRouter()
-    const { 
-        setIsNewTemplateModalOpen, 
-        setIsEditTemplateModalOpen, 
-        setEditingTemplateId 
+    const {
+        setIsNewTemplateModalOpen,
+        setIsEditTemplateModalOpen,
+        setEditingTemplateId,
+        isNewTemplateModalOpen,
+        isEditTemplateModalOpen,
     } = useUIStore()
 
     const [templates, setTemplates] = useState<any[]>([])
@@ -28,7 +30,7 @@ export default function TemplatesPage() {
         async function fetchTemplates() {
             const { data: { user: networkUser } } = await supabase.auth.getUser()
             const user = networkUser || await CacheUtil.getAuthUser()
-            
+
             if (!user) {
                 router.push('/login')
                 return
@@ -50,7 +52,8 @@ export default function TemplatesPage() {
         }
 
         fetchTemplates()
-    }, [supabase, router])
+    // 모달이 닫힐 때(false로 변경) 목록을 다시 가져와 UI를 갱신한다.
+    }, [supabase, router, isNewTemplateModalOpen, isEditTemplateModalOpen])
 
     if (loading) {
         return (
