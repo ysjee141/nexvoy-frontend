@@ -44,6 +44,8 @@ export interface PlanImageProps {
     onRecoveryFailed?: () => void
     /** 오프라인 모드 등에서 강제 비활성화 */
     disableRecovery?: boolean
+    /** DB에 photo_unavailable=true로 마킹된 plan — 즉시 placeholder, 자발 복구 스킵 */
+    photoUnavailable?: boolean
     className?: string
 }
 
@@ -111,6 +113,7 @@ export function PlanImage(props: PlanImageProps) {
         onRecovered,
         onRecoveryFailed,
         disableRecovery = false,
+        photoUnavailable = false,
         className,
     } = props
 
@@ -168,6 +171,7 @@ export function PlanImage(props: PlanImageProps) {
             return imgLoaded ? 'loaded' : 'loading-img'
         }
         // image_url 없음 분기
+        if (photoUnavailable) return 'idle-placeholder'
         if (disableRecovery) return 'idle-placeholder'
         // 자발 복구가 예약/진행 중인 경우 → shimmer
         if (recoveryRequested) return 'idle-empty'
@@ -178,7 +182,7 @@ export function PlanImage(props: PlanImageProps) {
         }
         if (isNewnessExpired) return 'idle-placeholder'
         return 'idle-empty'
-    }, [activeUrl, imgLoaded, isRecovering, recoveryFailed, photoReference, placeId, disableRecovery, isNewnessExpired, recoveryRequested])
+    }, [activeUrl, imgLoaded, isRecovering, recoveryFailed, photoReference, placeId, disableRecovery, photoUnavailable, isNewnessExpired, recoveryRequested])
 
     /** 이미지 onError → 복구 시도 트리거 */
     const handleImgError = useCallback(async () => {
@@ -216,7 +220,7 @@ export function PlanImage(props: PlanImageProps) {
             setIsRecovering(false)
             recoveryStartedAtRef.current = null
         }
-    }, [planId, tripId, placeId, photoReference, disableRecovery, recover, onRecovered, onRecoveryFailed])
+    }, [planId, tripId, placeId, photoReference, disableRecovery, photoUnavailable, recover, onRecovered, onRecoveryFailed])
 
     /**
      * image_url=null 자발 복구 트리거
@@ -226,6 +230,7 @@ export function PlanImage(props: PlanImageProps) {
      */
     useEffect(() => {
         if (disableRecovery) return
+        if (photoUnavailable) return
         if (activeUrl) return
         if (!placeId) return
         if (!planId || !tripId) return
