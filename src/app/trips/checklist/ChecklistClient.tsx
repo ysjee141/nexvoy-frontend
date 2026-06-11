@@ -1335,7 +1335,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                             </select>
                             <button
                                 type="submit"
-                                disabled={!newItemName.trim()}
+                                disabled={!newItemName.trim() || !checklistId}
                                 className={css({ py: '10px', px: '20px', bg: 'brand.primary', color: 'white', fontWeight: '700', borderRadius: '12px', border: 'none', cursor: 'pointer', boxShadow: 'shadow.primary' })}
                             >
                                 추가
