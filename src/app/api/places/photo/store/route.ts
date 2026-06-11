@@ -65,6 +65,19 @@ function buildStoragePath(userId: string, tripId: string, planId: string, placeI
     return `${userId}/${tripId}/${planId}_${placeIdHash8(placeId)}.jpg`
 }
 
+async function markPhotoUnavailable(
+    supabase: Awaited<ReturnType<typeof createClient>>,
+    planId: string
+): Promise<void> {
+    const { error } = await supabase
+        .from('plans')
+        .update({ photo_unavailable: true })
+        .eq('id', planId)
+    if (error) {
+        console.error('[photo/store] markPhotoUnavailable failed:', error.message, { planId })
+    }
+}
+
 export async function POST(request: NextRequest) {
     try {
         // 1) 요청 본문 파싱
@@ -150,6 +163,7 @@ export async function POST(request: NextRequest) {
             console.info('[photo/store] photoReference fallback via placeId', { planId })
             const recovered = await fetchPhotoReferenceByPlaceId(placeId, apiKey)
             if (!recovered) {
+                await markPhotoUnavailable(supabase, planId)
                 return NextResponse.json(
                     { error: 'Photo reference unavailable' },
                     { status: 410 }
@@ -173,11 +187,14 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Photo fetch failed' }, { status: 502 })
         }
 
-        // 403/410은 토큰 만료/거부 — 클라이언트가 photo_reference 무효화 처리해야 함
+        // 403은 일시적 거부(키 제약 등) — 마킹 금지. 410만 사진 없음 확정으로 영구 마킹.
         if (photoRes.status === 403 || photoRes.status === 410) {
             console.warn(
                 `[places/photo/store] Google Photo expired (status=${photoRes.status}) for plan=${planId}`
             )
+            if (photoRes.status === 410) {
+                await markPhotoUnavailable(supabase, planId)
+            }
             return NextResponse.json({ error: 'Photo reference expired' }, { status: 410 })
         }
         if (!photoRes.ok) {

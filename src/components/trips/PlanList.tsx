@@ -30,6 +30,7 @@ export interface Plan {
     is_visited: boolean
     timezone_string: string
     plan_urls?: Array<{ id?: string; url: string; title?: string | null }>
+    photo_unavailable?: boolean
 }
 
 interface PlanListProps {
@@ -209,6 +210,7 @@ function PlanCard({
                     createdAt={plan.created_at}
                     variant="thumbnail"
                     alt={`${plan.title} 장소 사진`}
+                    photoUnavailable={plan.photo_unavailable}
                     onRecovered={(newUrl) => {
                         try {
                             onPlanImageRecovered?.(plan.id, newUrl)
