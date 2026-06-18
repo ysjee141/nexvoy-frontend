@@ -142,6 +142,28 @@ importers:
         specifier: ^5
         version: 5.9.3
 
+  packages/core:
+    dependencies:
+      '@nexvoy/types':
+        specifier: workspace:*
+        version: link:../types
+      date-fns:
+        specifier: ^4.0.0
+        version: 4.1.0
+    devDependencies:
+      '@supabase/supabase-js':
+        specifier: ^2.0.0
+        version: 2.98.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
+  packages/types:
+    devDependencies:
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
 packages:
 
   '@babel/code-frame@7.29.0':
