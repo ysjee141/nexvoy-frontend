@@ -101,9 +101,10 @@ export default function SharePage() {
     const fetchShareInfo = useCallback(async () => {
         setLoading(true)
         // 1. 공유 토큰으로 정보 조회
+        // password_hash 등 민감 컬럼은 클라이언트로 노출하지 않도록 필요한 컬럼만 명시
         const { data: shareData, error: shareError } = await supabase
             .from('trip_shares')
-            .select('*, trips(*)')
+            .select('id, share_token, share_type, trip_id, expires_at, trips(*)')
             .eq('share_token', shareToken ?? '')
             .single()
 
@@ -142,11 +143,22 @@ export default function SharePage() {
 
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (passwordInput === shareInfo?.password_hash) { // 실제는 해시 검증 필요하나 현재는 단순 비교
-            setIsAuthorized(true)
-            await fetchPlans(shareInfo.trip_id)
-        } else {
-            alert('비밀번호가 일치하지 않습니다.')
+        // 비밀번호 검증은 서버 라우트에서 수행 (password_hash는 클라이언트로 노출되지 않음)
+        try {
+            const res = await fetch('/api/share/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ token: shareToken, password: passwordInput }),
+            })
+            const result = await res.json().catch(() => ({ authorized: false }))
+            if (res.ok && result.authorized) {
+                setIsAuthorized(true)
+                await fetchPlans(shareInfo.trip_id)
+            } else {
+                alert('비밀번호가 일치하지 않습니다.')
+            }
+        } catch {
+            alert('비밀번호 확인 중 오류가 발생했습니다.')
         }
     }
 

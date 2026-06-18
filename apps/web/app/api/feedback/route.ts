@@ -4,6 +4,16 @@ import { NextRequest, NextResponse } from 'next/server'
  * 테스터 피드백을 디스코드 Webhook으로 전달하는 서버 사이드 API
  * 클라이언트의 CORS 문제를 방지하고 Webhook URL을 숨기기 위해 사용합니다.
  */
+
+// ─── 파일 업로드 검증 정책 ──────────────────────────────────────────────
+const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+const MAX_FILE_COUNT = 5
+const ALLOWED_MIME_TYPES = new Set([
+    'image/png',
+    'image/jpeg',
+    'image/webp',
+    'image/gif',
+])
 export async function OPTIONS() {
     return NextResponse.json({}, {
         headers: {
@@ -35,12 +45,25 @@ export async function POST(req: NextRequest) {
             if (body.files && Array.isArray(body.files)) {
                 for (const file of body.files) {
                     if (file.data && file.name) {
-                        console.log(`Base64 파일 추출: ${file.name} (${file.type})`);
+                        const fileType = file.type || 'application/octet-stream'
+                        if (!ALLOWED_MIME_TYPES.has(fileType)) {
+                            return NextResponse.json(
+                                { error: 'Unsupported file type', detail: `허용되지 않은 파일 형식입니다: ${fileType}` },
+                                { status: 400, headers: corsHeaders }
+                            )
+                        }
                         const buffer = Buffer.from(file.data, 'base64')
+                        if (buffer.byteLength > MAX_FILE_SIZE) {
+                            return NextResponse.json(
+                                { error: 'File too large', detail: `파일 크기는 최대 ${MAX_FILE_SIZE / (1024 * 1024)}MB까지 허용됩니다.` },
+                                { status: 400, headers: corsHeaders }
+                            )
+                        }
+                        console.log(`Base64 파일 추출: ${file.name} (${fileType})`);
                         files.push({
                             name: file.name,
                             buffer: buffer,
-                            type: file.type || 'application/octet-stream'
+                            type: fileType
                         })
                     }
                 }
@@ -54,6 +77,18 @@ export async function POST(req: NextRequest) {
             const entries = Array.from(formData.entries());
             for (const [key, value] of entries) {
                 if (value instanceof File) {
+                    if (!ALLOWED_MIME_TYPES.has(value.type)) {
+                        return NextResponse.json(
+                            { error: 'Unsupported file type', detail: `허용되지 않은 파일 형식입니다: ${value.type}` },
+                            { status: 400, headers: corsHeaders }
+                        )
+                    }
+                    if (value.size > MAX_FILE_SIZE) {
+                        return NextResponse.json(
+                            { error: 'File too large', detail: `파일 크기는 최대 ${MAX_FILE_SIZE / (1024 * 1024)}MB까지 허용됩니다.` },
+                            { status: 400, headers: corsHeaders }
+                        )
+                    }
                     console.log(`Multipart 파일 추출: ${value.name} (${value.size} bytes)`);
                     const arrayBuffer = await value.arrayBuffer()
                     files.push({
@@ -63,6 +98,14 @@ export async function POST(req: NextRequest) {
                     })
                 }
             }
+        }
+
+        // 파일 개수 제한 검증
+        if (files.length > MAX_FILE_COUNT) {
+            return NextResponse.json(
+                { error: 'Too many files', detail: `파일은 최대 ${MAX_FILE_COUNT}개까지 첨부할 수 있습니다.` },
+                { status: 400, headers: corsHeaders }
+            )
         }
 
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL
