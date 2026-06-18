@@ -61,4 +61,5 @@ styled-system-studio
 .antigravity_rules
 .claude/settings.local.json
 _feedback/
-_workspace
+_workspacepackages/*/node_modules
+apps/*/node_modules
