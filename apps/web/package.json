@@ -8,15 +8,24 @@
     "start": "next start"
   },
   "dependencies": {
+    "@next/third-parties": "^16.2.9",
     "@nexvoy/core": "workspace:*",
     "@nexvoy/types": "workspace:*",
-    "@supabase/ssr": "^0.6.1",
-    "@supabase/supabase-js": "^2.0.0",
+    "@pandacss/dev": "^1.8.2",
+    "@react-google-maps/api": "^2.20.8",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.97.0",
+    "@vercel/speed-insights": "^2.0.0",
+    "date-fns": "^4.4.0",
+    "framer-motion": "^12.38.0",
+    "lucide-react": "^0.575.0",
     "next": "16.2.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@types/google.maps": "^3.58.1",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
