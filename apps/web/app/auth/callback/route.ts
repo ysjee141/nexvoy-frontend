@@ -5,6 +5,18 @@ const SUPABASE_FUNCTION_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
   ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/handle-kakao-oauth`
   : ''
 
+/**
+ * open redirect 방어: `next` 값은 동일 출처 내 경로만 허용한다.
+ * 절대 URL(`http(s)://...`)이나 protocol-relative(`//evil.com`)는 거부하고 `/`로 폴백.
+ */
+function safeNext(next: string | null | undefined): string {
+  if (!next) return '/'
+  // protocol-relative(`//host`) 또는 절대 URL은 거부
+  if (next.startsWith('//') || /^https?:\/\//i.test(next)) return '/'
+  // 반드시 단일 슬래시로 시작하는 상대 경로만 허용
+  return next.startsWith('/') ? next : '/'
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin: defaultOrigin } = new URL(request.url)
 
@@ -26,7 +38,7 @@ export async function GET(request: Request) {
   const modeFromState = stateParams.get('mode')
   const nextFromState = stateParams.get('next')
 
-  const next = searchParams.get('next') ?? nextFromState ?? '/'
+  const next = safeNext(searchParams.get('next') ?? nextFromState)
 
   const error_description = searchParams.get('error_description')
   if (error_description) {
