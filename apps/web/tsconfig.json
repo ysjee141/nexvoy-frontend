@@ -20,6 +20,7 @@
     ],
     "paths": {
       "@/*": ["./*"],
+      "styled-system/*": ["./styled-system/*"],
       "@nexvoy/types": ["../../packages/types/src/index.ts"],
       "@nexvoy/core": ["../../packages/core/src/index.ts"],
       "@nexvoy/core/*": ["../../packages/core/src/*"]
