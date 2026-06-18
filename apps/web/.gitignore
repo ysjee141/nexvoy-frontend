@@ -12,8 +12,6 @@
 
 # testing
 /coverage
-/playwright-report
-/test-results
 
 # next.js
 /.next/
@@ -41,27 +39,3 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-## Panda
-styled-system
-styled-system-studio
-.npm-cache
-
-# Supabase local config
-/supabase/.temp
-/supabase/.branches
-/supabase/.local-db-data
-
-*/.idea/
-# Sentry Config File
-.env.sentry-build-plugin
-
-.agents
-.github_config
-.antigravity_rules
-.claude/settings.local.json
-_feedback/
-_workspace/
-packages/*/node_modules
-apps/*/node_modules
-apps/*/pnpm-lock.yaml
