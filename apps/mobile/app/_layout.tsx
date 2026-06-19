@@ -90,6 +90,7 @@ function RootNavigator() {
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="trip/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="trip/new" options={{ headerShown: false }} />
     </Stack>
   )
 }
