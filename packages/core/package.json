@@ -1,0 +1,32 @@
+{
+  "name": "@nexvoy/core",
+  "version": "0.0.1",
+  "private": true,
+  "description": "OnVoy 플랫폼 독립 비즈니스 로직",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./supabase/queries": "./src/supabase/queries.ts",
+    "./supabase/storagePaths": "./src/supabase/storagePaths.ts",
+    "./domain/tripLogic": "./src/domain/tripLogic.ts",
+    "./domain/currency": "./src/domain/currency.ts",
+    "./domain/collaboration": "./src/domain/collaboration.ts",
+    "./utils/date": "./src/utils/date.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@nexvoy/types": "workspace:*",
+    "date-fns": "^4.0.0"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}

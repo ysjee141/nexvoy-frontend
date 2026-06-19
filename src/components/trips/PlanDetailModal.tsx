@@ -147,6 +147,7 @@ export default function PlanDetailModal({
                                 createdAt={plan.created_at}
                                 variant="hero"
                                 alt={plan.title}
+                                photoUnavailable={plan.photo_unavailable}
                                 onRecovered={(newUrl) => {
                                     try {
                                         onPlanImageRecovered?.(plan.id, newUrl)

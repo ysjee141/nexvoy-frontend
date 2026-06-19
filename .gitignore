@@ -61,4 +61,7 @@ styled-system-studio
 .antigravity_rules
 .claude/settings.local.json
 _feedback/
-_workspace*
+_workspace/
+packages/*/node_modules
+apps/*/node_modules
+apps/*/pnpm-lock.yaml

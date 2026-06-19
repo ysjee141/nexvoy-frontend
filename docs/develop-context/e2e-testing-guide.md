@@ -44,6 +44,7 @@
 > - 운영 DB가 아닌 **별도 테스트/로컬 Supabase 인스턴스** 사용을 강력히 권장.
 > - service_role 키·비밀번호·토큰은 **테스트 코드나 픽스처에 하드코딩 금지**, 환경변수(`.env.test.local` 등, gitignore 처리)로만 주입.
 > - 테스트 데이터에 **실제 고객/임직원 정보 사용 금지** — 시드 데이터로 격리.
+> - 기준: 야놀자그룹 AI 보안 가이드 https://yanoljagroup.atlassian.net/wiki/spaces/Compliance/pages/2451412038/AI
 
 ### 3.2 Google Maps API
 - E2E에서 실제 호출 시 비용·쿼터 발생 → **mock** 처리하거나 **테스트 전용 키** 분리.
