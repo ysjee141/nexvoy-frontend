@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { getTripsByUser, formatDate } from '@nexvoy/core'
 import type { Trip } from '@nexvoy/types'
@@ -22,6 +23,7 @@ import { colors, fontSizes, fontWeights, radii, spacing, shadows } from '@/theme
 
 export default function HomeScreen() {
   const { session } = useAuth()
+  const router = useRouter()
   const [trips, setTrips] = useState<Trip[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -45,6 +47,7 @@ export default function HomeScreen() {
 
   const renderTrip = ({ item }: { item: Trip }) => (
     <Pressable
+      onPress={() => router.push({ pathname: '/trip/[id]', params: { id: item.id } })}
       style={({ pressed }) => [
         styles.tripCard,
         pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
