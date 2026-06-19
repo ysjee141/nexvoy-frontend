@@ -20,9 +20,15 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
+import { AntDesign } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as WebBrowser from 'expo-web-browser'
+import { makeRedirectUri } from 'expo-auth-session'
 import { supabase } from '@/lib/supabase'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
+
+// OAuth 외부 인증 세션 복귀 시 브라우저 탭을 정리한다(Expo 권장 보일러플레이트).
+WebBrowser.maybeCompleteAuthSession()
 
 const REMEMBERED_EMAIL_KEY = 'rememberedEmail'
 
@@ -32,6 +38,7 @@ export default function LoginScreen() {
   const [rememberEmail, setRememberEmail] = useState(false)
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [oauthLoading, setOauthLoading] = useState(false)
   const [message, setMessage] = useState<{
     type: 'error' | 'success'
     text: string
@@ -71,6 +78,44 @@ export default function LoginScreen() {
       await AsyncStorage.removeItem(REMEMBERED_EMAIL_KEY)
     }
     // 성공 시 onAuthStateChange → Root auth gate 가 홈으로 리다이렉트.
+  }
+
+  const handleGoogleLogin = async () => {
+    setOauthLoading(true)
+    setMessage(null)
+
+    try {
+      // 딥링크 redirect URI (scheme: onvoy, path: auth/callback).
+      // 이 URI 는 Supabase 대시보드의 Redirect URLs 에 등록되어 있어야 한다.
+      const redirectTo = makeRedirectUri({ scheme: 'onvoy', path: 'auth/callback' })
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, skipBrowserRedirect: true },
+      })
+
+      if (error || !data?.url) {
+        throw error ?? new Error('OAuth URL 생성에 실패했습니다.')
+      }
+
+      // 외부 브라우저로 Google 인증을 진행하고, redirectTo 로 복귀하면 결과를 받는다.
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo)
+
+      if (result.type === 'success' && result.url) {
+        const code = new URL(result.url).searchParams.get('code')
+        if (code) {
+          const { error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code)
+          if (exchangeError) throw exchangeError
+          // 세션 생성 성공 → onAuthStateChange → Root auth gate 가 홈으로 리다이렉트.
+        }
+      }
+      // result.type 이 'cancel'/'dismiss' 면 사용자가 인증을 중단한 것 → 조용히 화면 잔류.
+    } catch (e) {
+      setMessage({ type: 'error', text: 'Google 로그인에 실패했습니다.' })
+    } finally {
+      setOauthLoading(false)
+    }
   }
 
   return (
@@ -195,12 +240,29 @@ export default function LoginScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* 소셜 로그인(Google/Kakao)은 P2-2 OAuth PoC 에서 구현 — 셋업 단계 placeholder */}
-              <View style={styles.socialPlaceholder}>
-                <Text style={styles.socialPlaceholderText}>
-                  소셜 로그인은 곧 제공될 예정이에요.
-                </Text>
-              </View>
+              {/* Google OAuth 로그인 (P2-2 PoC) — Google 가이드: 흰 배경 + 무채색 텍스트, 10% Rule 준수(블루 미사용) */}
+              <Pressable
+                onPress={handleGoogleLogin}
+                disabled={oauthLoading}
+                style={({ pressed }) => [
+                  styles.googleBtn,
+                  pressed && styles.pressedSoft,
+                  oauthLoading && styles.googleBtnDisabled,
+                ]}
+              >
+                {oauthLoading ? (
+                  <ActivityIndicator color={colors.brand.muted} />
+                ) : (
+                  <>
+                    <AntDesign
+                      name="google"
+                      size={18}
+                      color={colors.brand.ink}
+                    />
+                    <Text style={styles.googleBtnText}>Google로 계속하기</Text>
+                  </>
+                )}
+              </Pressable>
             </View>
 
             <View style={styles.signupRow}>
@@ -388,13 +450,26 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.brand.muted,
   },
-  socialPlaceholder: {
-    paddingVertical: spacing.base,
+  googleBtn: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 48,
+    paddingVertical: spacing.base,
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    borderColor: colors.brand.borderStrong,
+    backgroundColor: colors.bg.canvas,
+    marginBottom: spacing.lg,
   },
-  socialPlaceholderText: {
-    fontSize: fontSizes.sm,
-    color: colors.brand.mutedSoft,
+  googleBtnDisabled: {
+    opacity: 0.6,
+  },
+  googleBtnText: {
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.ink,
   },
   signupRow: {
     flexDirection: 'row',
