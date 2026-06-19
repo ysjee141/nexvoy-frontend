@@ -13,8 +13,6 @@ jobs:
     timeout-minutes: 20
     env:
       NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
-      NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: e2e-dummy-key
       NEXT_PUBLIC_APP_URL: http://localhost:3001
       CI: "true"
@@ -42,7 +40,10 @@ jobs:
           version: latest
 
       - name: Start Supabase local instance
-        run: supabase start
+        run: |
+          supabase start
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(supabase status --output env | grep '^PUBLISHABLE_KEY=' | cut -d'"' -f2)" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status --output env | grep '^SECRET_KEY=' | cut -d'"' -f2)" >> $GITHUB_ENV
 
       - name: Install Playwright browsers
         run: pnpm --filter nexvoy-web exec playwright install --with-deps chromium
