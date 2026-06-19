@@ -1,6 +1,6 @@
 /**
  * 탭 네비게이션 — 웹 BottomNavbar 동형.
- * 3탭: 홈 / 체크리스트 / 프로필 (초기 셋업 골격, 템플릿 탭은 후속 P2-6).
+ * 3탭: 홈 / 템플릿 / 프로필. 준비물(체크리스트)은 trip 상세 내부 탭으로 이동.
  * 활성 탭만 primary 컬러(10% 룰). 상단 hairline 으로 웹 shadows.nav 재표현.
  */
 import { Tabs } from 'expo-router'
@@ -36,15 +36,11 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="checklist"
+        name="templates"
         options={{
-          title: '체크리스트',
+          title: '템플릿',
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              name={focused ? 'checkbox' : 'checkbox-outline'}
-              size={22}
-              color={color}
-            />
+            <Ionicons name={focused ? 'list' : 'list-outline'} size={22} color={color} />
           ),
         }}
       />
