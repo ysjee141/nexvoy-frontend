@@ -13,6 +13,7 @@
   "dependencies": {
     "@next/third-parties": "^16.2.9",
     "@nexvoy/core": "workspace:*",
+    "@nexvoy/design-tokens": "workspace:*",
     "@nexvoy/types": "workspace:*",
     "@pandacss/dev": "^1.8.2",
     "@react-google-maps/api": "^2.20.8",
