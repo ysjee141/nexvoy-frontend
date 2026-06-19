@@ -150,6 +150,9 @@ importers:
       '@nexvoy/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@nexvoy/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
       '@nexvoy/types':
         specifier: workspace:*
         version: link:../../packages/types
@@ -227,6 +230,12 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.0.0
         version: 2.98.0
+      typescript:
+        specifier: ^5.0.0
+        version: 5.9.3
+
+  packages/design-tokens:
+    devDependencies:
       typescript:
         specifier: ^5.0.0
         version: 5.9.3

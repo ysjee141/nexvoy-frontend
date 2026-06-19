@@ -32,6 +32,9 @@
       "@nexvoy/types": [
         "../../packages/types/src/index.ts"
       ],
+      "@nexvoy/design-tokens": [
+        "../../packages/design-tokens/src/index.ts"
+      ],
       "@nexvoy/core": [
         "../../packages/core/src/index.ts"
       ],
