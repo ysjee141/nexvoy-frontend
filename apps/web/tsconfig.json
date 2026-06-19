@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -19,11 +23,21 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "styled-system/*": ["./styled-system/*"],
-      "@nexvoy/types": ["../../packages/types/src/index.ts"],
-      "@nexvoy/core": ["../../packages/core/src/index.ts"],
-      "@nexvoy/core/*": ["../../packages/core/src/*"]
+      "@/*": [
+        "./*"
+      ],
+      "styled-system/*": [
+        "./styled-system/*"
+      ],
+      "@nexvoy/types": [
+        "../../packages/types/src/index.ts"
+      ],
+      "@nexvoy/core": [
+        "../../packages/core/src/index.ts"
+      ],
+      "@nexvoy/core/*": [
+        "../../packages/core/src/*"
+      ]
     }
   },
   "include": [
@@ -32,7 +46,10 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "**/*.mts",
+    ".next/dev/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }
