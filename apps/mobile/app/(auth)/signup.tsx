@@ -115,74 +115,71 @@ export default function SignupScreen() {
             </View>
 
             <View style={styles.formZone}>
-              <View style={styles.inputGroup}>
-                {/* 닉네임 (선택) */}
-                <View style={[styles.inputCell, styles.inputCellDivider]}>
-                  <Text style={styles.inputLabel}>닉네임 (선택)</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={nickname}
-                    onChangeText={setNickname}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    placeholder="여행자 이름"
-                    placeholderTextColor={colors.brand.mutedSoft}
-                    returnKeyType="next"
-                  />
-                </View>
-
-                {/* 이메일 */}
-                <View style={[styles.inputCell, styles.inputCellDivider]}>
-                  <Text style={styles.inputLabel}>이메일</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    placeholder="you@example.com"
-                    placeholderTextColor={colors.brand.mutedSoft}
-                    returnKeyType="next"
-                  />
-                </View>
-
-                {/* 비밀번호 */}
-                <View style={[styles.inputCell, styles.inputCellDivider]}>
-                  <Text style={styles.inputLabel}>비밀번호</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    placeholder="6자 이상"
-                    placeholderTextColor={colors.brand.mutedSoft}
-                    returnKeyType="next"
-                  />
-                </View>
-
-                {/* 비밀번호 확인 */}
-                <View style={styles.inputCell}>
-                  <Text style={styles.inputLabel}>비밀번호 확인</Text>
-                  <TextInput
-                    style={styles.textInput}
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
-                    secureTextEntry
-                    placeholder="비밀번호를 다시 입력하세요"
-                    placeholderTextColor={colors.brand.mutedSoft}
-                    returnKeyType="done"
-                    onSubmitEditing={handleSignup}
-                  />
-                </View>
+              {/* 닉네임 (선택) */}
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>닉네임 (선택)</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={nickname}
+                  onChangeText={setNickname}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder="여행자 이름"
+                  placeholderTextColor={colors.brand.mutedSoft}
+                  returnKeyType="next"
+                />
               </View>
 
-              {/* 비밀번호 불일치 인라인 경고 */}
-              {confirmPassword.length > 0 && !isConfirmValid && (
-                <Text style={styles.fieldError}>
-                  비밀번호가 일치하지 않아요.
-                </Text>
-              )}
+              {/* 이메일 */}
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>이메일</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder="you@example.com"
+                  placeholderTextColor={colors.brand.mutedSoft}
+                  returnKeyType="next"
+                />
+              </View>
+
+              {/* 비밀번호 */}
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>비밀번호</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  placeholder="6자 이상"
+                  placeholderTextColor={colors.brand.mutedSoft}
+                  returnKeyType="next"
+                />
+              </View>
+
+              {/* 비밀번호 확인 */}
+              <View style={styles.field}>
+                <Text style={styles.fieldLabel}>비밀번호 확인</Text>
+                <TextInput
+                  style={styles.fieldInput}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry
+                  placeholder="비밀번호를 다시 입력하세요"
+                  placeholderTextColor={colors.brand.mutedSoft}
+                  returnKeyType="done"
+                  onSubmitEditing={handleSignup}
+                />
+                {/* 비밀번호 불일치 인라인 경고 */}
+                {confirmPassword.length > 0 && !isConfirmValid && (
+                  <Text style={styles.fieldError}>
+                    비밀번호가 일치하지 않아요.
+                  </Text>
+                )}
+              </View>
 
               {/* 서버 에러 */}
               {error && (
@@ -267,44 +264,35 @@ const styles = StyleSheet.create({
   formZone: {
     flexDirection: 'column',
   },
-  inputGroup: {
-    borderWidth: 1,
-    borderColor: colors.brand.border,
-    borderRadius: radii.md,
-    overflow: 'hidden',
+  field: {
     marginBottom: spacing.base,
   },
-  inputCell: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.base,
+  fieldLabel: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.medium,
+    color: colors.brand.muted,
+    marginBottom: spacing.xs,
   },
-  inputCellDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.brand.border,
-  },
-  inputLabel: {
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.bold,
+  fieldInput: {
+    height: 52,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+    paddingHorizontal: spacing.md,
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.normal,
     color: colors.brand.ink,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xxs,
-  },
-  textInput: {
-    fontSize: fontSizes.md,
-    color: colors.brand.ink,
-    padding: 0,
   },
   fieldError: {
     fontSize: fontSizes.sm,
     color: colors.brand.error,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.base,
+    marginTop: spacing.xs,
     paddingHorizontal: spacing.xs,
   },
   errorBox: {
     padding: spacing.md,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.brand.error,
     backgroundColor: colors.bg.surfaceSoft,
@@ -316,16 +304,15 @@ const styles = StyleSheet.create({
     color: colors.brand.error,
   },
   submitBtn: {
-    paddingVertical: spacing.base,
-    borderRadius: radii.md,
+    height: 52,
+    borderRadius: radii.sm,
     backgroundColor: colors.brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
     marginBottom: spacing.lg,
   },
   submitBtnDisabled: {
-    opacity: 0.45,
+    backgroundColor: colors.brand.primaryDisabled,
   },
   submitBtnText: {
     fontSize: fontSizes.base,
@@ -391,7 +378,7 @@ const styles = StyleSheet.create({
   backToLoginBtn: {
     paddingVertical: spacing.base,
     paddingHorizontal: spacing.xl,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     backgroundColor: colors.brand.primary,
     marginTop: spacing.sm,
   },

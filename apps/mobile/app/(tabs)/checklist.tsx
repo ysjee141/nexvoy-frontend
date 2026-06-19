@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
   progressTrack: {
     height: 6,
     borderRadius: radii.full,
-    backgroundColor: colors.bg.surfaceSoft,
+    backgroundColor: colors.bg.surfaceStrong,
     overflow: 'hidden',
   },
   progressFill: {
@@ -395,9 +395,9 @@ const styles = StyleSheet.create({
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: radii.xs,
-    borderWidth: 2,
-    borderColor: colors.brand.border,
+    borderRadius: radii.full,
+    borderWidth: 1.5,
+    borderColor: colors.brand.hairline,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -43,6 +43,8 @@
   ],
   "exclude": [
     "node_modules",
-    "supabase"
+    "supabase",
+    "apps/mobile",
+    "apps/web"
   ]
 }

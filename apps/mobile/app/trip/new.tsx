@@ -1,18 +1,20 @@
 /**
  * 새 여행 만들기 화면 (nexvoy-app)
  *
- * signup.tsx / login.tsx 의 폼 디자인 언어(셀형 inputGroup, divider, primary 제출 버튼)를
+ * signup.tsx / login.tsx 의 폼 디자인 언어(독립 필드, primary 제출 버튼)를
  * 계승하되 여행 생성 폼 필드(여행지·출발일·도착일·인원 스테퍼)에 맞게 조정.
  *
- * 날짜는 YYYY-MM-DD 문자열로만 다룬다. `new Date('YYYY-MM-DD')` 파싱은 TZ 왜곡 위험이
- * 있어 금지 — 형식 검증은 정규식, 선후 비교는 문자열 사전식 비교(endDate >= startDate)로 처리.
+ * 날짜는 네이티브 DateTimePicker 로 Date 객체를 직접 다루고, 제출/검증 시에만
+ * toDateString() 으로 YYYY-MM-DD 문자열을 만든다. `toISOString()` 은 UTC 변환으로
+ * TZ 왜곡 위험이 있어 금지 — 로컬 연/월/일을 직접 조합한다.
  *
- * createTrip API 호출은 frontend-developer 가 연결(TODO stub). 화면은 폼 UI/검증/상태만 담당.
+ * createTrip 호출로 여행을 생성하고 상세 화면으로 이동한다. 화면은 폼 UI/검증/상태만 담당.
  */
 import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -24,6 +26,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
+import DateTimePicker from '@react-native-community/datetimepicker'
 import { createTrip } from '@nexvoy/core'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
@@ -31,16 +34,23 @@ import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const DESTINATION_MAX = 50
 
-/** YYYY-MM-DD 형식인지 검사. 값 파싱 없이 형식만 본다(TZ 왜곡 방지). */
-const isDateValid = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d)
+/** Date → YYYY-MM-DD. 로컬 연/월/일을 직접 조합한다(toISOString TZ 왜곡 방지). */
+function toDateString(d: Date): string {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
 export default function NewTripScreen() {
   const router = useRouter()
   const { session } = useAuth()
 
   const [destination, setDestination] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
+  const [startDate, setStartDate] = useState<Date>(new Date())
+  const [endDate, setEndDate] = useState<Date>(new Date())
+  const [showStartPicker, setShowStartPicker] = useState(false)
+  const [showEndPicker, setShowEndPicker] = useState(false)
   const [adultsCount, setAdultsCount] = useState(1)
   const [childrenCount, setChildrenCount] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -48,14 +58,14 @@ export default function NewTripScreen() {
   const isMounted = useRef(true)
   useEffect(() => () => { isMounted.current = false }, [])
 
-  // 날짜 형식은 맞으나 도착일이 출발일보다 이른 경우 인라인 경고용 플래그.
-  const datesFilled = isDateValid(startDate) && isDateValid(endDate)
-  const isDateOrderInvalid = datesFilled && endDate < startDate
+  const startDateStr = toDateString(startDate)
+  const endDateStr = toDateString(endDate)
+
+  // 도착일이 출발일보다 이른 경우 인라인 경고용 플래그.
+  const isDateOrderInvalid = endDate < startDate
 
   const canSubmit =
     destination.trim().length > 0 &&
-    isDateValid(startDate) &&
-    isDateValid(endDate) &&
     endDate >= startDate &&
     !loading
 
@@ -67,8 +77,8 @@ export default function NewTripScreen() {
       const trip = await createTrip(supabase, {
         user_id: session.user.id,
         destination: destination.trim(),
-        start_date: startDate,
-        end_date: endDate,
+        start_date: toDateString(startDate),
+        end_date: toDateString(endDate),
         adults_count: adultsCount,
         children_count: childrenCount,
       })
@@ -115,70 +125,144 @@ export default function NewTripScreen() {
           keyboardShouldPersistTaps="handled"
         >
           {/* 여행지 */}
-          <View style={styles.inputGroup}>
-            <View style={styles.inputCell}>
-              <Text style={styles.inputLabel}>여행지</Text>
-              <TextInput
-                style={styles.textInput}
-                value={destination}
-                onChangeText={setDestination}
-                maxLength={DESTINATION_MAX}
-                autoCorrect={false}
-                placeholder="예) 제주도, 도쿄, 파리"
-                placeholderTextColor={colors.brand.mutedSoft}
-                returnKeyType="next"
-              />
-            </View>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>여행지</Text>
+            <TextInput
+              style={styles.fieldInput}
+              value={destination}
+              onChangeText={setDestination}
+              maxLength={DESTINATION_MAX}
+              autoCorrect={false}
+              placeholder="예) 제주도, 도쿄, 파리"
+              placeholderTextColor={colors.brand.mutedSoft}
+              returnKeyType="next"
+            />
           </View>
 
-          {/* 출발일 / 도착일 */}
-          <View style={styles.inputGroup}>
-            <View style={[styles.inputCell, styles.inputCellDivider]}>
-              <Text style={styles.inputLabel}>출발일</Text>
-              <TextInput
-                style={styles.textInput}
+          {/* 출발일 */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>출발일</Text>
+            <Pressable
+              onPress={() => setShowStartPicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`출발일 ${startDateStr} 선택`}
+              style={({ pressed }) => [styles.dateBtn, pressed && styles.pressedFade]}
+            >
+              <Text style={styles.dateBtnText}>{startDateStr}</Text>
+              <Ionicons name="calendar-outline" size={18} color={colors.brand.muted} />
+            </Pressable>
+          </View>
+
+          {/* 도착일 */}
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>도착일</Text>
+            <Pressable
+              onPress={() => setShowEndPicker(true)}
+              accessibilityRole="button"
+              accessibilityLabel={`도착일 ${endDateStr} 선택`}
+              style={({ pressed }) => [styles.dateBtn, pressed && styles.pressedFade]}
+            >
+              <Text style={styles.dateBtnText}>{endDateStr}</Text>
+              <Ionicons name="calendar-outline" size={18} color={colors.brand.muted} />
+            </Pressable>
+            {/* 날짜 순서 인라인 경고 */}
+            {isDateOrderInvalid && (
+              <Text style={styles.fieldError}>
+                도착일은 출발일과 같거나 이후여야 해요.
+              </Text>
+            )}
+          </View>
+
+          {/* 출발일 피커 */}
+          {showStartPicker &&
+            (Platform.OS === 'ios' ? (
+              <Modal transparent animationType="slide" visible>
+                <Pressable
+                  style={styles.pickerBackdrop}
+                  onPress={() => setShowStartPicker(false)}
+                />
+                <View style={styles.pickerSheet}>
+                  <View style={styles.pickerHeader}>
+                    <Pressable
+                      onPress={() => setShowStartPicker(false)}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.pickerDone}>완료</Text>
+                    </Pressable>
+                  </View>
+                  <DateTimePicker
+                    value={startDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={(_, date) => {
+                      if (date) setStartDate(date)
+                    }}
+                    locale="ko"
+                  />
+                </View>
+              </Modal>
+            ) : (
+              <DateTimePicker
                 value={startDate}
-                onChangeText={setStartDate}
-                keyboardType="numeric"
-                autoCorrect={false}
-                placeholder="2025-12-25"
-                placeholderTextColor={colors.brand.mutedSoft}
-                maxLength={10}
-                returnKeyType="next"
+                mode="date"
+                display="default"
+                onChange={(event, date) => {
+                  setShowStartPicker(false)
+                  if (event.type === 'set' && date) setStartDate(date)
+                }}
               />
-            </View>
-            <View style={styles.inputCell}>
-              <Text style={styles.inputLabel}>도착일</Text>
-              <TextInput
-                style={styles.textInput}
-                value={endDate}
-                onChangeText={setEndDate}
-                keyboardType="numeric"
-                autoCorrect={false}
-                placeholder="2025-12-28"
-                placeholderTextColor={colors.brand.mutedSoft}
-                maxLength={10}
-                returnKeyType="done"
-              />
-            </View>
-          </View>
+            ))}
 
-          {/* 날짜 순서 인라인 경고 */}
-          {isDateOrderInvalid && (
-            <Text style={styles.fieldError}>
-              도착일은 출발일과 같거나 이후여야 해요.
-            </Text>
-          )}
+          {/* 도착일 피커 */}
+          {showEndPicker &&
+            (Platform.OS === 'ios' ? (
+              <Modal transparent animationType="slide" visible>
+                <Pressable
+                  style={styles.pickerBackdrop}
+                  onPress={() => setShowEndPicker(false)}
+                />
+                <View style={styles.pickerSheet}>
+                  <View style={styles.pickerHeader}>
+                    <Pressable
+                      onPress={() => setShowEndPicker(false)}
+                      hitSlop={8}
+                      accessibilityRole="button"
+                    >
+                      <Text style={styles.pickerDone}>완료</Text>
+                    </Pressable>
+                  </View>
+                  <DateTimePicker
+                    value={endDate}
+                    mode="date"
+                    display="spinner"
+                    onChange={(_, date) => {
+                      if (date) setEndDate(date)
+                    }}
+                    locale="ko"
+                  />
+                </View>
+              </Modal>
+            ) : (
+              <DateTimePicker
+                value={endDate}
+                mode="date"
+                display="default"
+                onChange={(event, date) => {
+                  setShowEndPicker(false)
+                  if (event.type === 'set' && date) setEndDate(date)
+                }}
+              />
+            ))}
 
           {/* 인원 섹션 */}
           <Text style={styles.sectionLabel}>인원</Text>
-          <View style={styles.inputGroup}>
+          <View style={styles.stepperGroup}>
             <Stepper
               label="성인"
               value={adultsCount}
               min={1}
               onChange={setAdultsCount}
-              divider
             />
             <Stepper
               label="아동"
@@ -226,15 +310,13 @@ interface StepperProps {
   value: number
   min: number
   onChange: (next: number) => void
-  /** 하단 divider 표시 여부(그룹 내 마지막 행은 false). */
-  divider?: boolean
 }
 
-function Stepper({ label, value, min, onChange, divider }: StepperProps) {
+function Stepper({ label, value, min, onChange }: StepperProps) {
   const canDecrement = value > min
 
   return (
-    <View style={[styles.stepperRow, divider && styles.inputCellDivider]}>
+    <View style={styles.stepperRow}>
       <Text style={styles.stepperLabel}>{label}</Text>
       <View style={styles.stepperControls}>
         <Pressable
@@ -244,9 +326,8 @@ function Stepper({ label, value, min, onChange, divider }: StepperProps) {
           accessibilityLabel={`${label} 인원 줄이기`}
           hitSlop={8}
           style={({ pressed }) => [
-            styles.stepBtn,
+            canDecrement ? styles.minusBtnActive : styles.minusBtnDisabled,
             pressed && canDecrement && styles.pressedFade,
-            !canDecrement && styles.stepBtnDisabled,
           ]}
         >
           <Ionicons
@@ -262,19 +343,18 @@ function Stepper({ label, value, min, onChange, divider }: StepperProps) {
           accessibilityLabel={`${label} 인원 늘리기`}
           hitSlop={8}
           style={({ pressed }) => [
-            styles.stepBtn,
+            styles.plusBtn,
             pressed && styles.pressedFade,
           ]}
         >
-          <Ionicons name="add" size={18} color={colors.brand.ink} />
+          <Ionicons name="add" size={18} color={colors.bg.canvas} />
         </Pressable>
       </View>
     </View>
   )
 }
 
-const STEP_BTN_SIZE = 36
-const STEP_VALUE_WIDTH = 20
+const STEP_VALUE_WIDTH = 24
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
@@ -314,56 +394,93 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.lg,
   },
-  inputGroup: {
-    borderWidth: 1,
-    borderColor: colors.brand.border,
-    borderRadius: radii.md,
-    overflow: 'hidden',
+  field: {
     marginBottom: spacing.base,
   },
-  inputCell: {
-    paddingVertical: spacing.md,
+  fieldLabel: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.medium,
+    color: colors.brand.muted,
+    marginBottom: spacing.xs,
+  },
+  fieldInput: {
+    height: 52,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+    paddingHorizontal: spacing.md,
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.normal,
+    color: colors.brand.ink,
+  },
+  dateBtn: {
+    height: 52,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dateBtnText: {
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.normal,
+    color: colors.brand.ink,
+  },
+  // iOS DatePicker 모달 시트
+  pickerBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  pickerSheet: {
+    backgroundColor: colors.bg.canvas,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
+    paddingBottom: spacing.xl,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
     paddingHorizontal: spacing.base,
-  },
-  inputCellDivider: {
+    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.brand.border,
+    borderBottomColor: colors.brand.hairline,
   },
-  inputLabel: {
-    fontSize: fontSizes.xs,
+  pickerDone: {
+    fontSize: fontSizes.base,
     fontWeight: fontWeights.bold,
-    color: colors.brand.ink,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.xxs,
-  },
-  textInput: {
-    fontSize: fontSizes.md,
-    color: colors.brand.ink,
-    padding: 0,
+    color: colors.brand.primary,
   },
   sectionLabel: {
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.bold,
-    color: colors.brand.ink,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.medium,
+    color: colors.brand.muted,
     marginBottom: spacing.sm,
   },
   fieldError: {
     fontSize: fontSizes.sm,
     color: colors.brand.error,
-    marginTop: -spacing.sm,
-    marginBottom: spacing.base,
+    marginTop: spacing.xs,
     paddingHorizontal: spacing.xs,
   },
   // 스테퍼
+  stepperGroup: {
+    gap: spacing.sm,
+    marginBottom: spacing.base,
+  },
   stepperRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
   },
   stepperLabel: {
     fontSize: fontSizes.md,
@@ -375,17 +492,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  stepBtn: {
-    width: STEP_BTN_SIZE,
-    height: STEP_BTN_SIZE,
+  plusBtn: {
+    width: 40,
+    height: 40,
     borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.brand.border,
+    backgroundColor: colors.brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepBtnDisabled: {
-    opacity: 0.5,
+  minusBtnActive: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bg.surfaceSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  minusBtnDisabled: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bg.surfaceStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   stepValue: {
     width: STEP_VALUE_WIDTH,
@@ -397,7 +526,7 @@ const styles = StyleSheet.create({
   // 에러 박스
   errorBox: {
     padding: spacing.md,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.brand.error,
     backgroundColor: colors.bg.surfaceSoft,
@@ -411,15 +540,14 @@ const styles = StyleSheet.create({
   // 제출 버튼
   submitBtn: {
     marginTop: spacing.sm,
-    paddingVertical: spacing.base,
-    borderRadius: radii.md,
+    height: 52,
+    borderRadius: radii.sm,
     backgroundColor: colors.brand.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
   },
   submitBtnDisabled: {
-    opacity: 0.45,
+    backgroundColor: colors.brand.primaryDisabled,
   },
   submitBtnText: {
     fontSize: fontSizes.base,
