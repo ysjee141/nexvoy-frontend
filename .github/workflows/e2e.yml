@@ -16,7 +16,7 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_ACJWlzQHlZjBrEguHvfOxg_3BJgxAaH
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.E2E_SUPABASE_SERVICE_ROLE_KEY }}
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: e2e-dummy-key
-      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_APP_URL: http://localhost:3001
       CI: "true"
     steps:
       - name: Checkout repository
@@ -48,7 +48,7 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
-        run: pnpm test:e2e
+        run: pnpm --filter nexvoy-web test:e2e
 
       - name: Upload Playwright report
         if: ${{ !cancelled() }}
