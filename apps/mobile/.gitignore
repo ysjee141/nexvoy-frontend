@@ -1,0 +1,25 @@
+# Expo / RN 산출물
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native (CNG — prebuild로 생성, git 미추적)
+/ios/
+/android/
+
+# 환경변수 (실제 키)
+.env.local
+.env*.local
+
+# Metro
+.metro-health-check*
+
+# macOS
+.DS_Store
+
+# 디버그
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+dist/
