@@ -101,6 +101,18 @@ export async function getChecklistByTrip(
   return { checklist, items: items ?? [] }
 }
 
+export async function toggleChecklistItem(
+  sb: SupabaseClient,
+  itemId: string,
+  isChecked: boolean
+): Promise<void> {
+  const { error } = await sb
+    .from('checklist_items')
+    .update({ is_checked: isChecked })
+    .eq('id', itemId)
+  if (error) throw error
+}
+
 // ─── Templates ────────────────────────────────────────────────────────────────
 
 export async function getTemplates(
