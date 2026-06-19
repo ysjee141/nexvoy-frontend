@@ -6,6 +6,7 @@
  * - 세션 저장소: expo-secure-store (민감 토큰을 OS 보안 저장소에 암호화 보관).
  * - detectSessionInUrl: false — RN 은 URL 기반 세션 감지를 사용하지 않음(딥링크는 별도 처리).
  */
+import 'react-native-get-random-values' // crypto.getRandomValues polyfill (PKCE 필수)
 import 'react-native-url-polyfill/auto'
 import { createClient } from '@supabase/supabase-js'
 import * as SecureStore from 'expo-secure-store'
