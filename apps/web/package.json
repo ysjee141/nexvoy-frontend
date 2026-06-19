@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:e2e": "node scripts/dev-e2e.mjs",
+    "dev:e2e": "panda codegen && node scripts/dev-e2e.mjs",
     "build": "panda codegen && next build",
     "start": "next start",
     "test:e2e": "playwright test",
