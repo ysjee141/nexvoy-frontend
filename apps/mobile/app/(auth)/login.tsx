@@ -8,6 +8,7 @@
  * - 세션 자동 리다이렉트는 Root _layout 의 auth gate 가 담당. 이 화면은 폼만 책임.
  */
 import { useEffect, useState } from 'react'
+import { useRouter } from 'expo-router'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -33,6 +34,7 @@ WebBrowser.maybeCompleteAuthSession()
 const REMEMBERED_EMAIL_KEY = 'rememberedEmail'
 
 export default function LoginScreen() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberEmail, setRememberEmail] = useState(false)
@@ -267,7 +269,7 @@ export default function LoginScreen() {
 
             <View style={styles.signupRow}>
               <Text style={styles.signupText}>계정이 없으신가요? </Text>
-              <Pressable>
+              <Pressable onPress={() => router.push('/(auth)/signup')}>
                 <Text style={styles.signupLink}>회원가입하기</Text>
               </Pressable>
             </View>
