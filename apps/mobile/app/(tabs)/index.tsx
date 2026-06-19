@@ -3,7 +3,7 @@
  * @nexvoy/core 의 getTripsByUser 쿼리를 supabase client 주입하여 사용(ADR-010).
  * loading / empty / list 3-상태 분기. 디자인 토큰은 @/theme 사용.
  */
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import {
   ActivityIndicator,
   FlatList,
@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { getTripsByUser, formatDate } from '@nexvoy/core'
 import type { Trip } from '@nexvoy/types'
@@ -34,16 +34,17 @@ export default function HomeScreen() {
       const data = await getTripsByUser(supabase, session.user.id)
       setTrips(data)
     } catch {
-      // 셋업 단계: 에러는 빈 목록으로 처리. 토스트 고도화는 후속.
-      setTrips([])
+      // 조회 실패 시 직전 목록 유지 (useFocusEffect 재진입 시 깜박임 방지)
     } finally {
       setLoading(false)
     }
   }, [session?.user])
 
-  useEffect(() => {
-    loadTrips()
-  }, [loadTrips])
+  useFocusEffect(
+    useCallback(() => {
+      loadTrips()
+    }, [loadTrips])
+  )
 
   const renderTrip = ({ item }: { item: Trip }) => (
     <Pressable
@@ -91,6 +92,9 @@ export default function HomeScreen() {
             contentContainerStyle={styles.listBody}
           />
           <Pressable
+            onPress={() => router.push('/trip/new')}
+            accessibilityRole="button"
+            accessibilityLabel="새 여행 만들기"
             style={({ pressed }) => [
               styles.fab,
               pressed && { opacity: 0.92, transform: [{ scale: 0.96 }] },
@@ -109,6 +113,9 @@ export default function HomeScreen() {
             첫 여행을 만들고 설렘을 기록해 보세요.
           </Text>
           <Pressable
+            onPress={() => router.push('/trip/new')}
+            accessibilityRole="button"
+            accessibilityLabel="새 여행 만들기"
             style={({ pressed }) => [
               styles.emptyCta,
               pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] },

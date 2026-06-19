@@ -1,6 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Trip, Plan, Checklist, ChecklistItem, ChecklistTemplate, ChecklistTemplateItem, Profile } from '@nexvoy/types'
 
+export interface CreateTripInput {
+  user_id: string
+  destination: string
+  start_date: string
+  end_date: string
+  adults_count: number
+  children_count: number
+}
+
 // ─── Trips ───────────────────────────────────────────────────────────────────
 
 export async function getTripsByUser(
@@ -60,6 +69,19 @@ export async function getTripWithPlans(
   if (tripRes.error) throw tripRes.error
   if (plansRes.error) throw plansRes.error
   return { trip: tripRes.data, plans: plansRes.data ?? [] }
+}
+
+export async function createTrip(
+  sb: SupabaseClient,
+  input: CreateTripInput
+): Promise<Trip> {
+  const { data, error } = await sb
+    .from('trips')
+    .insert(input)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
 }
 
 // ─── Plans ────────────────────────────────────────────────────────────────────
