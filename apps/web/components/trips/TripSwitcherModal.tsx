@@ -399,17 +399,6 @@ export default function TripSwitcherModal() {
                     </button>
                 </div>
             </div>
-
-            <style jsx global>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slideUp {
-                    from { transform: translateY(100%); }
-                    to { transform: translateY(0); }
-                }
-            `}</style>
         </div>
     )
 }

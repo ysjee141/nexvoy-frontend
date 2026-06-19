@@ -591,21 +591,6 @@ export default function PlanDetailModal({
                     </div>
                 )}
             </div>
-            <style jsx global>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slideUp {
-                    from { transform: translateY(30px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-                @keyframes pulse {
-                    0% { transform: scale(1); opacity: 0.8; }
-                    50% { transform: scale(1.1); opacity: 1; }
-                    100% { transform: scale(1); opacity: 0.8; }
-                }
-            `}</style>
         </div>
     )
 }
