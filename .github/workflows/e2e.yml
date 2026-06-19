@@ -43,7 +43,7 @@ jobs:
         run: |
           supabase start
           echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(supabase status --output env | grep '^PUBLISHABLE_KEY=' | cut -d'"' -f2)" >> $GITHUB_ENV
-          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status --output env | grep '^SECRET_KEY=' | cut -d'"' -f2)" >> $GITHUB_ENV
+          echo "SUPABASE_SERVICE_ROLE_KEY=$(supabase status --output env | grep '^SERVICE_ROLE_KEY=' | cut -d'"' -f2)" >> $GITHUB_ENV
 
       - name: Install Playwright browsers
         run: pnpm --filter nexvoy-web exec playwright install --with-deps chromium
