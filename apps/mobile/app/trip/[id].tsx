@@ -247,7 +247,7 @@ export default function TripDetailScreen() {
                 <Ionicons
                   name="calendar-outline"
                   size={40}
-                  color={colors.brand.primary}
+                  color={colors.brand.muted}
                 />
               </View>
               <Text style={styles.emptyTitle}>아직 등록된 일정이 없어요</Text>
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   destination: {
-    fontSize: fontSizes['4xl'],
+    fontSize: fontSizes['3xl'],
     fontWeight: fontWeights.bold,
     color: colors.brand.ink,
     letterSpacing: -0.5,
