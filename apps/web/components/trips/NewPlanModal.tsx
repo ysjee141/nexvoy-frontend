@@ -703,31 +703,6 @@ export default function NewPlanModal({
                     )}
                 </div>
             </div>
-
-            <style jsx global>{`
-                @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-                @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-                @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-                .pac-container { 
-                    border-radius: 16px; 
-                    border: none; 
-                    box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
-                    margin-top: 8px;
-                    padding: 8px 0;
-                    font-family: inherit;
-                    z-index: 4000 !important;
-                }
-                .pac-item { 
-                    padding: 10px 16px; 
-                    cursor: pointer; 
-                    display: flex;
-                    align-items: center;
-                }
-                .pac-item:hover { background-color: token(colors.bg.softCotton); }
-                .pac-item-query { font-size: 14px; font-weight: 700; color: token(colors.brand.ink); }
-                .pac-matched { color: token(colors.brand.primary); }
-                .pac-icon { display: none; }
-            `}</style>
         </div>
     )
 }

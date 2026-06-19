@@ -187,16 +187,6 @@ export default function TermsModal({ isOpen, onClose }: TermsModalProps) {
                     </div>
                 </div>
             </div>
-            <style jsx global>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-                @keyframes slideUp {
-                    from { transform: translateY(30px); opacity: 0; }
-                    to { transform: translateY(0); opacity: 1; }
-                }
-            `}</style>
         </div>
     )
 }
