@@ -92,6 +92,14 @@ function RootNavigator() {
       <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
       <Stack.Screen name="trip/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="trip/new" options={{ headerShown: false }} />
+      <Stack.Screen name="templates/new" options={{ headerShown: false }} />
+      <Stack.Screen name="templates/[id]" options={{ headerShown: false }} />
+      <Stack.Screen name="profile/travel-log" options={{ headerShown: false }} />
+      <Stack.Screen name="profile/withdrawal" options={{ headerShown: false }} />
+      <Stack.Screen name="profile/places-visited" options={{ headerShown: false }} />
+      <Stack.Screen name="profile/licenses" options={{ headerShown: false }} />
+      <Stack.Screen name="join" options={{ headerShown: false }} />
+      <Stack.Screen name="share/[id]" options={{ headerShown: false }} />
     </Stack>
   )
 }

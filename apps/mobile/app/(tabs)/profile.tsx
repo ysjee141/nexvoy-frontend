@@ -3,17 +3,19 @@
  * @nexvoy/core 의 getProfile 쿼리를 supabase client 주입하여 사용(ADR-010).
  * avatar_url 미설정 시 닉네임/이메일 이니셜 원형으로 대체.
  */
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
+import { useRouter } from 'expo-router'
 import { getProfile } from '@nexvoy/core'
 import type { Profile } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
@@ -30,8 +32,47 @@ function formatJoinedDate(createdAt: string): string {
   return `${year}년 ${Number(month)}월 ${Number(day)}일 가입`
 }
 
+function NavRow({
+  icon,
+  label,
+  onPress,
+  destructive = false,
+}: {
+  icon: string
+  label: string
+  onPress: () => void
+  destructive?: boolean
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.navRow, pressed && { opacity: 0.7 }]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
+      <Ionicons
+        name={icon as any}
+        size={18}
+        color={destructive ? colors.brand.error : colors.brand.muted}
+      />
+      <Text style={[styles.navRowLabel, destructive && { color: colors.brand.error }]}>
+        {label}
+      </Text>
+      <Ionicons
+        name="chevron-forward"
+        size={16}
+        color={colors.brand.mutedSoft}
+        style={{ marginLeft: 'auto' }}
+      />
+    </Pressable>
+  )
+}
+
 export default function ProfileScreen() {
+  const router = useRouter()
   const { session, signOut } = useAuth()
+  const isMounted = useRef(true)
+  useEffect(() => { return () => { isMounted.current = false } }, [])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -40,11 +81,11 @@ export default function ProfileScreen() {
     setLoading(true)
     try {
       const data = await getProfile(supabase, session.user.id)
-      setProfile(data)
+      if (isMounted.current) setProfile(data)
     } catch {
       // 로드 실패 시 session 기본값으로 표시
     } finally {
-      setLoading(false)
+      if (isMounted.current) setLoading(false)
     }
   }, [session?.user])
 
@@ -79,7 +120,11 @@ export default function ProfileScreen() {
           <ActivityIndicator size="large" color={colors.brand.primary} />
         </View>
       ) : (
-        <View style={styles.body}>
+        <ScrollView
+          style={styles.flex}
+          contentContainerStyle={styles.body}
+          showsVerticalScrollIndicator={false}
+        >
           {/* 아바타 + 이름 */}
           <View style={styles.heroCard}>
             <View style={styles.avatar}>
@@ -117,6 +162,39 @@ export default function ProfileScreen() {
             ) : null}
           </View>
 
+          {/* 내 여행 */}
+          <View style={styles.navSection}>
+            <NavRow
+              icon="stats-chart-outline"
+              label="여행 기록"
+              onPress={() => router.push('/profile/travel-log')}
+            />
+            <NavRow
+              icon="location-outline"
+              label="방문한 곳"
+              onPress={() => router.push('/profile/places-visited')}
+            />
+          </View>
+
+          {/* 앱 정보 */}
+          <View style={styles.navSection}>
+            <NavRow
+              icon="document-text-outline"
+              label="오픈소스 라이선스"
+              onPress={() => router.push('/profile/licenses')}
+            />
+          </View>
+
+          {/* 계정 */}
+          <View style={styles.navSection}>
+            <NavRow
+              icon="trash-outline"
+              label="회원 탈퇴"
+              onPress={() => router.push('/profile/withdrawal')}
+              destructive
+            />
+          </View>
+
           {/* 로그아웃 */}
           <Pressable
             onPress={handleSignOut}
@@ -132,7 +210,7 @@ export default function ProfileScreen() {
             />
             <Text style={styles.signOutText}>로그아웃</Text>
           </Pressable>
-        </View>
+        </ScrollView>
       )}
     </SafeAreaView>
   )
@@ -152,9 +230,10 @@ const styles = StyleSheet.create({
     color: colors.brand.ink,
     letterSpacing: -0.5,
   },
+  flex: { flex: 1 },
   centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   body: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     gap: spacing.lg,
@@ -226,6 +305,25 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: fontSizes.sm,
     color: colors.brand.muted,
+  },
+  // 서브 내비
+  navSection: {
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.border,
+    overflow: 'hidden',
+  },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    backgroundColor: colors.bg.canvas,
+  },
+  navRowLabel: {
+    fontSize: fontSizes.base,
+    color: colors.brand.ink,
   },
   // 로그아웃
   signOutBtn: {
