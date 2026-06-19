@@ -154,31 +154,29 @@ export default function LoginScreen() {
                 </Pressable>
               ) : (
                 <View>
-                  <View style={styles.inputGroup}>
-                    <View style={[styles.inputCell, styles.inputCellDivider]}>
-                      <Text style={styles.inputLabel}>이메일</Text>
-                      <TextInput
-                        style={styles.textInput}
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                        autoCorrect={false}
-                        placeholder="you@example.com"
-                        placeholderTextColor={colors.brand.mutedSoft}
-                      />
-                    </View>
-                    <View style={styles.inputCell}>
-                      <Text style={styles.inputLabel}>비밀번호</Text>
-                      <TextInput
-                        style={styles.textInput}
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                        placeholder="••••••••"
-                        placeholderTextColor={colors.brand.mutedSoft}
-                      />
-                    </View>
+                  <View style={styles.field}>
+                    <Text style={styles.fieldLabel}>이메일</Text>
+                    <TextInput
+                      style={styles.fieldInput}
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      placeholder="you@example.com"
+                      placeholderTextColor={colors.brand.mutedSoft}
+                    />
+                  </View>
+                  <View style={styles.field}>
+                    <Text style={styles.fieldLabel}>비밀번호</Text>
+                    <TextInput
+                      style={styles.fieldInput}
+                      value={password}
+                      onChangeText={setPassword}
+                      secureTextEntry
+                      placeholder="••••••••"
+                      placeholderTextColor={colors.brand.mutedSoft}
+                    />
                   </View>
 
                   <Pressable
@@ -330,8 +328,8 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   emailEntryBtn: {
-    paddingVertical: spacing.base,
-    borderRadius: radii.md,
+    height: 52,
+    borderRadius: radii.sm,
     borderWidth: 1.5,
     borderColor: colors.brand.border,
     backgroundColor: colors.bg.canvas,
@@ -346,32 +344,25 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
     color: colors.brand.ink,
   },
-  inputGroup: {
-    borderWidth: 1,
-    borderColor: colors.brand.border,
-    borderRadius: radii.md,
-    overflow: 'hidden',
+  field: {
     marginBottom: spacing.base,
   },
-  inputCell: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.base,
+  fieldLabel: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.medium,
+    color: colors.brand.muted,
+    marginBottom: spacing.xs,
   },
-  inputCellDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.brand.border,
-  },
-  inputLabel: {
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.bold,
+  fieldInput: {
+    height: 52,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+    paddingHorizontal: spacing.md,
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.normal,
     color: colors.brand.ink,
-    textTransform: 'uppercase',
-    marginBottom: spacing.xxs,
-  },
-  textInput: {
-    fontSize: fontSizes.md,
-    color: colors.brand.ink,
-    padding: 0,
   },
   rememberRow: {
     flexDirection: 'row',
@@ -399,7 +390,7 @@ const styles = StyleSheet.create({
   },
   messageBox: {
     padding: spacing.md,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     borderWidth: 1,
     marginBottom: spacing.base,
   },
@@ -416,8 +407,8 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.medium,
   },
   submitBtn: {
-    paddingVertical: spacing.base,
-    borderRadius: radii.md,
+    height: 52,
+    borderRadius: radii.sm,
     backgroundColor: colors.brand.primary,
     flexDirection: 'row',
     alignItems: 'center',
@@ -426,7 +417,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   submitBtnDisabled: {
-    opacity: 0.7,
+    backgroundColor: colors.brand.primaryDisabled,
   },
   submitBtnText: {
     fontSize: fontSizes.base,
@@ -457,9 +448,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    minHeight: 48,
-    paddingVertical: spacing.base,
-    borderRadius: radii.md,
+    height: 52,
+    borderRadius: radii.sm,
     borderWidth: 1.5,
     borderColor: colors.brand.borderStrong,
     backgroundColor: colors.bg.canvas,

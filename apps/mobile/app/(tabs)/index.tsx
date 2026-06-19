@@ -55,7 +55,7 @@ export default function HomeScreen() {
       ]}
     >
       <View style={styles.tripCardThumb}>
-        <Ionicons name="airplane" size={22} color={colors.brand.primary} />
+        <Ionicons name="airplane" size={22} color={colors.brand.muted} />
       </View>
       <View style={styles.tripCardBody}>
         <Text style={styles.tripTitle} numberOfLines={1}>
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bg.canvas,
-    borderRadius: radii.lg,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.brand.border,
     padding: spacing.md,
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   tripCardThumb: {
     width: 56,
     height: 56,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     backgroundColor: colors.bg.surfaceSoft,
     alignItems: 'center',
     justifyContent: 'center',
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
   },
   emptyCta: {
     backgroundColor: colors.brand.primary,
-    borderRadius: radii.md,
+    borderRadius: radii.sm,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     marginTop: spacing.sm,
