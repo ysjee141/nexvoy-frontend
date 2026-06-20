@@ -23,7 +23,22 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import MapView, { Marker } from 'react-native-maps'
+// react-native-maps는 EAS Build(dev client)에서만 동작 — Expo Go에서는 null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let NativeMapView: React.ComponentType<any> | null = null
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let NativeMarker: React.ComponentType<any> | null = null
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const maps = require('react-native-maps') as {
+    default: React.ComponentType<any>
+    Marker: React.ComponentType<any>
+  }
+  NativeMapView = maps.default
+  NativeMarker = maps.Marker
+} catch {
+  // Expo Go: RNMapsAirModule 네이티브 모듈 없음 → 폴백 UI 사용
+}
 import {
   getPlansWithUrls,
   getTripById,
@@ -604,6 +619,23 @@ function MapTab({ plans }: { plans: PlanWithUrls[] }) {
     )
   }
 
+  const MapViewCmp = NativeMapView
+  const MarkerCmp = NativeMarker
+
+  if (!MapViewCmp || !MarkerCmp) {
+    return (
+      <View style={styles.emptyState}>
+        <View style={styles.emptyIllust}>
+          <Ionicons name="map-outline" size={40} color={colors.brand.mutedSoft} />
+        </View>
+        <Text style={styles.emptyTitle}>지도는 개발 빌드에서 사용 가능해요</Text>
+        <Text style={styles.emptyDesc}>
+          EAS Build 또는 개발 클라이언트에서 실행하면 지도를 볼 수 있어요.
+        </Text>
+      </View>
+    )
+  }
+
   const avgLat =
     mapMarkers.reduce((sum, p) => sum + planLat(p)!, 0) / mapMarkers.length
   const avgLng =
@@ -617,16 +649,16 @@ function MapTab({ plans }: { plans: PlanWithUrls[] }) {
   }
 
   return (
-    <MapView style={styles.map} initialRegion={region}>
+    <MapViewCmp style={styles.map} initialRegion={region}>
       {mapMarkers.map((p) => (
-        <Marker
+        <MarkerCmp
           key={p.id}
           coordinate={{ latitude: planLat(p)!, longitude: planLng(p)! }}
           title={p.title}
           description={p.location ?? undefined}
         />
       ))}
-    </MapView>
+    </MapViewCmp>
   )
 }
 
