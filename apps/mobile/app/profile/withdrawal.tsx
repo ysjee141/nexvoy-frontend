@@ -212,7 +212,7 @@ export default function WithdrawalScreen() {
                 <Text style={styles.confirmHeading}>최종 확인</Text>
                 <Text style={styles.confirmDesc}>
                   탈퇴를 확인하려면 아래 입력란에{' '}
-                  <Text style={styles.confirmKeyword}>"{CONFIRM_KEYWORD}"</Text>
+                  <Text style={styles.confirmKeyword}>‘{CONFIRM_KEYWORD}’</Text>
                   를 입력해 주세요.
                 </Text>
 

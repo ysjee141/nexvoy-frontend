@@ -17,15 +17,14 @@ import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 export default function AuthCallbackScreen() {
   const router = useRouter()
   const { code } = useLocalSearchParams<{ code?: string }>()
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(() =>
+    code ? null : '인증 코드가 없어요. 이메일 링크를 다시 확인해 주세요.'
+  )
 
   useEffect(() => {
     let active = true
 
-    if (!code) {
-      setError('인증 코드가 없어요. 이메일 링크를 다시 확인해 주세요.')
-      return () => { active = false }
-    }
+    if (!code) return () => { active = false }
 
     const resolvedCode = Array.isArray(code) ? code[0] : code
     supabase.auth.exchangeCodeForSession(resolvedCode).then(({ error: exchangeError }) => {
