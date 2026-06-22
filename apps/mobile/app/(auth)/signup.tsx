@@ -32,11 +32,17 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isTermsAgreed, setIsTermsAgreed] = useState(false)
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  const isPasswordValid = password.length >= 6
+  // 웹 signup(>=6) 및 Supabase auth minimum_password_length(6) 과 통일.
+  const isPasswordLengthValid = password.length >= 6
+  const isPasswordValid = isPasswordLengthValid
   const isConfirmValid = password === confirmPassword && isPasswordValid
-  const canSubmit = isEmailValid && isPasswordValid && isConfirmValid && !loading
+  const canSubmit =
+    isEmailValid && isPasswordValid && isConfirmValid && isTermsAgreed && !loading
 
   const handleSignup = async () => {
     if (!canSubmit) return
@@ -149,35 +155,109 @@ export default function SignupScreen() {
               {/* 비밀번호 */}
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>비밀번호</Text>
-                <TextInput
-                  style={styles.fieldInput}
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry
-                  placeholder="6자 이상"
-                  placeholderTextColor={colors.brand.mutedSoft}
-                  returnKeyType="next"
-                />
+                <View style={styles.inputWithToggle}>
+                  <TextInput
+                    style={[styles.fieldInput, styles.fieldInputFlex]}
+                    value={password}
+                    onChangeText={setPassword}
+                    secureTextEntry={!showPassword}
+                    placeholder="6자 이상"
+                    placeholderTextColor={colors.brand.mutedSoft}
+                    returnKeyType="next"
+                  />
+                  <Pressable
+                    onPress={() => setShowPassword((prev) => !prev)}
+                    style={styles.toggleBtn}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="비밀번호 표시/숨기기"
+                  >
+                    <Ionicons
+                      name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={colors.brand.mutedSoft}
+                    />
+                  </Pressable>
+                </View>
+                {/* 비밀번호 유효성 피드백 */}
+                {password.length > 0 && (
+                  <View style={styles.validationRow}>
+                    <Ionicons
+                      name={isPasswordLengthValid ? 'checkmark-circle' : 'close-circle'}
+                      size={16}
+                      color={
+                        isPasswordLengthValid
+                          ? colors.brand.success
+                          : colors.brand.error
+                      }
+                    />
+                    <Text
+                      style={[
+                        styles.validationText,
+                        {
+                          color: isPasswordLengthValid
+                            ? colors.brand.success
+                            : colors.brand.error,
+                        },
+                      ]}
+                    >
+                      6자 이상
+                    </Text>
+                  </View>
+                )}
               </View>
 
               {/* 비밀번호 확인 */}
               <View style={styles.field}>
                 <Text style={styles.fieldLabel}>비밀번호 확인</Text>
-                <TextInput
-                  style={styles.fieldInput}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry
-                  placeholder="비밀번호를 다시 입력하세요"
-                  placeholderTextColor={colors.brand.mutedSoft}
-                  returnKeyType="done"
-                  onSubmitEditing={handleSignup}
-                />
-                {/* 비밀번호 불일치 인라인 경고 */}
-                {confirmPassword.length > 0 && !isConfirmValid && (
-                  <Text style={styles.fieldError}>
-                    비밀번호가 일치하지 않아요.
-                  </Text>
+                <View style={styles.inputWithToggle}>
+                  <TextInput
+                    style={[styles.fieldInput, styles.fieldInputFlex]}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
+                    secureTextEntry={!showConfirmPassword}
+                    placeholder="비밀번호를 다시 입력하세요"
+                    placeholderTextColor={colors.brand.mutedSoft}
+                    returnKeyType="done"
+                    onSubmitEditing={handleSignup}
+                  />
+                  <Pressable
+                    onPress={() => setShowConfirmPassword((prev) => !prev)}
+                    style={styles.toggleBtn}
+                    hitSlop={8}
+                    accessibilityRole="button"
+                    accessibilityLabel="비밀번호 표시/숨기기"
+                  >
+                    <Ionicons
+                      name={showConfirmPassword ? 'eye-off-outline' : 'eye-outline'}
+                      size={20}
+                      color={colors.brand.mutedSoft}
+                    />
+                  </Pressable>
+                </View>
+                {/* 비밀번호 일치 여부 피드백 */}
+                {confirmPassword.length > 0 && (
+                  <View style={styles.validationRow}>
+                    <Ionicons
+                      name={isConfirmValid ? 'checkmark-circle' : 'close-circle'}
+                      size={16}
+                      color={isConfirmValid ? colors.brand.success : colors.brand.error}
+                    />
+                    <Text
+                      style={[
+                        styles.validationText,
+                        {
+                          color: isConfirmValid
+                            ? colors.brand.success
+                            : colors.brand.error,
+                        },
+                      ]}
+                    >
+                      {isConfirmValid
+                        ? '비밀번호가 일치합니다'
+                        : '비밀번호가 일치하지 않습니다'}
+                    </Text>
+                  </View>
                 )}
               </View>
 
@@ -187,6 +267,30 @@ export default function SignupScreen() {
                   <Text style={styles.errorText}>{error}</Text>
                 </View>
               )}
+
+              {/* 약관 동의 */}
+              <Pressable
+                onPress={() => setIsTermsAgreed((prev) => !prev)}
+                style={styles.termsRow}
+                hitSlop={8}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isTermsAgreed }}
+                accessibilityLabel="서비스 이용약관 및 개인정보 처리방침 동의"
+              >
+                <View
+                  style={[
+                    styles.checkbox,
+                    isTermsAgreed && styles.checkboxChecked,
+                  ]}
+                >
+                  {isTermsAgreed && (
+                    <Ionicons name="checkmark" size={14} color={colors.bg.canvas} />
+                  )}
+                </View>
+                <Text style={styles.termsText}>
+                  서비스 이용약관 및 개인정보 처리방침에 동의합니다
+                </Text>
+              </Pressable>
 
               <Pressable
                 onPress={handleSignup}
@@ -289,6 +393,57 @@ const styles = StyleSheet.create({
     color: colors.brand.error,
     marginTop: spacing.xs,
     paddingHorizontal: spacing.xs,
+  },
+  inputWithToggle: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  fieldInputFlex: {
+    paddingRight: 48,
+  },
+  toggleBtn: {
+    position: 'absolute',
+    right: spacing.md,
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  validationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
+  validationText: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.medium,
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.base,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: radii.xs,
+    borderWidth: 1.5,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxChecked: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.brand.primary,
+  },
+  termsText: {
+    flex: 1,
+    fontSize: fontSizes.sm,
+    color: colors.brand.muted,
+    lineHeight: 20,
   },
   errorBox: {
     padding: spacing.md,
