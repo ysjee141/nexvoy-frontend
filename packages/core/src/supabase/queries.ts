@@ -9,8 +9,11 @@ import type {
   ChecklistTemplateItem,
   Profile,
   TripMember,
+  TripShare,
   TripSummary,
   TemplateWithCount,
+  TemplateWithPreview,
+  TripWithProgress,
   VisitedPlace,
   TravelStats,
 } from '@nexvoy/types'
@@ -22,6 +25,47 @@ export interface CreateTripInput {
   end_date: string
   adults_count: number
   children_count: number
+}
+
+export interface UpdateTripInput {
+  destination: string
+  start_date: string
+  end_date: string
+  adults_count: number
+  children_count: number
+}
+
+export interface PlanInput {
+  trip_id: string
+  title: string
+  location?: string | null
+  address?: string | null
+  location_lat?: number | null
+  location_lng?: number | null
+  google_place_id?: string | null
+  image_url?: string | null
+  photo_reference?: string | null
+  start_datetime_local: string
+  end_datetime_local: string
+  cost?: number
+  memo?: string | null
+  alarm_minutes_before?: number | null
+  timezone_string?: string
+  urls?: string[]
+}
+
+export interface ChecklistItemInput {
+  item_name: string
+  category?: string
+  is_private?: boolean
+  assignment_type?: 'anyone' | 'specific' | 'everyone'
+  assigned_user_id?: string | null
+  source_template_name?: string | null
+}
+
+function throwDbError(error: { message?: string; code?: string; details?: string } | null): never {
+  const parts = [error?.message, error?.details, error?.code].filter(Boolean)
+  throw new Error(parts.join(' · ') || '데이터 저장에 실패했어요.')
 }
 
 // ─── Trips ───────────────────────────────────────────────────────────────────
@@ -64,7 +108,7 @@ export async function getTripById(
     .select('*')
     .eq('id', tripId)
     .single()
-  if (error) throw error
+  if (error) throwDbError(error)
   return data
 }
 
@@ -94,8 +138,71 @@ export async function createTrip(
     .insert(input)
     .select('*')
     .single()
+  if (error) throwDbError(error)
+  return data
+}
+
+export async function updateTrip(
+  sb: SupabaseClient,
+  tripId: string,
+  input: UpdateTripInput
+): Promise<Trip> {
+  const { data, error } = await sb
+    .from('trips')
+    .update(input)
+    .eq('id', tripId)
+    .select('*')
+    .single()
   if (error) throw error
   return data
+}
+
+/**
+ * 사용자의 여행 목록 + 체크리스트 진행률(progressPercent) + 소유 여부(isOwner).
+ * 목록 카드 정렬/표시용 view-model 을 반환한다.
+ *
+ * RLS graceful degrade: checklists/checklist_items 접근이 실패하거나
+ * 데이터가 없으면 progressPercent 를 0 으로 처리하고 throw 하지 않는다.
+ * (trips 자체 조회 실패만 throw)
+ *
+ * 참고: getTripsByUser 와 달리 trip_members 참여 여정은 포함하지 않고
+ * owner 기준(trips.user_id) 으로 조회한다. 진행률은 본인 소유 여정 카드용.
+ */
+export async function getTripsWithProgress(
+  sb: SupabaseClient,
+  userId: string
+): Promise<TripWithProgress[]> {
+  const { data, error } = await sb
+    .from('trips')
+    .select('*, checklists(checklist_items(is_checked))')
+    .eq('user_id', userId)
+    .order('start_date', { ascending: true })
+  if (error) throw error
+
+  type ChecklistRow = { checklist_items: { is_checked: boolean }[] | null }
+  type Row = Trip & { checklists: ChecklistRow[] | null }
+
+  return (data ?? []).map((trip: Row) => {
+    // RLS 로 checklists/checklist_items 가 가려지면 빈 배열로 graceful degrade
+    const items = (trip.checklists ?? []).flatMap(
+      (c) => c.checklist_items ?? []
+    )
+    const progressPercent =
+      items.length === 0
+        ? 0
+        : Math.round(
+            (items.filter((i) => i.is_checked).length / items.length) * 100
+          )
+
+    // 조인 필드는 view-model 에서 제외
+    const { checklists: _checklists, ...rest } = trip
+    void _checklists
+    return {
+      ...(rest as Trip),
+      progressPercent,
+      isOwner: trip.user_id === userId,
+    }
+  })
 }
 
 // ─── Plans ────────────────────────────────────────────────────────────────────
@@ -128,6 +235,76 @@ export async function getPlansWithUrls(
     ...p,
     plan_urls: p.plan_urls ?? [],
   }))
+}
+
+function toPlanRow(input: PlanInput) {
+  return {
+    trip_id: input.trip_id,
+    title: input.title,
+    location: input.location ?? null,
+    address: input.address ?? input.location ?? null,
+    location_lat: input.location_lat ?? null,
+    location_lng: input.location_lng ?? null,
+    google_place_id: input.google_place_id ?? null,
+    image_url: input.image_url ?? null,
+    photo_reference: input.photo_reference ?? null,
+    start_datetime_local: input.start_datetime_local,
+    end_datetime_local: input.end_datetime_local,
+    cost: input.cost ?? 0,
+    memo: input.memo ?? '',
+    alarm_minutes_before: input.alarm_minutes_before ?? null,
+    timezone_string: input.timezone_string ?? 'Asia/Seoul',
+  }
+}
+
+async function replacePlanUrls(
+  sb: SupabaseClient,
+  planId: string,
+  urls: string[] | undefined
+): Promise<void> {
+  if (!urls) return
+  const normalized = urls.map((url) => url.trim()).filter(Boolean)
+  const { error: delErr } = await sb.from('plan_urls').delete().eq('plan_id', planId)
+  if (delErr) throwDbError(delErr)
+  if (normalized.length === 0) return
+  const { error: insErr } = await sb
+    .from('plan_urls')
+    .insert(normalized.map((url) => ({ plan_id: planId, url })))
+  if (insErr) throwDbError(insErr)
+}
+
+export async function createPlan(
+  sb: SupabaseClient,
+  input: PlanInput
+): Promise<Plan & { plan_urls: PlanUrl[] }> {
+  const { data, error } = await sb
+    .from('plans')
+    .insert(toPlanRow(input))
+    .select('*')
+    .single()
+  if (error) throwDbError(error)
+  await replacePlanUrls(sb, data.id, input.urls)
+  const plans = await getPlansWithUrls(sb, data.trip_id)
+  const saved = plans.find((plan) => plan.id === data.id)
+  return saved ?? { ...data, plan_urls: [] }
+}
+
+export async function updatePlan(
+  sb: SupabaseClient,
+  planId: string,
+  input: PlanInput
+): Promise<Plan & { plan_urls: PlanUrl[] }> {
+  const { data, error } = await sb
+    .from('plans')
+    .update(toPlanRow(input))
+    .eq('id', planId)
+    .select('*')
+    .single()
+  if (error) throwDbError(error)
+  await replacePlanUrls(sb, data.id, input.urls)
+  const plans = await getPlansWithUrls(sb, data.trip_id)
+  const saved = plans.find((plan) => plan.id === data.id)
+  return saved ?? { ...data, plan_urls: [] }
 }
 
 /** 일정 삭제 (plan_urls는 FK cascade 가정) */
@@ -183,6 +360,107 @@ export async function toggleChecklistItem(
     .update({ is_checked: isChecked })
     .eq('id', itemId)
   if (error) throw error
+}
+
+export async function ensureChecklist(
+  sb: SupabaseClient,
+  tripId: string,
+  title = '기본 준비물'
+): Promise<Checklist> {
+  const { data: existing, error: findErr } = await sb
+    .from('checklists')
+    .select('*')
+    .eq('trip_id', tripId)
+    .maybeSingle()
+  if (findErr) throw findErr
+  if (existing) return existing
+
+  const { data, error } = await sb
+    .from('checklists')
+    .insert({ trip_id: tripId, title })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function createChecklistItem(
+  sb: SupabaseClient,
+  checklistId: string,
+  input: ChecklistItemInput
+): Promise<ChecklistItem> {
+  const { data, error } = await sb
+    .from('checklist_items')
+    .insert({
+      checklist_id: checklistId,
+      item_name: input.item_name,
+      category: input.category ?? '기타',
+      is_private: input.is_private ?? false,
+      assignment_type: input.assignment_type ?? 'anyone',
+      assigned_user_id: input.assigned_user_id ?? null,
+      source_template_name: input.source_template_name ?? null,
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateChecklistItem(
+  sb: SupabaseClient,
+  itemId: string,
+  input: ChecklistItemInput
+): Promise<ChecklistItem> {
+  const { data, error } = await sb
+    .from('checklist_items')
+    .update({
+      item_name: input.item_name,
+      category: input.category ?? '기타',
+      is_private: input.is_private ?? false,
+      assignment_type: input.assignment_type ?? 'anyone',
+      assigned_user_id: input.assigned_user_id ?? null,
+      source_template_name: input.source_template_name ?? null,
+    })
+    .eq('id', itemId)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteChecklistItem(
+  sb: SupabaseClient,
+  itemId: string
+): Promise<void> {
+  const { error } = await sb.from('checklist_items').delete().eq('id', itemId)
+  if (error) throw error
+}
+
+export async function applyTemplateToChecklist(
+  sb: SupabaseClient,
+  checklistId: string,
+  templateId: string
+): Promise<ChecklistItem[]> {
+  const result = await getTemplateWithItems(sb, templateId)
+  if (!result) throw new Error('템플릿을 찾을 수 없어요.')
+  if (result.items.length === 0) return []
+
+  const { data, error } = await sb
+    .from('checklist_items')
+    .insert(
+      result.items.map((item) => ({
+        checklist_id: checklistId,
+        item_name: item.item_name,
+        category: item.category || '기타',
+        is_private: item.is_private ?? false,
+        assignment_type: 'anyone',
+        assigned_user_id: null,
+        source_template_name: result.template.title,
+      }))
+    )
+    .select('*')
+  if (error) throw error
+  return data ?? []
 }
 
 // ─── Templates ────────────────────────────────────────────────────────────────
@@ -245,6 +523,42 @@ export async function getTemplatesWithItemCount(
       user_id: t.user_id,
       item_count: t.checklist_template_items?.length ?? 0,
     })
+  )
+}
+
+/**
+ * 템플릿 목록 + 아이템 개수 + 미리보기 항목명(최대 3개) (목록 카드용).
+ * getTemplatesWithItemCount 의 확장 버전으로, 항목명(item_name)과
+ * created_at 을 추가로 반환한다. 공개 템플릿(user_id is null)도 포함한다.
+ */
+export async function getTemplatesWithPreview(
+  sb: SupabaseClient,
+  userId: string
+): Promise<TemplateWithPreview[]> {
+  const { data, error } = await sb
+    .from('checklist_templates')
+    .select('id, title, user_id, created_at, checklist_template_items(item_name)')
+    .or(`user_id.eq.${userId},user_id.is.null`)
+    .order('created_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map(
+    (t: {
+      id: string
+      title: string
+      user_id: string | null
+      created_at: string
+      checklist_template_items: { item_name: string }[] | null
+    }) => {
+      const items = t.checklist_template_items ?? []
+      return {
+        id: t.id,
+        title: t.title,
+        user_id: t.user_id,
+        item_count: items.length,
+        preview_items: items.slice(0, 3).map((it) => it.item_name),
+        created_at: t.created_at,
+      }
+    }
   )
 }
 
@@ -559,4 +873,94 @@ export async function getTripMembers(
     .eq('trip_id', tripId)
   if (error) throw error
   return (data ?? []) as TripMember[]
+}
+
+export async function inviteTripMember(
+  sb: SupabaseClient,
+  tripId: string,
+  email: string,
+  role: 'editor' | 'viewer' = 'editor'
+): Promise<TripMember> {
+  const { data, error } = await sb
+    .from('trip_members')
+    .insert({
+      trip_id: tripId,
+      invited_email: email,
+      role,
+      status: 'pending',
+    })
+    .select('*, profiles(nickname, email)')
+    .single()
+  if (error) throw error
+  return data as TripMember
+}
+
+export async function updateTripMemberRole(
+  sb: SupabaseClient,
+  memberId: string,
+  role: 'editor' | 'viewer'
+): Promise<TripMember> {
+  const { data, error } = await sb
+    .from('trip_members')
+    .update({ role })
+    .eq('id', memberId)
+    .select('*, profiles(nickname, email)')
+    .single()
+  if (error) throw error
+  return data as TripMember
+}
+
+export async function removeTripMember(
+  sb: SupabaseClient,
+  memberId: string
+): Promise<void> {
+  const { error } = await sb.from('trip_members').delete().eq('id', memberId)
+  if (error) throw error
+}
+
+export async function createInvitationLink(
+  sb: SupabaseClient,
+  tripId: string
+): Promise<string> {
+  const { data, error } = await sb.rpc('generate_invitation_link', {
+    p_trip_id: tripId,
+  })
+  if (error) throw error
+  return String(data)
+}
+
+function generateShareToken(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
+}
+
+export async function getOrCreateTripShareLink(
+  sb: SupabaseClient,
+  tripId: string,
+  shareType: 'public' | 'password' = 'public',
+  password?: string
+): Promise<TripShare> {
+  const { data: existing, error: existingError } = await sb
+    .from('trip_shares')
+    .select('*')
+    .eq('trip_id', tripId)
+    .eq('share_type', shareType)
+    .maybeSingle()
+  if (existingError) throw existingError
+  if (existing) return existing as TripShare
+
+  const { data, error } = await sb
+    .from('trip_shares')
+    .insert({
+      trip_id: tripId,
+      share_token: generateShareToken(),
+      share_type: shareType,
+      password_hash: shareType === 'password' ? password ?? null : null,
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data as TripShare
 }

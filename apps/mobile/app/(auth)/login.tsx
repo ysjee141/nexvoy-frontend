@@ -113,7 +113,7 @@ export default function LoginScreen() {
         }
       }
       // result.type 이 'cancel'/'dismiss' 면 사용자가 인증을 중단한 것 → 조용히 화면 잔류.
-    } catch (e) {
+    } catch {
       setMessage({ type: 'error', text: 'Google 로그인에 실패했습니다.' })
     } finally {
       setOauthLoading(false)

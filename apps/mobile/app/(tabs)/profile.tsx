@@ -6,20 +6,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { getProfile } from '@nexvoy/core'
-import type { Profile } from '@nexvoy/types'
+import { getProfile, getTravelStats } from '@nexvoy/core'
+import type { Profile, TravelStats } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { ConfirmSheet } from '@/components/ui'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 function getInitial(nickname: string | null, email: string | null): string {
@@ -38,7 +39,7 @@ function NavRow({
   onPress,
   destructive = false,
 }: {
-  icon: string
+  icon: React.ComponentProps<typeof Ionicons>['name']
   label: string
   onPress: () => void
   destructive?: boolean
@@ -51,7 +52,7 @@ function NavRow({
       accessibilityLabel={label}
     >
       <Ionicons
-        name={icon as any}
+        name={icon}
         size={18}
         color={destructive ? colors.brand.error : colors.brand.muted}
       />
@@ -74,14 +75,28 @@ export default function ProfileScreen() {
   const isMounted = useRef(true)
   useEffect(() => { return () => { isMounted.current = false } }, [])
   const [profile, setProfile] = useState<Profile | null>(null)
+  const [stats, setStats] = useState<TravelStats | null>(null)
   const [loading, setLoading] = useState(true)
+
+  // 닉네임 인라인 편집 상태
+  const [isEditingNickname, setIsEditingNickname] = useState(false)
+  const [editNickname, setEditNickname] = useState('')
+  const [isSavingNickname, setIsSavingNickname] = useState(false)
+  const [nicknameError, setNicknameError] = useState('')
+  const [showLogoutSheet, setShowLogoutSheet] = useState(false)
 
   const loadProfile = useCallback(async () => {
     if (!session?.user) return
     setLoading(true)
     try {
-      const data = await getProfile(supabase, session.user.id)
-      if (isMounted.current) setProfile(data)
+      const [profileData, statsData] = await Promise.all([
+        getProfile(supabase, session.user.id),
+        getTravelStats(supabase, session.user.id).catch(() => null),
+      ])
+      if (isMounted.current) {
+        setProfile(profileData)
+        if (statsData) setStats(statsData)
+      }
     } catch {
       // 로드 실패 시 session 기본값으로 표시
     } finally {
@@ -93,15 +108,60 @@ export default function ProfileScreen() {
     loadProfile()
   }, [loadProfile])
 
+  const startEditingNickname = () => {
+    setEditNickname(profile?.nickname || displayName)
+    setNicknameError('')
+    setIsEditingNickname(true)
+  }
+
+  const cancelEditingNickname = () => {
+    setIsEditingNickname(false)
+    setNicknameError('')
+  }
+
+  const saveNickname = async () => {
+    if (!editNickname.trim() || !session?.user) return
+    setNicknameError('')
+    setIsSavingNickname(true)
+    try {
+      // 닉네임 중복 체크
+      const { data: existing } = await supabase
+        .from('profiles')
+        .select('nickname')
+        .ilike('nickname', editNickname.trim())
+        .neq('id', session.user.id)
+        .maybeSingle()
+
+      if (existing) {
+        if (isMounted.current) {
+          setNicknameError('이미 사용 중인 닉네임입니다.')
+          setIsSavingNickname(false)
+        }
+        return
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ nickname: editNickname.trim(), updated_at: new Date().toISOString() })
+        .eq('id', session.user.id)
+
+      if (error) throw error
+
+      if (isMounted.current) {
+        setProfile((prev) => (prev ? { ...prev, nickname: editNickname.trim() } : prev))
+        setIsEditingNickname(false)
+      }
+    } catch {
+      if (isMounted.current) {
+        setNicknameError('닉네임을 저장하지 못했어요. 잠시 후 다시 시도해 주세요.')
+      }
+    } finally {
+      if (isMounted.current) setIsSavingNickname(false)
+    }
+  }
+
   const handleSignOut = () => {
-    Alert.alert('로그아웃', '정말 로그아웃 하시겠어요?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '로그아웃',
-        style: 'destructive',
-        onPress: signOut,
-      },
-    ])
+    setShowLogoutSheet(true)
   }
 
   const displayName = profile?.nickname || session?.user?.email?.split('@')[0] || '여행자'
@@ -130,7 +190,78 @@ export default function ProfileScreen() {
             <View style={styles.avatar}>
               <Text style={styles.avatarInitial}>{initial}</Text>
             </View>
-            <Text style={styles.displayName}>{displayName}</Text>
+            {isEditingNickname ? (
+              <View style={styles.nicknameEditWrap}>
+                <View style={styles.nicknameEditRow}>
+                  <TextInput
+                    value={editNickname}
+                    onChangeText={setEditNickname}
+                    style={styles.nicknameInput}
+                    placeholder="닉네임"
+                    placeholderTextColor={colors.brand.mutedSoft}
+                    autoFocus
+                    maxLength={20}
+                    returnKeyType="done"
+                    onSubmitEditing={saveNickname}
+                    editable={!isSavingNickname}
+                    accessibilityLabel="닉네임 입력"
+                  />
+                  <Pressable
+                    onPress={saveNickname}
+                    disabled={isSavingNickname || !editNickname.trim()}
+                    style={({ pressed }) => [
+                      styles.nicknameIconBtn,
+                      (isSavingNickname || !editNickname.trim()) && { opacity: 0.4 },
+                      pressed && { opacity: 0.6 },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="닉네임 저장"
+                  >
+                    {isSavingNickname ? (
+                      <ActivityIndicator size="small" color={colors.brand.primary} />
+                    ) : (
+                      <Ionicons
+                        name="checkmark-outline"
+                        size={20}
+                        color={colors.brand.primary}
+                      />
+                    )}
+                  </Pressable>
+                  <Pressable
+                    onPress={cancelEditingNickname}
+                    disabled={isSavingNickname}
+                    style={({ pressed }) => [
+                      styles.nicknameIconBtn,
+                      pressed && { opacity: 0.6 },
+                    ]}
+                    accessibilityRole="button"
+                    accessibilityLabel="편집 취소"
+                  >
+                    <Ionicons name="close-outline" size={20} color={colors.brand.muted} />
+                  </Pressable>
+                </View>
+                {nicknameError ? (
+                  <Text style={styles.nicknameError}>{nicknameError}</Text>
+                ) : null}
+              </View>
+            ) : (
+              <Pressable
+                onPress={startEditingNickname}
+                style={({ pressed }) => [
+                  styles.nicknameDisplayRow,
+                  pressed && { opacity: 0.6 },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="닉네임 편집"
+              >
+                <Text style={styles.displayName}>{displayName}</Text>
+                <Ionicons
+                  name="pencil-outline"
+                  size={16}
+                  color={colors.brand.muted}
+                />
+              </Pressable>
+            )}
             <Text style={styles.displayEmail}>{displayEmail}</Text>
 
             {/* 가입 경로 배지 */}
@@ -161,6 +292,28 @@ export default function ProfileScreen() {
               </View>
             ) : null}
           </View>
+
+          {/* 여행 통계 (2×2 그리드) */}
+          {stats ? (
+            <View style={styles.statsGrid}>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats.completedCount}회</Text>
+                <Text style={styles.statLabel}>완료한 여행</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats.upcomingTrips.length}회</Text>
+                <Text style={styles.statLabel}>예정된 여행</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats.totalDays}일</Text>
+                <Text style={styles.statLabel}>총 여행일</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={styles.statValue}>{stats.uniqueDestinations}곳</Text>
+                <Text style={styles.statLabel}>방문한 곳</Text>
+              </View>
+            </View>
+          ) : null}
 
           {/* 내 여행 */}
           <View style={styles.navSection}>
@@ -212,6 +365,18 @@ export default function ProfileScreen() {
           </Pressable>
         </ScrollView>
       )}
+      <ConfirmSheet
+        visible={showLogoutSheet}
+        title="로그아웃"
+        message="정말 로그아웃 하시겠어요?"
+        confirmLabel="로그아웃"
+        destructive
+        onConfirm={() => {
+          setShowLogoutSheet(false)
+          signOut()
+        }}
+        onCancel={() => setShowLogoutSheet(false)}
+      />
     </SafeAreaView>
   )
 }
@@ -262,10 +427,81 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
     color: colors.bg.canvas,
   },
+  nicknameDisplayRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   displayName: {
     fontSize: fontSizes.lg,
     fontWeight: fontWeights.bold,
     color: colors.brand.ink,
+  },
+  // 닉네임 인라인 편집
+  nicknameEditWrap: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'stretch',
+    paddingHorizontal: spacing.lg,
+  },
+  nicknameEditRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'stretch',
+  },
+  nicknameInput: {
+    flex: 1,
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.ink,
+    textAlign: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.canvas,
+  },
+  nicknameIconBtn: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.sm,
+  },
+  nicknameError: {
+    fontSize: fontSizes.xs,
+    color: colors.brand.error,
+    textAlign: 'center',
+  },
+  // 통계 그리드
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -spacing.xs,
+  },
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
+    margin: spacing.xs,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    alignItems: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.border,
+  },
+  statValue: {
+    fontSize: fontSizes.xl,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.primary,
+  },
+  statLabel: {
+    fontSize: fontSizes.xs,
+    color: colors.brand.muted,
+    marginTop: spacing.xxs,
   },
   displayEmail: {
     fontSize: fontSizes.sm,

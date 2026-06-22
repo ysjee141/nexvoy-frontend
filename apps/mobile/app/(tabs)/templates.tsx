@@ -1,10 +1,13 @@
 /**
  * 준비물 템플릿 탭 — 템플릿 목록 + 빈 상태 + FAB.
- * @nexvoy/core 의 getTemplatesWithItemCount / deleteTemplate 를 supabase client 주입하여 사용(ADR-010).
+ * @nexvoy/core 의 getTemplatesWithPreview / deleteTemplate 를 supabase client 주입하여 사용(ADR-010).
  * loading / empty / list 3-상태 분기. 디자인 토큰은 @/theme 사용.
  *
+ * 카드 구조는 웹(apps/web/app/templates/page.tsx)의 TripSection 카드를 모바일에 맞춰 정렬:
+ *   아이콘 + 제목 + 항목 수 배지 / preview_items 태그 / 생성일.
  * 카드 탭 → 편집(/templates/[id]), FAB → 생성(/templates/new).
  * 카드 롱프레스 → Alert 확인 → deleteTemplate → 목록 갱신.
+ *   (공개 템플릿은 RLS 로 삭제가 차단되며, 실패 시 사용자 안내 Alert 노출)
  * useFocusEffect 로 생성/편집 후 복귀 시 자동 재조회.
  */
 import { useCallback, useRef, useState } from 'react'
@@ -17,27 +20,42 @@ import {
   Text,
   View,
 } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { getTemplatesWithItemCount, deleteTemplate } from '@nexvoy/core'
-import type { TemplateWithCount } from '@nexvoy/types'
+import { getTemplatesWithPreview, deleteTemplate } from '@nexvoy/core'
+import type { TemplateWithPreview } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { ConfirmSheet, EmptyState } from '@/components/ui'
 import { colors, fontSizes, fontWeights, radii, spacing, shadows } from '@/theme'
+
+/**
+ * created_at(ISO 문자열)을 'YYYY년 M월 D일 등록' 형식으로 변환.
+ * new Date() 파싱 시 타임존 오프셋으로 날짜가 밀릴 수 있어 문자열 슬라이싱으로 추출한다.
+ */
+function formatRegisteredDate(createdAt: string): string {
+  const year = createdAt.slice(0, 4)
+  // 앞자리 0 제거 (01월 → 1월)
+  const month = String(Number(createdAt.slice(5, 7)))
+  const day = String(Number(createdAt.slice(8, 10)))
+  return `${year}년 ${month}월 ${day}일 등록`
+}
 
 export default function TemplatesScreen() {
   const { session } = useAuth()
   const router = useRouter()
-  const [templates, setTemplates] = useState<TemplateWithCount[]>([])
+  const insets = useSafeAreaInsets()
+  const [templates, setTemplates] = useState<TemplateWithPreview[]>([])
   const [loading, setLoading] = useState(true)
+  const [pendingDelete, setPendingDelete] = useState<TemplateWithPreview | null>(null)
   const isMounted = useRef(true)
 
   const loadTemplates = useCallback(async () => {
     if (!session?.user) return
     setLoading(true)
     try {
-      const data = await getTemplatesWithItemCount(supabase, session.user.id)
+      const data = await getTemplatesWithPreview(supabase, session.user.id)
       if (isMounted.current) setTemplates(data)
     } catch {
       // 조회 실패 시 직전 목록 유지 (useFocusEffect 재진입 시 깜박임 방지)
@@ -57,60 +75,83 @@ export default function TemplatesScreen() {
   )
 
   const handleDelete = useCallback(
-    (template: TemplateWithCount) => {
+    (template: TemplateWithPreview) => {
       // 공개 템플릿(user_id=null)은 삭제 불가 — 본인 소유만 삭제.
+      // RLS 상 공개 템플릿 DELETE 는 0행 영향(에러 없음)이라 무반응처럼 보이므로 사전 차단.
       if (!template.user_id) return
-      Alert.alert(
-        '템플릿 삭제',
-        `'${template.title}' 템플릿을 삭제할까요? 이 작업은 되돌릴 수 없어요.`,
-        [
-          { text: '취소', style: 'cancel' },
-          {
-            text: '삭제',
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await deleteTemplate(supabase, template.id)
-                await loadTemplates()
-              } catch {
-                Alert.alert(
-                  '삭제 실패',
-                  '템플릿을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.'
-                )
-              }
-            },
-          },
-        ]
-      )
+      setPendingDelete(template)
     },
-    [loadTemplates]
+    []
   )
 
-  const renderTemplate = ({ item }: { item: TemplateWithCount }) => (
-    <Pressable
-      onPress={() =>
-        router.push({ pathname: '/templates/[id]', params: { id: item.id } })
-      }
-      onLongPress={() => handleDelete(item)}
-      accessibilityRole="button"
-      accessibilityLabel={`${item.title} 템플릿, 항목 ${item.item_count}개. 탭하면 수정, 길게 누르면 삭제`}
-      style={({ pressed }) => [
-        styles.templateCard,
-        pressed && styles.pressedSoft,
-      ]}
-    >
-      <View style={styles.templateBody}>
-        <Text style={styles.templateTitle} numberOfLines={1}>
-          {item.title}
-        </Text>
-        <Text style={styles.templateCount}>항목 {item.item_count}개</Text>
-      </View>
-      <View style={styles.editHint}>
-        <Text style={styles.editHintText}>수정</Text>
-        <Ionicons name="chevron-forward" size={16} color={colors.brand.mutedSoft} />
-      </View>
-    </Pressable>
-  )
+  const confirmDelete = useCallback(async () => {
+    if (!pendingDelete) return
+    try {
+      await deleteTemplate(supabase, pendingDelete.id)
+      setPendingDelete(null)
+      await loadTemplates()
+    } catch {
+      Alert.alert('삭제 실패', '템플릿을 삭제하지 못했어요. 잠시 후 다시 시도해 주세요.')
+    }
+  }, [loadTemplates, pendingDelete])
+
+  const renderTemplate = ({ item }: { item: TemplateWithPreview }) => {
+    const overflowCount = item.item_count - item.preview_items.length
+    return (
+      <Pressable
+        onPress={() =>
+          router.push({ pathname: '/templates/[id]', params: { id: item.id } })
+        }
+        onLongPress={() => handleDelete(item)}
+        accessibilityRole="button"
+        accessibilityLabel={`${item.title} 템플릿, 항목 ${item.item_count}개. 탭하면 수정, 길게 누르면 삭제`}
+        style={({ pressed }) => [
+          styles.templateCard,
+          pressed && styles.pressedSoft,
+        ]}
+      >
+        {/* 상단: 아이콘 + 제목 + 항목 수 배지 */}
+        <View style={styles.cardHeader}>
+          <View style={styles.iconBadge}>
+            <Ionicons
+              name="checkbox-outline"
+              size={20}
+              color={colors.brand.primary}
+            />
+          </View>
+          <Text style={styles.templateTitle} numberOfLines={1}>
+            {item.title}
+          </Text>
+          <Text style={styles.templateCount}>항목 {item.item_count}개</Text>
+        </View>
+
+        {/* 중단: preview_items 태그 (최대 3개 + 초과분) */}
+        {item.preview_items.length > 0 ? (
+          <View style={styles.tagRow}>
+            {item.preview_items.map((name, idx) => (
+              <View key={`${item.id}-${idx}`} style={styles.tag}>
+                <Text style={styles.tagText} numberOfLines={1}>
+                  {name}
+                </Text>
+              </View>
+            ))}
+            {overflowCount > 0 && (
+              <View style={[styles.tag, styles.tagMore]}>
+                <Text style={[styles.tagText, styles.tagMoreText]}>
+                  +{overflowCount}개
+                </Text>
+              </View>
+            )}
+          </View>
+        ) : (
+          <Text style={styles.emptyItems}>등록된 준비물이 없어요.</Text>
+        )}
+
+        {/* 하단: 생성일 */}
+        <Text style={styles.createdAt}>{formatRegisteredDate(item.created_at)}</Text>
+      </Pressable>
+    )
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -141,6 +182,7 @@ export default function TemplatesScreen() {
             accessibilityLabel="새 템플릿 만들기"
             style={({ pressed }) => [
               styles.fab,
+              { bottom: Math.max(insets.bottom, spacing.base) + spacing.lg },
               pressed && { opacity: 0.92, transform: [{ scale: 0.96 }] },
             ]}
           >
@@ -149,26 +191,28 @@ export default function TemplatesScreen() {
         </>
       ) : (
         <View style={styles.emptyState}>
-          <View style={styles.emptyIllust}>
-            <Ionicons name="list-outline" size={40} color={colors.brand.mutedSoft} />
-          </View>
-          <Text style={styles.emptyTitle}>아직 템플릿이 없어요</Text>
-          <Text style={styles.emptyDesc}>
-            나만의 준비물 목록을 템플릿으로 만들어 보세요.
-          </Text>
-          <Pressable
-            onPress={() => router.push('/templates/new')}
-            accessibilityRole="button"
-            accessibilityLabel="새 템플릿 만들기"
-            style={({ pressed }) => [
-              styles.emptyCta,
-              pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] },
-            ]}
-          >
-            <Text style={styles.emptyCtaText}>새 템플릿 만들기</Text>
-          </Pressable>
+          <EmptyState
+            icon="list-outline"
+            title="아직 템플릿이 없어요"
+            description="나만의 준비물 목록을 템플릿으로 만들어 보세요."
+            actionLabel="새 템플릿 만들기"
+            onAction={() => router.push('/templates/new')}
+          />
         </View>
       )}
+      <ConfirmSheet
+        visible={pendingDelete !== null}
+        title="템플릿 삭제"
+        message={
+          pendingDelete
+            ? `'${pendingDelete.title}' 템플릿을 삭제할까요? 이 작업은 되돌릴 수 없어요.`
+            : ''
+        }
+        confirmLabel="삭제"
+        destructive
+        onConfirm={confirmDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </SafeAreaView>
   )
 }
@@ -195,39 +239,71 @@ const styles = StyleSheet.create({
   listBody: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxxl,
-    gap: spacing.md,
   },
   templateCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
     backgroundColor: colors.bg.canvas,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.brand.border,
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.base,
+    marginBottom: spacing.sm,
     ...shadows.card,
   },
-  templateBody: { flex: 1 },
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bg.surfaceSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   templateTitle: {
+    flex: 1,
     fontSize: fontSizes.md,
-    fontWeight: fontWeights.semibold,
+    fontWeight: fontWeights.bold,
     color: colors.brand.ink,
   },
   templateCount: {
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.xs,
     color: colors.brand.muted,
-    marginTop: spacing.xxs,
   },
-  editHint: {
+  tagRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xxs,
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.md,
   },
-  editHintText: {
-    fontSize: fontSizes.sm,
-    fontWeight: fontWeights.medium,
-    color: colors.brand.muted,
+  tag: {
+    borderRadius: radii.xs,
+    backgroundColor: colors.bg.surfaceSoft,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+  },
+  tagText: {
+    fontSize: fontSizes.xs,
+    color: colors.brand.ink,
+  },
+  tagMore: {
+    backgroundColor: colors.brand.primary,
+  },
+  tagMoreText: {
+    color: colors.bg.canvas,
+    fontWeight: fontWeights.semibold,
+  },
+  emptyItems: {
+    fontSize: fontSizes.xs,
+    color: colors.brand.mutedSoft,
+    marginTop: spacing.md,
+  },
+  createdAt: {
+    fontSize: fontSizes.xs,
+    color: colors.brand.mutedSoft,
+    marginTop: spacing.md,
   },
   emptyState: {
     flex: 1,

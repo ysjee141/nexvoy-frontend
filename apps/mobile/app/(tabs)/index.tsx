@@ -1,13 +1,15 @@
 /**
- * 홈 탭 — 여행 목록 + 빈 상태.
- * @nexvoy/core 의 getTripsByUser 쿼리를 supabase client 주입하여 사용(ADR-010).
- * loading / empty / list 3-상태 분기. 디자인 토큰은 @/theme 사용.
+ * 홈 탭 — 여행 목록(진행 중/예정/지난) + 빈 상태.
+ * @nexvoy/core 의 getTripsWithProgress 쿼리를 supabase client 주입하여 사용(ADR-010).
+ * 웹 HomeClient/TripSection 카드 구조에 맞춰 3섹션 분류 + 진행률 카드로 정렬.
+ * 디자인 토큰은 @/theme 사용.
  */
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import {
   ActivityIndicator,
-  FlatList,
+  type DimensionValue,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -15,23 +17,56 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { getTripsByUser, formatDate } from '@nexvoy/core'
-import type { Trip } from '@nexvoy/types'
+import { getTripsWithProgress, formatDate } from '@nexvoy/core'
+import type { TripWithProgress } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { colors, fontSizes, fontWeights, radii, spacing, shadows } from '@/theme'
 
+type TripStatus = 'ongoing' | 'upcoming' | 'past'
+
+interface TripSection {
+  key: TripStatus
+  emoji: string
+  title: string
+  trips: TripWithProgress[]
+}
+
+/** `new Date('YYYY-MM-DD')` 는 UTC 로 해석되어 로컬 자정과 어긋난다. 로컬 자정 Date 로 변환. */
+function parseLocalDate(dateStr: string): Date {
+  const [y, m, d] = dateStr.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
+const STATUS_BADGE: Record<TripStatus, { label: string; bg: string; color: string }> = {
+  // 여행 중: success 계열 (디자인 토큰에 accent 없음 → success 사용)
+  ongoing: { label: '여행 중', bg: colors.brand.success + '1A', color: colors.brand.success },
+  upcoming: { label: '예정', bg: colors.brand.primary + '1A', color: colors.brand.primary },
+  past: { label: '완료', bg: colors.bg.surfaceStrong, color: colors.brand.muted },
+}
+
+const STATUS_FILL: Record<TripStatus, string> = {
+  ongoing: colors.brand.success,
+  upcoming: colors.brand.primary,
+  past: colors.brand.primary,
+}
+
 export default function HomeScreen() {
   const { session } = useAuth()
   const router = useRouter()
-  const [trips, setTrips] = useState<Trip[]>([])
+  const [trips, setTrips] = useState<TripWithProgress[]>([])
   const [loading, setLoading] = useState(true)
+  const [openSections, setOpenSections] = useState<Record<TripStatus, boolean>>({
+    ongoing: true,
+    upcoming: true,
+    past: false,
+  })
 
   const loadTrips = useCallback(async () => {
     if (!session?.user) return
     setLoading(true)
     try {
-      const data = await getTripsByUser(supabase, session.user.id)
+      const data = await getTripsWithProgress(supabase, session.user.id)
       setTrips(data)
     } catch {
       // 조회 실패 시 직전 목록 유지 (useFocusEffect 재진입 시 깜박임 방지)
@@ -46,31 +81,105 @@ export default function HomeScreen() {
     }, [loadTrips])
   )
 
-  const renderTrip = ({ item }: { item: Trip }) => (
-    <Pressable
-      onPress={() => router.push({ pathname: '/trip/[id]', params: { id: item.id } })}
-      style={({ pressed }) => [
-        styles.tripCard,
-        pressed && { opacity: 0.92, transform: [{ scale: 0.99 }] },
-      ]}
-    >
-      <View style={styles.tripCardThumb}>
-        <Ionicons name="airplane" size={22} color={colors.brand.muted} />
-      </View>
-      <View style={styles.tripCardBody}>
-        <Text style={styles.tripTitle} numberOfLines={1}>
-          {item.destination}
-        </Text>
-        <View style={styles.tripMetaRow}>
-          <Ionicons name="calendar-outline" size={14} color={colors.brand.muted} />
-          <Text style={styles.tripMetaText}>
-            {formatDate(item.start_date)} ~ {formatDate(item.end_date)}
+  const sections = useMemo<TripSection[]>(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+
+    const ongoingTrips = trips.filter(
+      (t) => parseLocalDate(t.start_date) <= today && parseLocalDate(t.end_date) >= today
+    )
+    const upcomingTrips = trips.filter((t) => parseLocalDate(t.start_date) > today)
+    const pastTrips = trips.filter((t) => parseLocalDate(t.end_date) < today)
+
+    return [
+      { key: 'ongoing', emoji: '✈️', title: '여행 중', trips: ongoingTrips },
+      { key: 'upcoming', emoji: '📅', title: '예정', trips: upcomingTrips },
+      { key: 'past', emoji: '📷', title: '다녀온 여행', trips: pastTrips },
+    ]
+  }, [trips])
+
+  const hasAnyTrip = sections.some((s) => s.trips.length > 0)
+  const toggleSection = (key: TripStatus) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  const renderCard = (trip: TripWithProgress, status: TripStatus) => {
+    const badge = STATUS_BADGE[status]
+    const isDone = trip.progressPercent === 100
+    const fillColor = isDone ? colors.brand.success : STATUS_FILL[status]
+    const showPeople = trip.adults_count > 0 || trip.children_count > 0
+
+    return (
+      <Pressable
+        key={trip.id}
+        onPress={() => router.push({ pathname: '/trip/[id]', params: { id: trip.id } })}
+        style={({ pressed }) => [
+          styles.tripCard,
+          pressed && { opacity: 0.92, transform: [{ scale: 0.98 }] },
+        ]}
+      >
+        {/* 배지 row */}
+        <View style={styles.badgeRow}>
+          <View style={[styles.ownerBadge, trip.isOwner ? styles.ownerBadgeOwned : styles.ownerBadgeShared]}>
+            <Text style={[styles.ownerBadgeText, { color: trip.isOwner ? colors.brand.primary : colors.brand.muted }]}>
+              {trip.isOwner ? '내 소중한 여정' : '함께하고 있어요'}
+            </Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: badge.bg }]}>
+            <Text style={[styles.statusBadgeText, { color: badge.color }]}>{badge.label}</Text>
+          </View>
+        </View>
+
+        {/* 목적지 row */}
+        <View style={styles.destinationRow}>
+          <Ionicons name="location" size={18} color={colors.brand.ink} />
+          <Text style={styles.destinationText} numberOfLines={1}>
+            {trip.destination}
           </Text>
         </View>
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.brand.mutedSoft} />
-    </Pressable>
-  )
+
+        {/* 날짜 row */}
+        <View style={styles.metaRow}>
+          <Ionicons name="calendar-outline" size={14} color={colors.brand.muted} />
+          <Text style={styles.metaText}>
+            {formatDate(trip.start_date)} ~ {formatDate(trip.end_date)}
+          </Text>
+        </View>
+
+        {/* 인원 row */}
+        {showPeople && (
+          <View style={styles.metaRow}>
+            <Ionicons name="person-outline" size={14} color={colors.brand.muted} />
+            <Text style={styles.metaText}>
+              성인 {trip.adults_count}명
+              {trip.children_count > 0 ? ` · 아동 ${trip.children_count}명` : ''}
+            </Text>
+          </View>
+        )}
+
+        {/* 진행률 */}
+        <View style={styles.progressSection}>
+          <View style={styles.progressLabelRow}>
+            <Text style={styles.progressLabel}>준비물</Text>
+            <Text style={[styles.progressValue, { color: isDone ? colors.brand.success : colors.brand.primary }]}>
+              {trip.progressPercent}%
+            </Text>
+          </View>
+          <View style={styles.progressTrack}>
+            <View
+              style={[
+                styles.progressFill,
+                {
+                  width: `${trip.progressPercent}%` as DimensionValue,
+                  backgroundColor: fillColor,
+                },
+              ]}
+            />
+          </View>
+        </View>
+      </Pressable>
+    )
+  }
 
   return (
     <SafeAreaView style={styles.screen} edges={['top']}>
@@ -83,14 +192,36 @@ export default function HomeScreen() {
         <View style={styles.centerFill}>
           <ActivityIndicator size="large" color={colors.brand.primary} />
         </View>
-      ) : trips.length > 0 ? (
+      ) : hasAnyTrip ? (
         <>
-          <FlatList
-            data={trips}
-            keyExtractor={(t) => t.id}
-            renderItem={renderTrip}
-            contentContainerStyle={styles.listBody}
-          />
+          <ScrollView contentContainerStyle={styles.listBody}>
+            {sections.map((section) =>
+              section.trips.length === 0 ? null : (
+                <View key={section.key} style={styles.section}>
+                  <Pressable
+                    onPress={() => toggleSection(section.key)}
+                    accessibilityRole="button"
+                    accessibilityState={{ expanded: openSections[section.key] }}
+                    accessibilityLabel={`${section.title} 섹션 ${openSections[section.key] ? '접기' : '펼치기'}`}
+                    style={({ pressed }) => [styles.sectionHeader, pressed && styles.sectionHeaderPressed]}
+                  >
+                    <Text style={styles.sectionEmoji}>{section.emoji}</Text>
+                    <Text style={styles.sectionTitle}>{section.title}</Text>
+                    <Text style={styles.sectionCount}>{section.trips.length}개</Text>
+                    <Ionicons
+                      name="chevron-down"
+                      size={18}
+                      color={colors.brand.muted}
+                      style={openSections[section.key] ? styles.sectionChevronOpen : styles.sectionChevron}
+                    />
+                  </Pressable>
+                  {openSections[section.key]
+                    ? section.trips.map((trip) => renderCard(trip, section.key))
+                    : null}
+                </View>
+              )
+            )}
+          </ScrollView>
           <Pressable
             onPress={() => router.push('/trip/new')}
             accessibilityRole="button"
@@ -151,42 +282,130 @@ const styles = StyleSheet.create({
   listBody: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxxl,
-    gap: spacing.md,
   },
-  tripCard: {
+  section: {
+    marginBottom: spacing.lg,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    minHeight: 44,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  sectionHeaderPressed: {
+    opacity: 0.75,
+  },
+  sectionEmoji: { fontSize: 20 },
+  sectionTitle: {
+    flex: 1,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.ink,
+  },
+  sectionCount: {
+    fontSize: fontSizes.sm,
+    color: colors.brand.muted,
+  },
+  sectionChevron: {
+    transform: [{ rotate: '0deg' }],
+  },
+  sectionChevronOpen: {
+    transform: [{ rotate: '180deg' }],
+  },
+  tripCard: {
     backgroundColor: colors.bg.canvas,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.brand.border,
-    padding: spacing.md,
-    gap: spacing.md,
+    padding: spacing.base,
+    marginBottom: spacing.md,
     ...shadows.card,
   },
-  tripCardThumb: {
-    width: 56,
-    height: 56,
-    borderRadius: radii.sm,
-    backgroundColor: colors.bg.surfaceSoft,
+  badgeRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
-  tripCardBody: { flex: 1 },
-  tripTitle: {
-    fontSize: fontSizes.md,
-    fontWeight: fontWeights.semibold,
+  ownerBadge: {
+    borderRadius: radii.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  ownerBadgeOwned: {
+    backgroundColor: colors.brand.primary + '1A',
+  },
+  ownerBadgeShared: {
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  ownerBadgeText: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  statusBadge: {
+    borderRadius: radii.xs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  statusBadgeText: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  destinationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  destinationText: {
+    flex: 1,
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.bold,
     color: colors.brand.ink,
   },
-  tripMetaRow: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
     marginTop: spacing.xs,
   },
-  tripMetaText: {
+  metaText: {
     fontSize: fontSizes.sm,
     color: colors.brand.muted,
+  },
+  progressSection: {
+    borderTopWidth: 1,
+    borderTopColor: colors.brand.hairline,
+    paddingTop: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  progressLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  progressLabel: {
+    fontSize: fontSizes.xs,
+    color: colors.brand.muted,
+  },
+  progressValue: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: 10,
+    backgroundColor: colors.brand.hairline,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 10,
   },
   emptyState: {
     flex: 1,
