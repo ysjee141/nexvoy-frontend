@@ -429,13 +429,15 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 return
             }
 
-            let { data: checklists } = await supabase
+            let { data: checklists, error: checklistsError } = await supabase
                 .from('checklists')
-                .select('id, title')
+                .select('id, title, created_at')
                 .eq('trip_id', tripId)
-                .limit(1)
+                .order('created_at', { ascending: true })
+            if (checklistsError) throw checklistsError
 
-            let currentChecklistId = checklists?.[0]?.id
+            let checklistRows = checklists ?? []
+            let currentChecklistId = checklistRows[0]?.id
 
             if (!currentChecklistId) {
                 const { data: newChecklist } = await supabase
@@ -446,17 +448,21 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
                 if (newChecklist) {
                     currentChecklistId = newChecklist.id
+                    checklistRows = [newChecklist]
                 }
             }
 
             if (currentChecklistId) {
-                setChecklistId(currentChecklistId)
+                const checklistIds = checklistRows.map((checklist: any) => checklist.id)
 
                 const [tripRes, itemsRes, membersRes] = await Promise.all([
                     supabase.from('trips').select('*, profiles(nickname, email)').eq('id', tripId).single(),
-                    supabase.from('checklist_items').select('*').eq('checklist_id', currentChecklistId).order('created_at', { ascending: true }),
+                    checklistIds.length > 0
+                        ? supabase.from('checklist_items').select('*').in('checklist_id', checklistIds).order('created_at', { ascending: true })
+                        : Promise.resolve({ data: [], error: null }),
                     supabase.from('trip_members').select('user_id, invited_email, role, status, profiles(nickname, email)').eq('trip_id', tripId).eq('status', 'accepted'),
                 ])
+                if (itemsRes.error) throw itemsRes.error
 
                 if (tripRes.data) {
                     setTripInfo(tripRes.data)
@@ -464,6 +470,10 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 }
                 
                 if (itemsRes.data) {
+                    const checklistIdWithItems = checklistIds.find((id: string) =>
+                        itemsRes.data.some((item: any) => item.checklist_id === id)
+                    )
+                    setChecklistId(checklistIdWithItems ?? currentChecklistId)
                     setItems(itemsRes.data)
                     // 명시적 다운로드 정책에 따라 자동 저장은 제거
                     
