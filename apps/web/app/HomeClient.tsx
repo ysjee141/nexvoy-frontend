@@ -321,7 +321,9 @@ export default function HomeClient() {
                 .from('checklists')
                 .select('id, trip_id')
                 .in('trip_id', tripIds)
-            if (checklistsError) throw checklistsError
+            if (checklistsError) {
+                console.warn('Checklist progress fetch failed; rendering trips without progress', checklistsError)
+            }
 
             ;(checklistRows || []).forEach((checklist: any) => {
                 checklistsByTrip.set(checklist.trip_id, [
@@ -336,7 +338,9 @@ export default function HomeClient() {
                     .from('checklist_items')
                     .select('id, checklist_id, is_checked')
                     .in('checklist_id', checklistIds)
-                if (itemsError) throw itemsError
+                if (itemsError) {
+                    console.warn('Checklist item progress fetch failed; rendering trips without item progress', itemsError)
+                }
 
                 ;(itemRows || []).forEach((item: any) => {
                     itemsByChecklist.set(item.checklist_id, [
