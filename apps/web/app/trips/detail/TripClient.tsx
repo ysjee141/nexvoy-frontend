@@ -207,13 +207,38 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 return
             }
 
-            const { data, error } = await supabase
+            const { data: planRows, error: plansError } = await supabase
                 .from('plans')
-                .select('*, plan_urls(*)')
+                .select('*')
                 .eq('trip_id', tripId)
                 .order('start_datetime_local', { ascending: true })
+            if (plansError) throw plansError
 
-            if (data && !error) {
+            const planIds = (planRows || []).map((plan: any) => plan.id)
+            let urlsByPlan = new Map<string, any[]>()
+            if (planIds.length > 0) {
+                const { data: urlRows, error: urlsError } = await supabase
+                    .from('plan_urls')
+                    .select('*')
+                    .in('plan_id', planIds)
+                if (urlsError) {
+                    console.warn('Plan URL fetch failed; rendering plans without attached URLs', urlsError)
+                } else {
+                    ;(urlRows || []).forEach((url: any) => {
+                        urlsByPlan.set(url.plan_id, [
+                            ...(urlsByPlan.get(url.plan_id) || []),
+                            url,
+                        ])
+                    })
+                }
+            }
+
+            const data = (planRows || []).map((plan: any) => ({
+                ...plan,
+                plan_urls: urlsByPlan.get(plan.id) || [],
+            }))
+
+            if (data) {
                 setPlans(data)
                 // 명시적 다운로드 정책에 따라 자동 저장은 제거하고 알림만 예약
                 NotificationService.scheduleOfflineReminders(data)
@@ -223,8 +248,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 if (bundle) {
                     DownloadService.downloadTrip(tripId)
                 }
-            } else {
-                throw new Error("Failed to fetch")
             }
         } catch (err) {
             console.error('fetchPlans Error:', err)
