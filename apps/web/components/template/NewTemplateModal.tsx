@@ -1,12 +1,19 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
 import { X, Sparkles } from 'lucide-react'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useRouter } from 'next/navigation'
 import TemplateForm, { TemplateItemInput } from './TemplateForm'
+import {
+    createChecklistCategory,
+    deleteChecklistCategory,
+    getChecklistCategories,
+    updateChecklistCategory,
+} from '@nexvoy/core'
+import type { ChecklistCategory } from '@nexvoy/types'
 
 interface NewTemplateModalProps {
     isOpen: boolean
@@ -18,6 +25,7 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
     const router = useRouter()
     const supabase = createClient()
     const [loading, setLoading] = useState(false)
+    const [categories, setCategories] = useState<ChecklistCategory[]>([])
 
     // 폼 상태
     const [title, setTitle] = useState('')
@@ -29,6 +37,35 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
         setTitle('')
         setItems([{ id: '1', item_name: '', category: '의류', is_private: false }])
     }, [])
+
+    const loadCategories = useCallback(async () => {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) return
+        const data = await getChecklistCategories(supabase, session.user.id)
+        setCategories(data)
+    }, [supabase])
+
+    useEffect(() => {
+        if (isOpen) void loadCategories()
+    }, [isOpen, loadCategories])
+
+    const handleCreateCategory = useCallback(async (name: string) => {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session?.user) return
+        await createChecklistCategory(supabase, { user_id: session.user.id, name })
+        await loadCategories()
+    }, [loadCategories, supabase])
+
+    const handleRenameCategory = useCallback(async (id: string, name: string) => {
+        await updateChecklistCategory(supabase, id, { name })
+        await loadCategories()
+    }, [loadCategories, supabase])
+
+    const handleDeleteCategory = useCallback(async (id: string) => {
+        if (!window.confirm('이 카테고리를 삭제할까요? 기존 준비물의 카테고리 텍스트는 유지됩니다.')) return
+        await deleteChecklistCategory(supabase, id)
+        await loadCategories()
+    }, [loadCategories, supabase])
 
     const handleClose = useCallback(() => {
         const isDirty = title.trim() !== '' || items.some(item => item.item_name.trim() !== '')
@@ -166,6 +203,10 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
                         loading={loading}
                         onCancel={handleClose}
                         submitText="템플릿 저장할게요"
+                        categories={categories}
+                        onCreateCategory={handleCreateCategory}
+                        onRenameCategory={handleRenameCategory}
+                        onDeleteCategory={handleDeleteCategory}
                     />
                 </div>
             </div>

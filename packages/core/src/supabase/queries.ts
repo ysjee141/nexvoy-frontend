@@ -5,8 +5,15 @@ import type {
   PlanUrl,
   Checklist,
   ChecklistItem,
+  ChecklistCategory,
+  ChecklistItemAssignee,
+  ChecklistItemStatus,
+  ChecklistItemUserCheck,
   ChecklistTemplate,
   ChecklistTemplateItem,
+  ChecklistTemplateShareRole,
+  ChecklistTemplateShareWithProfile,
+  ChecklistTemplateWithAccess,
   Profile,
   TripMember,
   TripShare,
@@ -60,6 +67,7 @@ export interface ChecklistItemInput {
   is_private?: boolean
   assignment_type?: 'anyone' | 'specific' | 'everyone'
   assigned_user_id?: string | null
+  assignee_ids?: string[]
   source_template_name?: string | null
 }
 
@@ -174,19 +182,57 @@ export async function getTripsWithProgress(
 ): Promise<TripWithProgress[]> {
   const { data, error } = await sb
     .from('trips')
-    .select('*, checklists(checklist_items(is_checked))')
+    .select('*')
     .eq('user_id', userId)
     .order('start_date', { ascending: true })
   if (error) throw error
 
-  type ChecklistRow = { checklist_items: { is_checked: boolean }[] | null }
-  type Row = Trip & { checklists: ChecklistRow[] | null }
+  const trips = data ?? []
+  const tripIds = trips.map((trip: Trip) => trip.id)
+  let checklistIdsByTrip = new Map<string, string[]>()
+  let itemsByChecklist = new Map<string, { is_checked: boolean }[]>()
 
-  return (data ?? []).map((trip: Row) => {
-    // RLS 로 checklists/checklist_items 가 가려지면 빈 배열로 graceful degrade
-    const items = (trip.checklists ?? []).flatMap(
-      (c) => c.checklist_items ?? []
+  if (tripIds.length > 0) {
+    const { data: checklists } = await sb
+      .from('checklists')
+      .select('id, trip_id')
+      .in('trip_id', tripIds)
+
+    checklistIdsByTrip = new Map(
+      (checklists ?? []).reduce<[string, string[]][]>((acc, checklist: { id: string; trip_id: string }) => {
+        const existing = acc.find(([tripId]) => tripId === checklist.trip_id)
+        if (existing) {
+          existing[1].push(checklist.id)
+        } else {
+          acc.push([checklist.trip_id, [checklist.id]])
+        }
+        return acc
+      }, [])
     )
+
+    const checklistIds = (checklists ?? []).map((checklist: { id: string }) => checklist.id)
+    if (checklistIds.length > 0) {
+      const { data: items } = await sb
+        .from('checklist_items')
+        .select('checklist_id, is_checked')
+        .in('checklist_id', checklistIds)
+      itemsByChecklist = new Map(
+        (items ?? []).reduce<[string, { is_checked: boolean }[]][]>((acc, item: { checklist_id: string; is_checked: boolean }) => {
+          const existing = acc.find(([checklistId]) => checklistId === item.checklist_id)
+          if (existing) {
+            existing[1].push({ is_checked: item.is_checked })
+          } else {
+            acc.push([item.checklist_id, [{ is_checked: item.is_checked }]])
+          }
+          return acc
+        }, [])
+      )
+    }
+  }
+
+  return trips.map((trip: Trip) => {
+    const checklistIds = checklistIdsByTrip.get(trip.id) ?? []
+    const items = checklistIds.flatMap((checklistId) => itemsByChecklist.get(checklistId) ?? [])
     const progressPercent =
       items.length === 0
         ? 0
@@ -194,11 +240,8 @@ export async function getTripsWithProgress(
             (items.filter((i) => i.is_checked).length / items.length) * 100
           )
 
-    // 조인 필드는 view-model 에서 제외
-    const { checklists: _checklists, ...rest } = trip
-    void _checklists
     return {
-      ...(rest as Trip),
+      ...trip,
       progressPercent,
       isOwner: trip.user_id === userId,
     }
@@ -384,11 +427,172 @@ export async function ensureChecklist(
   return data
 }
 
+export async function getChecklistCategories(
+  sb: SupabaseClient,
+  userId: string
+): Promise<ChecklistCategory[]> {
+  const { data, error } = await sb
+    .from('checklist_categories')
+    .select('*')
+    .or(`user_id.is.null,user_id.eq.${userId}`)
+    .order('sort_order', { ascending: true })
+    .order('name', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function createChecklistCategory(
+  sb: SupabaseClient,
+  input: { user_id: string; name: string; sort_order?: number }
+): Promise<ChecklistCategory> {
+  const { data, error } = await sb
+    .from('checklist_categories')
+    .insert({
+      user_id: input.user_id,
+      name: input.name.trim(),
+      sort_order: input.sort_order ?? 100,
+    })
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateChecklistCategory(
+  sb: SupabaseClient,
+  categoryId: string,
+  input: { name?: string; sort_order?: number }
+): Promise<ChecklistCategory> {
+  const { data, error } = await sb
+    .from('checklist_categories')
+    .update({
+      ...(input.name != null ? { name: input.name.trim() } : {}),
+      ...(input.sort_order != null ? { sort_order: input.sort_order } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', categoryId)
+    .select('*')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function deleteChecklistCategory(
+  sb: SupabaseClient,
+  categoryId: string
+): Promise<void> {
+  const { error } = await sb.from('checklist_categories').delete().eq('id', categoryId)
+  if (error) throw error
+}
+
+export async function getChecklistItemAssignees(
+  sb: SupabaseClient,
+  itemIds: string[]
+): Promise<ChecklistItemAssignee[]> {
+  if (itemIds.length === 0) return []
+  const { data, error } = await sb
+    .from('checklist_item_assignees')
+    .select('*')
+    .in('item_id', itemIds)
+  if (error) throw error
+  return data ?? []
+}
+
+export async function getChecklistItemUserChecks(
+  sb: SupabaseClient,
+  itemIds: string[]
+): Promise<ChecklistItemUserCheck[]> {
+  if (itemIds.length === 0) return []
+  const { data, error } = await sb
+    .from('checklist_item_user_checks')
+    .select('*')
+    .in('item_id', itemIds)
+  if (error) throw error
+  return data ?? []
+}
+
+async function replaceChecklistItemAssignees(
+  sb: SupabaseClient,
+  itemId: string,
+  assigneeIds?: string[]
+): Promise<void> {
+  if (!assigneeIds) return
+  const uniqueIds = Array.from(new Set(assigneeIds.filter(Boolean)))
+  const { error: deleteError } = await sb
+    .from('checklist_item_assignees')
+    .delete()
+    .eq('item_id', itemId)
+  if (deleteError) throw deleteError
+  if (uniqueIds.length === 0) return
+  const { error: insertError } = await sb
+    .from('checklist_item_assignees')
+    .insert(uniqueIds.map((user_id) => ({ item_id: itemId, user_id })))
+  if (insertError) throw insertError
+}
+
+export function getChecklistItemStatus(
+  item: ChecklistItem,
+  currentUserId: string | null | undefined,
+  participantIds: string[],
+  userChecks: ChecklistItemUserCheck[] = [],
+  assignees: ChecklistItemAssignee[] = []
+): ChecklistItemStatus {
+  const assignedIds =
+    assignees.filter((a) => a.item_id === item.id).map((a) => a.user_id)
+  const legacyAssignedIds = item.assigned_user_id ? [item.assigned_user_id] : []
+  const specificIds = assignedIds.length > 0 ? assignedIds : legacyAssignedIds
+  const requiredIds =
+    item.assignment_type === 'everyone'
+      ? participantIds
+      : item.assignment_type === 'specific'
+        ? specificIds
+        : []
+  const checks = userChecks.filter((check) => check.item_id === item.id)
+  const isMyChecked = currentUserId
+    ? checks.some((check) => check.user_id === currentUserId)
+    : false
+
+  if (item.assignment_type === 'everyone' || specificIds.length > 1) {
+    const requiredSet = new Set(requiredIds)
+    const checksCount = checks.filter((check) => requiredSet.has(check.user_id)).length
+    return {
+      is_checked: requiredIds.length > 0 && checksCount >= requiredIds.length,
+      is_my_checked: isMyChecked,
+      checks_count: checksCount,
+      required_count: requiredIds.length,
+      can_check: Boolean(currentUserId && requiredSet.has(currentUserId)),
+    }
+  }
+
+  if (item.assignment_type === 'specific') {
+    const targetId = specificIds[0] ?? item.assigned_user_id
+    return {
+      is_checked: item.is_checked,
+      is_my_checked: item.is_checked,
+      checks_count: item.is_checked ? 1 : 0,
+      required_count: targetId ? 1 : 0,
+      can_check: Boolean(currentUserId && targetId === currentUserId),
+    }
+  }
+
+  return {
+    is_checked: item.is_checked,
+    is_my_checked: item.is_checked,
+    checks_count: item.is_checked ? 1 : 0,
+    required_count: 1,
+    can_check: Boolean(currentUserId),
+  }
+}
+
 export async function createChecklistItem(
   sb: SupabaseClient,
   checklistId: string,
   input: ChecklistItemInput
 ): Promise<ChecklistItem> {
+  const assigneeIds = input.assignee_ids ?? (
+    input.assigned_user_id ? [input.assigned_user_id] : undefined
+  )
+  const firstAssigneeId = assigneeIds?.[0] ?? input.assigned_user_id ?? null
   const { data, error } = await sb
     .from('checklist_items')
     .insert({
@@ -397,12 +601,13 @@ export async function createChecklistItem(
       category: input.category ?? '기타',
       is_private: input.is_private ?? false,
       assignment_type: input.assignment_type ?? 'anyone',
-      assigned_user_id: input.assigned_user_id ?? null,
+      assigned_user_id: firstAssigneeId,
       source_template_name: input.source_template_name ?? null,
     })
     .select('*')
     .single()
   if (error) throw error
+  await replaceChecklistItemAssignees(sb, data.id, assigneeIds)
   return data
 }
 
@@ -411,6 +616,10 @@ export async function updateChecklistItem(
   itemId: string,
   input: ChecklistItemInput
 ): Promise<ChecklistItem> {
+  const assigneeIds = input.assignee_ids ?? (
+    input.assigned_user_id ? [input.assigned_user_id] : undefined
+  )
+  const firstAssigneeId = assigneeIds?.[0] ?? input.assigned_user_id ?? null
   const { data, error } = await sb
     .from('checklist_items')
     .update({
@@ -418,13 +627,14 @@ export async function updateChecklistItem(
       category: input.category ?? '기타',
       is_private: input.is_private ?? false,
       assignment_type: input.assignment_type ?? 'anyone',
-      assigned_user_id: input.assigned_user_id ?? null,
+      assigned_user_id: firstAssigneeId,
       source_template_name: input.source_template_name ?? null,
     })
     .eq('id', itemId)
     .select('*')
     .single()
   if (error) throw error
+  await replaceChecklistItemAssignees(sb, itemId, assigneeIds)
   return data
 }
 
@@ -439,28 +649,143 @@ export async function deleteChecklistItem(
 export async function applyTemplateToChecklist(
   sb: SupabaseClient,
   checklistId: string,
-  templateId: string
+  templateId: string,
+  currentUserId?: string | null
 ): Promise<ChecklistItem[]> {
   const result = await getTemplateWithItems(sb, templateId)
   if (!result) throw new Error('템플릿을 찾을 수 없어요.')
   if (result.items.length === 0) return []
+  const appliedByUserId =
+    currentUserId ??
+    (await sb.auth.getUser()).data.user?.id ??
+    null
+
+  const { data: existingItems, error: existingError } = await sb
+    .from('checklist_items')
+    .select('item_name, category, source_template_name')
+    .eq('checklist_id', checklistId)
+  if (existingError) throw existingError
+
+  const existingKeys = new Set(
+    (existingItems ?? []).map((item: {
+      item_name: string
+      category: string
+      source_template_name: string | null
+    }) =>
+      [
+        item.item_name.trim().toLowerCase(),
+        item.category.trim().toLowerCase(),
+        (item.source_template_name || '').trim().toLowerCase(),
+      ].join('|')
+    )
+  )
+  const templateName = result.template.title
+  const newItems = result.items.filter((item) => {
+    const key = [
+      item.item_name.trim().toLowerCase(),
+      (item.category || '기타').trim().toLowerCase(),
+      templateName.trim().toLowerCase(),
+    ].join('|')
+    return !existingKeys.has(key)
+  })
+  if (newItems.length === 0) return []
 
   const { data, error } = await sb
     .from('checklist_items')
     .insert(
-      result.items.map((item) => ({
-        checklist_id: checklistId,
-        item_name: item.item_name,
-        category: item.category || '기타',
-        is_private: item.is_private ?? false,
-        assignment_type: 'anyone',
-        assigned_user_id: null,
-        source_template_name: result.template.title,
-      }))
+      newItems.map((item) => {
+        const isPrivate = item.is_private ?? false
+        return {
+          checklist_id: checklistId,
+          item_name: item.item_name,
+          category: item.category || '기타',
+          is_private: isPrivate,
+          assignment_type: isPrivate ? 'specific' : 'anyone',
+          assigned_user_id: isPrivate ? appliedByUserId : null,
+          source_template_name: templateName,
+        }
+      })
     )
     .select('*')
   if (error) throw error
+  if (appliedByUserId && data) {
+    const privateRows = data.filter((item: ChecklistItem) => item.is_private)
+    if (privateRows.length > 0) {
+      const { error: assigneeError } = await sb
+        .from('checklist_item_assignees')
+        .upsert(
+          privateRows.map((item: ChecklistItem) => ({
+            item_id: item.id,
+            user_id: appliedByUserId,
+          })),
+          { onConflict: 'item_id,user_id' }
+        )
+      if (assigneeError) throw assigneeError
+    }
+  }
   return data ?? []
+}
+
+export async function toggleChecklistItemForUser(
+  sb: SupabaseClient,
+  item: ChecklistItem,
+  currentUserId: string,
+  nextChecked: boolean,
+  participantIds: string[] = []
+): Promise<void> {
+  const assignees = item.assignment_type === 'specific'
+    ? await getChecklistItemAssignees(sb, [item.id])
+    : []
+  const specificIds = assignees.length > 0
+    ? assignees.map((assignee) => assignee.user_id)
+    : item.assigned_user_id
+      ? [item.assigned_user_id]
+      : []
+
+  if (
+    item.assignment_type === 'specific' &&
+    specificIds.length > 0 &&
+    !specificIds.includes(currentUserId)
+  ) {
+    throw new Error('이 항목을 체크할 권한이 없어요.')
+  }
+
+  const usesUserChecks =
+    item.assignment_type === 'everyone' ||
+    (item.assignment_type === 'specific' && specificIds.length > 1)
+
+  if (usesUserChecks) {
+    if (nextChecked) {
+      const { error } = await sb
+        .from('checklist_item_user_checks')
+        .upsert({ item_id: item.id, user_id: currentUserId }, { onConflict: 'item_id,user_id' })
+      if (error) throw error
+    } else {
+      const { error } = await sb
+        .from('checklist_item_user_checks')
+        .delete()
+        .eq('item_id', item.id)
+        .eq('user_id', currentUserId)
+      if (error) throw error
+    }
+    const requiredIds = item.assignment_type === 'everyone' ? participantIds : specificIds
+    if (requiredIds.length > 0) {
+      const { data: checks, error: checksError } = await sb
+        .from('checklist_item_user_checks')
+        .select('user_id')
+        .eq('item_id', item.id)
+      if (checksError) throw checksError
+      const checkedIds = new Set((checks ?? []).map((check: { user_id: string }) => check.user_id))
+      await toggleChecklistItem(
+        sb,
+        item.id,
+        requiredIds.every((userId) => checkedIds.has(userId))
+      )
+    }
+    return
+  }
+
+  await toggleChecklistItem(sb, item.id, nextChecked)
 }
 
 // ─── Templates ────────────────────────────────────────────────────────────────
@@ -469,10 +794,10 @@ export async function getTemplates(
   sb: SupabaseClient,
   userId: string
 ): Promise<ChecklistTemplate[]> {
+  void userId
   const { data, error } = await sb
     .from('checklist_templates')
     .select('*')
-    .or(`user_id.eq.${userId},user_id.is.null`)
     .order('created_at', { ascending: false })
   if (error) throw error
   return data ?? []
@@ -505,10 +830,10 @@ export async function getTemplatesWithItemCount(
   sb: SupabaseClient,
   userId: string
 ): Promise<TemplateWithCount[]> {
+  void userId
   const { data, error } = await sb
     .from('checklist_templates')
     .select('id, title, user_id, checklist_template_items(id)')
-    .or(`user_id.eq.${userId},user_id.is.null`)
     .order('created_at', { ascending: false })
   if (error) throw error
   return (data ?? []).map(
@@ -535,13 +860,25 @@ export async function getTemplatesWithPreview(
   sb: SupabaseClient,
   userId: string
 ): Promise<TemplateWithPreview[]> {
-  const { data, error } = await sb
+  const [templateRes, shareRes] = await Promise.all([
+    sb
     .from('checklist_templates')
     .select('id, title, user_id, created_at, checklist_template_items(item_name)')
-    .or(`user_id.eq.${userId},user_id.is.null`)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-  return (data ?? []).map(
+      .order('created_at', { ascending: false }),
+    sb
+      .from('checklist_template_shares')
+      .select('template_id, role')
+      .eq('shared_with_user_id', userId),
+  ])
+  if (templateRes.error) throw templateRes.error
+  if (shareRes.error) throw shareRes.error
+  const shareRoleByTemplate = new Map(
+    (shareRes.data ?? []).map((share: { template_id: string; role: ChecklistTemplateShareRole }) => [
+      share.template_id,
+      share.role,
+    ])
+  )
+  return (templateRes.data ?? []).map(
     (t: {
       id: string
       title: string
@@ -557,9 +894,98 @@ export async function getTemplatesWithPreview(
         item_count: items.length,
         preview_items: items.slice(0, 3).map((it) => it.item_name),
         created_at: t.created_at,
+        access: t.user_id === userId
+          ? 'owner'
+          : t.user_id === null
+            ? 'default'
+            : shareRoleByTemplate.get(t.id) ?? 'viewer',
       }
     }
   )
+}
+
+export async function getTemplatesWithAccess(
+  sb: SupabaseClient,
+  userId: string
+): Promise<ChecklistTemplateWithAccess[]> {
+  const [templateRes, shareRes] = await Promise.all([
+    sb.from('checklist_templates').select('*').order('created_at', { ascending: false }),
+    sb
+      .from('checklist_template_shares')
+      .select('template_id, role')
+      .eq('shared_with_user_id', userId),
+  ])
+  if (templateRes.error) throw templateRes.error
+  if (shareRes.error) throw shareRes.error
+  const shareRoleByTemplate = new Map(
+    (shareRes.data ?? []).map((share: { template_id: string; role: ChecklistTemplateShareRole }) => [
+      share.template_id,
+      share.role,
+    ])
+  )
+  return (templateRes.data ?? []).map((template: ChecklistTemplate) => {
+    const shareRole = shareRoleByTemplate.get(template.id) ?? null
+    return {
+      ...template,
+      share_role: shareRole,
+      access: template.user_id === userId
+        ? 'owner'
+        : template.user_id === null
+          ? 'default'
+          : shareRole ?? 'viewer',
+    }
+  })
+}
+
+export async function getTemplateShares(
+  sb: SupabaseClient,
+  templateId: string
+): Promise<ChecklistTemplateShareWithProfile[]> {
+  const { data, error } = await sb
+    .from('checklist_template_shares')
+    .select('*, profiles!checklist_template_shares_shared_with_user_id_fkey(nickname, email)')
+    .eq('template_id', templateId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
+export async function shareTemplate(
+  sb: SupabaseClient,
+  input: {
+    template_id: string
+    shared_with_user_id: string
+    role: ChecklistTemplateShareRole
+    created_by: string
+  }
+): Promise<void> {
+  const { error } = await sb
+    .from('checklist_template_shares')
+    .upsert(input, { onConflict: 'template_id,shared_with_user_id' })
+  if (error) throw error
+}
+
+export async function updateTemplateShareRole(
+  sb: SupabaseClient,
+  shareId: string,
+  role: ChecklistTemplateShareRole
+): Promise<void> {
+  const { error } = await sb
+    .from('checklist_template_shares')
+    .update({ role })
+    .eq('id', shareId)
+  if (error) throw error
+}
+
+export async function removeTemplateShare(
+  sb: SupabaseClient,
+  shareId: string
+): Promise<void> {
+  const { error } = await sb
+    .from('checklist_template_shares')
+    .delete()
+    .eq('id', shareId)
+  if (error) throw error
 }
 
 /** 템플릿 생성 */
@@ -648,6 +1074,19 @@ export async function getProfile(
     throw error
   }
   return data
+}
+
+export async function getProfileByEmail(
+  sb: SupabaseClient,
+  email: string
+): Promise<Profile | null> {
+  const { data, error } = await sb
+    .from('profiles')
+    .select('*')
+    .ilike('email', email.trim())
+    .maybeSingle()
+  if (error) throw error
+  return data ?? null
 }
 
 /**

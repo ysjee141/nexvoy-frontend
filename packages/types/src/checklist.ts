@@ -18,3 +18,39 @@ export interface ChecklistItem {
   created_at: string
   updated_at: string
 }
+
+export interface ChecklistCategory {
+  id: string
+  user_id: string | null
+  name: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ChecklistItemAssignee {
+  id: string
+  item_id: string
+  user_id: string
+  created_at: string
+}
+
+export interface ChecklistItemUserCheck {
+  id: string
+  item_id: string
+  user_id: string
+  created_at: string
+}
+
+export interface ChecklistItemWithMeta extends ChecklistItem {
+  assignees?: ChecklistItemAssignee[]
+  user_checks?: ChecklistItemUserCheck[]
+}
+
+export interface ChecklistItemStatus {
+  is_checked: boolean
+  is_my_checked: boolean
+  checks_count: number
+  required_count: number
+  can_check: boolean
+}

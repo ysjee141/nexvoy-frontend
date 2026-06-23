@@ -6,6 +6,7 @@ import { X, Copy, Loader2 } from 'lucide-react'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/lib/supabase/client'
+import { applyTemplateToChecklist, getTemplatesWithPreview } from '@nexvoy/core'
 
 interface TemplateModalProps {
     isOpen: boolean
@@ -29,15 +30,8 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
         const fetchTemplates = async () => {
             setLoading(true)
 
-            // 공용 템플릿(user_id가 null인 것)과 본인 템플릿 가져오기
-            // 우선 MVP 단계에선 로그인한 유저의 세션에 맞춘 RLS를 통해 자동으로 필터링 된 데이터 가져오기
-            const { data } = await supabase
-                .from('checklist_templates')
-                .select('*')
-                .order('created_at', { ascending: false })
-
-            if (data) {
-                setTemplates(data)
+            if (currentUser?.id) {
+                setTemplates(await getTemplatesWithPreview(supabase, currentUser.id))
             }
             setLoading(false)
         }
@@ -49,74 +43,21 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
         if (!checklistId) return
         setLoadingTemplateId(templateId)
 
-        // 1. 선택한 템플릿의 아이템 목록 가져오기
-        const { data: templateItems, error: itemsError } = await supabase
-            .from('checklist_template_items')
-            .select('*')
-            .eq('template_id', templateId)
-
-        if (itemsError || !templateItems || templateItems.length === 0) {
-            alert('어라, 템플릿 항목을 불러올 수 없거나 비어 있네요. 다시 한번 확인해 볼까요?')
-            setLoadingTemplateId(null)
-            return
-        }
-
-        // 2. 선택한 템플릿 이름 찾기 (중복 체크 키 생성을 위해 먼저 조회)
-        const selectedTemplate = templates.find(t => t.id === templateId)
-        const templateName = selectedTemplate ? selectedTemplate.title : null
-
-        // 3. 현재 체크리스트에 이미 존재하는 항목 가져오기 (중복 방지)
-        const { data: existingItems } = await supabase
-            .from('checklist_items')
-            .select('item_name, source_template_name')
-            .eq('checklist_id', checklistId)
-
-        // 중복 판단 기준: 항목명(item_name) + 출처(source_template_name)
-        const existingKeys = new Set(existingItems?.map((item: any) => 
-            `${item.item_name.trim().toLowerCase()}|${(item.source_template_name || '').trim().toLowerCase()}`
-        ) || [])
-
-        // 4. 템플릿 아이템 중복 필터링
-        const newItemsToInsert = templateItems.filter((tItem: any) => {
-            const key = `${tItem.item_name.trim().toLowerCase()}|${(templateName || '').trim().toLowerCase()}`
-            return !existingKeys.has(key)
-        })
-
-        if (newItemsToInsert.length === 0) {
-            alert('완전해요! 해당 템플릿의 모든 항목이 이미 체크리스트에 들어있어요.')
-            setLoadingTemplateId(null)
-            return
-        }
-
-        // 4. 현재 체크리스트에 새 항목들만 벌크 인서트할 포맷팅 배열 만들기
-        const insertData = newItemsToInsert.map((item: any) => {
-            const isPrivate = item.is_private || false
-            return {
-                checklist_id: checklistId,
-                item_name: item.item_name,
-                category: item.category || '기타',
-                is_checked: false,
-                source_template_name: templateName,
-                is_private: isPrivate,
-                assignment_type: isPrivate ? 'specific' : 'anyone',
-                assigned_user_id: isPrivate ? (currentUser?.id || null) : null
+        try {
+            const insertedItems = await applyTemplateToChecklist(supabase, checklistId, templateId, currentUser?.id)
+            if (insertedItems.length === 0) {
+                alert('완전해요! 해당 템플릿의 모든 항목이 이미 체크리스트에 들어있어요.')
+                return
             }
-        })
-
-        const { data: insertedItems, error: insertError } = await supabase
-            .from('checklist_items')
-            .insert(insertData)
-            .select()
-
-        if (insertError) {
-            console.error('Template apply error', insertError)
-            alert('어라, 템플릿을 가져오다가 잠시 길을 잃었나 봐요. 다시 시도해 볼까요?')
-        } else if (insertedItems) {
             analytics.logEvent('template_use', { template_id: templateId })
             onSuccess(insertedItems)
             onClose()
+        } catch (error) {
+            console.error('Template apply error', error)
+            alert('어라, 템플릿을 가져오다가 잠시 길을 잃었나 봐요. 다시 시도해 볼까요?')
+        } finally {
+            setLoadingTemplateId(null)
         }
-        setLoadingTemplateId(null)
     }
 
     if (!isOpen) return null
@@ -173,7 +114,12 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
                                         _hover: { bg: 'bg.softCotton', borderColor: 'brand.primary', transform: 'translateY(-2px)' }
                                     })}
                                 >
-                                    <span className={css({ fontWeight: '700', fontSize: '15px', color: 'brand.ink', flex: 1 })}>{template.title}</span>
+                                    <div className={css({ flex: 1 })}>
+                                        <span className={css({ fontWeight: '700', fontSize: '15px', color: 'brand.ink', display: 'block' })}>{template.title}</span>
+                                        <span className={css({ fontSize: '11px', color: 'brand.muted', fontWeight: '700' })}>
+                                            {template.access === 'owner' ? '내 템플릿' : template.access === 'editor' ? '공유받음 · 편집 가능' : template.access === 'viewer' ? '공유받음 · 보기' : '기본 템플릿'}
+                                        </span>
+                                    </div>
                                     <button
                                         onClick={() => handleApplyTemplate(template.id)}
                                         disabled={loadingTemplateId === template.id}

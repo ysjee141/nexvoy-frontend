@@ -346,9 +346,9 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
                                     pb: { base: 'calc(16px + max(env(safe-area-inset-bottom), var(--safe-area-inset-bottom)))', sm: '16px' },
                                     bg: 'bg.surfaceSoft' 
                                 })}>
-                                    <button 
+                                    <button
                                         onClick={() => setIsOthersOpen(false)}
-                                        className={css({ 
+                                        className={css({
                                             w: '100%', py: '14px', borderRadius: '12px',
                                             fontSize: '15px', color: 'brand.muted', fontWeight: '700', 
                                             bg: 'white', border: '1px solid', borderColor: 'brand.hairline',
@@ -385,13 +385,16 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const [tripInfo, setTripInfo] = useState<{ destination: string, start_date: string } | null>(null)
     const [members, setMembers] = useState<any[]>([])
     const [userChecks, setUserChecks] = useState<any[]>([])
+    const [itemAssignees, setItemAssignees] = useState<any[]>([])
     const [currentUser, setCurrentUser] = useState<any>(null)
     const [tripOwner, setTripOwner] = useState<any>(null)
     const [newItemAssignmentType, setNewItemAssignmentType] = useState<'anyone' | 'specific' | 'everyone'>('anyone')
     const [newItemAssignedUserId, setNewItemAssignedUserId] = useState<string>('')
+    const [newItemAssignedUserIds, setNewItemAssignedUserIds] = useState<string[]>([])
     const [editingItem, setEditingItem] = useState<any | null>(null)
     const [filterMode, setFilterMode] = useState<'all' | 'me' | string>('all')
     const [sortBy, setSortBy] = useState<'status' | 'alphabetical' | 'latest'>('status')
+    const [hideChecked, setHideChecked] = useState(false)
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
 
     const [showTemplateModal, setShowTemplateModal] = useState(false)
@@ -472,13 +475,23 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     
                     const itemIds = itemsRes.data.map((i: any) => i.id)
                     if (itemIds.length > 0) {
-                        const { data: checks } = await supabase
-                            .from('checklist_item_user_checks')
-                            .select('*')
-                            .in('item_id', itemIds)
+                        const [checksRes, assigneesRes] = await Promise.all([
+                            supabase
+                                .from('checklist_item_user_checks')
+                                .select('*')
+                                .in('item_id', itemIds),
+                            supabase
+                                .from('checklist_item_assignees')
+                                .select('*')
+                                .in('item_id', itemIds),
+                        ])
+                        const checks = checksRes.data
                         if (checks) {
                             setUserChecks(checks)
                             // 명시적 다운로드 정책에 따라 자동 저장은 제거
+                        }
+                        if (assigneesRes.data) {
+                            setItemAssignees(assigneesRes.data)
                         }
                     }
 
@@ -513,8 +526,35 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         if (!item) return
 
         // 1. 유형별 처리
+        const assignedIds = getAssignedUserIds(item)
         if (item.assignment_type === 'specific') {
-            if (currentUser?.id !== item.assigned_user_id) {
+            if (assignedIds.length > 1) {
+                if (!assignedIds.includes(currentUser?.id)) {
+                    alert('이 항목은 담당자님이 따로 있어요! 내 준비물을 멋지게 챙겨볼까요?')
+                    return
+                }
+                const myCheck = userChecks.find(c => c.item_id === itemId && c.user_id === currentUser?.id)
+                if (myCheck) {
+                    setUserChecks(prev => prev.filter(c => c.id !== myCheck.id))
+                    const { error } = await supabase.from('checklist_item_user_checks').delete().eq('id', myCheck.id)
+                    if (error) setUserChecks(prev => [...prev, myCheck])
+                } else {
+                    const tempId = Math.random().toString()
+                    const optimisticCheck = { id: tempId, item_id: itemId, user_id: currentUser?.id }
+                    setUserChecks(prev => [...prev, optimisticCheck])
+                    const { data, error } = await supabase.from('checklist_item_user_checks').insert({
+                        item_id: itemId,
+                        user_id: currentUser?.id
+                    }).select().single()
+                    if (error || !data) {
+                        setUserChecks(prev => prev.filter(c => c.id !== tempId))
+                    } else {
+                        setUserChecks(prev => prev.map(c => c.id === tempId ? data : c))
+                    }
+                }
+                return
+            }
+            if (currentUser?.id !== (assignedIds[0] ?? item.assigned_user_id)) {
                 alert('이 항목은 담당자님이 따로 있어요! 내 준비물을 멋지게 챙겨볼까요?')
                 return
             }
@@ -583,7 +623,12 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         // "나만 보기" 설정 시 담당자 강제 본인 지정
         const finalIsPrivate = newItemIsPrivate
         const finalAssignmentType = finalIsPrivate ? 'specific' : newItemAssignmentType
-        const finalAssignedUserId = finalIsPrivate ? (currentUser?.id || null) : (newItemAssignmentType === 'specific' ? newItemAssignedUserId : null)
+        const finalAssignedUserIds = finalIsPrivate
+            ? [currentUser?.id].filter(Boolean)
+            : (newItemAssignmentType === 'specific'
+                ? (newItemAssignedUserIds.length > 0 ? newItemAssignedUserIds : [newItemAssignedUserId].filter(Boolean))
+                : [])
+        const finalAssignedUserId = finalAssignedUserIds[0] || null
 
         const { data, error } = await supabase
             .from('checklist_items')
@@ -599,12 +644,20 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
             .single()
 
         if (!error && data) {
+            if (finalAssignedUserIds.length > 0) {
+                const { data: insertedAssignees } = await supabase
+                    .from('checklist_item_assignees')
+                    .insert(finalAssignedUserIds.map(user_id => ({ item_id: data.id, user_id })))
+                    .select()
+                if (insertedAssignees) setItemAssignees(prev => [...prev, ...insertedAssignees])
+            }
             const updatedItems = [...items, data]
             setItems(updatedItems)
             setNewItemName('')
             setNewItemIsPrivate(false)
             setNewItemAssignmentType('anyone')
             setNewItemAssignedUserId('')
+            setNewItemAssignedUserIds([])
             setIsAdding(false)
 
             // 리마인더 갱신
@@ -619,15 +672,35 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
     const updateItem = async (updatedFields: any) => {
         if (!editingItem) return
+        const assigneeIds = updatedFields.assignee_ids as string[] | undefined
+        const fieldsToUpdate = { ...updatedFields }
+        delete fieldsToUpdate.assignee_ids
 
         const { data, error } = await supabase
             .from('checklist_items')
-            .update(updatedFields)
+            .update(fieldsToUpdate)
             .eq('id', editingItem.id)
             .select()
             .single()
 
         if (!error && data) {
+            if (assigneeIds) {
+                await supabase.from('checklist_item_assignees').delete().eq('item_id', editingItem.id)
+                if (assigneeIds.length > 0) {
+                    const { data: nextAssignees } = await supabase
+                        .from('checklist_item_assignees')
+                        .insert(assigneeIds.map(user_id => ({ item_id: editingItem.id, user_id })))
+                        .select()
+                    if (nextAssignees) {
+                        setItemAssignees(prev => [
+                            ...prev.filter(a => a.item_id !== editingItem.id),
+                            ...nextAssignees
+                        ])
+                    }
+                } else {
+                    setItemAssignees(prev => prev.filter(a => a.item_id !== editingItem.id))
+                }
+            }
             setItems(prev => prev.map(item => item.id === data.id ? data : item))
             setEditingItem(null)
         }
@@ -654,14 +727,23 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
     const participants = getParticipants()
     const totalMembersCount = participants.length
+    const getAssignedUserIds = (item: any): string[] => {
+        const assigned = itemAssignees
+            .filter(a => a.item_id === item.id)
+            .map(a => a.user_id)
+        if (assigned.length > 0) return assigned
+        return item.assigned_user_id ? [item.assigned_user_id] : []
+    }
     
     const getItemStatus = (item: any): { is_checked: boolean, checks_count: number, is_my_checked: boolean } => {
-        if (item.assignment_type === 'everyone') {
+        const assignedIds = getAssignedUserIds(item)
+        if (item.assignment_type === 'everyone' || assignedIds.length > 1) {
             const checks = userChecks.filter(c => c.item_id === item.id)
             const checksCount = checks.length
             const isMyChecked = checks.some(c => c.user_id === currentUser?.id)
+            const requiredCount = item.assignment_type === 'everyone' ? totalMembersCount : assignedIds.length
             return {
-                is_checked: checksCount >= totalMembersCount,
+                is_checked: requiredCount > 0 && checksCount >= requiredCount,
                 checks_count: checksCount,
                 is_my_checked: isMyChecked
             }
@@ -677,7 +759,10 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
     const ChecklistItem = ({ item }: { item: any }) => {
         const status = getItemStatus(item)
-        const isAssignedToMe = item.assignment_type === 'specific' ? item.assigned_user_id === currentUser?.id : true
+        const assignedIds = getAssignedUserIds(item)
+        const isAssignedToMe = item.assignment_type === 'specific'
+            ? (assignedIds.length > 0 ? assignedIds.includes(currentUser?.id) : item.assigned_user_id === currentUser?.id)
+            : true
         const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline && !isOffline
 
         const controls = useAnimation();
@@ -700,9 +785,12 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         };
 
         const getAssignedUserLabel = () => {
-            if (item.assigned_user_id === currentUser?.id) return '나'
-            const p = participants.find(p => p.user_id === item.assigned_user_id)
-            return getMemberDisplayName(p, item.assigned_user_id === currentUser?.id)
+            const assignedIds = getAssignedUserIds(item)
+            if (assignedIds.length > 1) return `${assignedIds.length}명`
+            const targetId = assignedIds[0] ?? item.assigned_user_id
+            if (targetId === currentUser?.id) return '나'
+            const p = participants.find(p => p.user_id === targetId)
+            return getMemberDisplayName(p, targetId === currentUser?.id)
         }
 
         const assignedUser = item.assignment_type === 'specific' ? getAssignedUserLabel() : null
@@ -794,7 +882,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                 </span>
                                 
                                 {/* 유형 배지 (Pastel style) */}
-                                {item.assignment_type === 'specific' && (
+                                {item.assignment_type === 'specific' && getAssignedUserIds(item).length <= 1 && (
                                     <span className={css({ 
                                         fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
                                         bg: isAssignedToMe ? 'brand.primary/5' : 'bg.softCotton',
@@ -805,6 +893,24 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                         {item.is_private && <Lock size={10} />}
                                         <User size={10} /> {assignedUser}
                                     </span>
+                                )}
+
+                                {item.assignment_type === 'specific' && getAssignedUserIds(item).length > 1 && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation()
+                                            setShowChecksModal(item.id)
+                                        }}
+                                        className={css({
+                                            fontSize: '11px', px: '8px', py: '3px', borderRadius: '12px',
+                                            bg: status.is_checked ? 'bg.softCotton' : 'brand.primary/8',
+                                            color: status.is_checked ? 'brand.muted' : 'brand.primary',
+                                            fontWeight: '700', border: 'none', cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', gap: '4px'
+                                        })}
+                                    >
+                                        <Users size={10} /> {status.checks_count}/{getAssignedUserIds(item).length}
+                                    </button>
                                 )}
 
                                 {item.assignment_type === 'everyone' && (
@@ -871,6 +977,10 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         if (!item) return null
         
         const checkedUserIds = userChecks.filter(c => c.item_id === item.id).map(c => c.user_id)
+        const assignedIds = getAssignedUserIds(item)
+        const requiredParticipants = item.assignment_type === 'specific' && assignedIds.length > 1
+            ? participants.filter(p => assignedIds.includes(p.user_id))
+            : participants
         
         return (
             <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'bg.scrim/50', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setShowChecksModal(null)}>
@@ -881,10 +991,10 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     </div>
                     <div className={css({ p: '20px', maxHeight: '300px', overflowY: 'auto' })}>
                         <div className={css({ mb: '16px', fontSize: '14px', color: 'brand.muted', fontWeight: '700' })}>
-                            "{item.item_name}" 준비 완료 인원 ({checkedUserIds.length}/{totalMembersCount})
+                            "{item.item_name}" 준비 완료 인원 ({checkedUserIds.length}/{requiredParticipants.length})
                         </div>
                         <ul className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                            {participants.map(p => {
+                            {requiredParticipants.map(p => {
                                 return (
                                     <li key={p.user_id} className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between' })}>
                                         <span className={css({ fontSize: '15px', fontWeight: '500', color: 'brand.ink' })}>
@@ -908,7 +1018,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         const [category, setCategory] = useState(editingItem.category || '기타')
         const [isPrivate, setIsPrivate] = useState(editingItem.is_private || false)
         const [type, setType] = useState(editingItem.assignment_type || 'anyone')
-        const [assignedTo, setAssignedTo] = useState(editingItem.assigned_user_id || '')
+        const initialAssignedIds = getAssignedUserIds(editingItem)
+        const [assignedTo, setAssignedTo] = useState(initialAssignedIds[0] || editingItem.assigned_user_id || '')
+        const [assignedToIds, setAssignedToIds] = useState<string[]>(initialAssignedIds.length > 0 ? initialAssignedIds : (editingItem.assigned_user_id ? [editingItem.assigned_user_id] : []))
 
         return (
             <div className={css({ position: 'fixed', inset: 0, zIndex: 100, bg: 'bg.scrim/50', display: 'flex', alignItems: 'center', justifyContent: 'center', p: '20px' })} onClick={() => setEditingItem(null)}>
@@ -945,6 +1057,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                         if (e.target.checked) {
                                             setType('specific')
                                             setAssignedTo(currentUser?.id || '')
+                                            setAssignedToIds(currentUser?.id ? [currentUser.id] : [])
                                         }
                                     }}
                                     className={css({ accentColor: 'brand.primary', w: '18px', h: '18px' })}
@@ -965,6 +1078,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     setType(e.target.value as any)
                                     if (e.target.value === 'specific' && !assignedTo) {
                                         setAssignedTo(currentUser?.id || '')
+                                        setAssignedToIds(currentUser?.id ? [currentUser.id] : [])
+                                    } else if (e.target.value !== 'specific') {
+                                        setAssignedToIds([])
                                     }
                                 }}
                                 className={css({ w: '100%', p: '14px', bg: 'bg.surfaceSoft', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px', outline: 'none', fontSize: '15px', fontWeight: '600' })}
@@ -975,23 +1091,36 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                             </select>
 
                             {type === 'specific' && (
-                                <select
-                                    value={assignedTo}
-                                    onChange={e => setAssignedTo(e.target.value)}
-                                    className={css({ w: '100%', mt: '12px', p: '14px', bg: 'bg.surfaceSoft', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px', outline: 'none', fontSize: '15px' })}
-                                >
-                                    {participants.map(p => (
-                                        <option key={p.user_id} value={p.user_id}>
-                                            {p.user_id === currentUser?.id ? `${getMemberDisplayName(p, true)} (나)` : getMemberDisplayName(p, false)}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className={css({ display: 'flex', gap: '8px', flexWrap: 'wrap', mt: '12px' })}>
+                                    {participants.map(p => {
+                                        const checked = assignedToIds.includes(p.user_id)
+                                        return (
+                                            <label key={p.user_id} className={css({ display: 'inline-flex', alignItems: 'center', gap: '6px', px: '12px', py: '10px', borderRadius: '999px', border: '1px solid', borderColor: checked ? 'brand.primary' : 'brand.hairline', bg: checked ? 'brand.primary/5' : 'white', fontSize: '13px', fontWeight: '700', cursor: 'pointer' })}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={checked}
+                                                    onChange={e => {
+                                                        setAssignedToIds(prev => {
+                                                            const next = e.target.checked
+                                                                ? [...prev, p.user_id]
+                                                                : prev.filter(id => id !== p.user_id)
+                                                            setAssignedTo(next[0] || '')
+                                                            return next
+                                                        })
+                                                    }}
+                                                    className={css({ accentColor: 'brand.primary' })}
+                                                />
+                                                {p.user_id === currentUser?.id ? `${getMemberDisplayName(p, true)} (나)` : getMemberDisplayName(p, false)}
+                                            </label>
+                                        )
+                                    })}
+                                </div>
                             )}
                         </div>
                     </div>
                     <div className={css({ p: '24px', bg: 'bg.surfaceSoft', display: 'flex', gap: '12px' })}>
                         <button 
-                            onClick={() => updateItem({ item_name: name, category, is_private: isPrivate, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null })}
+                            onClick={() => updateItem({ item_name: name, category, is_private: isPrivate, assignment_type: type, assigned_user_id: type === 'specific' ? assignedTo : null, assignee_ids: type === 'specific' ? assignedToIds : [] })}
                             className={css({ flex: 1, py: '14px', bg: 'brand.primary', color: 'white', borderRadius: '16px', fontWeight: '700', border: 'none', cursor: 'pointer', boxShadow: 'shadow.primary', _hover: { opacity: 0.9, transform: 'translateY(-1px)' }, _active: { transform: 'translateY(0)' } })}
                         >
                             저장하기
@@ -1038,7 +1167,11 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     });
 
     // 필터링된 항목 정렬
-    const sortedFilteredItems = [...filteredItems].sort((a, b) => {
+    const visibleFilteredItems = hideChecked
+        ? filteredItems.filter((item: any) => !getItemStatus(item).is_checked)
+        : filteredItems
+
+    const sortedFilteredItems = [...visibleFilteredItems].sort((a, b) => {
         // 1. 최신순 처리 (가장 뒤에 추가된 항목이 위로)
         if (sortBy === 'latest') {
             return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -1129,6 +1262,21 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         </div>
 
                         {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
+                        {totalItems > 0 && (
+                            <button
+                                onClick={() => setHideChecked(prev => !prev)}
+                                className={css({
+                                    display: 'flex', alignItems: 'center', gap: '6px',
+                                    bg: hideChecked ? 'brand.primary' : 'white',
+                                    color: hideChecked ? 'white' : 'brand.ink',
+                                    border: '1px solid', borderColor: hideChecked ? 'brand.primary' : 'brand.hairline',
+                                    borderRadius: '8px', px: '16px', h: '42px',
+                                    fontSize: '13px', fontWeight: '700', cursor: 'pointer'
+                                })}
+                            >
+                                <CheckCircle size={14} /> 완료 숨김
+                            </button>
+                        )}
                     </div>
 
                     {/* PC에서 totalItems === 0 일 때 우측 버튼들을 오른쪽으로 밀기 위한 빈 공간용 div */}
@@ -1152,6 +1300,22 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                             })}>
                                 {totalItems > 0 && <CustomViewDropdown groupBy={groupBy} setGroupBy={setGroupBy} />}
                                 {totalItems > 0 && <SortDropdown sortBy={sortBy} setSortBy={setSortBy} />}
+                                {totalItems > 0 && (
+                                    <button
+                                        onClick={() => setHideChecked(prev => !prev)}
+                                        className={css({
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                            px: '12px', h: '42px',
+                                            bg: hideChecked ? 'brand.primary' : 'white',
+                                            color: hideChecked ? 'white' : 'brand.ink',
+                                            border: '1px solid', borderColor: hideChecked ? 'brand.primary' : 'brand.hairline',
+                                            borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+                                            flex: '1', whiteSpace: 'nowrap'
+                                        })}
+                                    >
+                                        <CheckCircle size={14} /> 완료 숨김
+                                    </button>
+                                )}
                                 
                                 <button
                                     onClick={() => setIsTemplateModalOpen(true)}
@@ -1261,6 +1425,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                         if (e.target.checked) {
                                             setNewItemAssignmentType('specific')
                                             setNewItemAssignedUserId(currentUser?.id || '')
+                                            setNewItemAssignedUserIds(currentUser?.id ? [currentUser.id] : [])
                                         }
                                     }}
                                     className={css({ accentColor: 'brand.primary', w: '18px', h: '18px' })}
@@ -1283,6 +1448,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                         setNewItemAssignmentType(e.target.value as any)
                                         if (e.target.value === 'specific' && !newItemAssignedUserId) {
                                             setNewItemAssignedUserId(currentUser?.id || '')
+                                            setNewItemAssignedUserIds(currentUser?.id ? [currentUser.id] : [])
+                                        } else if (e.target.value !== 'specific') {
+                                            setNewItemAssignedUserIds([])
                                         }
                                     }}
                                     className={css({ p: '8px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', outline: 'none', fontSize: '13px', fontWeight: '700' })}
@@ -1293,21 +1461,32 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                 </select>
 
                                 {newItemAssignmentType === 'specific' && (
-                                    <select
-                                        value={newItemAssignedUserId}
-                                        onChange={e => setNewItemAssignedUserId(e.target.value)}
-                                        className={css({ p: '8px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', outline: 'none', fontSize: '13px' })}
-                                    >
+                                    <div className={css({ display: 'flex', gap: '6px', flexWrap: 'wrap' })}>
                                         {participants.map(p => {
                                             const isMe = p.user_id === currentUser?.id
                                             const label = getMemberDisplayName(p, isMe)
+                                            const checked = newItemAssignedUserIds.includes(p.user_id)
                                             return (
-                                                <option key={p.user_id} value={p.user_id}>
+                                                <label key={p.user_id} className={css({ display: 'inline-flex', alignItems: 'center', gap: '5px', px: '10px', py: '8px', borderRadius: '999px', border: '1px solid', borderColor: checked ? 'brand.primary' : 'brand.hairline', bg: checked ? 'brand.primary/5' : 'white', fontSize: '12px', fontWeight: '700', cursor: 'pointer' })}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={checked}
+                                                        onChange={e => {
+                                                            setNewItemAssignedUserIds(prev => {
+                                                                const next = e.target.checked
+                                                                    ? [...prev, p.user_id]
+                                                                    : prev.filter(id => id !== p.user_id)
+                                                                setNewItemAssignedUserId(next[0] || '')
+                                                                return next
+                                                            })
+                                                        }}
+                                                        className={css({ accentColor: 'brand.primary' })}
+                                                    />
                                                     {isMe ? `${label} (나)` : label}
-                                                </option>
+                                                </label>
                                             )
                                         })}
-                                    </select>
+                                    </div>
                                 )}
                                 
                                 <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', color: 'brand.muted', fontSize: '12px' })}>
