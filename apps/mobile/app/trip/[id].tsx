@@ -17,6 +17,7 @@ import {
   Image,
   Linking,
   Modal,
+  Platform,
   Pressable,
   Share,
   ScrollView,
@@ -28,6 +29,9 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import DateTimePicker from '@react-native-community/datetimepicker'
+import { Picker } from '@react-native-picker/picker'
+import * as Clipboard from 'expo-clipboard'
 import * as WebBrowser from 'expo-web-browser'
 // react-native-maps는 로컬 네이티브 빌드에서만 동작한다. Expo Go에서는 폴백 UI를 유지한다.
 type NativeMapViewProps = {
@@ -118,6 +122,7 @@ import {
 type PlanWithUrls = Plan & { plan_urls: PlanUrl[] }
 type PlanSheetStep = 'place' | 'details'
 type TimeDisplayMode = 'local' | 'kst' | 'both'
+type ShareType = 'public' | 'password'
 
 type PlaceOption = {
   name: string
@@ -198,9 +203,27 @@ const PLACES_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ??
   process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ??
   ''
-const WEB_APP_BASE = process.env.EXPO_PUBLIC_WEB_API_URL ?? 'https://app.onvoy.travel'
+const WEB_APP_BASE =
+  process.env.EXPO_PUBLIC_APP_URL ??
+  process.env.EXPO_PUBLIC_WEB_API_URL ??
+  'https://app.nexvoy.xyz'
 const PLACE_PHOTO_BUCKET = 'place-photos'
 const PLACE_PHOTO_MAX_WIDTH = 800
+const DURATION_OPTIONS = [
+  { value: '0.5', label: '30분' },
+  { value: '1', label: '1시간' },
+  { value: '2', label: '2시간' },
+  { value: '3', label: '3시간+' },
+  { value: '5', label: '5시간+' },
+]
+const ALARM_OPTIONS = [
+  { value: 0, label: '알림 없음' },
+  { value: 10, label: '10분 전' },
+  { value: 30, label: '30분 전' },
+  { value: 60, label: '1시간 전' },
+  { value: 120, label: '2시간 전' },
+  { value: 1440, label: '1일 전' },
+]
 
 // ─── 날짜/시간 파싱 유틸 (파일 로컬, new Date() 생성자 금지) ───────────────────
 
@@ -288,6 +311,46 @@ function toDateString(d: Date): string {
   const m = String(d.getMonth() + 1).padStart(2, '0')
   const day = String(d.getDate()).padStart(2, '0')
   return `${y}-${m}-${day}`
+}
+
+function timeToPickerDate(time: string): Date {
+  const safeTime = normalizeTimeInput(time)
+  const [hour, minute] = safeTime.split(':').map(Number)
+  const d = new Date()
+  d.setHours(hour, minute, 0, 0)
+  return d
+}
+
+function dateToPickerDate(date: string): Date {
+  const safeDate = parseDate(date)
+  if (!safeDate) return new Date()
+  const [year, month, day] = safeDate.split('-').map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function toTimeString(d: Date): string {
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+}
+
+function getDurationHours(startDateTime?: string | null, endDateTime?: string | null): string {
+  if (!startDateTime || !endDateTime) return '1'
+  const start = new Date(startDateTime.replace(' ', 'T')).getTime()
+  const end = new Date(endDateTime.replace(' ', 'T')).getTime()
+  const diff = (end - start) / 3600000
+  if (!Number.isFinite(diff) || diff <= 0) return '1'
+  return String(Math.max(0.5, Math.min(diff, 24)))
+}
+
+function stripNumberFormatting(value: string): string {
+  return value.replace(/[^\d.]/g, '')
+}
+
+function formatNumberWithCommas(value: string): string {
+  const numeric = stripNumberFormatting(value)
+  if (!numeric) return ''
+  const [integer, decimal] = numeric.split('.')
+  const formattedInteger = integer.replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  return decimal != null ? `${formattedInteger}.${decimal}` : formattedInteger
 }
 
 function normalizeDateTime(date: string, time: string): string {
@@ -545,6 +608,8 @@ export default function TripDetailScreen() {
   const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null)
   const [isItemSheetOpen, setIsItemSheetOpen] = useState(false)
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false)
+  const [isTripDeleteOpen, setIsTripDeleteOpen] = useState(false)
+  const [deletingTrip, setDeletingTrip] = useState(false)
   const [isTripSwitcherOpen, setIsTripSwitcherOpen] = useState(false)
   const [isShareSheetOpen, setIsShareSheetOpen] = useState(false)
   const [isCollaboratorSheetOpen, setIsCollaboratorSheetOpen] = useState(false)
@@ -554,8 +619,11 @@ export default function TripDetailScreen() {
   const [timeDisplayMode, setTimeDisplayMode] = useState<TimeDisplayMode>('local')
   const [isTimeModeSheetOpen, setIsTimeModeSheetOpen] = useState(false)
   const [shareInfo, setShareInfo] = useState<TripShare | null>(null)
+  const [shareType, setShareType] = useState<ShareType>('public')
+  const [sharePassword, setSharePassword] = useState('')
   const [shareLoading, setShareLoading] = useState(false)
   const [inviteLoading, setInviteLoading] = useState(false)
+  const [inviteLink, setInviteLink] = useState('')
 
   useEffect(() => {
     isMounted.current = true
@@ -563,6 +631,10 @@ export default function TripDetailScreen() {
       isMounted.current = false
     }
   }, [])
+
+  useEffect(() => {
+    setInviteLink('')
+  }, [id])
 
   const loadTripList = useCallback(async () => {
     if (!session?.user.id) return
@@ -717,6 +789,30 @@ export default function TripDetailScreen() {
     [trip]
   )
 
+  const handleOfflineSave = useCallback(() => {
+    Alert.alert('준비 중', '오프라인 저장 기능은 곧 제공될 예정이에요.')
+  }, [])
+
+  const handleDeleteTrip = useCallback(async () => {
+    if (!id || !session?.user.id || deletingTrip) return
+    setDeletingTrip(true)
+    try {
+      const { error: deleteError } = await supabase
+        .from('trips')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', session.user.id)
+
+      if (deleteError) throw deleteError
+      setIsTripDeleteOpen(false)
+      router.replace('/(tabs)')
+    } catch {
+      Alert.alert('오류', '여행 삭제에 실패했어요. 다시 시도해 주세요.')
+    } finally {
+      if (isMounted.current) setDeletingTrip(false)
+    }
+  }, [deletingTrip, id, router, session?.user.id])
+
   const handleSavePlan = useCallback(
     async (input: PlanSaveInput) => {
       if (!id) return
@@ -832,6 +928,22 @@ export default function TripDetailScreen() {
     ? `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${shareInfo.share_token}`
     : ''
 
+  const ensureShareLink = async (type: ShareType = shareType, password = sharePassword): Promise<TripShare | null> => {
+    if (!id) return null
+    if (type === 'password' && !password.trim()) {
+      Alert.alert('비밀번호 필요', '공유용 비밀번호를 입력해 주세요.')
+      return null
+    }
+    const data = await getOrCreateTripShareLink(
+      supabase,
+      id,
+      type,
+      type === 'password' ? password.trim() : undefined
+    )
+    setShareInfo(data)
+    return data
+  }
+
   const handleSwitchTrip = (tripId: string) => {
     setIsTripSwitcherOpen(false)
     if (tripId === id) return
@@ -842,8 +954,7 @@ export default function TripDetailScreen() {
     if (!id || shareLoading) return
     setShareLoading(true)
     try {
-      const data = await getOrCreateTripShareLink(supabase, id, 'public')
-      setShareInfo(data)
+      await ensureShareLink()
     } catch {
       Alert.alert('오류', '공유 링크를 만들지 못했어요.')
     } finally {
@@ -852,10 +963,11 @@ export default function TripDetailScreen() {
   }
 
   const handleShareTrip = async () => {
+    if (shareLoading) return
+    setShareLoading(true)
     try {
-      const data = shareInfo ?? (id ? await getOrCreateTripShareLink(supabase, id, 'public') : null)
+      const data = shareInfo ?? (await ensureShareLink())
       if (!data) return
-      setShareInfo(data)
       const url = `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${data.share_token}`
       await Share.share({
         title: `${trip?.destination ?? '여행'} 일정 공유`,
@@ -864,6 +976,35 @@ export default function TripDetailScreen() {
       })
     } catch {
       Alert.alert('오류', '공유를 시작하지 못했어요.')
+    } finally {
+      setShareLoading(false)
+    }
+  }
+
+  const handleCopyShareLink = async () => {
+    if (!publicShareUrl) return
+    try {
+      await Clipboard.setStringAsync(publicShareUrl)
+      Alert.alert('완료', '공유 링크가 클립보드에 복사되었어요.')
+    } catch {
+      Alert.alert('오류', '공유 링크를 복사하지 못했어요.')
+    }
+  }
+
+  const handleEmailShare = async () => {
+    if (shareLoading) return
+    setShareLoading(true)
+    try {
+      const data = shareInfo ?? (await ensureShareLink())
+      if (!data) return
+      const url = `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${data.share_token}`
+      const subject = encodeURIComponent(`[온여정] ${trip?.destination ?? '여행'} 여행 일정 공유`)
+      const body = encodeURIComponent(`안녕하세요,\n\n${trip?.destination ?? '여행'} 여행 일정을 함께 확인해보세요!\n\n링크: ${url}\n\n감사합니다.`)
+      await Linking.openURL(`mailto:?subject=${subject}&body=${body}`)
+    } catch {
+      Alert.alert('오류', '메일 공유를 시작하지 못했어요.')
+    } finally {
+      setShareLoading(false)
     }
   }
 
@@ -896,15 +1037,34 @@ export default function TripDetailScreen() {
     try {
       const token = await createInvitationLink(supabase, id)
       const url = `${WEB_APP_BASE.replace(/\/$/, '')}/join?token=${token}`
-      await Share.share({
-        title: `${trip?.destination ?? '여행'} 여정 초대`,
-        message: `함께 여정을 계획해보세요.\n${url}`,
-        url,
-      })
+      setInviteLink(url)
     } catch {
       Alert.alert('오류', '초대 링크를 만들지 못했어요.')
     } finally {
       setInviteLoading(false)
+    }
+  }
+
+  const handleCopyInviteLink = async () => {
+    if (!inviteLink) return
+    try {
+      await Clipboard.setStringAsync(inviteLink)
+      Alert.alert('완료', '초대 링크가 클립보드에 복사되었어요.')
+    } catch {
+      Alert.alert('오류', '초대 링크를 복사하지 못했어요.')
+    }
+  }
+
+  const handleShareInviteLink = async () => {
+    if (!inviteLink) return
+    try {
+      await Share.share({
+        title: `${trip?.destination ?? '여행'} 여정 초대`,
+        message: `함께 여정을 계획해보세요. 링크는 6시간 동안 유효합니다.\n${inviteLink}`,
+        url: inviteLink,
+      })
+    } catch {
+      Alert.alert('오류', '초대 링크를 공유하지 못했어요.')
     }
   }
 
@@ -1001,8 +1161,17 @@ export default function TripDetailScreen() {
                 <Text style={styles.tripTitle} numberOfLines={2}>
                   {trip.destination} 여행
                 </Text>
-                {canEditTrip ? (
-                  <View style={styles.tripIconActions}>
+                <View style={styles.tripIconActions}>
+                  <Pressable
+                    onPress={handleOfflineSave}
+                    accessibilityRole="button"
+                    accessibilityLabel="오프라인 저장"
+                    style={({ pressed }) => [styles.tripIconAction, pressed && styles.pressedFade]}
+                  >
+                    <Ionicons name="cloud-download-outline" size={18} color={colors.brand.muted} />
+                  </Pressable>
+                  {canEditTrip ? (
+                    <>
                     <Pressable
                       onPress={() => setIsTripSheetOpen(true)}
                       accessibilityRole="button"
@@ -1011,8 +1180,17 @@ export default function TripDetailScreen() {
                     >
                       <Ionicons name="pencil-outline" size={18} color={colors.brand.muted} />
                     </Pressable>
-                  </View>
-                ) : null}
+                    <Pressable
+                      onPress={() => setIsTripDeleteOpen(true)}
+                      accessibilityRole="button"
+                      accessibilityLabel="여행 삭제"
+                      style={({ pressed }) => [styles.tripIconAction, styles.tripIconActionDanger, pressed && styles.pressedFade]}
+                    >
+                      <Ionicons name="trash-outline" size={18} color={colors.brand.error} />
+                    </Pressable>
+                    </>
+                  ) : null}
+                </View>
               </View>
               <View style={styles.tripMetaGrid}>
                 <View style={styles.tripMetaItem}>
@@ -1053,7 +1231,6 @@ export default function TripDetailScreen() {
               }}
               onOpenShare={() => {
                 setIsShareSheetOpen(true)
-                if (!shareInfo) void handleCreateShare()
               }}
               canInvite={canEditContent}
               canShare={canEditTrip}
@@ -1119,6 +1296,19 @@ export default function TripDetailScreen() {
             onClose={() => setIsTripSheetOpen(false)}
             onSave={handleSaveTrip}
           />
+          <ConfirmSheet
+            visible={isTripDeleteOpen}
+            title="여행 삭제"
+            message={`'${trip.destination} 여행'을 삭제할까요? 이 작업은 되돌릴 수 없으며 모든 일정과 준비물 정보가 함께 삭제돼요.`}
+            confirmLabel={deletingTrip ? '삭제 중...' : '삭제'}
+            destructive
+            onCancel={() => {
+              if (!deletingTrip) setIsTripDeleteOpen(false)
+            }}
+            onConfirm={() => {
+              void handleDeleteTrip()
+            }}
+          />
           <PlanEditSheet
             visible={isPlanSheetOpen}
             plan={editingPlan}
@@ -1163,9 +1353,21 @@ export default function TripDetailScreen() {
           <ShareTripSheet
             visible={isShareSheetOpen}
             trip={trip}
+            shareType={shareType}
+            password={sharePassword}
             shareUrl={publicShareUrl}
             loading={shareLoading}
+            onChangeShareType={(nextType) => {
+              setShareType(nextType)
+              setShareInfo(null)
+            }}
+            onChangePassword={(nextPassword) => {
+              setSharePassword(nextPassword)
+              if (shareType === 'password') setShareInfo(null)
+            }}
             onCreateLink={handleCreateShare}
+            onCopyLink={handleCopyShareLink}
+            onEmailShare={handleEmailShare}
             onShare={handleShareTrip}
             onClose={() => setIsShareSheetOpen(false)}
           />
@@ -1178,8 +1380,11 @@ export default function TripDetailScreen() {
             ownerId={trip.user_id}
             canManage={canEditTrip}
             canInvite={canEditContent}
+            inviteLink={inviteLink}
             onInvite={handleInviteMember}
             onCreateInviteLink={handleCreateInviteLink}
+            onCopyInviteLink={handleCopyInviteLink}
+            onShareInviteLink={handleShareInviteLink}
             onUpdateRole={handleUpdateMemberRole}
             onRemove={handleRemoveMember}
             onClose={() => setIsCollaboratorSheetOpen(false)}
@@ -1220,38 +1425,45 @@ function TripActionBar({
   const currentLabel = TIME_MODE_OPTIONS.find((option) => option.value === timeDisplayMode)?.label ?? '현지 시간'
   return (
     <View style={styles.actionBar}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.actionBarScroll}>
+      <View style={styles.actionBarRow}>
         <Pressable
           onPress={onOpenTimeMode}
           accessibilityRole="button"
           accessibilityLabel="시간 표시 방식 선택"
-          style={({ pressed }) => [styles.actionChip, styles.actionChipActive, pressed && styles.pressedFade]}
+          style={({ pressed }) => [
+            styles.actionChip,
+            styles.actionChipWeighted,
+            styles.actionChipActive,
+            pressed && styles.pressedFade,
+          ]}
         >
           <Ionicons name="time-outline" size={15} color={colors.brand.primary} />
-          <Text style={[styles.actionChipText, styles.actionChipTextActive]}>{currentLabel}</Text>
+          <Text style={[styles.actionChipText, styles.actionChipTextActive]} numberOfLines={1}>
+            {currentLabel}
+          </Text>
           <Ionicons name="chevron-down" size={14} color={colors.brand.primary} />
         </Pressable>
         {canInvite ? (
           <Pressable
             onPress={onOpenMembers}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.actionChip, pressed && styles.pressedFade]}
+            style={({ pressed }) => [styles.actionChip, styles.actionChipEqual, pressed && styles.pressedFade]}
           >
             <Ionicons name="person-add-outline" size={15} color={colors.brand.ink} />
-            <Text style={styles.actionChipText}>동행자</Text>
+            <Text style={styles.actionChipText} numberOfLines={1}>동행자</Text>
           </Pressable>
         ) : null}
         {canShare ? (
           <Pressable
             onPress={onOpenShare}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.actionChip, pressed && styles.pressedFade]}
+            style={({ pressed }) => [styles.actionChip, styles.actionChipEqual, pressed && styles.pressedFade]}
           >
             <Ionicons name="share-social-outline" size={15} color={colors.brand.ink} />
-            <Text style={styles.actionChipText}>공유</Text>
+            <Text style={styles.actionChipText} numberOfLines={1}>공유</Text>
           </Pressable>
         ) : null}
-      </ScrollView>
+      </View>
     </View>
   )
 }
@@ -1363,17 +1575,29 @@ function TripSwitcherSheet({
 function ShareTripSheet({
   visible,
   trip,
+  shareType,
+  password,
   shareUrl,
   loading,
+  onChangeShareType,
+  onChangePassword,
   onCreateLink,
+  onCopyLink,
+  onEmailShare,
   onShare,
   onClose,
 }: {
   visible: boolean
   trip: Trip
+  shareType: ShareType
+  password: string
   shareUrl: string
   loading: boolean
+  onChangeShareType: (type: ShareType) => void
+  onChangePassword: (password: string) => void
   onCreateLink: () => void
+  onCopyLink: () => void
+  onEmailShare: () => void
   onShare: () => void
   onClose: () => void
 }) {
@@ -1385,38 +1609,112 @@ function ShareTripSheet({
         </View>
         <View style={styles.sheetHeroBody}>
           <Text style={styles.sheetHeroTitle}>{trip.destination} 일정</Text>
-          <Text style={styles.sheetHeroDesc}>읽기 전용 링크로 가족이나 친구에게 여행 일정을 공유해요.</Text>
+          <Text style={styles.sheetHeroDesc}>동행자가 아닌 분들에게도 읽기 전용으로 안전하게 공유할 수 있어요.</Text>
         </View>
       </View>
 
-      {shareUrl ? (
-        <View style={styles.shareUrlBox}>
-          <Text style={styles.shareUrlLabel}>공유 링크</Text>
-          <Text style={styles.shareUrlText} numberOfLines={3}>
-            {shareUrl}
-          </Text>
+      <View style={styles.shareTypeTabs}>
+        {([
+          { value: 'public' as const, label: '전체 공개', icon: 'globe-outline' as const },
+          { value: 'password' as const, label: '비밀번호 보호', icon: 'lock-closed-outline' as const },
+        ]).map((option) => {
+          const selected = shareType === option.value
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => onChangeShareType(option.value)}
+              accessibilityRole="button"
+              accessibilityState={{ selected }}
+              style={({ pressed }) => [
+                styles.shareTypeTab,
+                selected && styles.shareTypeTabActive,
+                pressed && styles.pressedFade,
+              ]}
+            >
+              <Ionicons name={option.icon} size={16} color={selected ? colors.brand.primary : colors.brand.muted} />
+              <Text style={[styles.shareTypeTabText, selected && styles.shareTypeTabTextActive]}>
+                {option.label}
+              </Text>
+            </Pressable>
+          )
+        })}
+      </View>
+
+      {shareType === 'password' && !shareUrl ? (
+        <View style={styles.sharePasswordField}>
+          <Text style={styles.shareUrlLabel}>접속 비밀번호 설정</Text>
+          <TextInput
+            value={password}
+            onChangeText={onChangePassword}
+            placeholder="공유용 비밀번호 입력"
+            placeholderTextColor={colors.brand.mutedSoft}
+            secureTextEntry
+            style={styles.sharePasswordInput}
+          />
         </View>
       ) : null}
 
-      <Pressable
-        onPress={shareUrl ? onShare : onCreateLink}
-        disabled={loading}
-        accessibilityRole="button"
-        style={({ pressed }) => [
-          styles.sheetPrimaryButton,
-          loading && styles.buttonDisabled,
-          pressed && !loading && styles.pressedSoft,
-        ]}
-      >
-        {loading ? (
-          <ActivityIndicator color={colors.bg.canvas} />
-        ) : (
-          <Ionicons name={shareUrl ? 'share-outline' : 'link-outline'} size={18} color={colors.bg.canvas} />
-        )}
-        <Text style={styles.sheetPrimaryButtonText}>
-          {loading ? '링크 생성 중...' : shareUrl ? '공유하기' : '공유 링크 만들기'}
-        </Text>
-      </Pressable>
+      {shareUrl ? (
+        <Pressable
+          onPress={onCopyLink}
+          accessibilityRole="button"
+          accessibilityLabel="공유 링크 복사"
+          style={({ pressed }) => [styles.shareUrlBox, pressed && styles.pressedFade]}
+        >
+          <Text style={styles.shareUrlLabel}>공유 링크 URL</Text>
+          <Text style={styles.shareUrlText} numberOfLines={3}>
+            {shareUrl}
+          </Text>
+          <Text style={styles.shareUrlHint}>URL을 누르면 복사돼요</Text>
+        </Pressable>
+      ) : null}
+
+      {!shareUrl ? (
+        <Pressable
+          onPress={onCreateLink}
+          disabled={loading}
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.sheetPrimaryButton,
+            loading && styles.buttonDisabled,
+            pressed && !loading && styles.pressedSoft,
+          ]}
+        >
+          {loading ? <ActivityIndicator color={colors.bg.canvas} /> : <Ionicons name="link-outline" size={18} color={colors.bg.canvas} />}
+          <Text style={styles.sheetPrimaryButtonText}>
+            {loading ? '링크 생성 중...' : '공유 링크 생성'}
+          </Text>
+        </Pressable>
+      ) : (
+        <View style={styles.shareActionGrid}>
+          <Pressable
+            onPress={onEmailShare}
+            disabled={loading}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.shareActionButton,
+              loading && styles.buttonDisabled,
+              pressed && !loading && styles.pressedFade,
+            ]}
+          >
+            <Ionicons name="mail-outline" size={18} color={colors.brand.ink} />
+            <Text style={styles.shareActionButtonText}>메일 공유</Text>
+          </Pressable>
+          <Pressable
+            onPress={onShare}
+            disabled={loading}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.shareActionButtonPrimary,
+              loading && styles.buttonDisabled,
+              pressed && !loading && styles.pressedSoft,
+            ]}
+          >
+            <Ionicons name="share-outline" size={18} color={colors.bg.canvas} />
+            <Text style={styles.shareActionButtonPrimaryText}>공유하기</Text>
+          </Pressable>
+        </View>
+      )}
     </BottomSheet>
   )
 }
@@ -1430,8 +1728,11 @@ function CollaboratorSheet({
   ownerId,
   canManage,
   canInvite,
+  inviteLink,
   onInvite,
   onCreateInviteLink,
+  onCopyInviteLink,
+  onShareInviteLink,
   onUpdateRole,
   onRemove,
   onClose,
@@ -1444,8 +1745,11 @@ function CollaboratorSheet({
   ownerId: string
   canManage: boolean
   canInvite: boolean
+  inviteLink: string
   onInvite: (email: string, role: 'editor' | 'viewer') => void
   onCreateInviteLink: () => void
+  onCopyInviteLink: () => void
+  onShareInviteLink: () => void
   onUpdateRole: (memberId: string, role: 'editor' | 'viewer') => void
   onRemove: (member: TripMember) => void
   onClose: () => void
@@ -1465,15 +1769,32 @@ function CollaboratorSheet({
       {canInvite ? (
         <View style={styles.invitePanel}>
           <Text style={styles.sheetSectionTitle}>이메일로 초대하기</Text>
-          <TextInput
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            placeholder="friend@example.com"
-            placeholderTextColor={colors.brand.mutedSoft}
-            style={styles.inviteInput}
-          />
+          <View style={styles.inviteInputRow}>
+            <View style={styles.inviteInputBox}>
+              <Ionicons name="mail-outline" size={16} color={colors.brand.muted} />
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholder="friend@example.com"
+                placeholderTextColor={colors.brand.mutedSoft}
+                style={styles.inviteInput}
+              />
+            </View>
+            <Pressable
+              onPress={submitInvite}
+              disabled={inviteLoading || !email.trim()}
+              accessibilityRole="button"
+              style={({ pressed }) => [
+                styles.inviteSubmitButton,
+                (inviteLoading || !email.trim()) && styles.buttonDisabled,
+                pressed && !inviteLoading && email.trim().length > 0 && styles.pressedSoft,
+              ]}
+            >
+              {inviteLoading ? <ActivityIndicator color={colors.bg.canvas} /> : <Text style={styles.inviteSubmitText}>초대</Text>}
+            </Pressable>
+          </View>
           <View style={styles.roleRow}>
             {(['editor', 'viewer'] as const).map((nextRole) => (
               <Pressable
@@ -1493,30 +1814,47 @@ function CollaboratorSheet({
               </Pressable>
             ))}
           </View>
-          <View style={styles.inviteButtonRow}>
-            <Pressable
-              onPress={submitInvite}
-              disabled={inviteLoading || !email.trim()}
-              accessibilityRole="button"
-              style={({ pressed }) => [
-                styles.sheetPrimaryButton,
-                styles.inviteButton,
-                (inviteLoading || !email.trim()) && styles.buttonDisabled,
-                pressed && !inviteLoading && email.trim().length > 0 && styles.pressedSoft,
-              ]}
-            >
-              {inviteLoading ? <ActivityIndicator color={colors.bg.canvas} /> : <Ionicons name="mail-outline" size={18} color={colors.bg.canvas} />}
-              <Text style={styles.sheetPrimaryButtonText}>초대</Text>
-            </Pressable>
-            <Pressable
-              onPress={onCreateInviteLink}
-              disabled={inviteLoading}
-              accessibilityRole="button"
-              style={({ pressed }) => [styles.sheetSecondaryButton, inviteLoading && styles.buttonDisabled, pressed && styles.pressedFade]}
-            >
-              <Ionicons name="link-outline" size={18} color={colors.brand.primary} />
-              <Text style={styles.sheetSecondaryButtonText}>링크</Text>
-            </Pressable>
+          <View style={styles.inviteLinkPanel}>
+            <Text style={styles.sheetSectionTitle}>링크로 초대하기</Text>
+            {inviteLink ? (
+              <View style={styles.inviteLinkResultRow}>
+                <View style={styles.inviteLinkBox}>
+                  <Text style={styles.inviteLinkText} numberOfLines={1}>
+                    {inviteLink}
+                  </Text>
+                </View>
+                <Pressable
+                  onPress={onCopyInviteLink}
+                  accessibilityRole="button"
+                  accessibilityLabel="초대 링크 복사"
+                  style={({ pressed }) => [styles.inviteLinkIconButton, pressed && styles.pressedFade]}
+                >
+                  <Ionicons name="copy-outline" size={18} color={colors.brand.ink} />
+                </Pressable>
+                <Pressable
+                  onPress={onShareInviteLink}
+                  accessibilityRole="button"
+                  accessibilityLabel="초대 링크 공유"
+                  style={({ pressed }) => [styles.inviteLinkShareButton, pressed && styles.pressedSoft]}
+                >
+                  <Ionicons name="share-outline" size={18} color={colors.bg.canvas} />
+                </Pressable>
+              </View>
+            ) : (
+              <Pressable
+                onPress={onCreateInviteLink}
+                disabled={inviteLoading}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.inviteLinkCreateButton,
+                  inviteLoading && styles.buttonDisabled,
+                  pressed && !inviteLoading && styles.pressedFade,
+                ]}
+              >
+                {inviteLoading ? <ActivityIndicator color={colors.brand.primary} /> : <Ionicons name="link-outline" size={18} color={colors.brand.ink} />}
+                <Text style={styles.inviteLinkCreateText}>초대 링크 생성</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       ) : null}
@@ -2456,11 +2794,17 @@ function PlanEditSheet({
   const [date, setDate] = useState(defaultDate)
   const [time, setTime] = useState('09:00')
   const [duration, setDuration] = useState('1')
+  const [alarmMinutes, setAlarmMinutes] = useState(60)
   const [cost, setCost] = useState('')
+  const [planTimezone, setPlanTimezone] = useState(plan?.timezone_string || 'Asia/Seoul')
   const [memo, setMemo] = useState('')
   const [urls, setUrls] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [showDatePicker, setShowDatePicker] = useState(false)
+  const [showTimePicker, setShowTimePicker] = useState(false)
+  const [showDurationPicker, setShowDurationPicker] = useState(false)
+  const [showAlarmPicker, setShowAlarmPicker] = useState(false)
 
   useEffect(() => {
     if (!visible) return
@@ -2479,11 +2823,17 @@ function PlanEditSheet({
     setTitle(plan?.title ?? '')
     setDate(plan ? parseDate(plan.start_datetime_local) : defaultDate)
     setTime(plan ? parseTime(plan.start_datetime_local) : '09:00')
-    setDuration('1')
-    setCost(plan?.cost ? String(plan.cost) : '')
+    setDuration(plan ? getDurationHours(plan.start_datetime_local, plan.end_datetime_local) : '1')
+    setAlarmMinutes(plan?.alarm_minutes_before ?? 60)
+    setPlanTimezone(plan?.timezone_string || 'Asia/Seoul')
+    setCost(plan?.cost ? formatNumberWithCommas(String(plan.cost)) : '')
     setMemo(plan?.memo ?? '')
     setUrls(plan ? planUrls(plan).join('\n') : '')
     setError('')
+    setShowDatePicker(false)
+    setShowTimePicker(false)
+    setShowDurationPicker(false)
+    setShowAlarmPicker(false)
   }, [defaultDate, plan, visible])
 
   useEffect(() => {
@@ -2608,7 +2958,7 @@ function PlanEditSheet({
     setStep('details')
   }
 
-  const resolveTimezone = async (place: PlaceOption): Promise<string> => {
+  const resolveTimezone = useCallback(async (place: PlaceOption): Promise<string> => {
     if (!PLACES_API_KEY || place.lat == null || place.lng == null) {
       return plan?.timezone_string || 'Asia/Seoul'
     }
@@ -2625,7 +2975,28 @@ function PlanEditSheet({
     } catch {
       return plan?.timezone_string || 'Asia/Seoul'
     }
-  }
+  }, [plan?.timezone_string])
+
+  useEffect(() => {
+    if (!visible || step !== 'details' || !selectedPlace) return
+    let cancelled = false
+
+    resolveTimezone(selectedPlace)
+      .then((timezone) => {
+        if (!cancelled) setPlanTimezone(timezone)
+      })
+      .catch(() => {
+        if (!cancelled) setPlanTimezone(plan?.timezone_string || 'Asia/Seoul')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [plan?.timezone_string, resolveTimezone, selectedPlace, step, visible])
+
+  const costCurrency = getCurrencyFromTimezone(planTimezone)
+  const costCurrencyLabel = `${costCurrency.code} ${costCurrency.symbol}`
+  const costPlaceholder = `금액을 입력하세요 (예: ${formatNumberWithCommas('50000')})`
 
   const submit = async () => {
     if (!selectedPlace) {
@@ -2658,9 +3029,9 @@ function PlanEditSheet({
         photo_reference: selectedPlace.photoReference,
         start_datetime_local: start,
         end_datetime_local: addHoursToLocalDateTime(start, Math.max(0.5, Number(duration) || 1)),
-        cost: Number(cost) || 0,
+        cost: Number(stripNumberFormatting(cost)) || 0,
         memo,
-        alarm_minutes_before: plan?.alarm_minutes_before ?? 60,
+        alarm_minutes_before: alarmMinutes,
         timezone_string: timezone,
         urls: urls.split('\n').map((url) => url.trim()).filter(Boolean),
       })
@@ -2790,14 +3161,137 @@ function PlanEditSheet({
 
           <FormField label="일정 제목" value={title} onChangeText={setTitle} placeholder="비워두면 장소명이 제목이 돼요" />
           <View style={styles.formTwoColumn}>
-            <FormField label="날짜" value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" />
-            <FormField label="시간" value={time} onChangeText={setTime} placeholder="HH:mm" />
+            <PickerField
+              label="방문 날짜"
+              icon="calendar-outline"
+              value={formatDate(date)}
+              accessibilityLabel={`일정 날짜 ${date} 선택`}
+              onPress={() => setShowDatePicker(true)}
+            />
+            <PickerField
+              label="방문 시간"
+              icon="time-outline"
+              value={formatClockLabel(time)}
+              accessibilityLabel={`일정 시간 ${time} 선택`}
+              onPress={() => setShowTimePicker(true)}
+            />
           </View>
+          {showDatePicker &&
+            (Platform.OS === 'ios' ? (
+              <Modal transparent animationType="slide" visible>
+                <Pressable style={styles.pickerBackdrop} onPress={() => setShowDatePicker(false)} />
+                <View style={styles.pickerSheet}>
+                  <View style={styles.pickerHeader}>
+                    <Pressable onPress={() => setShowDatePicker(false)} hitSlop={8} accessibilityRole="button">
+                      <Text style={styles.pickerDone}>완료</Text>
+                    </Pressable>
+                  </View>
+                  <DateTimePicker
+                    value={dateToPickerDate(date)}
+                    mode="date"
+                    display="inline"
+                    onChange={(_, nextDate) => {
+                      if (nextDate) setDate(toDateString(nextDate))
+                    }}
+                    locale="ko"
+                    themeVariant="light"
+                    accentColor={colors.brand.primary}
+                    textColor={colors.brand.ink}
+                  />
+                </View>
+              </Modal>
+            ) : (
+              <DateTimePicker
+                value={dateToPickerDate(date)}
+                mode="date"
+                display="default"
+                onChange={(event, nextDate) => {
+                  setShowDatePicker(false)
+                  if (event.type === 'set' && nextDate) setDate(toDateString(nextDate))
+                }}
+              />
+            ))}
+          {showTimePicker &&
+            (Platform.OS === 'ios' ? (
+              <Modal transparent animationType="slide" visible>
+                <Pressable style={styles.pickerBackdrop} onPress={() => setShowTimePicker(false)} />
+                <View style={styles.pickerSheet}>
+                  <View style={styles.pickerHeader}>
+                    <Pressable onPress={() => setShowTimePicker(false)} hitSlop={8} accessibilityRole="button">
+                      <Text style={styles.pickerDone}>완료</Text>
+                    </Pressable>
+                  </View>
+                  <DateTimePicker
+                    value={timeToPickerDate(time)}
+                    mode="time"
+                    display="spinner"
+                    onChange={(_, nextTime) => {
+                      if (nextTime) setTime(toTimeString(nextTime))
+                    }}
+                    locale="ko"
+                    themeVariant="light"
+                    accentColor={colors.brand.primary}
+                    textColor={colors.brand.ink}
+                  />
+                </View>
+              </Modal>
+            ) : (
+              <DateTimePicker
+                value={timeToPickerDate(time)}
+                mode="time"
+                display="default"
+                onChange={(event, nextTime) => {
+                  setShowTimePicker(false)
+                  if (event.type === 'set' && nextTime) setTime(toTimeString(nextTime))
+                }}
+              />
+            ))}
           <View style={styles.formTwoColumn}>
-            <FormField label="소요 시간" value={duration} onChangeText={setDuration} keyboardType="decimal-pad" />
-            <FormField label="예산" value={cost} onChangeText={setCost} keyboardType="decimal-pad" />
+            <SelectTriggerField
+              label="소요 시간"
+              icon="hourglass-outline"
+              options={DURATION_OPTIONS}
+              value={duration}
+              onPress={() => setShowDurationPicker(true)}
+            />
+            <SelectTriggerField
+              label="알림 설정"
+              icon="notifications-outline"
+              options={ALARM_OPTIONS}
+              value={alarmMinutes}
+              onPress={() => setShowAlarmPicker(true)}
+            />
           </View>
-          <FormField label="메모" value={memo} onChangeText={setMemo} multiline />
+          <OptionPickerModal
+            visible={showDurationPicker}
+            options={DURATION_OPTIONS}
+            value={duration}
+            onClose={() => setShowDurationPicker(false)}
+            onChange={setDuration}
+          />
+          <OptionPickerModal
+            visible={showAlarmPicker}
+            options={ALARM_OPTIONS}
+            value={alarmMinutes}
+            onClose={() => setShowAlarmPicker(false)}
+            onChange={setAlarmMinutes}
+          />
+          <FormField
+            label={`예상 비용 (${costCurrencyLabel})`}
+            icon="wallet-outline"
+            value={cost}
+            onChangeText={(value) => setCost(formatNumberWithCommas(value))}
+            placeholder={costPlaceholder}
+            keyboardType="decimal-pad"
+          />
+          <FormField
+            label="메모/남길 말"
+            icon="document-text-outline"
+            value={memo}
+            onChangeText={setMemo}
+            placeholder="장소의 특징이나 미리 알아둘 것이 있다면 적어주세요"
+            multiline
+          />
           <FormField label="참고 URL" value={urls} onChangeText={setUrls} placeholder="한 줄에 하나씩 입력" multiline />
         </>
       )}
@@ -2955,8 +3449,116 @@ function TemplateApplySheet({
   )
 }
 
+function PickerField({
+  label,
+  value,
+  icon,
+  accessibilityLabel,
+  onPress,
+}: {
+  label: string
+  value: string
+  icon: React.ComponentProps<typeof Ionicons>['name']
+  accessibilityLabel: string
+  onPress: () => void
+}) {
+  return (
+    <View style={styles.formField}>
+      <View style={styles.formLabelRow}>
+        <Ionicons name={icon} size={14} color={colors.brand.primary} />
+        <Text style={styles.formLabel}>{label}</Text>
+      </View>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+        style={({ pressed }) => [styles.pickerFieldButton, pressed && styles.pressedFade]}
+      >
+        <Ionicons name={icon} size={17} color={colors.brand.primary} />
+        <Text style={styles.pickerFieldText} numberOfLines={1}>
+          {value}
+        </Text>
+        <Ionicons name="chevron-down" size={15} color={colors.brand.muted} />
+      </Pressable>
+    </View>
+  )
+}
+
+function SelectTriggerField<T extends string | number>({
+  label,
+  icon,
+  options,
+  value,
+  onPress,
+}: {
+  label: string
+  icon: React.ComponentProps<typeof Ionicons>['name']
+  options: Array<{ value: T; label: string }>
+  value: T
+  onPress: () => void
+}) {
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? ''
+
+  return (
+    <View style={styles.formField}>
+      <View style={styles.formLabelRow}>
+        <Ionicons name={icon} size={14} color={colors.brand.primary} />
+        <Text style={styles.formLabel}>{label}</Text>
+      </View>
+      <Pressable
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${label} ${selectedLabel} 선택`}
+        style={({ pressed }) => [styles.selectTrigger, pressed && styles.pressedFade]}
+      >
+        <Text style={styles.selectTriggerText} numberOfLines={1}>
+          {selectedLabel}
+        </Text>
+        <Ionicons name="chevron-down" size={15} color={colors.brand.muted} />
+      </Pressable>
+    </View>
+  )
+}
+
+function OptionPickerModal<T extends string | number>({
+  visible,
+  options,
+  value,
+  onClose,
+  onChange,
+}: {
+  visible: boolean
+  options: Array<{ value: T; label: string }>
+  value: T
+  onClose: () => void
+  onChange: (value: T) => void
+}) {
+  return (
+    <Modal transparent animationType="slide" visible={visible}>
+      <Pressable style={styles.pickerBackdrop} onPress={onClose} />
+      <View style={styles.pickerSheet}>
+        <View style={styles.pickerHeader}>
+          <Pressable onPress={onClose} hitSlop={8} accessibilityRole="button">
+            <Text style={styles.pickerDone}>완료</Text>
+          </Pressable>
+        </View>
+        <Picker
+          selectedValue={value}
+          onValueChange={(nextValue) => onChange(nextValue as T)}
+          itemStyle={styles.optionPickerItem}
+        >
+          {options.map((option) => (
+            <Picker.Item key={String(option.value)} label={option.label} value={option.value} />
+          ))}
+        </Picker>
+      </View>
+    </Modal>
+  )
+}
+
 function FormField({
   label,
+  icon,
   value,
   onChangeText,
   placeholder,
@@ -2964,6 +3566,7 @@ function FormField({
   multiline = false,
 }: {
   label: string
+  icon?: React.ComponentProps<typeof Ionicons>['name']
   value: string
   onChangeText: (value: string) => void
   placeholder?: string
@@ -2972,7 +3575,10 @@ function FormField({
 }) {
   return (
     <View style={styles.formField}>
-      <Text style={styles.formLabel}>{label}</Text>
+      <View style={styles.formLabelRow}>
+        {icon ? <Ionicons name={icon} size={14} color={colors.brand.primary} /> : null}
+        <Text style={styles.formLabel}>{label}</Text>
+      </View>
       <TextInput
         value={value}
         onChangeText={onChangeText}
@@ -3224,6 +3830,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.bg.canvas,
   },
+  tripIconActionDanger: {
+    borderColor: colors.brand.error,
+    backgroundColor: colors.bg.canvas,
+  },
   tripMetaGrid: {
     marginTop: spacing.sm,
     gap: spacing.xs,
@@ -3244,7 +3854,8 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.brand.hairlineSoft,
     backgroundColor: colors.bg.canvas,
   },
-  actionBarScroll: {
+  actionBarRow: {
+    flexDirection: 'row',
     gap: spacing.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
@@ -3253,18 +3864,28 @@ const styles = StyleSheet.create({
     height: 40,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: spacing.xs,
-    paddingHorizontal: spacing.md,
+    minWidth: 0,
+    paddingHorizontal: spacing.sm,
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.brand.hairline,
     backgroundColor: colors.bg.canvas,
+  },
+  actionChipWeighted: {
+    flex: 1.35,
+  },
+  actionChipEqual: {
+    flex: 1,
   },
   actionChipActive: {
     borderColor: colors.brand.primary,
     backgroundColor: colors.bg.surfaceSoft,
   },
   actionChipText: {
+    minWidth: 0,
+    flexShrink: 1,
     color: colors.brand.ink,
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.bold,
@@ -3380,6 +4001,54 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     lineHeight: 20,
   },
+  shareTypeTabs: {
+    marginTop: spacing.base,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    padding: spacing.xs,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  shareTypeTab: {
+    flex: 1,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.sm,
+  },
+  shareTypeTabActive: {
+    backgroundColor: colors.bg.canvas,
+    shadowColor: colors.bg.scrim,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 1,
+  },
+  shareTypeTabText: {
+    color: colors.brand.muted,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  shareTypeTabTextActive: {
+    color: colors.brand.primary,
+  },
+  sharePasswordField: {
+    marginTop: spacing.base,
+  },
+  sharePasswordInput: {
+    minHeight: 50,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.md,
+    color: colors.brand.ink,
+    fontSize: fontSizes.base,
+    backgroundColor: colors.bg.canvas,
+  },
   shareUrlBox: {
     marginTop: spacing.base,
     padding: spacing.md,
@@ -3398,6 +4067,49 @@ const styles = StyleSheet.create({
     color: colors.brand.muted,
     fontSize: fontSizes.sm,
     lineHeight: 20,
+  },
+  shareUrlHint: {
+    marginTop: spacing.sm,
+    color: colors.brand.primary,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  shareActionGrid: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.base,
+  },
+  shareActionButton: {
+    flex: 1,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+  },
+  shareActionButtonText: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+  },
+  shareActionButtonPrimary: {
+    flex: 1,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: colors.brand.primary,
+  },
+  shareActionButtonPrimaryText: {
+    color: colors.bg.canvas,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
   },
   sheetPrimaryButton: {
     marginTop: spacing.base,
@@ -3437,6 +4149,7 @@ const styles = StyleSheet.create({
   invitePanel: {
     padding: spacing.base,
     borderRadius: radii.lg,
+    gap: spacing.sm,
     backgroundColor: colors.bg.surfaceSoft,
   },
   sheetSectionTitle: {
@@ -3445,15 +4158,42 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
   },
   inviteInput: {
-    marginTop: spacing.sm,
-    height: 48,
+    flex: 1,
+    minHeight: 46,
+    color: colors.brand.ink,
+    fontSize: fontSizes.base,
+  },
+  inviteInputRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'stretch',
+  },
+  inviteInputBox: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: colors.brand.hairline,
     backgroundColor: colors.bg.canvas,
-    color: colors.brand.ink,
-    fontSize: fontSizes.base,
+  },
+  inviteSubmitButton: {
+    minWidth: 72,
+    minHeight: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.sm,
+    backgroundColor: colors.brand.primary,
+  },
+  inviteSubmitText: {
+    color: colors.bg.canvas,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
   },
   roleRow: {
     flexDirection: 'row',
@@ -3482,14 +4222,67 @@ const styles = StyleSheet.create({
   roleButtonTextActive: {
     color: colors.bg.canvas,
   },
-  inviteButtonRow: {
-    flexDirection: 'row',
+  inviteLinkPanel: {
     gap: spacing.sm,
     marginTop: spacing.sm,
+    paddingTop: spacing.base,
+    borderTopWidth: 1,
+    borderTopColor: colors.brand.hairline,
   },
-  inviteButton: {
+  inviteLinkCreateButton: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+  },
+  inviteLinkCreateText: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+  },
+  inviteLinkResultRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.sm,
+  },
+  inviteLinkBox: {
     flex: 1,
-    marginTop: 0,
+    minWidth: 0,
+    minHeight: 46,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+  },
+  inviteLinkText: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
+  inviteLinkIconButton: {
+    width: 46,
+    minHeight: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+  },
+  inviteLinkShareButton: {
+    width: 46,
+    minHeight: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.md,
+    backgroundColor: colors.brand.primary,
   },
   membersHeader: {
     marginTop: spacing.lg,
@@ -4619,6 +5412,12 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.bold,
   },
+  formLabelRow: {
+    minHeight: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
+  },
   formInput: {
     minHeight: 52,
     borderRadius: radii.sm,
@@ -4633,6 +5432,99 @@ const styles = StyleSheet.create({
     minHeight: 92,
     paddingTop: spacing.md,
     textAlignVertical: 'top',
+  },
+  pickerFieldButton: {
+    minHeight: 52,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.bg.canvas,
+  },
+  pickerFieldText: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.brand.ink,
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.semibold,
+  },
+  selectTrigger: {
+    minHeight: 52,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.bg.canvas,
+  },
+  selectTriggerText: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.brand.ink,
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.semibold,
+  },
+  selectOptionRow: {
+    minHeight: 54,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.canvas,
+  },
+  selectOptionRowActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  selectOptionText: {
+    flex: 1,
+    color: colors.brand.ink,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.semibold,
+  },
+  selectOptionTextActive: {
+    color: colors.brand.primary,
+    fontWeight: fontWeights.bold,
+  },
+  pickerBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(15, 23, 42, 0.28)',
+  },
+  pickerSheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingBottom: spacing.lg,
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
+    backgroundColor: colors.bg.canvas,
+  },
+  pickerHeader: {
+    minHeight: 48,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.brand.hairlineSoft,
+  },
+  pickerDone: {
+    color: colors.brand.primary,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+  },
+  optionPickerItem: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.lg,
   },
   formTwoColumn: {
     flexDirection: 'row',
