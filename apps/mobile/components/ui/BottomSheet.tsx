@@ -1,7 +1,9 @@
-import type { ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
+  Animated,
   KeyboardAvoidingView,
   Modal,
+  PanResponder,
   Platform,
   Pressable,
   ScrollView,
@@ -33,6 +35,39 @@ export function BottomSheet({
   contentStyle,
 }: BottomSheetProps) {
   const insets = useSafeAreaInsets()
+  const [translateY] = useState(() => new Animated.Value(0))
+
+  useEffect(() => {
+    if (visible) translateY.setValue(0)
+  }, [translateY, visible])
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_, gesture) =>
+          gesture.dy > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+        onPanResponderMove: (_, gesture) => {
+          translateY.setValue(Math.max(0, gesture.dy))
+        },
+        onPanResponderRelease: (_, gesture) => {
+          if (gesture.dy > 80 || gesture.vy > 0.8) {
+            onClose()
+            return
+          }
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start()
+        },
+        onPanResponderTerminate: () => {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start()
+        },
+      }),
+    [onClose, translateY]
+  )
 
   return (
     <Modal
@@ -52,24 +87,34 @@ export function BottomSheet({
           accessibilityRole="button"
           accessibilityLabel="닫기"
         />
-        <View style={[styles.sheet, { paddingBottom: Math.max(insets.bottom, spacing.base) }]}>
-          <View style={styles.handle} />
-          {(title || onClose) ? (
-            <View style={styles.header}>
-              <Text style={styles.title} numberOfLines={1}>
-                {title ?? ''}
-              </Text>
-              <Pressable
-                onPress={onClose}
-                accessibilityRole="button"
-                accessibilityLabel="닫기"
-                hitSlop={8}
-                style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
-              >
-                <Ionicons name="close" size={20} color={colors.brand.ink} />
-              </Pressable>
-            </View>
-          ) : null}
+        <Animated.View
+          style={[
+            styles.sheet,
+            {
+              paddingBottom: Math.max(insets.bottom, spacing.base),
+              transform: [{ translateY }],
+            },
+          ]}
+        >
+          <View style={styles.dragZone} {...panResponder.panHandlers}>
+            <View style={styles.handle} />
+            {(title || onClose) ? (
+              <View style={styles.header}>
+                <Text style={styles.title} numberOfLines={1}>
+                  {title ?? ''}
+                </Text>
+                <Pressable
+                  onPress={onClose}
+                  accessibilityRole="button"
+                  accessibilityLabel="닫기"
+                  hitSlop={8}
+                  style={({ pressed }) => [styles.closeButton, pressed && styles.pressed]}
+                >
+                  <Ionicons name="close" size={20} color={colors.brand.ink} />
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
           <ScrollView
             contentContainerStyle={[styles.content, contentStyle]}
             showsVerticalScrollIndicator={false}
@@ -79,7 +124,7 @@ export function BottomSheet({
             {children}
           </ScrollView>
           {footer ? <View style={styles.footer}>{footer}</View> : null}
-        </View>
+        </Animated.View>
       </KeyboardAvoidingView>
     </Modal>
   )
@@ -97,6 +142,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: radii.lg,
     backgroundColor: colors.bg.canvas,
     ...shadows.modal,
+  },
+  dragZone: {
+    borderTopLeftRadius: radii.lg,
+    borderTopRightRadius: radii.lg,
   },
   handle: {
     alignSelf: 'center',
