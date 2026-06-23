@@ -67,6 +67,10 @@ import {
   getTripsByUser,
   getTripById,
   getChecklistByTrip,
+  getChecklistCategories,
+  getChecklistItemAssignees,
+  getChecklistItemStatus,
+  getChecklistItemUserChecks,
   getTemplatesWithPreview,
   getUserTripRole,
   getTripMembers,
@@ -85,6 +89,7 @@ import {
   deleteChecklistItem,
   applyTemplateToChecklist,
   toggleChecklistItem,
+  toggleChecklistItemForUser,
   togglePlanVisited,
   formatDate,
   formatCurrency,
@@ -96,6 +101,9 @@ import type {
   Trip,
   Checklist,
   ChecklistItem,
+  ChecklistCategory,
+  ChecklistItemAssignee,
+  ChecklistItemUserCheck,
   TripMember,
   TripShare,
   TemplateWithPreview,
@@ -600,6 +608,9 @@ export default function TripDetailScreen() {
   // 체크리스트 (lazy)
   const [checklist, setChecklist] = useState<Checklist | null>(null)
   const [items, setItems] = useState<ChecklistItem[]>([])
+  const [itemAssignees, setItemAssignees] = useState<ChecklistItemAssignee[]>([])
+  const [userChecks, setUserChecks] = useState<ChecklistItemUserCheck[]>([])
+  const [checklistCategories, setChecklistCategories] = useState<ChecklistCategory[]>([])
   const [checklistLoaded, setChecklistLoaded] = useState(false)
   const [checklistLoading, setChecklistLoading] = useState(false)
   const [isTripSheetOpen, setIsTripSheetOpen] = useState(false)
@@ -710,11 +721,22 @@ export default function TripDetailScreen() {
       const result = await getChecklistByTrip(supabase, id)
       if (!isMounted.current) return
       if (result) {
+        const itemIds = result.items.map((item) => item.id)
+        const [assigneesData, checksData, categoryData] = await Promise.all([
+          getChecklistItemAssignees(supabase, itemIds),
+          getChecklistItemUserChecks(supabase, itemIds),
+          session?.user.id ? getChecklistCategories(supabase, session.user.id) : Promise.resolve([]),
+        ])
         setChecklist(result.checklist)
         setItems(result.items)
+        setItemAssignees(assigneesData)
+        setUserChecks(checksData)
+        setChecklistCategories(categoryData)
       } else {
         setChecklist(null)
         setItems([])
+        setItemAssignees([])
+        setUserChecks([])
       }
     } catch {
       // 빈 상태 유지
@@ -724,7 +746,7 @@ export default function TripDetailScreen() {
         setChecklistLoaded(true)
       }
     }
-  }, [id])
+  }, [id, session?.user.id])
 
   // 준비물 탭 최초 진입 시 1회 lazy load
   useEffect(() => {
@@ -754,24 +776,44 @@ export default function TripDetailScreen() {
   }, [])
 
   // 체크리스트 항목 토글 (낙관적 업데이트 + 롤백)
+  const participantIds = useMemo(
+    () => Array.from(new Set([
+      trip?.user_id,
+      ...members.map((member) => member.user_id),
+    ].filter((userId): userId is string => Boolean(userId)))),
+    [members, trip?.user_id]
+  )
+
   const handleToggleItem = useCallback(async (item: ChecklistItem) => {
-    const next = !item.is_checked
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, is_checked: next } : i))
-    )
+    if (!session?.user.id) return
+    const status = getChecklistItemStatus(item, session.user.id, participantIds, userChecks, itemAssignees)
+    if (!status.can_check) {
+      Alert.alert('담당자 확인', '이 준비물은 다른 담당자가 챙기는 항목이에요.')
+      return
+    }
+    const next = !status.is_my_checked
+    if (item.assignment_type === 'everyone' || status.required_count > 1) {
+      setUserChecks((prev) => {
+        if (next) {
+          return [...prev, { id: `tmp-${Date.now()}`, item_id: item.id, user_id: session.user.id, created_at: new Date().toISOString() }]
+        }
+        return prev.filter((check) => !(check.item_id === item.id && check.user_id === session.user.id))
+      })
+    } else {
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, is_checked: next } : i))
+      )
+    }
     try {
-      await toggleChecklistItem(supabase, item.id, next)
+      await toggleChecklistItemForUser(supabase, item, session.user.id, next)
+      await loadChecklist()
     } catch {
       if (isMounted.current) {
-        setItems((prev) =>
-          prev.map((i) =>
-            i.id === item.id ? { ...i, is_checked: item.is_checked } : i
-          )
-        )
+        await loadChecklist()
       }
       Alert.alert('오류', '저장에 실패했어요. 다시 시도해 주세요.')
     }
-  }, [])
+  }, [itemAssignees, loadChecklist, participantIds, session?.user.id, userChecks])
 
   const handleSaveTrip = useCallback(
     async (input: {
@@ -870,31 +912,47 @@ export default function TripDetailScreen() {
   )
 
   const handleSaveChecklistItem = useCallback(
-    async (input: { item_name: string; category: string }) => {
+    async (input: {
+      item_name: string
+      category: string
+      is_private: boolean
+      assignment_type: 'anyone' | 'specific' | 'everyone'
+      assignee_ids: string[]
+    }) => {
       if (!id) return
       const currentChecklist = checklist ?? (await ensureChecklist(supabase, id))
       if (!checklist) setChecklist(currentChecklist)
+      const finalAssigneeIds = input.is_private
+        ? (session?.user.id ? [session.user.id] : [])
+        : input.assignment_type === 'specific'
+          ? input.assignee_ids
+          : []
 
       if (editingItem) {
         await updateChecklistItem(supabase, editingItem.id, {
           item_name: input.item_name,
           category: input.category,
-          is_private: editingItem.is_private,
-          assignment_type: editingItem.assignment_type,
-          assigned_user_id: editingItem.assigned_user_id,
+          is_private: input.is_private,
+          assignment_type: input.is_private ? 'specific' : input.assignment_type,
+          assigned_user_id: finalAssigneeIds[0] ?? null,
+          assignee_ids: finalAssigneeIds,
           source_template_name: editingItem.source_template_name,
         })
       } else {
         await createChecklistItem(supabase, currentChecklist.id, {
           item_name: input.item_name,
           category: input.category,
+          is_private: input.is_private,
+          assignment_type: input.is_private ? 'specific' : input.assignment_type,
+          assigned_user_id: finalAssigneeIds[0] ?? null,
+          assignee_ids: finalAssigneeIds,
         })
       }
       setEditingItem(null)
       setIsItemSheetOpen(false)
       await loadChecklist()
     },
-    [checklist, editingItem, id, loadChecklist]
+    [checklist, editingItem, id, loadChecklist, session?.user.id]
   )
 
   const handleDeleteChecklistItem = useCallback(
@@ -912,11 +970,11 @@ export default function TripDetailScreen() {
       if (!id) return
       const currentChecklist = checklist ?? (await ensureChecklist(supabase, id))
       if (!checklist) setChecklist(currentChecklist)
-      await applyTemplateToChecklist(supabase, currentChecklist.id, templateId)
+      await applyTemplateToChecklist(supabase, currentChecklist.id, templateId, session?.user.id)
       setIsTemplateSheetOpen(false)
       await loadChecklist()
     },
-    [checklist, id, loadChecklist]
+    [checklist, id, loadChecklist, session?.user.id]
   )
 
   const totalPlanCost = useMemo(
@@ -1256,6 +1314,10 @@ export default function TripDetailScreen() {
               loaded={checklistLoaded}
               checklist={checklist}
               items={items}
+              assignees={itemAssignees}
+              userChecks={userChecks}
+              participantIds={participantIds}
+              currentUserId={session?.user.id ?? null}
               onToggle={handleToggleItem}
               onCreateItem={() => {
                 setEditingItem(null)
@@ -1322,6 +1384,11 @@ export default function TripDetailScreen() {
           <ChecklistItemSheet
             visible={isItemSheetOpen}
             item={editingItem}
+            categories={checklistCategories}
+            members={members}
+            ownerId={trip.user_id}
+            currentUserId={session?.user.id ?? null}
+            assignees={itemAssignees}
             onClose={() => {
               setEditingItem(null)
               setIsItemSheetOpen(false)
@@ -2434,6 +2501,10 @@ interface ChecklistTabProps {
   loaded: boolean
   checklist: Checklist | null
   items: ChecklistItem[]
+  assignees: ChecklistItemAssignee[]
+  userChecks: ChecklistItemUserCheck[]
+  participantIds: string[]
+  currentUserId: string | null
   onToggle: (item: ChecklistItem) => void
   onCreateItem: () => void
   onEditItem: (item: ChecklistItem) => void
@@ -2447,6 +2518,10 @@ function ChecklistTab({
   loaded,
   checklist,
   items,
+  assignees,
+  userChecks,
+  participantIds,
+  currentUserId,
   onToggle,
   onCreateItem,
   onEditItem,
@@ -2455,6 +2530,9 @@ function ChecklistTab({
   canEdit,
 }: ChecklistTabProps) {
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [groupBy, setGroupBy] = useState<'category' | 'template'>('category')
+  const [sortBy, setSortBy] = useState<'status' | 'alphabetical'>('status')
+  const [hideChecked, setHideChecked] = useState(false)
 
   if (loading || !loaded) {
     return (
@@ -2474,14 +2552,36 @@ function ChecklistTab({
           actionLabel={canEdit ? '준비물 추가' : undefined}
           onAction={canEdit ? onCreateItem : undefined}
         />
+        {canEdit ? (
+          <Pressable
+            onPress={onOpenTemplates}
+            accessibilityRole="button"
+            style={({ pressed }) => [styles.inlineSecondaryButton, pressed && styles.pressedFade]}
+          >
+            <Ionicons name="albums-outline" size={18} color={colors.brand.primary} />
+            <Text style={styles.inlineSecondaryButtonText}>템플릿 적용</Text>
+          </Pressable>
+        ) : null}
       </View>
     )
   }
 
-  const pendingItems = items.filter((i) => !i.is_checked)
-  const doneItems = items.filter((i) => i.is_checked)
+  const getStatus = (item: ChecklistItem) =>
+    getChecklistItemStatus(item, currentUserId, participantIds, userChecks, assignees)
+  const sortedItems = [...items]
+    .filter((item) => !hideChecked || !getStatus(item).is_checked)
+    .sort((a, b) => {
+      if (sortBy === 'status') {
+        const aDone = getStatus(a).is_checked
+        const bDone = getStatus(b).is_checked
+        if (aDone !== bDone) return aDone ? 1 : -1
+      }
+      return a.item_name.localeCompare(b.item_name, 'ko')
+    })
+  const pendingItems = sortedItems.filter((i) => !getStatus(i).is_checked)
+  const doneItems = sortedItems.filter((i) => getStatus(i).is_checked)
   const totalCount = items.length
-  const doneCount = doneItems.length
+  const doneCount = items.filter((item) => getStatus(item).is_checked).length
   const progressPct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0
 
   const toggleGroup = (key: string) => {
@@ -2491,7 +2591,9 @@ function ChecklistTab({
   const groupItems = (source: ChecklistItem[]) => {
     const groups = new Map<string, ChecklistItem[]>()
     source.forEach((item) => {
-      const key = item.category?.trim() || '기타'
+      const key = groupBy === 'template'
+        ? (item.source_template_name?.trim() || '직접 추가')
+        : (item.category?.trim() || '기타')
       groups.set(key, [...(groups.get(key) ?? []), item])
     })
     return Array.from(groups.entries())
@@ -2529,6 +2631,32 @@ function ChecklistTab({
           </Pressable>
         </View>
       ) : null}
+      <View style={styles.checklistOptionRow}>
+        <SegmentedTabs
+          tabs={[
+            { key: 'category', label: '카테고리별' },
+            { key: 'template', label: '템플릿별' },
+          ]}
+          value={groupBy}
+          onChange={(value) => setGroupBy(value as 'category' | 'template')}
+        />
+        <View style={styles.checklistFilterRow}>
+          <Pressable
+            onPress={() => setSortBy((prev) => prev === 'status' ? 'alphabetical' : 'status')}
+            style={({ pressed }) => [styles.filterChip, pressed && styles.pressedFade]}
+          >
+            <Ionicons name="swap-vertical-outline" size={14} color={colors.brand.primary} />
+            <Text style={styles.filterChipText}>{sortBy === 'status' ? '상태순' : '가나다순'}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => setHideChecked((prev) => !prev)}
+            style={({ pressed }) => [styles.filterChip, hideChecked && styles.filterChipActive, pressed && styles.pressedFade]}
+          >
+            <Ionicons name="checkmark-done-outline" size={14} color={hideChecked ? colors.bg.canvas : colors.brand.primary} />
+            <Text style={[styles.filterChipText, hideChecked && styles.filterChipTextActive]}>완료 숨김</Text>
+          </Pressable>
+        </View>
+      </View>
 
       {/* 미완료 항목 */}
       {pendingItems.length > 0 && (
@@ -2549,6 +2677,7 @@ function ChecklistTab({
                   <ItemRow
                     key={item.id}
                     item={item}
+                    status={getStatus(item)}
                     onToggle={onToggle}
                     onEdit={onEditItem}
                     onDelete={onDeleteItem}
@@ -2580,6 +2709,7 @@ function ChecklistTab({
                   <ItemRow
                     key={item.id}
                     item={item}
+                    status={getStatus(item)}
                     onToggle={onToggle}
                     onEdit={onEditItem}
                     onDelete={onDeleteItem}
@@ -2606,6 +2736,7 @@ function ChecklistTab({
 
 interface ItemRowProps {
   item: ChecklistItem
+  status: ReturnType<typeof getChecklistItemStatus>
   onToggle: (item: ChecklistItem) => void
   onEdit: (item: ChecklistItem) => void
   onDelete: (item: ChecklistItem) => Promise<void>
@@ -2613,26 +2744,28 @@ interface ItemRowProps {
   done?: boolean
 }
 
-function ItemRow({ item, onToggle, onEdit, onDelete, canEdit, done = false }: ItemRowProps) {
+function ItemRow({ item, status, onToggle, onEdit, onDelete, canEdit, done = false }: ItemRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const checked = status.is_checked || status.is_my_checked
+  const canCheck = canEdit && status.can_check
   const row = (
     <Pressable
-      disabled={!canEdit}
+      disabled={!canCheck}
       style={({ pressed }) => [
         styles.itemRow,
-        !canEdit && styles.readonlyRow,
-        pressed && canEdit && styles.pressedFade,
+        !canCheck && styles.readonlyRow,
+        pressed && canCheck && styles.pressedFade,
       ]}
       onPress={() => onToggle(item)}
       accessibilityRole="checkbox"
-      accessibilityState={{ checked: done, disabled: !canEdit }}
+      accessibilityState={{ checked, disabled: !canCheck }}
       accessibilityLabel={item.item_name}
     >
-      <View style={[styles.checkbox, done && styles.checkboxChecked]}>
-        {done && <Ionicons name="checkmark" size={12} color={colors.bg.canvas} />}
+      <View style={[styles.checkbox, checked && styles.checkboxChecked, !canCheck && styles.checkboxDisabled]}>
+        {checked && <Ionicons name="checkmark" size={12} color={colors.bg.canvas} />}
       </View>
       <View style={styles.itemContent}>
-        <Text style={[styles.itemName, done && styles.itemNameDone]} numberOfLines={2}>
+        <Text style={[styles.itemName, status.is_checked && styles.itemNameDone]} numberOfLines={2}>
           {item.item_name}
         </Text>
         {item.category?.length > 0 ? (
@@ -2643,6 +2776,11 @@ function ItemRow({ item, onToggle, onEdit, onDelete, canEdit, done = false }: It
         {item.source_template_name ? (
           <Text style={styles.itemSource} numberOfLines={1}>
             {item.source_template_name}
+          </Text>
+        ) : null}
+        {status.required_count > 1 ? (
+          <Text style={styles.itemSource} numberOfLines={1}>
+            준비 현황 {status.checks_count}/{status.required_count}
           </Text>
         ) : null}
       </View>
@@ -3313,25 +3451,66 @@ function PlanEditSheet({
 function ChecklistItemSheet({
   visible,
   item,
+  categories,
+  members,
+  ownerId,
+  currentUserId,
+  assignees,
   onClose,
   onSave,
 }: {
   visible: boolean
   item: ChecklistItem | null
+  categories: ChecklistCategory[]
+  members: TripMember[]
+  ownerId: string
+  currentUserId: string | null
+  assignees: ChecklistItemAssignee[]
   onClose: () => void
-  onSave: (input: { item_name: string; category: string }) => Promise<void>
+  onSave: (input: {
+    item_name: string
+    category: string
+    is_private: boolean
+    assignment_type: 'anyone' | 'specific' | 'everyone'
+    assignee_ids: string[]
+  }) => Promise<void>
 }) {
   const [name, setName] = useState('')
   const [category, setCategory] = useState('기타')
+  const [isPrivate, setIsPrivate] = useState(false)
+  const [assignmentType, setAssignmentType] = useState<'anyone' | 'specific' | 'everyone'>('anyone')
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const participants = useMemo(() => {
+    const owner = ownerId ? [{ user_id: ownerId, invited_email: '나', role: 'owner' }] : []
+    const rest = members
+      .filter((member) => member.user_id)
+      .map((member) => ({
+        user_id: member.user_id as string,
+        invited_email: member.profiles?.nickname || member.profiles?.email || member.invited_email,
+        role: member.role,
+      }))
+    const seen = new Set<string>()
+    return [...owner, ...rest].filter((member) => {
+      if (seen.has(member.user_id)) return false
+      seen.add(member.user_id)
+      return true
+    })
+  }, [members, ownerId])
 
   useEffect(() => {
     if (!visible) return
     setName(item?.item_name ?? '')
     setCategory(item?.category || '기타')
+    setIsPrivate(Boolean(item?.is_private))
+    setAssignmentType((item?.assignment_type as 'anyone' | 'specific' | 'everyone') || 'anyone')
+    const assigned = item
+      ? assignees.filter((assignee) => assignee.item_id === item.id).map((assignee) => assignee.user_id)
+      : []
+    setAssigneeIds(assigned.length > 0 ? assigned : (item?.assigned_user_id ? [item.assigned_user_id] : []))
     setError('')
-  }, [item, visible])
+  }, [assignees, item, visible])
 
   const submit = async () => {
     if (!name.trim()) {
@@ -3341,7 +3520,13 @@ function ChecklistItemSheet({
     setSaving(true)
     setError('')
     try {
-      await onSave({ item_name: name.trim(), category: category.trim() || '기타' })
+      await onSave({
+        item_name: name.trim(),
+        category: category.trim() || '기타',
+        is_private: isPrivate,
+        assignment_type: isPrivate ? 'specific' : assignmentType,
+        assignee_ids: isPrivate ? (currentUserId ? [currentUserId] : []) : assigneeIds,
+      })
     } catch (e) {
       setError(e instanceof Error ? e.message : '준비물 저장에 실패했어요.')
     } finally {
@@ -3352,7 +3537,69 @@ function ChecklistItemSheet({
   return (
     <BottomSheet visible={visible} title={item ? '준비물 수정' : '준비물 추가'} onClose={onClose}>
       <FormField label="준비물" value={name} onChangeText={setName} placeholder="예) 여권" />
-      <FormField label="카테고리" value={category} onChangeText={setCategory} placeholder="기타" />
+      <Text style={styles.formLabel}>카테고리</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categorySelector}>
+        {(categories.length > 0 ? categories : [{ id: 'fallback', name: '기타' } as ChecklistCategory]).map((cat) => {
+          const selected = category === cat.name
+          return (
+            <Pressable
+              key={cat.id}
+              onPress={() => setCategory(cat.name)}
+              style={[styles.filterChip, selected && styles.filterChipActive]}
+            >
+              <Text style={[styles.filterChipText, selected && styles.filterChipTextActive]}>{cat.name}</Text>
+            </Pressable>
+          )
+        })}
+      </ScrollView>
+      <Pressable
+        onPress={() => setIsPrivate((prev) => !prev)}
+        style={styles.sheetToggleRow}
+      >
+        <Ionicons name={isPrivate ? 'lock-closed' : 'lock-open-outline'} size={17} color={isPrivate ? colors.brand.primary : colors.brand.muted} />
+        <Text style={[styles.sheetToggleText, isPrivate && styles.sheetToggleTextActive]}>나만 보기</Text>
+      </Pressable>
+      {!isPrivate ? (
+        <>
+          <Text style={styles.formLabel}>누가 챙길까요?</Text>
+          <View style={styles.assignmentTypeRow}>
+            {[
+              { key: 'anyone', label: '한 명' },
+              { key: 'specific', label: '담당자' },
+              { key: 'everyone', label: '모두' },
+            ].map((option) => {
+              const selected = assignmentType === option.key
+              return (
+                <Pressable
+                  key={option.key}
+                  onPress={() => setAssignmentType(option.key as 'anyone' | 'specific' | 'everyone')}
+                  style={[styles.assignmentChip, selected && styles.assignmentChipActive]}
+                >
+                  <Text style={[styles.assignmentChipText, selected && styles.assignmentChipTextActive]}>{option.label}</Text>
+                </Pressable>
+              )
+            })}
+          </View>
+          {assignmentType === 'specific' ? (
+            <View style={styles.assigneeGrid}>
+              {participants.map((participant) => {
+                const selected = assigneeIds.includes(participant.user_id)
+                const label = participant.user_id === currentUserId ? '나' : participant.invited_email || '동행자'
+                return (
+                  <Pressable
+                    key={participant.user_id}
+                    onPress={() => setAssigneeIds((prev) => selected ? prev.filter((id) => id !== participant.user_id) : [...prev, participant.user_id])}
+                    style={[styles.assigneeChip, selected && styles.assigneeChipActive]}
+                  >
+                    <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={15} color={selected ? colors.brand.primary : colors.brand.muted} />
+                    <Text style={[styles.assigneeChipText, selected && styles.assigneeChipTextActive]}>{label}</Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          ) : null}
+        </>
+      ) : null}
       {error ? <Text style={styles.formError}>{error}</Text> : null}
       <Pressable
         onPress={submit}
@@ -3432,7 +3679,8 @@ function TemplateApplySheet({
               <View style={styles.templateApplyBody}>
                 <Text style={styles.templateApplyTitle}>{template.title}</Text>
                 <Text style={styles.templateApplyMeta}>
-                  항목 {template.item_count}개 · {template.preview_items.join(', ') || '미리보기 없음'}
+                  {template.access === 'owner' ? '내 템플릿' : template.access === 'editor' ? '공유받음 · 편집 가능' : template.access === 'viewer' ? '공유받음' : '기본 템플릿'}
+                  {' · '}항목 {template.item_count}개 · {template.preview_items.join(', ') || '미리보기 없음'}
                 </Text>
               </View>
               {applyingId === template.id ? (
@@ -5536,6 +5784,78 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     lineHeight: 20,
   },
+  categorySelector: {
+    gap: spacing.xs,
+    paddingBottom: spacing.sm,
+  },
+  sheetToggleRow: {
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  sheetToggleText: {
+    color: colors.brand.muted,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
+  sheetToggleTextActive: {
+    color: colors.brand.primary,
+  },
+  assignmentTypeRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  assignmentChip: {
+    flex: 1,
+    minHeight: 40,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.canvas,
+  },
+  assignmentChipActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  assignmentChipText: {
+    color: colors.brand.muted,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  assignmentChipTextActive: {
+    color: colors.brand.primary,
+  },
+  assigneeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  assigneeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  assigneeChipActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  assigneeChipText: {
+    color: colors.brand.muted,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+  },
+  assigneeChipTextActive: {
+    color: colors.brand.primary,
+  },
   sheetSubmitButton: {
     minHeight: 50,
     marginTop: spacing.base,
@@ -5606,6 +5926,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
   },
+  checklistOptionRow: {
+    gap: spacing.sm,
+  },
+  checklistFilterRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.bg.canvas,
+  },
+  filterChipActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.brand.primary,
+  },
+  filterChipText: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.primary,
+  },
+  filterChipTextActive: {
+    color: colors.bg.canvas,
+  },
   progressLabel: {
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.medium,
@@ -5655,6 +6005,9 @@ const styles = StyleSheet.create({
   checkboxChecked: {
     backgroundColor: colors.brand.primary,
     borderColor: colors.brand.primary,
+  },
+  checkboxDisabled: {
+    opacity: 0.45,
   },
   itemContent: { flex: 1, gap: spacing.xxs },
   itemName: {

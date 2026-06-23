@@ -44,6 +44,77 @@ export type Database = {
         }
         Relationships: []
       }
+      checklist_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_categories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_item_assignees: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_item_assignees_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_item_assignees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       checklist_item_user_checks: {
         Row: {
           created_at: string
@@ -165,6 +236,55 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "checklist_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_template_shares: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: string
+          shared_with_user_id: string
+          template_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: string
+          shared_with_user_id: string
+          template_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: string
+          shared_with_user_id?: string
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_template_shares_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_template_shares_shared_with_user_id_fkey"
+            columns: ["shared_with_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_template_shares_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "checklist_templates"
@@ -576,7 +696,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_can_edit_template: {
+        Args: { _template_id: string; _user_id: string }
+        Returns: boolean
+      }
+      check_can_view_template: {
+        Args: { _template_id: string; _user_id: string }
+        Returns: boolean
+      }
       check_is_public_trip: { Args: { _trip_id: string }; Returns: boolean }
+      check_is_template_owner: {
+        Args: { _template_id: string; _user_id: string }
+        Returns: boolean
+      }
       check_is_trip_editor: {
         Args: { _trip_id: string; _user_id: string }
         Returns: boolean

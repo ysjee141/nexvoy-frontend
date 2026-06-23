@@ -289,18 +289,19 @@ export default function HomeClient() {
         setShowNicknamePrompt(!profile?.nickname)
 
         // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
-        const { data: memberTripData } = await supabase
+        const { data: memberTripData, error: memberTripError } = await supabase
             .from('trip_members')
             .select('trip_id')
             .eq('user_id', networkUser.id)
             .eq('status', 'accepted')
+        if (memberTripError) throw memberTripError
 
         const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
 
         // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
         let query = supabase
             .from('trips')
-            .select('*, checklists(id, checklist_items(id, is_checked))')
+            .select('*')
 
         if (memberTripIds.length > 0) {
             query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
@@ -308,9 +309,51 @@ export default function HomeClient() {
             query = query.eq('user_id', networkUser.id)
         }
 
-        const { data: trips } = await query.order('start_date', { ascending: true })
+        const { data: trips, error: tripsError } = await query.order('start_date', { ascending: true })
+        if (tripsError) throw tripsError
+        const tripRows = trips || []
+        const tripIds = tripRows.map((trip: any) => trip.id)
+        let checklistsByTrip = new globalThis.Map<string, any[]>()
+        let itemsByChecklist = new globalThis.Map<string, any[]>()
 
-        const allTrips = trips || []
+        if (tripIds.length > 0) {
+            const { data: checklistRows, error: checklistsError } = await supabase
+                .from('checklists')
+                .select('id, trip_id')
+                .in('trip_id', tripIds)
+            if (checklistsError) throw checklistsError
+
+            ;(checklistRows || []).forEach((checklist: any) => {
+                checklistsByTrip.set(checklist.trip_id, [
+                    ...(checklistsByTrip.get(checklist.trip_id) || []),
+                    { ...checklist, checklist_items: [] },
+                ])
+            })
+
+            const checklistIds = (checklistRows || []).map((checklist: any) => checklist.id)
+            if (checklistIds.length > 0) {
+                const { data: itemRows, error: itemsError } = await supabase
+                    .from('checklist_items')
+                    .select('id, checklist_id, is_checked')
+                    .in('checklist_id', checklistIds)
+                if (itemsError) throw itemsError
+
+                ;(itemRows || []).forEach((item: any) => {
+                    itemsByChecklist.set(item.checklist_id, [
+                        ...(itemsByChecklist.get(item.checklist_id) || []),
+                        item,
+                    ])
+                })
+            }
+        }
+
+        const allTrips = tripRows.map((trip: any) => ({
+            ...trip,
+            checklists: (checklistsByTrip.get(trip.id) || []).map((checklist: any) => ({
+                ...checklist,
+                checklist_items: itemsByChecklist.get(checklist.id) || [],
+            })),
+        }))
         processTrips(allTrips)
     } catch (e) {
         console.warn('Network sync failed, keeping local/cached state', e)

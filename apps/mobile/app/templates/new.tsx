@@ -22,13 +22,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { createTemplate, replaceTemplateItems } from '@nexvoy/core'
+import { createTemplate, getChecklistCategories, replaceTemplateItems } from '@nexvoy/core'
+import type { ChecklistCategory } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const TITLE_MAX = 50
 const ITEM_MAX = 50
+type TemplateDraftItem = {
+  id: string
+  item_name: string
+  category: string
+  is_private: boolean
+}
 
 export default function NewTemplateScreen() {
   const router = useRouter()
@@ -36,11 +43,24 @@ export default function NewTemplateScreen() {
 
   const [title, setTitle] = useState('')
   const [itemDraft, setItemDraft] = useState('')
-  const [items, setItems] = useState<string[]>([])
+  const [itemCategory, setItemCategory] = useState('기타')
+  const [itemPrivate, setItemPrivate] = useState(false)
+  const [items, setItems] = useState<TemplateDraftItem[]>([])
+  const [categories, setCategories] = useState<ChecklistCategory[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isMounted = useRef(true)
   useEffect(() => () => { isMounted.current = false }, [])
+  useEffect(() => {
+    if (!session?.user) return
+    getChecklistCategories(supabase, session.user.id)
+      .then((data) => {
+        if (isMounted.current) setCategories(data)
+      })
+      .catch(() => {
+        if (isMounted.current) setCategories([])
+      })
+  }, [session?.user])
 
   const trimmedDraft = itemDraft.trim()
   const canAddItem = trimmedDraft.length > 0
@@ -48,8 +68,17 @@ export default function NewTemplateScreen() {
 
   const handleAddItem = () => {
     if (!canAddItem) return
-    setItems((prev) => [...prev, trimmedDraft])
+    setItems((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-${prev.length}`,
+        item_name: trimmedDraft,
+        category: itemCategory.trim() || '기타',
+        is_private: itemPrivate,
+      },
+    ])
     setItemDraft('')
+    setItemPrivate(false)
   }
 
   const handleRemoveItem = (index: number) => {
@@ -68,7 +97,11 @@ export default function NewTemplateScreen() {
       await replaceTemplateItems(
         supabase,
         template.id,
-        items.map((name) => ({ item_name: name, category: '' }))
+        items.map((item) => ({
+          item_name: item.item_name,
+          category: item.category,
+          is_private: item.is_private,
+        }))
       )
       router.back()
     } catch (e) {
@@ -164,20 +197,60 @@ export default function NewTemplateScreen() {
                 </Text>
               </Pressable>
             </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryChips}
+            >
+              {(categories.length > 0 ? categories : [{ id: 'fallback', name: '기타' } as ChecklistCategory]).map((category) => {
+                const selected = itemCategory === category.name
+                return (
+                  <Pressable
+                    key={category.id}
+                    onPress={() => setItemCategory(category.name)}
+                    style={[styles.categoryChip, selected && styles.categoryChipActive]}
+                  >
+                    <Text style={[styles.categoryChipText, selected && styles.categoryChipTextActive]}>
+                      {category.name}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </ScrollView>
+            <Pressable
+              onPress={() => setItemPrivate((prev) => !prev)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: itemPrivate }}
+              style={styles.privateToggle}
+            >
+              <Ionicons
+                name={itemPrivate ? 'lock-closed' : 'lock-open-outline'}
+                size={16}
+                color={itemPrivate ? colors.brand.primary : colors.brand.muted}
+              />
+              <Text style={[styles.privateToggleText, itemPrivate && styles.privateToggleTextActive]}>
+                비공개 항목
+              </Text>
+            </Pressable>
           </View>
 
           {/* 항목 리스트 */}
           {items.length > 0 && (
             <View style={styles.itemList}>
-              {items.map((name, index) => (
-                <View key={`${name}-${index}`} style={styles.itemRow}>
-                  <Text style={styles.itemText} numberOfLines={1}>
-                    {name}
-                  </Text>
+              {items.map((item, index) => (
+                <View key={item.id} style={styles.itemRow}>
+                  <View style={styles.itemTextBlock}>
+                    <Text style={styles.itemText} numberOfLines={1}>
+                      {item.item_name}
+                    </Text>
+                    <Text style={styles.itemMeta} numberOfLines={1}>
+                      {item.category}{item.is_private ? ' · 비공개' : ''}
+                    </Text>
+                  </View>
                   <Pressable
                     onPress={() => handleRemoveItem(index)}
                     accessibilityRole="button"
-                    accessibilityLabel={`${name} 항목 삭제`}
+                    accessibilityLabel={`${item.item_name} 항목 삭제`}
                     hitSlop={8}
                     style={({ pressed }) => [
                       styles.itemRemoveBtn,
@@ -295,6 +368,45 @@ const styles = StyleSheet.create({
     color: colors.brand.ink,
   },
   addBtnTextDisabled: { color: colors.brand.mutedSoft },
+  categoryChips: {
+    gap: spacing.xs,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  categoryChip: {
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.bg.canvas,
+  },
+  categoryChipActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categoryChipText: {
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+    color: colors.brand.muted,
+  },
+  categoryChipTextActive: {
+    color: colors.brand.primary,
+  },
+  privateToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  privateToggleText: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+    color: colors.brand.muted,
+  },
+  privateToggleTextActive: {
+    color: colors.brand.primary,
+  },
   // 항목 리스트
   itemList: {
     gap: spacing.sm,
@@ -318,6 +430,12 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     fontWeight: fontWeights.normal,
     color: colors.brand.ink,
+  },
+  itemTextBlock: { flex: 1 },
+  itemMeta: {
+    fontSize: fontSizes.xs,
+    color: colors.brand.muted,
+    marginTop: 2,
   },
   itemRemoveBtn: {
     width: 36,
