@@ -8,6 +8,18 @@ import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useRouter } from 'next/navigation'
 import { useUIStore } from '@/stores/useUIStore'
 import TemplateForm, { TemplateItemInput } from './TemplateForm'
+import {
+    createChecklistCategory,
+    deleteChecklistCategory,
+    getChecklistCategories,
+    getProfileByEmail,
+    getTemplateShares,
+    removeTemplateShare,
+    shareTemplate,
+    updateChecklistCategory,
+    updateTemplateShareRole,
+} from '@nexvoy/core'
+import type { ChecklistCategory, ChecklistTemplateShareWithProfile } from '@nexvoy/types'
 
 interface EditTemplateModalProps {
     isOpen: boolean
@@ -27,6 +39,14 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
     const [items, setItems] = useState<TemplateItemInput[]>([])
     const [originalItemIds, setOriginalItemIds] = useState<string[]>([])
     const [deletedItemIds, setDeletedItemIds] = useState<string[]>([])
+    const [categories, setCategories] = useState<ChecklistCategory[]>([])
+    const [shares, setShares] = useState<ChecklistTemplateShareWithProfile[]>([])
+    const [ownerId, setOwnerId] = useState<string | null>(null)
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+    const [shareEmail, setShareEmail] = useState('')
+    const [shareRole, setShareRole] = useState<'viewer' | 'editor'>('viewer')
+    const canManageShares = Boolean(ownerId && currentUserId && ownerId === currentUserId)
+    const canEditTemplate = canManageShares || shares.some((share) => share.shared_with_user_id === currentUserId && share.role === 'editor')
 
     const fetchTemplate = useCallback(async () => {
         if (!templateId) return
@@ -37,6 +57,7 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                 .from('checklist_templates')
                 .select(`
                     id, 
+                    user_id,
                     title, 
                     checklist_template_items (id, item_name, category, is_private)
                 `)
@@ -44,6 +65,7 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                 .single()
 
             if (data) {
+                setOwnerId(data.user_id)
                 setTitle(data.title)
                 const mappedItems = (data.checklist_template_items || []).map((item: any) => ({
                     id: item.id,
@@ -55,6 +77,16 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                 setItems(mappedItems)
                 setOriginalItemIds(mappedItems.map((i: any) => i.id))
                 setDeletedItemIds([])
+                const { data: { session } } = await supabase.auth.getSession()
+                setCurrentUserId(session?.user.id ?? null)
+                if (session?.user.id) {
+                    const [categoryData, shareData] = await Promise.all([
+                        getChecklistCategories(supabase, session.user.id),
+                        getTemplateShares(supabase, templateId),
+                    ])
+                    setCategories(categoryData)
+                    setShares(shareData)
+                }
             } else if (error) {
                 console.error("Fetch template error:", error)
                 alert('템플릿 정보를 불러오는 데 실패했어요.')
@@ -80,6 +112,10 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
 
     const handleDeleteTemplate = async () => {
         if (!templateId) return
+        if (!canManageShares) {
+            alert('템플릿 삭제는 소유자만 할 수 있어요.')
+            return
+        }
         if (!confirm('정말 이 템플릿을 삭제하시겠어요? 🥺')) return
 
         setLoading(true)
@@ -100,6 +136,10 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!templateId) return
+        if (!canEditTemplate) {
+            alert('이 템플릿은 보기 권한만 있어요.')
+            return
+        }
         if (!title.trim()) {
             alert('템플릿 이름을 지어주세요!')
             return
@@ -170,6 +210,54 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
         }
     }
 
+    const loadCategories = useCallback(async () => {
+        if (!currentUserId) return
+        setCategories(await getChecklistCategories(supabase, currentUserId))
+    }, [currentUserId, supabase])
+
+    const loadShares = useCallback(async () => {
+        if (!templateId) return
+        setShares(await getTemplateShares(supabase, templateId))
+    }, [supabase, templateId])
+
+    const handleCreateCategory = useCallback(async (name: string) => {
+        if (!currentUserId) return
+        await createChecklistCategory(supabase, { user_id: currentUserId, name })
+        await loadCategories()
+    }, [currentUserId, loadCategories, supabase])
+
+    const handleRenameCategory = useCallback(async (id: string, name: string) => {
+        await updateChecklistCategory(supabase, id, { name })
+        await loadCategories()
+    }, [loadCategories, supabase])
+
+    const handleDeleteCategory = useCallback(async (id: string) => {
+        if (!confirm('이 카테고리를 삭제할까요? 기존 준비물의 카테고리 텍스트는 유지됩니다.')) return
+        await deleteChecklistCategory(supabase, id)
+        await loadCategories()
+    }, [loadCategories, supabase])
+
+    const handleShareTemplate = useCallback(async () => {
+        if (!templateId || !currentUserId || !shareEmail.trim()) return
+        const profile = await getProfileByEmail(supabase, shareEmail)
+        if (!profile) {
+            alert('해당 이메일의 사용자를 찾지 못했어요.')
+            return
+        }
+        if (profile.id === ownerId) {
+            alert('소유자에게는 공유할 필요가 없어요.')
+            return
+        }
+        await shareTemplate(supabase, {
+            template_id: templateId,
+            shared_with_user_id: profile.id,
+            role: shareRole,
+            created_by: currentUserId,
+        })
+        setShareEmail('')
+        await loadShares()
+    }, [currentUserId, loadShares, ownerId, shareEmail, shareRole, supabase, templateId])
+
     if (!isOpen) return null
 
     return (
@@ -199,7 +287,7 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                 })}>
                     <button
                         onClick={handleDeleteTemplate}
-                        disabled={loading || fetching}
+                        disabled={loading || fetching || !canManageShares}
                         className={css({ 
                             p: '10px', borderRadius: '14px', bg: 'brand.error/10', color: 'brand.error', 
                             transition: 'all 0.2s', _hover: { bg: 'brand.error/20', transform: 'scale(1.05)' },
@@ -246,6 +334,83 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                                 <p className={css({ color: 'brand.muted', fontSize: '15px', fontWeight: '500' })}>필요한 항목들을 자유롭게 수정해 보세요. ✨</p>
                             </div>
 
+                            <div className={css({ mx: { base: '20px', sm: '32px' }, mb: '16px', p: '18px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '16px', bg: 'bg.surfaceSoft' })}>
+                                <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '12px' })}>
+                                    <h4 className={css({ fontSize: '15px', fontWeight: '800', color: 'brand.ink' })}>템플릿 공유</h4>
+                                    <span className={css({ fontSize: '12px', fontWeight: '700', color: canManageShares ? 'brand.primary' : 'brand.muted' })}>
+                                        {canManageShares ? 'Owner' : canEditTemplate ? 'Editor' : 'Viewer'}
+                                    </span>
+                                </div>
+                                {canManageShares ? (
+                                    <div className={css({ display: 'flex', gap: '8px', mb: '12px', flexDirection: { base: 'column', sm: 'row' } })}>
+                                        <input
+                                            type="email"
+                                            value={shareEmail}
+                                            onChange={(e) => setShareEmail(e.target.value)}
+                                            placeholder="공유할 사용자 이메일"
+                                            className={css({ flex: 1, p: '12px 14px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', bg: 'white', outline: 'none', fontSize: '14px' })}
+                                        />
+                                        <select
+                                            value={shareRole}
+                                            onChange={(e) => setShareRole(e.target.value as 'viewer' | 'editor')}
+                                            className={css({ p: '12px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', bg: 'white', fontSize: '13px', fontWeight: '700' })}
+                                        >
+                                            <option value="viewer">뷰어</option>
+                                            <option value="editor">편집</option>
+                                        </select>
+                                        <button
+                                            type="button"
+                                            onClick={handleShareTemplate}
+                                            disabled={!shareEmail.trim()}
+                                            className={css({ px: '16px', borderRadius: '8px', bg: 'brand.primary', color: 'white', fontSize: '13px', fontWeight: '800', border: 'none', cursor: 'pointer', _disabled: { opacity: 0.4, cursor: 'not-allowed' } })}
+                                        >
+                                            공유
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p className={css({ fontSize: '13px', color: 'brand.muted', lineHeight: '1.6', mb: '12px' })}>
+                                        공유 사용자 관리는 템플릿 소유자만 할 수 있어요.
+                                    </p>
+                                )}
+                                <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
+                                    {shares.length === 0 ? (
+                                        <p className={css({ fontSize: '13px', color: 'brand.muted' })}>아직 공유된 사용자가 없어요.</p>
+                                    ) : shares.map((share) => {
+                                        const label = share.profiles?.nickname || share.profiles?.email || share.shared_with_user_id
+                                        return (
+                                            <div key={share.id} className={css({ display: 'flex', alignItems: 'center', gap: '10px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px', p: '10px 12px' })}>
+                                                <span className={css({ flex: 1, fontSize: '13px', fontWeight: '700', color: 'brand.ink', minW: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{label}</span>
+                                                <select
+                                                    value={share.role}
+                                                    disabled={!canManageShares}
+                                                    onChange={async (e) => {
+                                                        await updateTemplateShareRole(supabase, share.id, e.target.value as 'viewer' | 'editor')
+                                                        await loadShares()
+                                                    }}
+                                                    className={css({ p: '8px', borderRadius: '8px', border: '1px solid', borderColor: 'brand.hairline', bg: 'white', fontSize: '12px', fontWeight: '700' })}
+                                                >
+                                                    <option value="viewer">뷰어</option>
+                                                    <option value="editor">편집</option>
+                                                </select>
+                                                {canManageShares && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={async () => {
+                                                            await removeTemplateShare(supabase, share.id)
+                                                            await loadShares()
+                                                        }}
+                                                        className={css({ border: 'none', bg: 'transparent', color: 'brand.error', cursor: 'pointer', display: 'flex' })}
+                                                        aria-label={`${label} 공유 해제`}
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+
                             <TemplateForm
                                 title={title}
                                 setTitle={setTitle}
@@ -256,6 +421,10 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                                 onCancel={handleClose}
                                 submitText="변경 내용 저장할게요"
                                 isEdit={true}
+                                categories={categories}
+                                onCreateCategory={handleCreateCategory}
+                                onRenameCategory={handleRenameCategory}
+                                onDeleteCategory={handleDeleteCategory}
                             />
                         </>
                     )}

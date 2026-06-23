@@ -7,7 +7,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Skeleton from '@/components/ui/Skeleton'
 import CommonListSkeleton from '@/components/common/CommonListSkeleton'
-import { formatDate } from '@nexvoy/core'
+import { formatDate, getTemplatesWithPreview } from '@nexvoy/core'
+import type { TemplateWithPreview } from '@nexvoy/types'
 
 import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/lib/cache'
@@ -23,7 +24,7 @@ export default function TemplatesPage() {
         isEditTemplateModalOpen,
     } = useUIStore()
 
-    const [templates, setTemplates] = useState<any[]>([])
+    const [templates, setTemplates] = useState<TemplateWithPreview[]>([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
@@ -36,18 +37,7 @@ export default function TemplatesPage() {
                 return
             }
 
-            const { data } = await supabase
-                .from('checklist_templates')
-                .select(`
-                    id,
-                    title,
-                    created_at,
-                    checklist_template_items (id, item_name)
-                `)
-                .eq('user_id', user.id)
-                .order('created_at', { ascending: false })
-
-            setTemplates(data || [])
+            setTemplates(await getTemplatesWithPreview(supabase, user.id))
             setLoading(false)
         }
 
@@ -130,10 +120,14 @@ export default function TemplatesPage() {
                             gap: '20px',
                         })}
                     >
-                        {templates.map((template: any) => {
-                            const items = template.checklist_template_items || [];
-                            const itemCount = items.length;
-                            const previewItems = items.slice(0, 4);
+                        {templates.map((template) => {
+                            const itemCount = template.item_count;
+                            const previewItems = template.preview_items.slice(0, 4);
+                            const accessLabel =
+                                template.access === 'owner' ? 'MY' :
+                                template.access === 'editor' ? 'EDIT' :
+                                template.access === 'viewer' ? 'SHARED' :
+                                'BASIC'
 
                             return (
                                 <button
@@ -190,7 +184,7 @@ export default function TemplatesPage() {
                                         letterSpacing: '0.02em',
                                         transition: 'all 0.3s'
                                     })}>
-                                        MY
+                                        {accessLabel}
                                     </div>
                                     {/* 상단: 아이콘 & 제목 세트 (가로형) */}
                                     <div className={css({ display: 'flex', alignItems: 'center', gap: '12px', mb: '16px' })}>
@@ -234,7 +228,7 @@ export default function TemplatesPage() {
                                     <div className={css({ display: 'flex', flexWrap: 'wrap', alignContent: 'flex-start', alignItems: 'flex-start', gap: '6px', mb: '0', flex: 1, overflow: 'hidden', maxH: '64px' })}>
                                         {previewItems.length > 0 ? (
                                             <>
-                                                {previewItems.slice(0, 3).map((item: any, idx: number) => (
+                                                {previewItems.slice(0, 3).map((itemName: string, idx: number) => (
                                                     <span 
                                                         key={`${template.id}-${idx}`}
                                                         className={css({
@@ -249,7 +243,7 @@ export default function TemplatesPage() {
                                                             whiteSpace: 'nowrap'
                                                         })}
                                                     >
-                                                        {item.item_name}
+                                                        {itemName}
                                                     </span>
                                                 ))}
                                                 {itemCount > 3 && (

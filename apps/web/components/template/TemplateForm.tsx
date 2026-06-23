@@ -1,8 +1,10 @@
 'use client'
 
+import { useState } from 'react'
 import { css } from 'styled-system/css'
-import { Plus, Save, Trash2, ChevronDown } from 'lucide-react'
+import { Plus, Save, Trash2, ChevronDown, Pencil } from 'lucide-react'
 import { CATEGORIES } from '@/constants/checklist'
+import type { ChecklistCategory } from '@nexvoy/types'
 
 export interface TemplateItemInput {
     id: string
@@ -22,6 +24,10 @@ interface TemplateFormProps {
     onCancel: () => void
     submitText?: string
     isEdit?: boolean
+    categories?: ChecklistCategory[]
+    onCreateCategory?: (name: string) => Promise<void>
+    onRenameCategory?: (id: string, name: string) => Promise<void>
+    onDeleteCategory?: (id: string) => Promise<void>
 }
 
 export default function TemplateForm({
@@ -33,8 +39,19 @@ export default function TemplateForm({
     loading,
     onCancel,
     submitText = '템플릿 저장할게요',
-    isEdit = false
+    isEdit = false,
+    categories = [],
+    onCreateCategory,
+    onRenameCategory,
+    onDeleteCategory
 }: TemplateFormProps) {
+    const [newCategoryName, setNewCategoryName] = useState('')
+    const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null)
+    const [editingCategoryName, setEditingCategoryName] = useState('')
+    const categoryOptions = categories.length > 0
+        ? categories.map((category) => category.name)
+        : [...CATEGORIES]
+
     const handleAddItem = () => {
         setItems([
             ...items,
@@ -50,6 +67,20 @@ export default function TemplateForm({
         setItems(items.map(item => 
             item.id === id ? { ...item, [field]: value } : item
         ))
+    }
+
+    const submitCategory = async () => {
+        const name = newCategoryName.trim()
+        if (!name || !onCreateCategory) return
+        await onCreateCategory(name)
+        setNewCategoryName('')
+    }
+
+    const submitRenameCategory = async () => {
+        if (!editingCategoryId || !editingCategoryName.trim() || !onRenameCategory) return
+        await onRenameCategory(editingCategoryId, editingCategoryName.trim())
+        setEditingCategoryId(null)
+        setEditingCategoryName('')
     }
 
     return (
@@ -90,6 +121,79 @@ export default function TemplateForm({
                 </div>
 
                 <hr className={css({ border: 'none', borderTop: '1px solid', borderTopColor: 'brand.hairline', mb: '32px' })} />
+
+                {/* 카테고리 관리 */}
+                <div className={css({ mb: '32px', p: '18px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '16px', bg: 'bg.surfaceSoft' })}>
+                    <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: '14px' })}>
+                        <h4 className={css({ fontSize: '15px', fontWeight: '800', color: 'brand.ink' })}>준비물 카테고리</h4>
+                        <span className={css({ fontSize: '12px', color: 'brand.muted', fontWeight: '700' })}>기본 + 내 카테고리</span>
+                    </div>
+                    <div className={css({ display: 'flex', gap: '8px', mb: '12px' })}>
+                        <input
+                            type="text"
+                            value={newCategoryName}
+                            onChange={(e) => setNewCategoryName(e.target.value)}
+                            placeholder="새 카테고리 이름"
+                            className={css({ flex: 1, p: '12px 14px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', bg: 'white', outline: 'none', fontSize: '14px' })}
+                        />
+                        <button
+                            type="button"
+                            onClick={submitCategory}
+                            disabled={!newCategoryName.trim() || !onCreateCategory}
+                            className={css({ px: '14px', borderRadius: '8px', bg: 'brand.ink', color: 'white', fontSize: '13px', fontWeight: '800', border: 'none', cursor: 'pointer', _disabled: { opacity: 0.4, cursor: 'not-allowed' } })}
+                        >
+                            추가
+                        </button>
+                    </div>
+                    <div className={css({ display: 'flex', flexWrap: 'wrap', gap: '8px' })}>
+                        {categories.map((category) => {
+                            const isDefault = category.user_id === null
+                            const isEditing = editingCategoryId === category.id
+                            return (
+                                <div key={category.id} className={css({ display: 'inline-flex', alignItems: 'center', gap: '6px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '999px', px: '10px', py: '6px' })}>
+                                    {isEditing ? (
+                                        <>
+                                            <input
+                                                value={editingCategoryName}
+                                                onChange={(e) => setEditingCategoryName(e.target.value)}
+                                                className={css({ w: '96px', border: 'none', outline: 'none', fontSize: '12px', fontWeight: '700' })}
+                                                autoFocus
+                                            />
+                                            <button type="button" onClick={submitRenameCategory} className={css({ border: 'none', bg: 'transparent', color: 'brand.primary', fontSize: '12px', fontWeight: '800', cursor: 'pointer' })}>저장</button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className={css({ fontSize: '12px', fontWeight: '700', color: isDefault ? 'brand.muted' : 'brand.ink' })}>{category.name}</span>
+                                            {!isDefault && (
+                                                <>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setEditingCategoryId(category.id)
+                                                            setEditingCategoryName(category.name)
+                                                        }}
+                                                        className={css({ border: 'none', bg: 'transparent', color: 'brand.muted', cursor: 'pointer', display: 'flex' })}
+                                                        aria-label={`${category.name} 카테고리 수정`}
+                                                    >
+                                                        <Pencil size={12} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onDeleteCategory?.(category.id)}
+                                                        className={css({ border: 'none', bg: 'transparent', color: 'brand.error', cursor: 'pointer', display: 'flex' })}
+                                                        aria-label={`${category.name} 카테고리 삭제`}
+                                                    >
+                                                        <Trash2 size={12} />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+                </div>
 
                 {/* 템플릿 항목 지정 */}
                 <div className={css({ mb: '32px' })}>
@@ -137,7 +241,7 @@ export default function TemplateForm({
                                             onChange={(e) => handleItemChange(item.id, 'category', e.target.value)}
                                             className={css({ w: '100%', p: '14px 36px 14px 16px', bg: 'transparent', border: 'none', outline: 'none', fontSize: '14px', fontWeight: '700', color: 'brand.ink', cursor: 'pointer', appearance: 'none' })}
                                         >
-                                            {CATEGORIES.map((cat: any) => (
+                                            {categoryOptions.map((cat: any) => (
                                                 <option key={cat} value={cat}>{cat}</option>
                                             ))}
                                         </select>

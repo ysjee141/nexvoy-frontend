@@ -76,9 +76,8 @@ export default function TemplatesScreen() {
 
   const handleDelete = useCallback(
     (template: TemplateWithPreview) => {
-      // 공개 템플릿(user_id=null)은 삭제 불가 — 본인 소유만 삭제.
-      // RLS 상 공개 템플릿 DELETE 는 0행 영향(에러 없음)이라 무반응처럼 보이므로 사전 차단.
-      if (!template.user_id) return
+      // 공개/공유 템플릿은 삭제 불가 — 본인 소유만 삭제.
+      if (template.access !== 'owner') return
       setPendingDelete(template)
     },
     []
@@ -97,6 +96,14 @@ export default function TemplatesScreen() {
 
   const renderTemplate = ({ item }: { item: TemplateWithPreview }) => {
     const overflowCount = item.item_count - item.preview_items.length
+    const accessLabel =
+      item.access === 'owner'
+        ? 'MY'
+        : item.access === 'editor'
+          ? 'EDIT'
+          : item.access === 'viewer'
+            ? 'SHARED'
+            : 'BASIC'
     return (
       <Pressable
         onPress={() =>
@@ -124,6 +131,7 @@ export default function TemplatesScreen() {
           </Text>
           <Text style={styles.templateCount}>항목 {item.item_count}개</Text>
         </View>
+        <Text style={styles.accessBadge}>{accessLabel}</Text>
 
         {/* 중단: preview_items 태그 (최대 3개 + 초과분) */}
         {item.preview_items.length > 0 ? (
@@ -271,6 +279,17 @@ const styles = StyleSheet.create({
   templateCount: {
     fontSize: fontSizes.xs,
     color: colors.brand.muted,
+  },
+  accessBadge: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.sm,
+    borderRadius: radii.full,
+    backgroundColor: colors.bg.surfaceSoft,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 2,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.primary,
   },
   tagRow: {
     flexDirection: 'row',

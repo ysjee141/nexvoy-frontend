@@ -36,6 +36,8 @@ export interface TemplateWithPreview {
   /** 최대 3개 항목명 */
   preview_items: string[]
   created_at: string
+  /** owner/editor/viewer/default 접근 구분. 기존 호출부 호환을 위해 optional */
+  access?: 'owner' | 'editor' | 'viewer' | 'default'
 }
 
 /** 방문 목적지: plans.location 기준 집계 + 연관 trip 목록 */
