@@ -48,7 +48,7 @@ OnVoy를 프로덕션 환경에 배포하기 위해 해야 할 것과 챙겨야 
 - [ ] **`anon` role 권한 최소화** — anon key로 접근 가능한 데이터 범위 검토
 - [ ] **Service Role Key 노출 확인** — 서버사이드 코드 이외에서 사용되지 않는지 grep 확인
   ```bash
-  grep -r "SUPABASE_SERVICE_ROLE_KEY" src/
+  rg "SUPABASE_SERVICE_ROLE_KEY" apps packages supabase
   ```
 - [ ] **Supabase Auth 설정 확인** — 운영 환경 OAuth 리다이렉트 URL 등록
 
@@ -92,12 +92,12 @@ OnVoy를 프로덕션 환경에 배포하기 위해 해야 할 것과 챙겨야 
 
 ### 3-1. 공통
 
-- [ ] **앱 버전 확정** — `package.json` `version` 필드, Android `versionCode`/`versionName`, iOS `CFBundleVersion`/`CFBundleShortVersionString` 일치 여부
+- [ ] **앱 버전 확정** — `apps/mobile/package.json` 및 `apps/mobile/app.json`의 `version` 확인
 - [ ] **번들 ID 확정** — 현재: `xyz.nexvoy.app` — 스토어 등록 후 변경 불가
-- [ ] **`pnpm build:mobile` 성공 확인** — `out/index.html` 생성 및 파일 무결성 검증
-- [ ] **Capacitor 설정 최종 확인** (`capacitor.config.ts`)
-  - `appId`, `appName` 확인
-  - OTA 자동 업데이트 정책 결정 (`autoUpdate: false` 유지 또는 변경)
+- [ ] **Expo/RN 검증 성공 확인** — `pnpm --filter nexvoy-app lint`, `pnpm --filter nexvoy-app typecheck`, `pnpm --filter nexvoy-app build`
+- [ ] **Expo 설정 최종 확인** (`apps/mobile/app.json`)
+  - `ios.bundleIdentifier`, `android.package` 확인
+  - EAS build profile 및 앱 스토어 제출 전략 확인
 
 ### 3-2. Android
 
@@ -226,5 +226,5 @@ OnVoy를 프로덕션 환경에 배포하기 위해 해야 할 것과 챙겨야 
 
 - Supabase 운영 보안 가이드: https://supabase.com/docs/guides/platform/going-into-prod
 - Next.js 배포 체크리스트: https://nextjs.org/docs/app/building-your-application/deploying
-- Capacitor Android 서명: https://capacitorjs.com/docs/android/deploying-to-google-play
-- Capacitor iOS 배포: https://capacitorjs.com/docs/ios/deploying-to-app-store
+- Expo EAS Build: https://docs.expo.dev/build/introduction/
+- Expo EAS Submit: https://docs.expo.dev/submit/introduction/
