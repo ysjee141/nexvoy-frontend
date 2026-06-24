@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, type ComponentType, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
 import { X, MapPin, Calendar, Users, Minus, Plus, Loader2, Check, Sparkles } from 'lucide-react'
@@ -10,6 +10,14 @@ import { useRouter } from 'next/navigation'
 import { analytics } from '@/services/AnalyticsService'
 
 const libraries: ("places")[] = ["places"]
+
+type PlacesAutocompleteProps = {
+    children: ReactNode
+    onLoad?: (autocomplete: google.maps.places.Autocomplete) => void
+    onPlaceChanged?: () => void
+}
+
+const PlacesAutocomplete = Autocomplete as unknown as ComponentType<PlacesAutocompleteProps>
 
 interface NewTripModalProps {
     isOpen: boolean
@@ -177,7 +185,7 @@ export default function NewTripModal({ isOpen, onClose, onSuccess }: NewTripModa
                                 <MapPin size={16} className={css({ color: 'brand.primary' })} /> 여행지 (국가/도시) *
                             </label>
                             {isLoaded ? (
-                                <Autocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
+                                <PlacesAutocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
                                     <input
                                         type="text"
                                         required
@@ -190,7 +198,7 @@ export default function NewTripModal({ isOpen, onClose, onSuccess }: NewTripModa
                                             transition: 'all 0.3s', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 5px rgba(var(--colors-brand-primary-rgb), 0.1)' }
                                         })}
                                     />
-                                </Autocomplete>
+                                </PlacesAutocomplete>
                             ) : (
                                 <div className={css({ w: '100%', p: '18px 20px', bg: 'white', borderRadius: '8px', border: '1px solid', borderColor: 'brand.hairline', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '10px' })}>
                                     <Loader2 size={18} className={css({ animation: 'spin 1.5s linear infinite' })} /> 지도 정보를 불러오는 중...
