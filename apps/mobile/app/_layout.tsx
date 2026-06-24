@@ -15,7 +15,7 @@ import { colors } from '@/theme'
 
 // 원인 오류를 Metro 터미널에 출력하기 위한 임시 핸들러 (디버깅용)
 if (typeof __DEV__ !== 'undefined' && __DEV__) {
-  const gu = (global as unknown as { ErrorUtils?: { getGlobalHandler: () => (e: Error, fatal: boolean) => void; setGlobalHandler: (h: (e: Error, fatal: boolean) => void) => void } }).ErrorUtils
+  const gu = (globalThis as unknown as { ErrorUtils?: { getGlobalHandler: () => (e: Error, fatal: boolean) => void; setGlobalHandler: (h: (e: Error, fatal: boolean) => void) => void } }).ErrorUtils
   if (gu) {
     const prev = gu.getGlobalHandler()
     gu.setGlobalHandler((error, isFatal) => {
