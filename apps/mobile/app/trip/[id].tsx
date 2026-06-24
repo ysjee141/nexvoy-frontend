@@ -17,6 +17,8 @@ import {
   Image,
   Linking,
   Modal,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Platform,
   Pressable,
   Share,
@@ -88,7 +90,6 @@ import {
   updateChecklistItem,
   deleteChecklistItem,
   applyTemplateToChecklist,
-  toggleChecklistItem,
   toggleChecklistItemForUser,
   togglePlanVisited,
   formatDate,
@@ -109,7 +110,6 @@ import type {
   TemplateWithPreview,
 } from '@nexvoy/types'
 import {
-  AccordionCard,
   BottomSheet,
   ConfirmSheet,
   EmptyState,
@@ -583,6 +583,13 @@ const TABS: {
   { key: 'map', label: '지도', icon: 'map-outline' },
 ]
 
+function getTripMemberDisplayName(member: TripMember, fallback = '동행자'): string {
+  const nickname = member.profiles?.nickname?.trim()
+  const profileEmail = member.profiles?.email?.trim()
+  const invitedEmail = member.invited_email?.trim()
+  return nickname || profileEmail || invitedEmail || fallback
+}
+
 // ─── 화면 ─────────────────────────────────────────────────────────────────────
 
 export default function TripDetailScreen() {
@@ -591,6 +598,9 @@ export default function TripDetailScreen() {
   const { session } = useAuth()
   const insets = useSafeAreaInsets()
   const isMounted = useRef(true)
+  const scrollRef = useRef<ScrollView>(null)
+  const detailTopHeightRef = useRef(0)
+  const scrollOffsetRef = useRef(0)
 
   const [activeTab, setActiveTab] = useState<TabKey>('plans')
 
@@ -599,6 +609,7 @@ export default function TripDetailScreen() {
   const [plans, setPlans] = useState<PlanWithUrls[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [isDetailScrollEnabled, setIsDetailScrollEnabled] = useState(true)
   const [userRole, setUserRole] = useState<string | null>(null)
 
   // 권한별 액션 노출 제어
@@ -619,6 +630,7 @@ export default function TripDetailScreen() {
   const [editingItem, setEditingItem] = useState<ChecklistItem | null>(null)
   const [isItemSheetOpen, setIsItemSheetOpen] = useState(false)
   const [isTemplateSheetOpen, setIsTemplateSheetOpen] = useState(false)
+  const [isChecklistFabOpen, setIsChecklistFabOpen] = useState(false)
   const [isTripDeleteOpen, setIsTripDeleteOpen] = useState(false)
   const [deletingTrip, setDeletingTrip] = useState(false)
   const [isTripSwitcherOpen, setIsTripSwitcherOpen] = useState(false)
@@ -714,6 +726,17 @@ export default function TripDetailScreen() {
     loadTripList()
   }, [loadTripList])
 
+  useEffect(() => {
+    setChecklist(null)
+    setItems([])
+    setItemAssignees([])
+    setUserChecks([])
+    setChecklistLoaded(false)
+    setEditingItem(null)
+    setIsItemSheetOpen(false)
+    setIsTemplateSheetOpen(false)
+  }, [id])
+
   const loadChecklist = useCallback(async () => {
     if (!id) return
     setChecklistLoading(true)
@@ -747,6 +770,14 @@ export default function TripDetailScreen() {
       }
     }
   }, [id, session?.user.id])
+
+  const ensureCurrentTripChecklist = useCallback(async () => {
+    if (!id) return null
+    if (checklist?.trip_id === id) return checklist
+    const currentChecklist = await ensureChecklist(supabase, id)
+    setChecklist(currentChecklist)
+    return currentChecklist
+  }, [checklist, id])
 
   // 준비물 탭 최초 진입 시 1회 lazy load
   useEffect(() => {
@@ -920,8 +951,8 @@ export default function TripDetailScreen() {
       assignee_ids: string[]
     }) => {
       if (!id) return
-      const currentChecklist = checklist ?? (await ensureChecklist(supabase, id))
-      if (!checklist) setChecklist(currentChecklist)
+      const currentChecklist = await ensureCurrentTripChecklist()
+      if (!currentChecklist) return
       const finalAssigneeIds = input.is_private
         ? (session?.user.id ? [session.user.id] : [])
         : input.assignment_type === 'specific'
@@ -952,7 +983,7 @@ export default function TripDetailScreen() {
       setIsItemSheetOpen(false)
       await loadChecklist()
     },
-    [checklist, editingItem, id, loadChecklist, session?.user.id]
+    [editingItem, ensureCurrentTripChecklist, id, loadChecklist, session?.user.id]
   )
 
   const handleDeleteChecklistItem = useCallback(
@@ -968,13 +999,13 @@ export default function TripDetailScreen() {
   const handleApplyTemplate = useCallback(
     async (templateId: string) => {
       if (!id) return
-      const currentChecklist = checklist ?? (await ensureChecklist(supabase, id))
-      if (!checklist) setChecklist(currentChecklist)
+      const currentChecklist = await ensureCurrentTripChecklist()
+      if (!currentChecklist) return
       await applyTemplateToChecklist(supabase, currentChecklist.id, templateId, session?.user.id)
       setIsTemplateSheetOpen(false)
       await loadChecklist()
     },
-    [checklist, id, loadChecklist, session?.user.id]
+    [ensureCurrentTripChecklist, id, loadChecklist, session?.user.id]
   )
 
   const totalPlanCost = useMemo(
@@ -1006,6 +1037,22 @@ export default function TripDetailScreen() {
     setIsTripSwitcherOpen(false)
     if (tripId === id) return
     router.replace({ pathname: '/trip/[id]', params: { id: tripId } })
+  }
+
+  const handleTabChange = (tab: TabKey) => {
+    if (tab === activeTab) return
+    setActiveTab(tab)
+    setIsChecklistFabOpen(false)
+    const stickyOffset = detailTopHeightRef.current
+    if (scrollOffsetRef.current >= stickyOffset) {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollTo({ y: stickyOffset, animated: false })
+      })
+    }
+  }
+
+  const handleDetailScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    scrollOffsetRef.current = event.nativeEvent.contentOffset.y
   }
 
   const handleCreateShare = async () => {
@@ -1136,7 +1183,7 @@ export default function TripDetailScreen() {
   }
 
   const handleRemoveMember = async (member: TripMember) => {
-    Alert.alert('동행자 삭제', `${member.profiles?.nickname || member.invited_email}님을 제외할까요?`, [
+    Alert.alert('동행자 삭제', `${getTripMemberDisplayName(member)}님을 제외할까요?`, [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제',
@@ -1177,163 +1224,235 @@ export default function TripDetailScreen() {
         </View>
       ) : (
         <>
-          <View style={styles.detailTop}>
-            <View style={styles.topNav}>
-              <Pressable
-                onPress={() => router.back()}
-                accessibilityRole="button"
-                accessibilityLabel="뒤로"
-                hitSlop={12}
-                style={({ pressed }) => [styles.topNavButton, pressed && styles.pressedFade]}
-              >
-                <Ionicons name="chevron-back" size={24} color={colors.brand.ink} />
-              </Pressable>
-              <Pressable
-                onPress={() => setIsTripSwitcherOpen(true)}
-                accessibilityRole="button"
-                accessibilityLabel="여행 선택"
-                style={({ pressed }) => [styles.tripSwitchButton, pressed && styles.pressedFade]}
-              >
-                <Text style={styles.tripSwitchTitle} numberOfLines={1}>
-                  {trip.destination}
-                </Text>
-                <Ionicons name="chevron-down" size={16} color={colors.brand.ink} />
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  setIsCollaboratorSheetOpen(true)
-                  void loadMembers()
-                }}
-                accessibilityRole="button"
-                accessibilityLabel="동행자"
-                hitSlop={12}
-                style={({ pressed }) => [styles.topNavButton, styles.topNavButtonBadge, pressed && styles.pressedFade]}
-              >
-                <Ionicons name="chatbox-ellipses-outline" size={22} color={colors.brand.primary} />
-                {members.length > 0 ? <View style={styles.navDot} /> : null}
-              </Pressable>
-            </View>
+          <ScrollView
+            ref={scrollRef}
+            style={styles.detailScroll}
+            contentContainerStyle={styles.detailScrollContent}
+            stickyHeaderIndices={[1]}
+            scrollEnabled={isDetailScrollEnabled}
+            onScroll={handleDetailScroll}
+            scrollEventThrottle={16}
+            showsVerticalScrollIndicator={false}
+          >
+            <View
+              style={styles.detailTop}
+              onLayout={(event) => {
+                detailTopHeightRef.current = event.nativeEvent.layout.height
+              }}
+            >
+              <View style={styles.topNav}>
+                <Pressable
+                  onPress={() => router.back()}
+                  accessibilityRole="button"
+                  accessibilityLabel="뒤로"
+                  hitSlop={12}
+                  style={({ pressed }) => [styles.topNavButton, pressed && styles.pressedFade]}
+                >
+                  <Ionicons name="chevron-back" size={24} color={colors.brand.ink} />
+                </Pressable>
+                <Pressable
+                  onPress={() => setIsTripSwitcherOpen(true)}
+                  accessibilityRole="button"
+                  accessibilityLabel="여행 선택"
+                  style={({ pressed }) => [styles.tripSwitchButton, pressed && styles.pressedFade]}
+                >
+                  <Text style={styles.tripSwitchTitle} numberOfLines={1}>
+                    {trip.destination}
+                  </Text>
+                  <Ionicons name="chevron-down" size={16} color={colors.brand.ink} />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    setIsCollaboratorSheetOpen(true)
+                    void loadMembers()
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="동행자"
+                  hitSlop={12}
+                  style={({ pressed }) => [styles.topNavButton, styles.topNavButtonBadge, pressed && styles.pressedFade]}
+                >
+                  <Ionicons name="chatbox-ellipses-outline" size={22} color={colors.brand.primary} />
+                  {members.length > 0 ? <View style={styles.navDot} /> : null}
+                </Pressable>
+              </View>
 
-            <View style={styles.tripSummary}>
-              <View style={styles.tripTitleRow}>
-                <Text style={styles.tripTitle} numberOfLines={2}>
-                  {trip.destination} 여행
-                </Text>
-                <View style={styles.tripIconActions}>
-                  <Pressable
-                    onPress={handleOfflineSave}
-                    accessibilityRole="button"
-                    accessibilityLabel="오프라인 저장"
-                    style={({ pressed }) => [styles.tripIconAction, pressed && styles.pressedFade]}
-                  >
-                    <Ionicons name="cloud-download-outline" size={18} color={colors.brand.muted} />
-                  </Pressable>
-                  {canEditTrip ? (
-                    <>
+              <View style={styles.tripSummary}>
+                <View style={styles.tripTitleRow}>
+                  <Text style={styles.tripTitle} numberOfLines={2}>
+                    {trip.destination} 여행
+                  </Text>
+                  <View style={styles.tripIconActions}>
                     <Pressable
-                      onPress={() => setIsTripSheetOpen(true)}
+                      onPress={handleOfflineSave}
                       accessibilityRole="button"
-                      accessibilityLabel="여행 수정"
+                      accessibilityLabel="오프라인 저장"
                       style={({ pressed }) => [styles.tripIconAction, pressed && styles.pressedFade]}
                     >
-                      <Ionicons name="pencil-outline" size={18} color={colors.brand.muted} />
+                      <Ionicons name="cloud-download-outline" size={18} color={colors.brand.muted} />
                     </Pressable>
-                    <Pressable
-                      onPress={() => setIsTripDeleteOpen(true)}
-                      accessibilityRole="button"
-                      accessibilityLabel="여행 삭제"
-                      style={({ pressed }) => [styles.tripIconAction, styles.tripIconActionDanger, pressed && styles.pressedFade]}
-                    >
-                      <Ionicons name="trash-outline" size={18} color={colors.brand.error} />
-                    </Pressable>
-                    </>
+                    {canEditTrip ? (
+                      <>
+                      <Pressable
+                        onPress={() => setIsTripSheetOpen(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel="여행 수정"
+                        style={({ pressed }) => [styles.tripIconAction, pressed && styles.pressedFade]}
+                      >
+                        <Ionicons name="pencil-outline" size={18} color={colors.brand.muted} />
+                      </Pressable>
+                      <Pressable
+                        onPress={() => setIsTripDeleteOpen(true)}
+                        accessibilityRole="button"
+                        accessibilityLabel="여행 삭제"
+                        style={({ pressed }) => [styles.tripIconAction, styles.tripIconActionDanger, pressed && styles.pressedFade]}
+                      >
+                        <Ionicons name="trash-outline" size={18} color={colors.brand.error} />
+                      </Pressable>
+                      </>
+                    ) : null}
+                  </View>
+                </View>
+                <View style={styles.tripMetaGrid}>
+                  <View style={styles.tripMetaItem}>
+                    <Ionicons name="calendar-outline" size={14} color={colors.brand.ink} />
+                    <Text style={styles.tripMetaText} numberOfLines={1}>
+                      {formatDate(trip.start_date)} ~ {formatDate(trip.end_date)}
+                    </Text>
+                  </View>
+                  <View style={styles.tripMetaItem}>
+                    <Ionicons name="people-outline" size={14} color={colors.brand.primary} />
+                    <Text style={styles.tripMetaText} numberOfLines={1}>
+                      성인 {trip.adults_count}명, 아이 {trip.children_count}명
+                    </Text>
+                  </View>
+                  {totalPlanCost > 0 ? (
+                    <View style={styles.tripMetaItem}>
+                      <Ionicons name="wallet-outline" size={14} color={colors.brand.ink} />
+                      <Text style={styles.tripMetaText} numberOfLines={1}>
+                        약 {totalPlanCost.toLocaleString()}원
+                      </Text>
+                    </View>
                   ) : null}
                 </View>
               </View>
-              <View style={styles.tripMetaGrid}>
-                <View style={styles.tripMetaItem}>
-                  <Ionicons name="calendar-outline" size={14} color={colors.brand.ink} />
-                  <Text style={styles.tripMetaText} numberOfLines={1}>
-                    {formatDate(trip.start_date)} ~ {formatDate(trip.end_date)}
-                  </Text>
-                </View>
-                <View style={styles.tripMetaItem}>
-                  <Ionicons name="people-outline" size={14} color={colors.brand.primary} />
-                  <Text style={styles.tripMetaText} numberOfLines={1}>
-                    성인 {trip.adults_count}명, 아이 {trip.children_count}명
-                  </Text>
-                </View>
-                {totalPlanCost > 0 ? (
-                  <View style={styles.tripMetaItem}>
-                    <Ionicons name="wallet-outline" size={14} color={colors.brand.ink} />
-                    <Text style={styles.tripMetaText} numberOfLines={1}>
-                      약 {totalPlanCost.toLocaleString()}원
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
             </View>
-          </View>
 
-          <View style={styles.segmentWrap}>
-            <SegmentedTabs tabs={TABS} value={activeTab} onChange={setActiveTab} />
-          </View>
+            <View style={styles.segmentWrap}>
+              <SegmentedTabs tabs={TABS} value={activeTab} onChange={handleTabChange} />
+            </View>
 
-          {activeTab === 'plans' ? (
-            <TripActionBar
-              timeDisplayMode={timeDisplayMode}
-              onOpenTimeMode={() => setIsTimeModeSheetOpen(true)}
-              onOpenMembers={() => {
-                setIsCollaboratorSheetOpen(true)
-                void loadMembers()
-              }}
-              onOpenShare={() => {
-                setIsShareSheetOpen(true)
-              }}
-              canInvite={canEditContent}
-              canShare={canEditTrip}
-            />
+            <View>
+              {activeTab === 'plans' ? (
+                <TripActionBar
+                  timeDisplayMode={timeDisplayMode}
+                  onOpenTimeMode={() => setIsTimeModeSheetOpen(true)}
+                  onOpenMembers={() => {
+                    setIsCollaboratorSheetOpen(true)
+                    void loadMembers()
+                  }}
+                  onOpenShare={() => {
+                    setIsShareSheetOpen(true)
+                  }}
+                  canInvite={canEditContent}
+                  canShare={canEditTrip}
+                />
+              ) : null}
+
+              {/* 탭 콘텐츠 */}
+              {activeTab === 'plans' ? (
+                <PlansTab
+                  plans={plans}
+                  onToggleVisited={handleToggleVisited}
+                  onEditPlan={(plan) => {
+                    setEditingPlan(plan)
+                    setIsPlanSheetOpen(true)
+                  }}
+                  onDeletePlan={handleDeletePlan}
+                  canEdit={canEditContent}
+                  timeDisplayMode={timeDisplayMode}
+                />
+              ) : activeTab === 'checklist' ? (
+                <ChecklistTab
+                  loading={checklistLoading}
+                  loaded={checklistLoaded}
+                  checklist={checklist}
+                  items={items}
+                  assignees={itemAssignees}
+                  userChecks={userChecks}
+                  members={members}
+                  participantIds={participantIds}
+                  ownerId={trip.user_id}
+                  currentUserId={session?.user.id ?? null}
+                  onToggle={handleToggleItem}
+                  onEditItem={(item) => {
+                    setEditingItem(item)
+                    setIsItemSheetOpen(true)
+                  }}
+                  onDeleteItem={handleDeleteChecklistItem}
+                  onOpenTemplates={() => setIsTemplateSheetOpen(true)}
+                  canEdit={canEditContent}
+                />
+              ) : (
+                <MapTab
+                  plans={plans}
+                  onMapTouchStart={() => setIsDetailScrollEnabled(false)}
+                  onMapTouchEnd={() => setIsDetailScrollEnabled(true)}
+                />
+              )}
+            </View>
+          </ScrollView>
+          {activeTab === 'checklist' && canEditContent ? (
+            <View style={[styles.checklistFabWrap, { bottom: Math.max(insets.bottom, spacing.md) + spacing.md }]}>
+              {isChecklistFabOpen ? (
+                <View style={styles.speedDialMenu}>
+                  <Pressable
+                    onPress={() => {
+                      setIsChecklistFabOpen(false)
+                      setIsTemplateSheetOpen(true)
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="템플릿 적용"
+                    style={({ pressed }) => [styles.speedDialAction, pressed && styles.pressedFade]}
+                  >
+                    <View style={styles.speedDialIcon}>
+                      <Ionicons name="albums-outline" size={18} color={colors.brand.primary} />
+                    </View>
+                    <Text style={styles.speedDialText}>템플릿 적용</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setIsChecklistFabOpen(false)
+                      setEditingItem(null)
+                      setIsItemSheetOpen(true)
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="직접 추가"
+                    style={({ pressed }) => [styles.speedDialAction, pressed && styles.pressedFade]}
+                  >
+                    <View style={styles.speedDialIcon}>
+                      <Ionicons name="create-outline" size={18} color={colors.brand.primary} />
+                    </View>
+                    <Text style={styles.speedDialText}>직접 추가</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+              <Pressable
+                onPress={() => setIsChecklistFabOpen((prev) => !prev)}
+                accessibilityRole="button"
+                accessibilityLabel="준비물 추가 메뉴"
+                accessibilityState={{ expanded: isChecklistFabOpen }}
+                style={({ pressed }) => [
+                  styles.planFab,
+                  styles.checklistFabButton,
+                  isChecklistFabOpen && styles.planFabExpanded,
+                  pressed && styles.pressedSoft,
+                ]}
+              >
+                <Ionicons name={isChecklistFabOpen ? 'close' : 'add'} size={24} color={colors.bg.canvas} />
+                <Text style={styles.planFabText}>준비물 추가</Text>
+              </Pressable>
+            </View>
           ) : null}
-
-          {/* 탭 콘텐츠 */}
-          {activeTab === 'plans' ? (
-            <PlansTab
-              plans={plans}
-              onToggleVisited={handleToggleVisited}
-              onEditPlan={(plan) => {
-                setEditingPlan(plan)
-                setIsPlanSheetOpen(true)
-              }}
-              onDeletePlan={handleDeletePlan}
-              canEdit={canEditContent}
-              timeDisplayMode={timeDisplayMode}
-            />
-          ) : activeTab === 'checklist' ? (
-            <ChecklistTab
-              loading={checklistLoading}
-              loaded={checklistLoaded}
-              checklist={checklist}
-              items={items}
-              assignees={itemAssignees}
-              userChecks={userChecks}
-              participantIds={participantIds}
-              currentUserId={session?.user.id ?? null}
-              onToggle={handleToggleItem}
-              onCreateItem={() => {
-                setEditingItem(null)
-                setIsItemSheetOpen(true)
-              }}
-              onEditItem={(item) => {
-                setEditingItem(item)
-                setIsItemSheetOpen(true)
-              }}
-              onDeleteItem={handleDeleteChecklistItem}
-              onOpenTemplates={() => setIsTemplateSheetOpen(true)}
-              canEdit={canEditContent}
-            />
-          ) : (
-            <MapTab plans={plans} />
-          )}
           {activeTab === 'plans' && canEditContent ? (
             <Pressable
               onPress={() => {
@@ -1935,7 +2054,7 @@ function CollaboratorSheet({
       ) : members.length > 0 ? (
         <View style={styles.memberList}>
           {members.map((member) => {
-            const label = member.profiles?.nickname || member.profiles?.email || member.invited_email || '초대됨'
+            const label = getTripMemberDisplayName(member, '초대됨')
             const canEditMember = canManage && member.role !== 'owner' && member.user_id !== ownerId
             const isSelf = currentUserId && member.user_id === currentUserId
             return (
@@ -2007,7 +2126,7 @@ function PlansTab({
 
   return (
     <>
-    <ScrollView contentContainerStyle={styles.body}>
+    <View style={styles.body}>
       {/* 일정 타임라인 */}
       {groups.length > 0 ? (
         groups.map((group, groupIndex) => (
@@ -2151,7 +2270,7 @@ function PlansTab({
           style={styles.emptyPanel}
         />
       )}
-    </ScrollView>
+    </View>
     <PlanDetailSheet
       plan={selectedPlan}
       visible={selectedPlanId !== null}
@@ -2503,10 +2622,11 @@ interface ChecklistTabProps {
   items: ChecklistItem[]
   assignees: ChecklistItemAssignee[]
   userChecks: ChecklistItemUserCheck[]
+  members: TripMember[]
   participantIds: string[]
+  ownerId: string
   currentUserId: string | null
   onToggle: (item: ChecklistItem) => void
-  onCreateItem: () => void
   onEditItem: (item: ChecklistItem) => void
   onDeleteItem: (item: ChecklistItem) => Promise<void>
   onOpenTemplates: () => void
@@ -2520,10 +2640,11 @@ function ChecklistTab({
   items,
   assignees,
   userChecks,
+  members,
   participantIds,
+  ownerId,
   currentUserId,
   onToggle,
-  onCreateItem,
   onEditItem,
   onDeleteItem,
   onOpenTemplates,
@@ -2533,6 +2654,10 @@ function ChecklistTab({
   const [groupBy, setGroupBy] = useState<'category' | 'template'>('category')
   const [sortBy, setSortBy] = useState<'status' | 'alphabetical'>('status')
   const [hideChecked, setHideChecked] = useState(false)
+  const [assigneeFilter, setAssigneeFilter] = useState<'all' | 'me' | 'companions'>('all')
+  const [selectedCompanionIds, setSelectedCompanionIds] = useState<string[]>([])
+  const [isAssigneeFilterOpen, setIsAssigneeFilterOpen] = useState(false)
+  const [checklistDropdown, setChecklistDropdown] = useState<'group' | 'sort' | null>(null)
 
   if (loading || !loaded) {
     return (
@@ -2549,8 +2674,6 @@ function ChecklistTab({
           icon="checkbox-outline"
           title="이 여정에 체크리스트가 없어요"
           description="준비물을 직접 추가하거나 템플릿을 적용해 시작하세요."
-          actionLabel={canEdit ? '준비물 추가' : undefined}
-          onAction={canEdit ? onCreateItem : undefined}
         />
         {canEdit ? (
           <Pressable
@@ -2568,7 +2691,48 @@ function ChecklistTab({
 
   const getStatus = (item: ChecklistItem) =>
     getChecklistItemStatus(item, currentUserId, participantIds, userChecks, assignees)
+  const participants = (() => {
+    const owner = ownerId ? [{
+      user_id: ownerId,
+      label: ownerId === currentUserId ? '나' : '여행장',
+    }] : []
+    const tripMembers = members
+      .filter((member) => member.user_id)
+      .map((member) => ({
+        user_id: member.user_id as string,
+        label: member.user_id === currentUserId
+          ? '나'
+          : getTripMemberDisplayName(member),
+      }))
+    const seen = new Set<string>()
+    return [...owner, ...tripMembers].filter((participant) => {
+      if (seen.has(participant.user_id)) return false
+      seen.add(participant.user_id)
+      return true
+    })
+  })()
+  const companionOptions = participants.filter((participant) => participant.user_id !== currentUserId)
+  const selectedCompanionCount = selectedCompanionIds.length
+  const companionFilterIds = selectedCompanionCount > 0
+    ? selectedCompanionIds
+    : companionOptions.map((participant) => participant.user_id)
+  const getAssignedUserIds = (item: ChecklistItem) => {
+    if (item.assignment_type === 'everyone') return participantIds
+    const assigned = assignees
+      .filter((assignee) => assignee.item_id === item.id)
+      .map((assignee) => assignee.user_id)
+    if (assigned.length > 0) return assigned
+    return item.assigned_user_id ? [item.assigned_user_id] : []
+  }
+  const matchesAssigneeFilter = (item: ChecklistItem) => {
+    if (assigneeFilter === 'all') return true
+    const assignedIds = getAssignedUserIds(item)
+    if (assigneeFilter === 'me') return currentUserId ? assignedIds.includes(currentUserId) : false
+    if (companionFilterIds.length === 0) return false
+    return companionFilterIds.some((userId) => assignedIds.includes(userId))
+  }
   const sortedItems = [...items]
+    .filter(matchesAssigneeFilter)
     .filter((item) => !hideChecked || !getStatus(item).is_checked)
     .sort((a, b) => {
       if (sortBy === 'status') {
@@ -2583,6 +2747,10 @@ function ChecklistTab({
   const totalCount = items.length
   const doneCount = items.filter((item) => getStatus(item).is_checked).length
   const progressPct = totalCount > 0 ? (doneCount / totalCount) * 100 : 0
+  const groupByLabel = groupBy === 'category' ? '카테고리' : '템플릿'
+  const sortByLabel = sortBy === 'status' ? '상태순' : '가나다순'
+  const sortByIcon: React.ComponentProps<typeof Ionicons>['name'] =
+    sortBy === 'status' ? 'checkmark-done-outline' : 'swap-vertical-outline'
 
   const toggleGroup = (key: string) => {
     setOpenGroups((prev) => ({ ...prev, [key]: prev[key] === false }))
@@ -2600,137 +2768,393 @@ function ChecklistTab({
   }
 
   return (
-    <ScrollView
-      style={styles.contentScroll}
-      contentContainerStyle={styles.contentBody}
-    >
-      {/* 완료율 */}
-      <View style={styles.progressSection}>
-        <ProgressBar
-          label={`${doneCount} / ${totalCount} 완료`}
-          value={progressPct}
-        />
-      </View>
-      {canEdit ? (
-        <View style={styles.checklistActionRow}>
+    <>
+      <View style={styles.actionBar}>
+        <View style={styles.actionBarRow}>
           <Pressable
-            onPress={onCreateItem}
+            onPress={() => setChecklistDropdown('group')}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.inlinePrimaryButton, styles.actionFlex, pressed && styles.pressedFade]}
+            accessibilityLabel={`그룹 기준: ${groupByLabel}`}
+            style={({ pressed }) => [styles.actionChip, styles.actionChipEqual, pressed && styles.pressedFade]}
           >
-            <Ionicons name="add" size={18} color={colors.bg.canvas} />
-            <Text style={styles.inlinePrimaryButtonText}>준비물 추가</Text>
+            <Ionicons name={groupBy === 'category' ? 'grid-outline' : 'albums-outline'} size={15} color={colors.brand.primary} />
+            <Ionicons name="chevron-down" size={13} color={colors.brand.primary} />
           </Pressable>
           <Pressable
-            onPress={onOpenTemplates}
+            onPress={() => setChecklistDropdown('sort')}
             accessibilityRole="button"
-            style={({ pressed }) => [styles.inlineSecondaryButton, styles.actionFlex, pressed && styles.pressedFade]}
+            accessibilityLabel={`정렬 기준: ${sortByLabel}`}
+            style={({ pressed }) => [styles.actionChip, styles.actionChipEqual, pressed && styles.pressedFade]}
           >
-            <Ionicons name="albums-outline" size={18} color={colors.brand.primary} />
-            <Text style={styles.inlineSecondaryButtonText}>템플릿 적용</Text>
-          </Pressable>
-        </View>
-      ) : null}
-      <View style={styles.checklistOptionRow}>
-        <SegmentedTabs
-          tabs={[
-            { key: 'category', label: '카테고리별' },
-            { key: 'template', label: '템플릿별' },
-          ]}
-          value={groupBy}
-          onChange={(value) => setGroupBy(value as 'category' | 'template')}
-        />
-        <View style={styles.checklistFilterRow}>
-          <Pressable
-            onPress={() => setSortBy((prev) => prev === 'status' ? 'alphabetical' : 'status')}
-            style={({ pressed }) => [styles.filterChip, pressed && styles.pressedFade]}
-          >
-            <Ionicons name="swap-vertical-outline" size={14} color={colors.brand.primary} />
-            <Text style={styles.filterChipText}>{sortBy === 'status' ? '상태순' : '가나다순'}</Text>
+            <Ionicons name={sortByIcon} size={15} color={colors.brand.primary} />
+            <Ionicons name="chevron-down" size={13} color={colors.brand.primary} />
           </Pressable>
           <Pressable
             onPress={() => setHideChecked((prev) => !prev)}
-            style={({ pressed }) => [styles.filterChip, hideChecked && styles.filterChipActive, pressed && styles.pressedFade]}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: hideChecked }}
+            style={({ pressed }) => [
+              styles.actionChip,
+              styles.actionChipWeighted,
+              hideChecked && styles.actionChipActive,
+              pressed && styles.pressedFade,
+            ]}
           >
-            <Ionicons name="checkmark-done-outline" size={14} color={hideChecked ? colors.bg.canvas : colors.brand.primary} />
-            <Text style={[styles.filterChipText, hideChecked && styles.filterChipTextActive]}>완료 숨김</Text>
+            <Ionicons name="checkmark-done-outline" size={15} color={colors.brand.primary} />
+            <Text style={[styles.actionChipText, hideChecked && styles.actionChipTextActive]} numberOfLines={1}>완료 숨김</Text>
           </Pressable>
         </View>
       </View>
-
-      {/* 미완료 항목 */}
-      {pendingItems.length > 0 && (
-        <View style={styles.clSection}>
-          <Text style={styles.sectionLabel}>남은 항목 ({pendingItems.length})</Text>
-          {groupItems(pendingItems).map(([category, groupItems]) => {
-            const key = `pending-${category}`
-            const open = openGroups[key] !== false
-            return (
-              <AccordionCard
-                key={key}
-                title={category}
-                count={groupItems.length}
-                open={open}
-                onToggle={() => toggleGroup(key)}
-              >
-                {groupItems.map((item) => (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    status={getStatus(item)}
-                    onToggle={onToggle}
-                    onEdit={onEditItem}
-                    onDelete={onDeleteItem}
-                    canEdit={canEdit}
-                  />
-                ))}
-              </AccordionCard>
-            )
-          })}
+      <View style={styles.contentBody}>
+        {/* 완료율 */}
+        <View style={styles.progressSection}>
+          <ProgressBar
+            label={`${doneCount} / ${totalCount} 완료`}
+            value={progressPct}
+          />
         </View>
-      )}
 
-      {/* 완료 항목 */}
-      {doneItems.length > 0 && (
-        <View style={styles.clSection}>
-          <Text style={styles.sectionLabel}>완료 ({doneItems.length})</Text>
-          {groupItems(doneItems).map(([category, groupItems]) => {
-            const key = `done-${category}`
-            const open = openGroups[key] !== false
-            return (
-              <AccordionCard
-                key={key}
-                title={category}
-                count={groupItems.length}
-                open={open}
-                onToggle={() => toggleGroup(key)}
+        {/* 미완료 항목 */}
+        {items.length > 0 ? (
+          <View style={styles.clSection}>
+            <View style={styles.checklistSectionHeader}>
+              <Text style={styles.sectionLabel}>남은 항목 ({pendingItems.length})</Text>
+              <Pressable
+                onPress={() => setIsAssigneeFilterOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="담당자 필터"
+                style={({ pressed }) => [
+                  styles.sectionFilterButton,
+                  assigneeFilter !== 'all' && styles.sectionFilterButtonActive,
+                  pressed && styles.pressedFade,
+                ]}
               >
-                {groupItems.map((item) => (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    status={getStatus(item)}
-                    onToggle={onToggle}
-                    onEdit={onEditItem}
-                    onDelete={onDeleteItem}
-                    canEdit={canEdit}
-                    done
-                  />
-                ))}
-              </AccordionCard>
-            )
-          })}
-        </View>
-      )}
+                <Ionicons name="filter-outline" size={14} color={colors.brand.primary} />
+                <Text style={[styles.sectionFilterText, assigneeFilter !== 'all' && styles.sectionFilterTextActive]}>
+                  담당자
+                </Text>
+              </Pressable>
+            </View>
+            {pendingItems.length > 0 ? (
+              groupItems(pendingItems).map(([category, groupItems]) => {
+                const key = `pending-${category}`
+                const open = openGroups[key] !== false
+                return (
+                  <ChecklistAccordion
+                    key={key}
+                    title={category}
+                    count={groupItems.length}
+                    open={open}
+                    onToggle={() => toggleGroup(key)}
+                  >
+                    {groupItems.map((item) => (
+                      <ItemRow
+                        key={item.id}
+                        item={item}
+                        status={getStatus(item)}
+                        onToggle={onToggle}
+                        onEdit={onEditItem}
+                        onDelete={onDeleteItem}
+                        canEdit={canEdit}
+                        groupBy={groupBy}
+                      />
+                    ))}
+                  </ChecklistAccordion>
+                )
+              })
+            ) : null}
+          </View>
+        ) : null}
 
-      {items.length === 0 ? (
-        <EmptyState
-          icon="checkbox-outline"
-          title="등록된 준비물이 없어요"
-          description="템플릿을 적용하거나 준비물을 추가해 보세요."
+        {/* 완료 항목 */}
+        {doneItems.length > 0 && (
+          <View style={styles.clSection}>
+            <Text style={styles.sectionLabel}>완료 ({doneItems.length})</Text>
+            {groupItems(doneItems).map(([category, groupItems]) => {
+              const key = `done-${category}`
+              const open = openGroups[key] !== false
+              return (
+                <ChecklistAccordion
+                  key={key}
+                  title={category}
+                  count={groupItems.length}
+                  open={open}
+                  onToggle={() => toggleGroup(key)}
+                >
+                  {groupItems.map((item) => (
+                    <ItemRow
+                      key={item.id}
+                      item={item}
+                      status={getStatus(item)}
+                      onToggle={onToggle}
+                      onEdit={onEditItem}
+                      onDelete={onDeleteItem}
+                      canEdit={canEdit}
+                      groupBy={groupBy}
+                    />
+                  ))}
+                </ChecklistAccordion>
+              )
+            })}
+          </View>
+        )}
+
+        {items.length === 0 ? (
+          <EmptyState
+            icon="checkbox-outline"
+            title="등록된 준비물이 없어요"
+            description="템플릿을 적용하거나 준비물을 추가해 보세요."
+          />
+        ) : sortedItems.length === 0 ? (
+          <EmptyState
+            icon="funnel-outline"
+            title="조건에 맞는 준비물이 없어요"
+            description="담당자나 완료 숨김 조건을 바꿔보세요."
+          />
+        ) : null}
+      </View>
+      <AssigneeFilterSheet
+        visible={isAssigneeFilterOpen}
+        filter={assigneeFilter}
+        companions={companionOptions}
+        selectedIds={selectedCompanionIds}
+        onSelectAll={() => setAssigneeFilter('all')}
+        onSelectMe={() => setAssigneeFilter('me')}
+        onSelectCompanions={() => {
+          setAssigneeFilter('companions')
+          setSelectedCompanionIds([])
+        }}
+        onToggle={(userId) => {
+          setAssigneeFilter('companions')
+          setSelectedCompanionIds((prev) => (
+            prev.includes(userId)
+              ? prev.filter((id) => id !== userId)
+              : [...prev, userId]
+          ))
+        }}
+        onClose={() => setIsAssigneeFilterOpen(false)}
+      />
+      <ChecklistDropdownSheet
+        visible={checklistDropdown === 'group'}
+        title="그룹 기준"
+        value={groupBy}
+        options={[
+          { value: 'category', label: '카테고리별', icon: 'grid-outline' },
+          { value: 'template', label: '템플릿별', icon: 'albums-outline' },
+        ]}
+        onSelect={(value) => {
+          setGroupBy(value as 'category' | 'template')
+          setChecklistDropdown(null)
+        }}
+        onClose={() => setChecklistDropdown(null)}
+      />
+      <ChecklistDropdownSheet
+        visible={checklistDropdown === 'sort'}
+        title="정렬 기준"
+        value={sortBy}
+        options={[
+          { value: 'status', label: '상태순', icon: 'checkmark-done-outline' },
+          { value: 'alphabetical', label: '가나다순', icon: 'swap-vertical-outline' },
+        ]}
+        onSelect={(value) => {
+          setSortBy(value as 'status' | 'alphabetical')
+          setChecklistDropdown(null)
+        }}
+        onClose={() => setChecklistDropdown(null)}
+      />
+    </>
+  )
+}
+
+function AssigneeFilterSheet({
+  visible,
+  filter,
+  companions,
+  selectedIds,
+  onSelectAll,
+  onSelectMe,
+  onSelectCompanions,
+  onToggle,
+  onClose,
+}: {
+  visible: boolean
+  filter: 'all' | 'me' | 'companions'
+  companions: Array<{ user_id: string; label: string }>
+  selectedIds: string[]
+  onSelectAll: () => void
+  onSelectMe: () => void
+  onSelectCompanions: () => void
+  onToggle: (userId: string) => void
+  onClose: () => void
+}) {
+  return (
+    <BottomSheet visible={visible} title="담당자 필터" onClose={onClose}>
+      <Text style={styles.companionFilterHint}>
+        담당자 기준으로 준비물을 좁혀 볼 수 있어요. 동행인은 여러 명 선택할 수 있습니다.
+      </Text>
+      <View style={styles.companionFilterList}>
+        <Pressable
+          onPress={onSelectAll}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: filter === 'all' }}
+          style={({ pressed }) => [styles.companionFilterRow, filter === 'all' && styles.companionFilterRowActive, pressed && styles.pressedFade]}
+        >
+          <View style={styles.companionAvatar}>
+            <Ionicons name="list-outline" size={18} color={colors.brand.primary} />
+          </View>
+          <View style={styles.companionFilterBody}>
+            <Text style={styles.companionFilterName}>전체</Text>
+            <Text style={styles.companionFilterMeta}>모든 준비물 보기</Text>
+          </View>
+          <Ionicons name={filter === 'all' ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={filter === 'all' ? colors.brand.primary : colors.brand.mutedSoft} />
+        </Pressable>
+        <Pressable
+          onPress={onSelectMe}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: filter === 'me' }}
+          style={({ pressed }) => [styles.companionFilterRow, filter === 'me' && styles.companionFilterRowActive, pressed && styles.pressedFade]}
+        >
+          <View style={styles.companionAvatar}>
+            <Ionicons name="person-outline" size={18} color={colors.brand.primary} />
+          </View>
+          <View style={styles.companionFilterBody}>
+            <Text style={styles.companionFilterName}>나</Text>
+            <Text style={styles.companionFilterMeta}>내가 담당자인 준비물만 보기</Text>
+          </View>
+          <Ionicons name={filter === 'me' ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={filter === 'me' ? colors.brand.primary : colors.brand.mutedSoft} />
+        </Pressable>
+        {companions.length > 0 ? (
+          <Pressable
+            onPress={onSelectCompanions}
+            accessibilityRole="radio"
+            accessibilityState={{ checked: filter === 'companions' }}
+            style={({ pressed }) => [styles.companionFilterRow, filter === 'companions' && styles.companionFilterRowActive, pressed && styles.pressedFade]}
+          >
+            <View style={styles.companionAvatar}>
+              <Ionicons name="people-outline" size={18} color={colors.brand.primary} />
+            </View>
+            <View style={styles.companionFilterBody}>
+              <Text style={styles.companionFilterName}>동행인 선택</Text>
+              <Text style={styles.companionFilterMeta}>동행인을 골라 담당 준비물 보기</Text>
+            </View>
+            <Ionicons name={filter === 'companions' ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={filter === 'companions' ? colors.brand.primary : colors.brand.mutedSoft} />
+          </Pressable>
+        ) : null}
+        {filter === 'companions' && companions.length > 0 ? (
+          <View style={styles.companionSelectionPanel}>
+            {companions.map((companion) => {
+              const selected = selectedIds.includes(companion.user_id)
+              return (
+                <Pressable
+                  key={companion.user_id}
+                  onPress={() => onToggle(companion.user_id)}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: selected }}
+                  style={({ pressed }) => [styles.companionCheckboxRow, pressed && styles.pressedFade]}
+                >
+                  <View style={[styles.companionCheckbox, selected && styles.companionCheckboxActive]}>
+                    {selected ? <Ionicons name="checkmark" size={12} color={colors.bg.canvas} /> : null}
+                  </View>
+                  <View style={styles.companionFilterBody}>
+                    <Text style={styles.companionFilterName} numberOfLines={1}>{companion.label}</Text>
+                    <Text style={styles.companionFilterMeta}>담당 준비물 보기</Text>
+                  </View>
+                </Pressable>
+              )
+            })}
+          </View>
+        ) : null}
+      </View>
+    </BottomSheet>
+  )
+}
+
+function ChecklistDropdownSheet({
+  visible,
+  title,
+  value,
+  options,
+  onSelect,
+  onClose,
+}: {
+  visible: boolean
+  title: string
+  value: string
+  options: Array<{
+    value: string
+    label: string
+    icon: React.ComponentProps<typeof Ionicons>['name']
+  }>
+  onSelect: (value: string) => void
+  onClose: () => void
+}) {
+  return (
+    <BottomSheet visible={visible} title={title} onClose={onClose}>
+      <View style={styles.companionFilterList}>
+        {options.map((option) => {
+          const selected = option.value === value
+          return (
+            <Pressable
+              key={option.value}
+              onPress={() => onSelect(option.value)}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: selected }}
+              style={({ pressed }) => [styles.companionFilterRow, selected && styles.companionFilterRowActive, pressed && styles.pressedFade]}
+            >
+              <View style={styles.companionAvatar}>
+                <Ionicons name={option.icon} size={18} color={colors.brand.primary} />
+              </View>
+              <View style={styles.companionFilterBody}>
+                <Text style={styles.companionFilterName}>{option.label}</Text>
+              </View>
+              <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={selected ? colors.brand.primary : colors.brand.mutedSoft} />
+            </Pressable>
+          )
+        })}
+      </View>
+    </BottomSheet>
+  )
+}
+
+function ChecklistAccordion({
+  title,
+  count,
+  open,
+  onToggle,
+  children,
+}: {
+  title: string
+  count: number
+  open: boolean
+  onToggle: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <View style={styles.checklistAccordion}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded: open }}
+        style={({ pressed }) => [styles.checklistAccordionHeader, pressed && styles.pressedFade]}
+      >
+        <View style={styles.checklistAccordionTitleWrap}>
+          <View style={styles.checklistAccordionAccent} />
+          <Text style={styles.checklistAccordionTitle} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
+        <View style={styles.checklistAccordionCount}>
+          <Text style={styles.checklistAccordionCountText}>{count}</Text>
+        </View>
+        <Ionicons
+          name="chevron-down"
+          size={18}
+          color={colors.brand.primary}
+          style={{ transform: [{ rotate: open ? '180deg' : '0deg' }] }}
         />
-      ) : null}
-    </ScrollView>
+      </Pressable>
+      {open ? <View style={styles.checklistAccordionBody}>{children}</View> : null}
+    </View>
   )
 }
 
@@ -2741,13 +3165,16 @@ interface ItemRowProps {
   onEdit: (item: ChecklistItem) => void
   onDelete: (item: ChecklistItem) => Promise<void>
   canEdit: boolean
-  done?: boolean
+  groupBy: 'category' | 'template'
 }
 
-function ItemRow({ item, status, onToggle, onEdit, onDelete, canEdit, done = false }: ItemRowProps) {
+function ItemRow({ item, status, onToggle, onEdit, onDelete, canEdit, groupBy }: ItemRowProps) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const checked = status.is_checked || status.is_my_checked
   const canCheck = canEdit && status.can_check
+  const secondaryLabel = groupBy === 'category'
+    ? item.source_template_name?.trim()
+    : item.category?.trim()
   const row = (
     <Pressable
       disabled={!canCheck}
@@ -2765,22 +3192,22 @@ function ItemRow({ item, status, onToggle, onEdit, onDelete, canEdit, done = fal
         {checked && <Ionicons name="checkmark" size={12} color={colors.bg.canvas} />}
       </View>
       <View style={styles.itemContent}>
-        <Text style={[styles.itemName, status.is_checked && styles.itemNameDone]} numberOfLines={2}>
-          {item.item_name}
-        </Text>
-        {item.category?.length > 0 ? (
-          <Text style={styles.itemCategory} numberOfLines={1}>
-            {item.category}
+        <View style={styles.itemTitleLine}>
+          <Text style={[styles.itemName, status.is_checked && styles.itemNameDone]} numberOfLines={2}>
+            {item.item_name}
           </Text>
-        ) : null}
-        {item.source_template_name ? (
-          <Text style={styles.itemSource} numberOfLines={1}>
-            {item.source_template_name}
-          </Text>
-        ) : null}
-        {status.required_count > 1 ? (
-          <Text style={styles.itemSource} numberOfLines={1}>
-            준비 현황 {status.checks_count}/{status.required_count}
+          {status.required_count > 1 ? (
+            <View style={styles.itemProgressBadge}>
+              <Ionicons name="people-outline" size={12} color={colors.brand.primary} />
+              <Text style={styles.itemProgressBadgeText}>
+                {status.checks_count}/{status.required_count}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        {secondaryLabel ? (
+          <Text style={styles.itemSecondaryLabel} numberOfLines={1}>
+            {secondaryLabel}
           </Text>
         ) : null}
       </View>
@@ -3488,7 +3915,7 @@ function ChecklistItemSheet({
       .filter((member) => member.user_id)
       .map((member) => ({
         user_id: member.user_id as string,
-        invited_email: member.profiles?.nickname || member.profiles?.email || member.invited_email,
+        invited_email: getTripMemberDisplayName(member),
         role: member.role,
       }))
     const seen = new Set<string>()
@@ -3528,6 +3955,7 @@ function ChecklistItemSheet({
         assignee_ids: isPrivate ? (currentUserId ? [currentUserId] : []) : assigneeIds,
       })
     } catch (e) {
+      console.warn('[ChecklistItemSheet] save failed', e)
       setError(e instanceof Error ? e.message : '준비물 저장에 실패했어요.')
     } finally {
       setSaving(false)
@@ -3645,6 +4073,7 @@ function TemplateApplySheet({
     try {
       await onApply(templateId)
     } catch (e) {
+      console.warn('[TemplateApplySheet] apply failed', e)
       setError(e instanceof Error ? e.message : '템플릿 적용에 실패했어요.')
     } finally {
       setApplyingId(null)
@@ -3931,7 +4360,15 @@ function UrlPreviewCard({
 
 // ─── 지도 탭 ──────────────────────────────────────────────────────────────────
 
-function MapTab({ plans }: { plans: PlanWithUrls[] }) {
+function MapTab({
+  plans,
+  onMapTouchStart,
+  onMapTouchEnd,
+}: {
+  plans: PlanWithUrls[]
+  onMapTouchStart: () => void
+  onMapTouchEnd: () => void
+}) {
   const mapMarkers = plans.filter(
     (p) => planLat(p) != null && planLng(p) != null
   )
@@ -3980,16 +4417,23 @@ function MapTab({ plans }: { plans: PlanWithUrls[] }) {
   }
 
   return (
-    <MapViewCmp style={styles.map} initialRegion={region}>
-      {mapMarkers.map((p) => (
-        <MarkerCmp
-          key={p.id}
-          coordinate={{ latitude: planLat(p)!, longitude: planLng(p)! }}
-          title={p.title}
-          description={p.location ?? undefined}
-        />
-      ))}
-    </MapViewCmp>
+    <View
+      style={styles.mapWrap}
+      onTouchStart={onMapTouchStart}
+      onTouchEnd={onMapTouchEnd}
+      onTouchCancel={onMapTouchEnd}
+    >
+      <MapViewCmp style={styles.map} initialRegion={region}>
+        {mapMarkers.map((p) => (
+          <MarkerCmp
+            key={p.id}
+            coordinate={{ latitude: planLat(p)!, longitude: planLng(p)! }}
+            title={p.title}
+            description={p.location ?? undefined}
+          />
+        ))}
+      </MapViewCmp>
+    </View>
   )
 }
 
@@ -4000,6 +4444,12 @@ const DOT_SIZE = 8
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg.canvas },
+  detailScroll: {
+    flex: 1,
+  },
+  detailScrollContent: {
+    paddingBottom: spacing.xxxl,
+  },
   detailTop: {
     borderBottomWidth: 1,
     borderBottomColor: colors.brand.hairlineSoft,
@@ -4611,6 +5061,13 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.brand.hairlineSoft,
+    backgroundColor: colors.bg.canvas,
+    zIndex: 5,
+    elevation: 4,
+    shadowColor: colors.bg.scrim,
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   header: {
     flexDirection: 'row',
@@ -4659,6 +5116,7 @@ const styles = StyleSheet.create({
   },
   centerFill: {
     flex: 1,
+    minHeight: 360,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.md,
@@ -4791,6 +5249,55 @@ const styles = StyleSheet.create({
   planFabText: {
     color: colors.bg.canvas,
     fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+  },
+  checklistFabWrap: {
+    position: 'absolute',
+    right: spacing.lg,
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+  },
+  checklistFabButton: {
+    position: 'relative',
+    right: 0,
+  },
+  planFabExpanded: {
+    backgroundColor: colors.brand.ink,
+    shadowColor: colors.brand.ink,
+  },
+  speedDialMenu: {
+    alignItems: 'flex-end',
+    gap: spacing.sm,
+  },
+  speedDialAction: {
+    width: 144,
+    minHeight: 48,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.canvas,
+    shadowColor: colors.bg.scrim,
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 4,
+  },
+  speedDialIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  speedDialText: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.sm,
     fontWeight: fontWeights.bold,
   },
   section: {
@@ -5013,6 +5520,7 @@ const styles = StyleSheet.create({
   // 빈 상태
   emptyState: {
     flex: 1,
+    minHeight: 360,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
@@ -5914,7 +6422,6 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
   },
   // 준비물 콘텐츠
-  contentScroll: { flex: 1 },
   contentBody: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.sm,
@@ -5932,6 +6439,149 @@ const styles = StyleSheet.create({
   checklistFilterRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+  },
+  checklistControlRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.xs,
+  },
+  toolbarToggleButton: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.xs,
+    backgroundColor: colors.bg.canvas,
+  },
+  toolbarToggleButtonActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  toolbarToggleButtonSolid: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.brand.primary,
+  },
+  toolbarToggleText: {
+    color: colors.brand.primary,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  toolbarToggleTextActive: {
+    color: colors.brand.primary,
+  },
+  toolbarToggleTextSolid: {
+    color: colors.bg.canvas,
+  },
+  assigneeFilterRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  assigneeFilterButton: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: radii.full,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  assigneeFilterButtonActive: {
+    backgroundColor: colors.brand.primary,
+  },
+  assigneeFilterText: {
+    color: colors.brand.muted,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  assigneeFilterTextActive: {
+    color: colors.bg.canvas,
+  },
+  companionFilterHint: {
+    color: colors.brand.muted,
+    fontSize: fontSizes.sm,
+    lineHeight: 20,
+  },
+  companionFilterList: {
+    gap: spacing.sm,
+  },
+  companionSelectionPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  companionCheckboxRow: {
+    minHeight: 48,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  companionCheckbox: {
+    width: 22,
+    height: 22,
+    borderRadius: radii.xs,
+    borderWidth: 1.5,
+    borderColor: colors.brand.hairline,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.canvas,
+  },
+  companionCheckboxActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.brand.primary,
+  },
+  companionFilterRow: {
+    minHeight: 64,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.bg.canvas,
+  },
+  companionFilterRowActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  companionAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.canvas,
+  },
+  companionAvatarText: {
+    color: colors.brand.primary,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  companionFilterBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  companionFilterName: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+  },
+  companionFilterMeta: {
+    marginTop: spacing.xxs,
+    color: colors.brand.muted,
+    fontSize: fontSizes.xs,
   },
   filterChip: {
     flexDirection: 'row',
@@ -5973,21 +6623,105 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand.primary,
   },
   clSection: { gap: spacing.sm },
+  checklistAccordion: {
+    overflow: 'hidden',
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+  },
+  checklistAccordionHeader: {
+    minHeight: 56,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  checklistAccordionTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  checklistAccordionAccent: {
+    width: 4,
+    height: 20,
+    borderRadius: radii.full,
+    backgroundColor: colors.brand.primary,
+  },
+  checklistAccordionTitle: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.brand.primary,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+  },
+  checklistAccordionCount: {
+    minWidth: 28,
+    height: 24,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.canvas,
+  },
+  checklistAccordionCountText: {
+    color: colors.brand.primary,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  checklistAccordionBody: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  checklistSectionHeader: {
+    minHeight: 34,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
   sectionLabel: {
+    flex: 1,
     fontSize: fontSizes.xs,
     fontWeight: fontWeights.semibold,
     color: colors.brand.muted,
     letterSpacing: 0.5,
-    marginBottom: spacing.xs,
+  },
+  sectionFilterButton: {
+    minHeight: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.full,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+  },
+  sectionFilterButtonActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  sectionFilterText: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  sectionFilterTextActive: {
+    color: colors.brand.primary,
   },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bg.canvas,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.brand.border,
-    padding: spacing.md,
+    borderRadius: radii.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
     gap: spacing.md,
   },
   readonlyRow: {
@@ -6009,8 +6743,15 @@ const styles = StyleSheet.create({
   checkboxDisabled: {
     opacity: 0.45,
   },
-  itemContent: { flex: 1, gap: spacing.xxs },
+  itemContent: { flex: 1, minWidth: 0, gap: spacing.xxs },
+  itemTitleLine: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   itemName: {
+    flex: 1,
+    minWidth: 0,
     fontSize: fontSizes.base,
     fontWeight: fontWeights.medium,
     color: colors.brand.ink,
@@ -6019,15 +6760,25 @@ const styles = StyleSheet.create({
     color: colors.brand.muted,
     textDecorationLine: 'line-through',
   },
-  itemCategory: {
+  itemSecondaryLabel: {
     fontSize: fontSizes.xs,
     color: colors.brand.mutedSoft,
   },
-  itemSource: {
-    fontSize: fontSizes.xs,
+  itemProgressBadge: {
+    minHeight: 22,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.full,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  itemProgressBadgeText: {
     color: colors.brand.primary,
-    fontWeight: fontWeights.semibold,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
   },
   // 지도
+  mapWrap: { height: 520 },
   map: { flex: 1 },
 })
