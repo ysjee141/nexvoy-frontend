@@ -15,6 +15,7 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  KeyboardAvoidingView,
   Linking,
   Modal,
   NativeScrollEvent,
@@ -86,6 +87,7 @@ import {
   updatePlan,
   deletePlan,
   ensureChecklist,
+  createChecklistCategory,
   createChecklistItem,
   updateChecklistItem,
   deleteChecklistItem,
@@ -953,6 +955,19 @@ export default function TripDetailScreen() {
       if (!id) return
       const currentChecklist = await ensureCurrentTripChecklist()
       if (!currentChecklist) return
+      const normalizedCategory = input.category.trim() || '기타'
+      const shouldCreateCategory = Boolean(session?.user.id)
+        && !checklistCategories.some((category) => category.name.trim().toLowerCase() === normalizedCategory.toLowerCase())
+      if (shouldCreateCategory && session?.user.id) {
+        const createdCategory = await createChecklistCategory(supabase, {
+          user_id: session.user.id,
+          name: normalizedCategory,
+          sort_order: checklistCategories.length > 0
+            ? Math.max(...checklistCategories.map((category) => category.sort_order ?? 0)) + 10
+            : 10,
+        })
+        setChecklistCategories((prev) => [...prev, createdCategory])
+      }
       const finalAssigneeIds = input.is_private
         ? (session?.user.id ? [session.user.id] : [])
         : input.assignment_type === 'specific'
@@ -962,7 +977,7 @@ export default function TripDetailScreen() {
       if (editingItem) {
         await updateChecklistItem(supabase, editingItem.id, {
           item_name: input.item_name,
-          category: input.category,
+          category: normalizedCategory,
           is_private: input.is_private,
           assignment_type: input.is_private ? 'specific' : input.assignment_type,
           assigned_user_id: finalAssigneeIds[0] ?? null,
@@ -972,7 +987,7 @@ export default function TripDetailScreen() {
       } else {
         await createChecklistItem(supabase, currentChecklist.id, {
           item_name: input.item_name,
-          category: input.category,
+          category: normalizedCategory,
           is_private: input.is_private,
           assignment_type: input.is_private ? 'specific' : input.assignment_type,
           assigned_user_id: finalAssigneeIds[0] ?? null,
@@ -983,7 +998,7 @@ export default function TripDetailScreen() {
       setIsItemSheetOpen(false)
       await loadChecklist()
     },
-    [editingItem, ensureCurrentTripChecklist, id, loadChecklist, session?.user.id]
+    [checklistCategories, editingItem, ensureCurrentTripChecklist, id, loadChecklist, session?.user.id]
   )
 
   const handleDeleteChecklistItem = useCallback(
@@ -3907,10 +3922,13 @@ function ChecklistItemSheet({
   const [isPrivate, setIsPrivate] = useState(false)
   const [assignmentType, setAssignmentType] = useState<'anyone' | 'specific' | 'everyone'>('anyone')
   const [assigneeIds, setAssigneeIds] = useState<string[]>([])
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
+  const [categoryQuery, setCategoryQuery] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const insets = useSafeAreaInsets()
   const participants = useMemo(() => {
-    const owner = ownerId ? [{ user_id: ownerId, invited_email: '나', role: 'owner' }] : []
+    const owner = ownerId ? [{ user_id: ownerId, invited_email: ownerId === currentUserId ? '나' : '여행장', role: 'owner' }] : []
     const rest = members
       .filter((member) => member.user_id)
       .map((member) => ({
@@ -3924,7 +3942,24 @@ function ChecklistItemSheet({
       seen.add(member.user_id)
       return true
     })
-  }, [members, ownerId])
+  }, [currentUserId, members, ownerId])
+  const categoryOptions = useMemo(() => {
+    const base = categories.length > 0 ? categories : [{ id: 'fallback', name: '기타' } as ChecklistCategory]
+    const seen = new Set<string>()
+    return base.filter((cat) => {
+      const key = cat.name.trim()
+      if (!key || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [categories])
+  const filteredCategoryOptions = useMemo(() => {
+    const query = categoryQuery.trim().toLowerCase()
+    if (!query) return categoryOptions
+    return categoryOptions.filter((cat) => cat.name.toLowerCase().includes(query))
+  }, [categoryOptions, categoryQuery])
+  const canAddCategoryFromQuery = categoryQuery.trim().length > 0
+    && !categoryOptions.some((cat) => cat.name.trim().toLowerCase() === categoryQuery.trim().toLowerCase())
 
   useEffect(() => {
     if (!visible) return
@@ -3936,6 +3971,8 @@ function ChecklistItemSheet({
       ? assignees.filter((assignee) => assignee.item_id === item.id).map((assignee) => assignee.user_id)
       : []
     setAssigneeIds(assigned.length > 0 ? assigned : (item?.assigned_user_id ? [item.assigned_user_id] : []))
+    setCategoryPickerOpen(false)
+    setCategoryQuery('')
     setError('')
   }, [assignees, item, visible])
 
@@ -3963,81 +4000,188 @@ function ChecklistItemSheet({
   }
 
   return (
-    <BottomSheet visible={visible} title={item ? '준비물 수정' : '준비물 추가'} onClose={onClose}>
-      <FormField label="준비물" value={name} onChangeText={setName} placeholder="예) 여권" />
-      <Text style={styles.formLabel}>카테고리</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categorySelector}>
-        {(categories.length > 0 ? categories : [{ id: 'fallback', name: '기타' } as ChecklistCategory]).map((cat) => {
-          const selected = category === cat.name
-          return (
+    <Modal visible={visible} animationType="slide" presentationStyle="fullScreen" onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={styles.itemModalRoot}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <SafeAreaView style={[styles.itemModalSafe, { paddingTop: insets.top }]} edges={[]}>
+          <View style={styles.itemModalHeader}>
             <Pressable
-              key={cat.id}
-              onPress={() => setCategory(cat.name)}
-              style={[styles.filterChip, selected && styles.filterChipActive]}
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="준비물 추가 닫기"
+              hitSlop={8}
+              style={({ pressed }) => [styles.itemModalCloseButton, pressed && styles.pressedFade]}
             >
-              <Text style={[styles.filterChipText, selected && styles.filterChipTextActive]}>{cat.name}</Text>
+              <Ionicons name="close" size={20} color={colors.brand.ink} />
             </Pressable>
-          )
-        })}
-      </ScrollView>
-      <Pressable
-        onPress={() => setIsPrivate((prev) => !prev)}
-        style={styles.sheetToggleRow}
-      >
-        <Ionicons name={isPrivate ? 'lock-closed' : 'lock-open-outline'} size={17} color={isPrivate ? colors.brand.primary : colors.brand.muted} />
-        <Text style={[styles.sheetToggleText, isPrivate && styles.sheetToggleTextActive]}>나만 보기</Text>
-      </Pressable>
-      {!isPrivate ? (
-        <>
-          <Text style={styles.formLabel}>누가 챙길까요?</Text>
-          <View style={styles.assignmentTypeRow}>
-            {[
-              { key: 'anyone', label: '한 명' },
-              { key: 'specific', label: '담당자' },
-              { key: 'everyone', label: '모두' },
-            ].map((option) => {
-              const selected = assignmentType === option.key
-              return (
-                <Pressable
-                  key={option.key}
-                  onPress={() => setAssignmentType(option.key as 'anyone' | 'specific' | 'everyone')}
-                  style={[styles.assignmentChip, selected && styles.assignmentChipActive]}
-                >
-                  <Text style={[styles.assignmentChipText, selected && styles.assignmentChipTextActive]}>{option.label}</Text>
-                </Pressable>
-              )
-            })}
-          </View>
-          {assignmentType === 'specific' ? (
-            <View style={styles.assigneeGrid}>
-              {participants.map((participant) => {
-                const selected = assigneeIds.includes(participant.user_id)
-                const label = participant.user_id === currentUserId ? '나' : participant.invited_email || '동행자'
-                return (
-                  <Pressable
-                    key={participant.user_id}
-                    onPress={() => setAssigneeIds((prev) => selected ? prev.filter((id) => id !== participant.user_id) : [...prev, participant.user_id])}
-                    style={[styles.assigneeChip, selected && styles.assigneeChipActive]}
-                  >
-                    <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={15} color={selected ? colors.brand.primary : colors.brand.muted} />
-                    <Text style={[styles.assigneeChipText, selected && styles.assigneeChipTextActive]}>{label}</Text>
-                  </Pressable>
-                )
-              })}
+            <View style={styles.itemModalTitleBlock}>
+              <Text style={styles.itemModalTitle}>{item ? '준비물 수정' : '준비물 추가'}</Text>
+              <Text style={styles.itemModalSubtitle}>필요한 준비물과 담당자를 정리해요.</Text>
             </View>
-          ) : null}
-        </>
-      ) : null}
-      {error ? <Text style={styles.formError}>{error}</Text> : null}
-      <Pressable
-        onPress={submit}
-        disabled={saving}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.sheetSubmitButton, pressed && !saving && styles.pressedFade, saving && styles.disabledButton]}
-      >
-        {saving ? <ActivityIndicator color={colors.bg.canvas} /> : <Text style={styles.sheetSubmitText}>저장하기</Text>}
-      </Pressable>
-    </BottomSheet>
+            <View style={styles.itemModalHeaderSpacer} />
+          </View>
+
+          <ScrollView
+            contentContainerStyle={styles.itemModalContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <FormField label="준비물" value={name} onChangeText={setName} placeholder="예) 여권" />
+
+            <View style={styles.itemFormSection}>
+              <Text style={styles.formLabel}>카테고리</Text>
+              <Pressable
+                onPress={() => setCategoryPickerOpen((prev) => !prev)}
+                accessibilityRole="button"
+                accessibilityLabel={`카테고리 ${category} 선택`}
+                style={({ pressed }) => [styles.categoryTrigger, categoryPickerOpen && styles.categoryTriggerActive, pressed && styles.pressedFade]}
+              >
+                <View style={styles.categoryTriggerIcon}>
+                  <Ionicons name="pricetag-outline" size={17} color={colors.brand.primary} />
+                </View>
+                <Text style={styles.categoryTriggerText} numberOfLines={1}>{category || '카테고리 선택'}</Text>
+                <Ionicons name={categoryPickerOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.brand.muted} />
+              </Pressable>
+
+              {categoryPickerOpen ? (
+                <View style={styles.categoryPickerPanel}>
+                  <View style={styles.categorySearchBox}>
+                    <Ionicons name="search-outline" size={16} color={colors.brand.muted} />
+                    <TextInput
+                      value={categoryQuery}
+                      onChangeText={setCategoryQuery}
+                      placeholder="카테고리 검색 또는 직접 입력"
+                      placeholderTextColor={colors.brand.mutedSoft}
+                      style={styles.categorySearchInput}
+                    />
+                  </View>
+                  {canAddCategoryFromQuery ? (
+                    <Pressable
+                      onPress={() => {
+                        setCategory(categoryQuery.trim())
+                        setCategoryPickerOpen(false)
+                        setCategoryQuery('')
+                      }}
+                      style={({ pressed }) => [styles.categoryOptionRow, styles.categoryAddRow, pressed && styles.pressedFade]}
+                    >
+                      <Text style={[styles.categoryOptionText, styles.categoryAddText]}>+ “{categoryQuery.trim()}”로 추가</Text>
+                    </Pressable>
+                  ) : null}
+                  <ScrollView
+                    nestedScrollEnabled
+                    showsVerticalScrollIndicator={filteredCategoryOptions.length > 5}
+                    keyboardShouldPersistTaps="handled"
+                    style={styles.categoryOptionScroll}
+                    contentContainerStyle={styles.categoryOptionList}
+                  >
+                    {filteredCategoryOptions.map((cat) => {
+                      const selected = category === cat.name
+                      return (
+                        <Pressable
+                          key={cat.id}
+                          onPress={() => {
+                            setCategory(cat.name)
+                            setCategoryPickerOpen(false)
+                            setCategoryQuery('')
+                          }}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: selected }}
+                          style={({ pressed }) => [styles.categoryOptionRow, selected && styles.categoryOptionRowActive, pressed && styles.pressedFade]}
+                        >
+                          <Text style={[styles.categoryOptionText, selected && styles.categoryOptionTextActive]}>{cat.name}</Text>
+                          <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={selected ? colors.brand.primary : colors.brand.mutedSoft} />
+                        </Pressable>
+                      )
+                    })}
+                  </ScrollView>
+                </View>
+              ) : null}
+            </View>
+
+            <Pressable
+              onPress={() => setIsPrivate((prev) => !prev)}
+              style={styles.itemPrivateRow}
+            >
+              <View style={styles.itemPrivateIcon}>
+                <Ionicons name={isPrivate ? 'lock-closed' : 'lock-open-outline'} size={17} color={isPrivate ? colors.brand.primary : colors.brand.muted} />
+              </View>
+              <View style={styles.itemPrivateBody}>
+                <Text style={[styles.sheetToggleText, isPrivate && styles.sheetToggleTextActive]}>나만 보기</Text>
+                <Text style={styles.itemPrivateMeta}>켜면 나에게만 보이는 개인 준비물로 저장돼요.</Text>
+              </View>
+              <Ionicons name={isPrivate ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={isPrivate ? colors.brand.primary : colors.brand.mutedSoft} />
+            </Pressable>
+
+            {!isPrivate ? (
+              <View style={styles.itemFormSection}>
+                <Text style={styles.formLabel}>누가 챙길까요?</Text>
+                <View style={styles.assignmentTypeRow}>
+                  {[
+                    { key: 'anyone', label: '한 명' },
+                    { key: 'specific', label: '담당자' },
+                    { key: 'everyone', label: '모두' },
+                  ].map((option) => {
+                    const selected = assignmentType === option.key
+                    return (
+                      <Pressable
+                        key={option.key}
+                        onPress={() => setAssignmentType(option.key as 'anyone' | 'specific' | 'everyone')}
+                        style={[styles.assignmentChip, selected && styles.assignmentChipActive]}
+                      >
+                        <Text style={[styles.assignmentChipText, selected && styles.assignmentChipTextActive]}>{option.label}</Text>
+                      </Pressable>
+                    )
+                  })}
+                </View>
+                {assignmentType === 'specific' ? (
+                  <View style={styles.itemAssigneePanel}>
+                    {participants.map((participant) => {
+                      const selected = assigneeIds.includes(participant.user_id)
+                      const label = participant.invited_email || '동행자'
+                      const isMe = participant.user_id === currentUserId
+                      const meta = isMe ? '내가 챙기는 준비물' : participant.role === 'owner' ? '여행장' : '동행자'
+                      return (
+                        <Pressable
+                          key={participant.user_id}
+                          onPress={() => setAssigneeIds((prev) => selected ? prev.filter((id) => id !== participant.user_id) : [...prev, participant.user_id])}
+                          accessibilityRole="checkbox"
+                          accessibilityState={{ checked: selected }}
+                          style={({ pressed }) => [styles.companionFilterRow, selected && styles.companionFilterRowActive, pressed && styles.pressedFade]}
+                        >
+                          <View style={styles.companionAvatar}>
+                            <Text style={styles.companionAvatarText}>{label.slice(0, 1)}</Text>
+                          </View>
+                          <View style={styles.companionFilterBody}>
+                            <Text style={styles.companionFilterName} numberOfLines={1}>{label}</Text>
+                            <Text style={styles.companionFilterMeta}>{meta}</Text>
+                          </View>
+                          <Ionicons name={selected ? 'checkmark-circle' : 'ellipse-outline'} size={20} color={selected ? colors.brand.primary : colors.brand.mutedSoft} />
+                        </Pressable>
+                      )
+                    })}
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+
+            {error ? <Text style={styles.formError}>{error}</Text> : null}
+          </ScrollView>
+
+          <View style={[styles.itemModalFooter, { paddingBottom: Math.max(insets.bottom, spacing.base) }]}>
+            <Pressable
+              onPress={submit}
+              disabled={saving}
+              accessibilityRole="button"
+              style={({ pressed }) => [styles.sheetSubmitButton, styles.itemModalSubmitButton, pressed && !saving && styles.pressedFade, saving && styles.disabledButton]}
+            >
+              {saving ? <ActivityIndicator color={colors.bg.canvas} /> : <Text style={styles.sheetSubmitText}>저장하기</Text>}
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
+    </Modal>
   )
 }
 
@@ -6291,6 +6435,203 @@ const styles = StyleSheet.create({
     color: colors.brand.error,
     fontSize: fontSizes.sm,
     lineHeight: 20,
+  },
+  itemModalRoot: {
+    flex: 1,
+    backgroundColor: colors.bg.canvas,
+  },
+  itemModalSafe: {
+    flex: 1,
+    backgroundColor: colors.bg.canvas,
+  },
+  itemModalHeader: {
+    minHeight: 64,
+    paddingHorizontal: spacing.base,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.brand.hairlineSoft,
+    backgroundColor: colors.bg.canvas,
+  },
+  itemModalCloseButton: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  itemModalTitleBlock: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+  },
+  itemModalTitle: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.bold,
+  },
+  itemModalSubtitle: {
+    marginTop: spacing.xxs,
+    color: colors.brand.muted,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+  },
+  itemModalHeaderSpacer: {
+    width: 40,
+  },
+  itemModalContent: {
+    padding: spacing.base,
+    paddingBottom: spacing.xl,
+    gap: spacing.base,
+  },
+  itemFormSection: {
+    gap: spacing.sm,
+  },
+  categoryTrigger: {
+    minHeight: 56,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.canvas,
+  },
+  categoryTriggerActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categoryTriggerIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categoryTriggerText: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.brand.ink,
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.bold,
+  },
+  categoryPickerPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categorySearchBox: {
+    minHeight: 44,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.bg.canvas,
+  },
+  categorySearchInput: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.brand.ink,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
+  categoryOptionList: {
+    gap: spacing.xs,
+    paddingBottom: spacing.xxs,
+  },
+  categoryOptionScroll: {
+    maxHeight: 240,
+  },
+  categoryOptionRow: {
+    minHeight: 48,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.canvas,
+  },
+  categoryOptionRowActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categoryOptionText: {
+    flex: 1,
+    color: colors.brand.ink,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
+  categoryOptionTextActive: {
+    color: colors.brand.primary,
+    fontWeight: fontWeights.bold,
+  },
+  categoryAddRow: {
+    borderStyle: 'dashed',
+    borderColor: colors.brand.primary,
+  },
+  categoryAddText: {
+    color: colors.brand.primary,
+    fontWeight: fontWeights.bold,
+  },
+  itemPrivateRow: {
+    minHeight: 64,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.bg.canvas,
+  },
+  itemPrivateIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  itemPrivateBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  itemPrivateMeta: {
+    marginTop: spacing.xxs,
+    color: colors.brand.muted,
+    fontSize: fontSizes.xs,
+    lineHeight: 17,
+  },
+  itemAssigneePanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  itemModalFooter: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.brand.hairlineSoft,
+    backgroundColor: colors.bg.canvas,
+  },
+  itemModalSubmitButton: {
+    marginTop: 0,
   },
   categorySelector: {
     gap: spacing.xs,
