@@ -825,13 +825,39 @@ export default function TripDetailScreen() {
       return
     }
     const next = !status.is_my_checked
+    const previousItems = items
+    const previousUserChecks = userChecks
+
     if (item.assignment_type === 'everyone' || status.required_count > 1) {
-      setUserChecks((prev) => {
+      const assignedIds = itemAssignees
+        .filter((assignee) => assignee.item_id === item.id)
+        .map((assignee) => assignee.user_id)
+      const specificIds = assignedIds.length > 0
+        ? assignedIds
+        : item.assigned_user_id
+          ? [item.assigned_user_id]
+          : []
+      const requiredIds = item.assignment_type === 'everyone' ? participantIds : specificIds
+
+      const nextUserChecks = (() => {
         if (next) {
-          return [...prev, { id: `tmp-${Date.now()}`, item_id: item.id, user_id: session.user.id, created_at: new Date().toISOString() }]
+          const alreadyChecked = userChecks.some((check) => check.item_id === item.id && check.user_id === session.user.id)
+          if (alreadyChecked) return userChecks
+          return [...userChecks, { id: `tmp-${Date.now()}`, item_id: item.id, user_id: session.user.id, created_at: new Date().toISOString() }]
         }
-        return prev.filter((check) => !(check.item_id === item.id && check.user_id === session.user.id))
-      })
+        return userChecks.filter((check) => !(check.item_id === item.id && check.user_id === session.user.id))
+      })()
+      const checkedIds = new Set(
+        nextUserChecks
+          .filter((check) => check.item_id === item.id)
+          .map((check) => check.user_id)
+      )
+      const itemChecked = requiredIds.length > 0 && requiredIds.every((userId) => checkedIds.has(userId))
+
+      setUserChecks(nextUserChecks)
+      setItems((prev) =>
+        prev.map((i) => (i.id === item.id ? { ...i, is_checked: itemChecked } : i))
+      )
     } else {
       setItems((prev) =>
         prev.map((i) => (i.id === item.id ? { ...i, is_checked: next } : i))
@@ -839,14 +865,14 @@ export default function TripDetailScreen() {
     }
     try {
       await toggleChecklistItemForUser(supabase, item, session.user.id, next)
-      await loadChecklist()
     } catch {
       if (isMounted.current) {
-        await loadChecklist()
+        setItems(previousItems)
+        setUserChecks(previousUserChecks)
       }
       Alert.alert('오류', '저장에 실패했어요. 다시 시도해 주세요.')
     }
-  }, [itemAssignees, loadChecklist, participantIds, session?.user.id, userChecks])
+  }, [itemAssignees, items, participantIds, session?.user.id, userChecks])
 
   const handleSaveTrip = useCallback(
     async (input: {
