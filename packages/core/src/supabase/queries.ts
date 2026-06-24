@@ -607,7 +607,9 @@ export async function createChecklistItem(
     .select('*')
     .single()
   if (error) throw error
-  await replaceChecklistItemAssignees(sb, data.id, assigneeIds)
+  if (assigneeIds && assigneeIds.length > 0) {
+    await replaceChecklistItemAssignees(sb, data.id, assigneeIds)
+  }
   return data
 }
 
@@ -720,7 +722,9 @@ export async function applyTemplateToChecklist(
           })),
           { onConflict: 'item_id,user_id' }
         )
-      if (assigneeError) throw assigneeError
+      if (assigneeError) {
+        console.warn('[applyTemplateToChecklist] private assignee sync failed', assigneeError)
+      }
     }
   }
   return data ?? []
