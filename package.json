@@ -17,5 +17,8 @@
     "test:e2e": "pnpm --filter nexvoy-web test:e2e",
     "test:e2e:ui": "pnpm --filter nexvoy-web test:e2e:ui",
     "test:e2e:report": "pnpm --filter nexvoy-web exec playwright show-report"
+  },
+  "devDependencies": {
+    "next": "16.2.9"
   }
 }
