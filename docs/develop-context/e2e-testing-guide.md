@@ -10,8 +10,8 @@
 
 | 항목 | 내용 |
 |------|------|
-| 스택 | Next.js 16 (App Router) + React 19, Supabase 인증, Panda CSS, Capacitor 하이브리드 |
-| 테스트 인프라 | **전무** — Playwright / Vitest / Jest 미설치, 테스트 파일 0개 |
+| 스택 | `apps/web` Next.js App Router + React, Supabase 인증, Panda CSS |
+| 테스트 인프라 | Playwright 기반 웹 E2E가 `apps/web/e2e`에 위치 |
 | 인증 방식 | Supabase + 카카오/구글 OAuth (`@supabase/ssr` 쿠키 기반) |
 | 페이지 라우트 (약 20개) | `login`, `signup`, `join`, `trips`(new/detail/checklist), `templates`(new/detail), `profile`(licenses/places-visited/travel-log/withdrawal), `share/detail`, `offline`, `auth`(callback/success/error) |
 
@@ -23,8 +23,8 @@
 
 | 대상 | 가능 여부 | 비고 |
 |------|----------|------|
-| **웹 빌드** (`next dev` / `next start`) | ✅ 완전히 가능 | Playwright의 정석 영역 |
-| **모바일 빌드** (Capacitor static export) | ⚠️ 부분적 | 웹뷰는 동일 코드라 웹에서 대부분 검증 가능. 단, 네이티브 플러그인(푸시·로컬알림·네트워크·preferences 등)은 Playwright로 불가 → 필요 시 Appium 등 별도 도구 |
+| **웹 빌드** (`pnpm --filter nexvoy-web dev` / `start`) | ✅ 완전히 가능 | Playwright의 정석 영역 |
+| **모바일 앱** (Expo React Native) | ⚠️ 별도 필요 | RN 네이티브 화면은 Playwright 범위 밖. 필요 시 Detox/Appium 등 별도 도구 |
 
 **결론: 웹 기준 E2E는 충분히 도입 가능하다.** 모바일 네이티브 영역은 범위에서 제외하고 시작하는 것을 권장한다.
 
@@ -62,8 +62,8 @@
 ## 4. 제안 셋업 구성
 
 ```
-playwright.config.ts          # webServer로 next dev 자동 기동, baseURL, projects(브라우저) 설정
-e2e/
+apps/web/playwright.config.ts # webServer로 next dev 자동 기동, baseURL, projects(브라우저) 설정
+apps/web/e2e/
   ├── fixtures/
   │   └── auth.ts             # 인증된 세션(storageState) 주입 픽스처
   ├── helpers/
@@ -71,10 +71,10 @@ e2e/
   ├── trips.spec.ts           # 여행 생성/조회/체크리스트
   ├── templates.spec.ts       # 템플릿 생성/조회
   └── ...
-.env.test.local               # 테스트 전용 환경변수 (gitignore)
+apps/web/.env.test.local      # 테스트 전용 환경변수 (gitignore)
 ```
 
-`package.json` 스크립트 추가(예시):
+`apps/web/package.json` 스크립트:
 ```jsonc
 "test:e2e": "playwright test",
 "test:e2e:ui": "playwright test --ui"
@@ -86,29 +86,29 @@ pnpm add -D @playwright/test
 pnpm exec playwright install --with-deps chromium
 ```
 
-`playwright.config.ts` 골격(예시):
+`apps/web/playwright.config.ts` 골격:
 ```ts
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  use: { baseURL: 'http://localhost:3000', trace: 'on-first-retry' },
+  use: { baseURL: 'http://localhost:3001', trace: 'on-first-retry' },
   webServer: {
     command: 'pnpm dev',
-    url: 'http://localhost:3000',
+    url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });
 ```
 
-> 참고: `next dev`는 `NODE_OPTIONS='--dns-result-order=ipv4first'` 옵션과 함께 실행됨(package.json `dev` 스크립트). webServer command를 `pnpm dev`로 두면 그대로 적용된다.
+> 참고: root에서는 `pnpm --filter nexvoy-web test:e2e`로 실행하고, 웹 패키지 내부에서는 `pnpm test:e2e`로 실행한다.
 
 ---
 
 ## 5. 권장 진행 범위 (택1로 시작)
 
-1. **셋업만** — Playwright 설치 + `playwright.config.ts` + 인증 픽스처 골격까지.
+1. **셋업만** — Playwright 설치 + `apps/web/playwright.config.ts` + 인증 픽스처 골격까지.
 2. **셋업 + 스모크 1~2개** — "로그인 → 여행 생성 → 체크리스트 작성" 핵심 플로우 1개.  ← **권장 시작점**
 3. **전체 주요 플로우** — 위 라우트들의 핵심 시나리오 일괄 작성.
 
@@ -132,11 +132,11 @@ export default defineConfig({
 ## 7. 구현 완료 현황
 
 ### Phase 1 — 셋업 ✅
-- `@playwright/test` v1.60.0 설치
-- `playwright.config.ts` — `webServer: pnpm dev:e2e`, baseURL, chromium
-- `e2e/fixtures/`, `e2e/helpers/` 디렉토리 구조 생성
-- `.env.test.local` (로컬 Supabase 접속 정보, gitignore 처리)
-- `package.json` 스크립트: `test:e2e`, `test:e2e:ui`, `test:e2e:report`, `dev:e2e`
+- `@playwright/test` 설치 (`apps/web`)
+- `apps/web/playwright.config.ts` — `webServer: pnpm dev:e2e`, baseURL, chromium
+- `apps/web/e2e/fixtures/`, `apps/web/e2e/helpers/` 디렉토리 구조
+- `apps/web/.env.test.local` (로컬 Supabase 접속 정보, gitignore 처리)
+- `apps/web/package.json` 스크립트: `test:e2e`, `test:e2e:ui`, `dev:e2e`
 
 ### Phase 2 — 로컬 Supabase 마이그레이션 체계 ✅
 - `supabase` CLI v2.105.0 설치
@@ -145,12 +145,12 @@ export default defineConfig({
 - `supabase db reset --local` 으로 13개 테이블 재현 확인
 
 ### Phase 2 — 인증 픽스처 ✅
-- `e2e/helpers/supabase.ts` — REST API 직접 호출로 유저 생성/세션 발급/teardown
-- `e2e/fixtures/auth.ts` — `createBrowserClient.setSession()`으로 쿠키 생성 후 주입
-- `scripts/dev-e2e.mjs` — `.env.local` 무수정 원칙 준수, `process.env` 직접 주입 방식
+- `apps/web/e2e/helpers/supabase.ts` — REST API 직접 호출로 유저 생성/세션 발급/teardown
+- `apps/web/e2e/fixtures/auth.ts` — `createBrowserClient.setSession()`으로 쿠키 생성 후 주입
+- `apps/web/scripts/dev-e2e.mjs` — `.env.local` 무수정 원칙 준수, `process.env` 직접 주입 방식
 
 ### Phase 3 — 스모크 테스트 ✅
-`e2e/smoke.spec.ts` — 4개 테스트 모두 통과:
+`apps/web/e2e/smoke.spec.ts` — 4개 테스트 모두 통과:
 1. 비인증 사용자 → 랜딩 페이지 렌더링
 2. 비인증 사용자 → 보호 경로 접근 시 `/login` 리다이렉트
 3. 인증된 사용자 → 홈 렌더링 ("님! 👋", "새 여행 만들기" 버튼)

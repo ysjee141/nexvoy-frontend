@@ -1,0 +1,48 @@
+name: CI Quality Gates
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck shared packages
+        run: |
+          pnpm --filter @nexvoy/types typecheck
+          pnpm --filter @nexvoy/design-tokens typecheck
+          pnpm --filter @nexvoy/core typecheck
+
+      - name: Build web app
+        run: pnpm --filter nexvoy-web build
+
+      - name: Verify mobile app
+        run: |
+          pnpm --filter nexvoy-app lint
+          pnpm --filter nexvoy-app typecheck
+          pnpm --filter nexvoy-app build
