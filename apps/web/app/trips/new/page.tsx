@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, type ComponentType, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/lib/supabase/client'
@@ -10,6 +10,14 @@ import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { CacheUtil } from '@/lib/cache'
 
 const libraries: ("places")[] = ["places"]
+
+type PlacesAutocompleteProps = {
+    children: ReactNode
+    onLoad?: (autocomplete: google.maps.places.Autocomplete) => void
+    onPlaceChanged?: () => void
+}
+
+const PlacesAutocomplete = Autocomplete as unknown as ComponentType<PlacesAutocompleteProps>
 
 export default function NewTripPage() {
     const { isLoaded } = useLoadScript({
@@ -142,7 +150,7 @@ export default function NewTripPage() {
                                 여행지 (국가/도시) *
                             </label>
                             {isLoaded ? (
-                                <Autocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
+                                <PlacesAutocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
                                     <input
                                         type="text"
                                         required
@@ -164,7 +172,7 @@ export default function NewTripPage() {
                                             _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' },
                                         })}
                                     />
-                                </Autocomplete>
+                                </PlacesAutocomplete>
                             ) : (
                                 <input
                                     type="text"
