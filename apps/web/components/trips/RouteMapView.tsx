@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef, type ComponentType, type CSSProperties, type ReactNode } from 'react'
 import { css } from 'styled-system/css'
 import { useLoadScript, GoogleMap, OverlayView } from '@react-google-maps/api'
 import { WifiOff, MapPin, AlertCircle } from 'lucide-react'
@@ -16,6 +16,25 @@ import PlanDetailModal from '@/components/trips/PlanDetailModal'
 import NewPlanModal from '@/components/trips/NewPlanModal'
 
 const GOOGLE_MAPS_LIBRARIES: ('places')[] = ['places']
+
+type GoogleMapCompatProps = {
+    children?: ReactNode
+    mapContainerStyle?: CSSProperties
+    center?: google.maps.LatLngLiteral
+    zoom?: number
+    onLoad?: (map: google.maps.Map) => void
+    options?: google.maps.MapOptions
+}
+
+type OverlayViewCompatProps = {
+    children?: ReactNode
+    position: google.maps.LatLngLiteral
+    mapPaneName: string
+    getPixelPositionOffset?: (width: number, height: number) => { x: number; y: number }
+}
+
+const GoogleMapCompat = GoogleMap as unknown as ComponentType<GoogleMapCompatProps>
+const OverlayViewCompat = OverlayView as unknown as ComponentType<OverlayViewCompatProps>
 
 const MAP_STYLES: google.maps.MapTypeStyle[] = [
     { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
@@ -490,7 +509,7 @@ export default function RouteMapView({
                     minH: '400px',
                 })}
             >
-                <GoogleMap
+                <GoogleMapCompat
                     mapContainerStyle={MAP_CONTAINER_STYLE}
                     center={filteredPlans.length > 0 ? undefined : defaultCenter}
                     zoom={filteredPlans.length > 0 ? undefined : 12}
@@ -510,7 +529,7 @@ export default function RouteMapView({
                             lng: Number(plan.location_lng),
                         }
                         return (
-                            <OverlayView
+                            <OverlayViewCompat
                                 key={plan.id}
                                 position={position}
                                 mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
@@ -558,12 +577,12 @@ export default function RouteMapView({
                                         })}
                                     />
                                 </div>
-                            </OverlayView>
+                            </OverlayViewCompat>
                         )
                     })}
 
                     {/* Polyline은 useEffect에서 직접 Google Maps API로 관리 (cleanup 안정성) */}
-                </GoogleMap>
+                </GoogleMapCompat>
 
                 {/* Info modal when marker is selected */}
                 {selectedPlan && (
