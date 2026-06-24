@@ -1084,13 +1084,11 @@ export async function getProfileByEmail(
   sb: SupabaseClient,
   email: string
 ): Promise<Profile | null> {
-  const { data, error } = await sb
-    .from('profiles')
-    .select('*')
-    .ilike('email', email.trim())
-    .maybeSingle()
+  const { data, error } = await sb.rpc('find_profile_by_email', {
+    _email: email.trim(),
+  })
   if (error) throw error
-  return data ?? null
+  return (Array.isArray(data) ? data[0] : data) ?? null
 }
 
 /**

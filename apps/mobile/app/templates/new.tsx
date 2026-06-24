@@ -7,7 +7,7 @@
  *
  * category 는 빈 문자열로 저장(웹도 단순 항목만 사용). 화면은 폼 UI/검증/상태만 담당.
  */
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -47,6 +47,8 @@ export default function NewTemplateScreen() {
   const [itemPrivate, setItemPrivate] = useState(false)
   const [items, setItems] = useState<TemplateDraftItem[]>([])
   const [categories, setCategories] = useState<ChecklistCategory[]>([])
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false)
+  const [categoryQuery, setCategoryQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const isMounted = useRef(true)
@@ -65,6 +67,36 @@ export default function NewTemplateScreen() {
   const trimmedDraft = itemDraft.trim()
   const canAddItem = trimmedDraft.length > 0
   const canSubmit = title.trim().length > 0 && !loading
+  const categoryOptions = useMemo(() => {
+    const base = categories.length > 0 ? categories : [{ id: 'fallback', name: '기타' } as ChecklistCategory]
+    const seen = new Set<string>()
+    return base.filter((category) => {
+      const key = category.name.trim().toLowerCase()
+      if (!key || seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+  }, [categories])
+  const filteredCategoryOptions = useMemo(() => {
+    const query = categoryQuery.trim().toLowerCase()
+    if (!query) return categoryOptions
+    return categoryOptions.filter((category) => category.name.toLowerCase().includes(query))
+  }, [categoryOptions, categoryQuery])
+  const canAddCategoryFromQuery = categoryQuery.trim().length > 0
+    && !categoryOptions.some((category) => category.name.trim().toLowerCase() === categoryQuery.trim().toLowerCase())
+  const groupedItems = useMemo(() => {
+    const groups: { category: string; items: (TemplateDraftItem & { index: number })[] }[] = []
+    items.forEach((item, index) => {
+      const category = item.category.trim() || '기타'
+      const existing = groups.find((group) => group.category === category)
+      if (existing) {
+        existing.items.push({ ...item, index })
+      } else {
+        groups.push({ category, items: [{ ...item, index }] })
+      }
+    })
+    return groups
+  }, [items])
 
   const handleAddItem = () => {
     if (!canAddItem) return
@@ -79,6 +111,8 @@ export default function NewTemplateScreen() {
     ])
     setItemDraft('')
     setItemPrivate(false)
+    setCategoryPickerOpen(false)
+    setCategoryQuery('')
   }
 
   const handleRemoveItem = (index: number) => {
@@ -197,68 +231,165 @@ export default function NewTemplateScreen() {
                 </Text>
               </Pressable>
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.categoryChips}
-            >
-              {(categories.length > 0 ? categories : [{ id: 'fallback', name: '기타' } as ChecklistCategory]).map((category) => {
-                const selected = itemCategory === category.name
-                return (
-                  <Pressable
-                    key={category.id}
-                    onPress={() => setItemCategory(category.name)}
-                    style={[styles.categoryChip, selected && styles.categoryChipActive]}
+            <View style={styles.itemFormSection}>
+              <Text style={styles.fieldLabel}>카테고리</Text>
+              <Pressable
+                onPress={() => setCategoryPickerOpen((prev) => !prev)}
+                accessibilityRole="button"
+                accessibilityLabel={`카테고리 ${itemCategory} 선택`}
+                style={({ pressed }) => [
+                  styles.categoryTrigger,
+                  categoryPickerOpen && styles.categoryTriggerActive,
+                  pressed && styles.pressedFade,
+                ]}
+              >
+                <View style={styles.categoryTriggerIcon}>
+                  <Ionicons name="pricetag-outline" size={17} color={colors.brand.primary} />
+                </View>
+                <Text style={styles.categoryTriggerText} numberOfLines={1}>
+                  {itemCategory || '카테고리 선택'}
+                </Text>
+                <Ionicons name={categoryPickerOpen ? 'chevron-up' : 'chevron-down'} size={16} color={colors.brand.muted} />
+              </Pressable>
+
+              {categoryPickerOpen ? (
+                <View style={styles.categoryPickerPanel}>
+                  <View style={styles.categorySearchBox}>
+                    <Ionicons name="search-outline" size={16} color={colors.brand.muted} />
+                    <TextInput
+                      value={categoryQuery}
+                      onChangeText={setCategoryQuery}
+                      placeholder="카테고리 검색 또는 직접 입력"
+                      placeholderTextColor={colors.brand.mutedSoft}
+                      style={styles.categorySearchInput}
+                    />
+                  </View>
+                  {canAddCategoryFromQuery ? (
+                    <Pressable
+                      onPress={() => {
+                        setItemCategory(categoryQuery.trim())
+                        setCategoryPickerOpen(false)
+                        setCategoryQuery('')
+                      }}
+                      style={({ pressed }) => [styles.categoryOptionRow, styles.categoryAddRow, pressed && styles.pressedFade]}
+                    >
+                      <Text style={[styles.categoryOptionText, styles.categoryAddText]}>+ “{categoryQuery.trim()}”로 추가</Text>
+                    </Pressable>
+                  ) : null}
+                  <ScrollView
+                    nestedScrollEnabled
+                    showsVerticalScrollIndicator={filteredCategoryOptions.length > 5}
+                    keyboardShouldPersistTaps="handled"
+                    style={styles.categoryOptionScroll}
+                    contentContainerStyle={styles.categoryOptionList}
                   >
-                    <Text style={[styles.categoryChipText, selected && styles.categoryChipTextActive]}>
-                      {category.name}
-                    </Text>
-                  </Pressable>
-                )
-              })}
-            </ScrollView>
+                    {filteredCategoryOptions.map((category) => {
+                      const selected = itemCategory === category.name
+                      return (
+                        <Pressable
+                          key={category.id}
+                          onPress={() => {
+                            setItemCategory(category.name)
+                            setCategoryPickerOpen(false)
+                            setCategoryQuery('')
+                          }}
+                          accessibilityRole="radio"
+                          accessibilityState={{ checked: selected }}
+                          style={({ pressed }) => [
+                            styles.categoryOptionRow,
+                            selected && styles.categoryOptionRowActive,
+                            pressed && styles.pressedFade,
+                          ]}
+                        >
+                          <Text style={[styles.categoryOptionText, selected && styles.categoryOptionTextActive]}>
+                            {category.name}
+                          </Text>
+                          <Ionicons
+                            name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+                            size={20}
+                            color={selected ? colors.brand.primary : colors.brand.mutedSoft}
+                          />
+                        </Pressable>
+                      )
+                    })}
+                  </ScrollView>
+                </View>
+              ) : null}
+            </View>
             <Pressable
               onPress={() => setItemPrivate((prev) => !prev)}
               accessibilityRole="checkbox"
               accessibilityState={{ checked: itemPrivate }}
-              style={styles.privateToggle}
+              style={({ pressed }) => [styles.privateToggle, pressed && styles.pressedFade]}
             >
+              <View style={styles.privateToggleIcon}>
+                <Ionicons
+                  name={itemPrivate ? 'lock-closed' : 'lock-open-outline'}
+                  size={17}
+                  color={itemPrivate ? colors.brand.primary : colors.brand.muted}
+                />
+              </View>
+              <View style={styles.privateToggleBody}>
+                <Text style={[styles.privateToggleText, itemPrivate && styles.privateToggleTextActive]}>
+                  비공개 항목
+                </Text>
+                <Text style={styles.privateToggleMeta}>
+                  템플릿 적용 시 나만 볼 수 있는 개인 준비물로 추가돼요.
+                </Text>
+              </View>
               <Ionicons
-                name={itemPrivate ? 'lock-closed' : 'lock-open-outline'}
-                size={16}
-                color={itemPrivate ? colors.brand.primary : colors.brand.muted}
+                name={itemPrivate ? 'checkmark-circle' : 'ellipse-outline'}
+                size={20}
+                color={itemPrivate ? colors.brand.primary : colors.brand.mutedSoft}
               />
-              <Text style={[styles.privateToggleText, itemPrivate && styles.privateToggleTextActive]}>
-                비공개 항목
-              </Text>
             </Pressable>
           </View>
 
           {/* 항목 리스트 */}
           {items.length > 0 && (
             <View style={styles.itemList}>
-              {items.map((item, index) => (
-                <View key={item.id} style={styles.itemRow}>
-                  <View style={styles.itemTextBlock}>
-                    <Text style={styles.itemText} numberOfLines={1}>
-                      {item.item_name}
+              {groupedItems.map((group) => (
+                <View key={group.category} style={styles.itemCategorySection}>
+                  <View style={styles.itemCategoryHeader}>
+                    <View style={styles.itemCategoryAccent} />
+                    <Text style={styles.itemCategoryTitle} numberOfLines={1}>
+                      {group.category}
                     </Text>
-                    <Text style={styles.itemMeta} numberOfLines={1}>
-                      {item.category}{item.is_private ? ' · 비공개' : ''}
-                    </Text>
+                    <View style={styles.itemCategoryCount}>
+                      <Text style={styles.itemCategoryCountText}>{group.items.length}</Text>
+                    </View>
                   </View>
-                  <Pressable
-                    onPress={() => handleRemoveItem(index)}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${item.item_name} 항목 삭제`}
-                    hitSlop={8}
-                    style={({ pressed }) => [
-                      styles.itemRemoveBtn,
-                      pressed && styles.pressedFade,
-                    ]}
-                  >
-                    <Ionicons name="close" size={18} color={colors.brand.muted} />
-                  </Pressable>
+                  <View style={styles.itemCategoryBody}>
+                    {group.items.map((item) => (
+                      <View key={item.id} style={styles.itemRow}>
+                        <View style={styles.itemTextBlock}>
+                          <View style={styles.itemTitleRow}>
+                            <Text style={styles.itemText} numberOfLines={1}>
+                              {item.item_name}
+                            </Text>
+                            {item.is_private ? (
+                              <View style={styles.itemPrivateBadge}>
+                                <Ionicons name="lock-closed" size={11} color={colors.brand.primary} />
+                                <Text style={styles.itemPrivateBadgeText}>비공개</Text>
+                              </View>
+                            ) : null}
+                          </View>
+                        </View>
+                        <Pressable
+                          onPress={() => handleRemoveItem(item.index)}
+                          accessibilityRole="button"
+                          accessibilityLabel={`${item.item_name} 항목 삭제`}
+                          hitSlop={8}
+                          style={({ pressed }) => [
+                            styles.itemRemoveBtn,
+                            pressed && styles.pressedFade,
+                          ]}
+                        >
+                          <Ionicons name="close" size={18} color={colors.brand.muted} />
+                        </Pressable>
+                      </View>
+                    ))}
+                  </View>
                 </View>
               ))}
             </View>
@@ -346,6 +477,107 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.normal,
     color: colors.brand.ink,
   },
+  itemFormSection: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  categoryTrigger: {
+    minHeight: 56,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.canvas,
+  },
+  categoryTriggerActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categoryTriggerIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categoryTriggerText: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.brand.ink,
+    fontSize: fontSizes.base,
+    fontWeight: fontWeights.bold,
+  },
+  categoryPickerPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categorySearchBox: {
+    minHeight: 44,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.bg.canvas,
+  },
+  categorySearchInput: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.brand.ink,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
+  categoryOptionList: {
+    gap: spacing.xs,
+    paddingBottom: spacing.xxs,
+  },
+  categoryOptionScroll: {
+    maxHeight: 240,
+  },
+  categoryOptionRow: {
+    minHeight: 48,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.canvas,
+  },
+  categoryOptionRowActive: {
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  categoryOptionText: {
+    flex: 1,
+    color: colors.brand.ink,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+  },
+  categoryOptionTextActive: {
+    color: colors.brand.primary,
+    fontWeight: fontWeights.bold,
+  },
+  categoryAddRow: {
+    borderStyle: 'dashed',
+    borderColor: colors.brand.primary,
+  },
+  categoryAddText: {
+    color: colors.brand.primary,
+    fontWeight: fontWeights.bold,
+  },
   // 항목 추가 행
   addRow: {
     flexDirection: 'row',
@@ -394,10 +626,28 @@ const styles = StyleSheet.create({
     color: colors.brand.primary,
   },
   privateToggle: {
+    minHeight: 64,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    padding: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.xs,
+    gap: spacing.md,
+    marginTop: spacing.sm,
+    backgroundColor: colors.bg.canvas,
+  },
+  privateToggleIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  privateToggleBody: {
+    flex: 1,
+    minWidth: 0,
   },
   privateToggleText: {
     fontSize: fontSizes.sm,
@@ -407,23 +657,99 @@ const styles = StyleSheet.create({
   privateToggleTextActive: {
     color: colors.brand.primary,
   },
+  privateToggleMeta: {
+    marginTop: spacing.xxs,
+    color: colors.brand.muted,
+    fontSize: fontSizes.xs,
+    lineHeight: 17,
+  },
   // 항목 리스트
   itemList: {
     gap: spacing.sm,
     marginBottom: spacing.base,
   },
+  itemListHeader: {
+    minHeight: 56,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  itemListTitle: {
+    flex: 1,
+    color: colors.brand.ink,
+    fontSize: fontSizes.md,
+    fontWeight: fontWeights.bold,
+  },
+  itemListCount: {
+    minWidth: 28,
+    height: 28,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.canvas,
+  },
+  itemListCountText: {
+    color: colors.brand.primary,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  itemCategorySection: {
+    overflow: 'hidden',
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+  },
+  itemCategoryHeader: {
+    minHeight: 52,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  itemCategoryAccent: {
+    width: 4,
+    height: 20,
+    borderRadius: radii.full,
+    backgroundColor: colors.brand.primary,
+  },
+  itemCategoryTitle: {
+    flex: 1,
+    minWidth: 0,
+    color: colors.brand.ink,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  itemCategoryCount: {
+    minWidth: 24,
+    height: 24,
+    borderRadius: radii.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  itemCategoryCountText: {
+    color: colors.brand.primary,
+    fontSize: 11,
+    fontWeight: fontWeights.bold,
+  },
+  itemCategoryBody: {
+    paddingVertical: spacing.xs,
+  },
   itemRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.brand.hairline,
-    backgroundColor: colors.bg.surfaceSoft,
+    gap: spacing.sm,
+    backgroundColor: colors.bg.canvas,
     paddingLeft: spacing.md,
     paddingRight: spacing.xs,
     paddingVertical: spacing.sm,
-    minHeight: 48,
+    minHeight: 58,
   },
   itemText: {
     flex: 1,
@@ -432,16 +758,42 @@ const styles = StyleSheet.create({
     color: colors.brand.ink,
   },
   itemTextBlock: { flex: 1 },
+  itemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  itemPrivateBadge: {
+    minHeight: 22,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.full,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  itemPrivateBadgeText: {
+    color: colors.brand.primary,
+    fontSize: 10,
+    fontWeight: fontWeights.bold,
+  },
+  itemMetaRow: {
+    marginTop: spacing.xxs,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xxs,
+  },
   itemMeta: {
     fontSize: fontSizes.xs,
     color: colors.brand.muted,
-    marginTop: 2,
   },
   itemRemoveBtn: {
     width: 36,
     height: 36,
+    borderRadius: radii.full,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: colors.bg.surfaceSoft,
   },
   // 에러 박스
   errorBox: {
