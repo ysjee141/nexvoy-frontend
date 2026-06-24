@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, type ComponentType, type ReactNode } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
 import { X, MapPin, Clock, Calendar, Check, Search, ChevronRight, Loader2, Camera, Navigation, Map, Info, Compass, Bell } from 'lucide-react'
@@ -21,6 +21,14 @@ type PlanInsert = Database['public']['Tables']['plans']['Insert']
 type EditDraft = Partial<Plan> & { id?: string }
 
 const libraries: ("places")[] = ["places"]
+
+type PlacesAutocompleteProps = {
+    children: ReactNode
+    onLoad?: (autocomplete: google.maps.places.Autocomplete) => void
+    onPlaceChanged?: () => void
+}
+
+const PlacesAutocomplete = Autocomplete as unknown as ComponentType<PlacesAutocompleteProps>
 
 interface NewPlanModalProps {
     isOpen: boolean
@@ -447,7 +455,7 @@ export default function NewPlanModal({
 
                             <div className={css({ position: 'relative' })}>
                                 {isLoaded && (
-                                    <Autocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
+                                    <PlacesAutocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
                                             <div className={css({ position: 'relative', width: '100%' })}>
                                                 <div className={css({ 
                                                     position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)', 
@@ -475,7 +483,7 @@ export default function NewPlanModal({
                                                     autoFocus
                                                 />
                                             </div>
-                                    </Autocomplete>
+                                    </PlacesAutocomplete>
                                 )}
 
                                 {inputValue.trim().length > 0 && (
@@ -536,7 +544,7 @@ export default function NewPlanModal({
                                         </div>
                                         <div className={css({ flex: 1, minW: 0 })}>
                                             <label className={css({ display: 'block', fontSize: '12px', fontWeight: '700', color: 'brand.muted', mb: '4px' })}>장소 이름</label>
-                                            <Autocomplete 
+                                            <PlacesAutocomplete 
                                                 onLoad={(a) => setDetailAutocomplete(a)} 
                                                 onPlaceChanged={onDetailPlaceChanged}
                                             >
@@ -553,7 +561,7 @@ export default function NewPlanModal({
                                                         _focus: { borderBottomColor: 'brand.primary' } 
                                                     })}
                                                 />
-                                            </Autocomplete>
+                                            </PlacesAutocomplete>
                                         </div>
                                     </div>
                                     <div className={css({ borderTop: '1px solid', borderColor: 'brand.hairlineSoft', pt: '12px' })}>
