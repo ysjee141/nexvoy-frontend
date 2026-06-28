@@ -36,35 +36,7 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { Picker } from '@react-native-picker/picker'
 import * as Clipboard from 'expo-clipboard'
 import * as WebBrowser from 'expo-web-browser'
-// react-native-maps는 로컬 네이티브 빌드에서만 동작한다. Expo Go에서는 폴백 UI를 유지한다.
-type NativeMapViewProps = {
-  style?: unknown
-  initialRegion?: {
-    latitude: number
-    longitude: number
-    latitudeDelta: number
-    longitudeDelta: number
-  }
-  children?: React.ReactNode
-}
-type NativeMarkerProps = {
-  coordinate: { latitude: number; longitude: number }
-  title?: string
-  description?: string
-}
-let NativeMapView: React.ComponentType<NativeMapViewProps> | null = null
-let NativeMarker: React.ComponentType<NativeMarkerProps> | null = null
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const maps = require('react-native-maps') as {
-    default: React.ComponentType<NativeMapViewProps>
-    Marker: React.ComponentType<NativeMarkerProps>
-  }
-  NativeMapView = maps.default
-  NativeMarker = maps.Marker
-} catch {
-  // Expo Go: RNMapsAirModule 네이티브 모듈 없음 -> 폴백 UI 사용
-}
+import { NativeMapView, NativeMarker } from '@/components/map/NativeMap'
 import {
   getPlansWithUrls,
   getTripsByUser,

@@ -332,6 +332,11 @@ export default function ProfileScreen() {
           {/* 앱 정보 */}
           <View style={styles.navSection}>
             <NavRow
+              icon="shield-checkmark-outline"
+              label="약관 및 개인정보 정책"
+              onPress={() => router.push('/profile/terms')}
+            />
+            <NavRow
               icon="document-text-outline"
               label="오픈소스 라이선스"
               onPress={() => router.push('/profile/licenses')}
