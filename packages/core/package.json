@@ -12,6 +12,7 @@
     "./domain/tripLogic": "./src/domain/tripLogic.ts",
     "./domain/currency": "./src/domain/currency.ts",
     "./domain/collaboration": "./src/domain/collaboration.ts",
+    "./domain/legal": "./src/domain/legal.ts",
     "./utils/date": "./src/utils/date.ts"
   },
   "scripts": {

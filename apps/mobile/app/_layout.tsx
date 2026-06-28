@@ -98,6 +98,7 @@ function RootNavigator() {
       <Stack.Screen name="profile/withdrawal" options={{ headerShown: false }} />
       <Stack.Screen name="profile/places-visited" options={{ headerShown: false }} />
       <Stack.Screen name="profile/licenses" options={{ headerShown: false }} />
+      <Stack.Screen name="profile/terms" options={{ headerShown: false }} />
       <Stack.Screen name="join" options={{ headerShown: false }} />
       <Stack.Screen name="share/[id]" options={{ headerShown: false }} />
     </Stack>
