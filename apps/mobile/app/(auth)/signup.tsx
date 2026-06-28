@@ -9,6 +9,7 @@ import { useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -20,6 +21,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
+import { ONVOY_TERMS_DOCUMENT } from '@nexvoy/core'
+import { TermsContent } from '@/components/legal/TermsContent'
 import { supabase } from '@/lib/supabase'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
@@ -35,6 +38,7 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isTermsAgreed, setIsTermsAgreed] = useState(false)
+  const [showTermsModal, setShowTermsModal] = useState(false)
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
   // 웹 signup(>=6) 및 Supabase auth minimum_password_length(6) 과 통일.
@@ -269,28 +273,43 @@ export default function SignupScreen() {
               )}
 
               {/* 약관 동의 */}
-              <Pressable
-                onPress={() => setIsTermsAgreed((prev) => !prev)}
-                style={styles.termsRow}
-                hitSlop={8}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: isTermsAgreed }}
-                accessibilityLabel="서비스 이용약관 및 개인정보 처리방침 동의"
-              >
-                <View
-                  style={[
-                    styles.checkbox,
-                    isTermsAgreed && styles.checkboxChecked,
-                  ]}
+              <View style={styles.termsBox}>
+                <Pressable
+                  onPress={() => setIsTermsAgreed((prev) => !prev)}
+                  style={styles.termsRow}
+                  hitSlop={8}
+                  accessibilityRole="checkbox"
+                  accessibilityState={{ checked: isTermsAgreed }}
+                  accessibilityLabel="서비스 이용약관 및 개인정보 처리방침 동의"
                 >
-                  {isTermsAgreed && (
-                    <Ionicons name="checkmark" size={14} color={colors.bg.canvas} />
-                  )}
-                </View>
-                <Text style={styles.termsText}>
-                  서비스 이용약관 및 개인정보 처리방침에 동의합니다
-                </Text>
-              </Pressable>
+                  <View
+                    style={[
+                      styles.checkbox,
+                      isTermsAgreed && styles.checkboxChecked,
+                    ]}
+                  >
+                    {isTermsAgreed && (
+                      <Ionicons name="checkmark" size={14} color={colors.bg.canvas} />
+                    )}
+                  </View>
+                  <Text style={styles.termsText}>
+                    서비스 이용약관 및 개인정보 처리방침에 동의합니다
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setShowTermsModal(true)}
+                  style={({ pressed }) => [styles.termsDetailBtn, pressed && styles.pressedFade]}
+                  accessibilityRole="button"
+                  accessibilityLabel="서비스 이용약관 및 개인정보 처리방침 보기"
+                >
+                  <Text style={styles.termsDetailText}>약관 내용 보기</Text>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={14}
+                    color={colors.brand.primary}
+                  />
+                </Pressable>
+              </View>
 
               <Pressable
                 onPress={handleSignup}
@@ -318,6 +337,34 @@ export default function SignupScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+      <Modal
+        visible={showTermsModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowTermsModal(false)}
+      >
+        <SafeAreaView style={styles.modalScreen} edges={['top', 'bottom']}>
+          <View style={styles.modalHeader}>
+            <Pressable
+              onPress={() => setShowTermsModal(false)}
+              hitSlop={12}
+              style={({ pressed }) => [styles.modalBackBtn, pressed && styles.pressedFade]}
+              accessibilityRole="button"
+              accessibilityLabel="약관 닫기"
+            >
+              <Ionicons name="chevron-back" size={24} color={colors.brand.ink} />
+            </Pressable>
+            <Text style={styles.modalTitle}>{ONVOY_TERMS_DOCUMENT.title}</Text>
+            <View style={styles.modalHeaderRight} />
+          </View>
+          <ScrollView
+            contentContainerStyle={styles.modalBody}
+            showsVerticalScrollIndicator={false}
+          >
+            <TermsContent />
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   )
 }
@@ -423,7 +470,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  termsBox: {
     marginBottom: spacing.base,
+    padding: spacing.base,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.border,
+    backgroundColor: colors.bg.surfaceSoft,
   },
   checkbox: {
     width: 20,
@@ -444,6 +498,20 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     color: colors.brand.muted,
     lineHeight: 20,
+  },
+  termsDetailBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: spacing.xxs,
+    marginTop: spacing.sm,
+    marginLeft: 28,
+  },
+  termsDetailText: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.primary,
+    textDecorationLine: 'underline',
   },
   errorBox: {
     padding: spacing.md,
@@ -478,6 +546,7 @@ const styles = StyleSheet.create({
     opacity: 0.92,
     transform: [{ scale: 0.98 }],
   },
+  pressedFade: { opacity: 0.6 },
   loginRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -541,5 +610,36 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.base,
     fontWeight: fontWeights.bold,
     color: colors.bg.canvas,
+  },
+  modalScreen: {
+    flex: 1,
+    backgroundColor: colors.bg.canvas,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.brand.border,
+  },
+  modalBackBtn: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalTitle: {
+    flex: 1,
+    fontSize: fontSizes.lg,
+    fontWeight: fontWeights.semibold,
+    color: colors.brand.ink,
+    textAlign: 'center',
+  },
+  modalHeaderRight: { width: 44, height: 44 },
+  modalBody: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xxl,
   },
 })
