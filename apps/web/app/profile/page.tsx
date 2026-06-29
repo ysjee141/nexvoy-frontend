@@ -3,7 +3,7 @@
 import { useEffect, useState, Suspense } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
-import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X, ShieldCheck, LogOut } from 'lucide-react'
+import { User, Mail, Lock, ChevronRight, Save, Eye, EyeOff, CheckCircle2, XCircle, Edit2, Check, X, ShieldCheck } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import TermsModal from '../signup/TermsModal'
@@ -750,29 +750,38 @@ function ProfileContent() {
                 </div>
             </section>
 
-            {/* 로그아웃 & 탈퇴 푸터 */}
-            <div className={css({ mt: '24px', mb: '60px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' })}>
+            {/* 보조 계정 액션 */}
+            <div className={css({ mt: '20px', mb: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', color: 'brand.muted' })}>
                 <button
                     onClick={handleLogout}
                     className={css({
-                        display: 'flex', alignItems: 'center', gap: '8px',
-                        px: '24px', py: '12px', bg: 'white', border: '1px solid #EEE', borderRadius: '16px',
-                        fontSize: '14px', fontWeight: '700', color: 'brand.muted', cursor: 'pointer',
-                        transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
-                        _hover: { bg: '#FFF1F0', color: '#FF4D4F', borderColor: '#FFCCC7', transform: 'translateY(-2px)' }
+                        bg: 'transparent',
+                        border: 'none',
+                        p: '4px',
+                        fontSize: '13px',
+                        fontWeight: '600',
+                        color: '#A7B0BD',
+                        cursor: 'pointer',
+                        textDecoration: 'underline',
+                        transition: 'color 0.2s',
+                        _hover: { color: 'brand.muted' }
                     })}
                 >
-                    <LogOut size={16} /> 안전하게 로그아웃
+                    로그아웃
                 </button>
-                
+                <span className={css({ color: '#CBD5E1', fontSize: '13px' })}>·</span>
                 <Link 
                     href="/profile/withdrawal" 
                     className={css({ 
-                        fontSize: '13px', color: '#BBB', textDecoration: 'none', fontWeight: '600',
-                        transition: 'color 0.2s', _hover: { color: 'brand.secondary', textDecoration: 'underline' } 
+                        fontSize: '13px',
+                        color: '#A7B0BD',
+                        textDecoration: 'underline',
+                        fontWeight: '600',
+                        transition: 'color 0.2s',
+                        _hover: { color: 'brand.muted' }
                     })}
                 >
-                    회원 탈퇴는 여기서 하실 수 있어요
+                    회원 탈퇴
                 </Link>
             </div>
             <TermsModal isOpen={showTerms} onClose={() => setShowTerms(false)} />
