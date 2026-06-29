@@ -17,6 +17,7 @@ TASK-001-trip-document-model.md
 TASK-002-row-to-document-converter.md
 TASK-003-document-materialized-read-model.md
 TASK-004-repository-abstraction.md
+TASK-005-web-indexeddb-yjs-checklist-spike.md
 ```
 
 ## 권장 템플릿
@@ -52,22 +53,35 @@ TASK-004-repository-abstraction.md
 - WebRTC/P2P는 optional fast path이며, 기본 sync/restore는 Supabase backup pull/push다.
 - Cloudflare STUN/TURN은 managed provider 기준선으로 사용한다.
 
+## 진행 현황
+
+| Task | 상태 | 결과 |
+|------|------|------|
+| `TASK-001-trip-document-model.md` | 완료 | PR [#255](https://github.com/ysjee141/nexvoy-frontend/pull/255) |
+| `TASK-002-row-to-document-converter.md` | 완료 | PR [#257](https://github.com/ysjee141/nexvoy-frontend/pull/257) |
+| `TASK-003-document-materialized-read-model.md` | 완료 | PR [#259](https://github.com/ysjee141/nexvoy-frontend/pull/259) |
+| `TASK-004-repository-abstraction.md` | 완료 | PR [#261](https://github.com/ysjee141/nexvoy-frontend/pull/261) |
+| `TASK-005-web-indexeddb-yjs-checklist-spike.md` | 완료 | PR [#263](https://github.com/ysjee141/nexvoy-frontend/pull/263) |
+| `TASK-006-backup-schema-and-rls.md` | 완료 | 로컬 구현 및 검증 완료 |
+
+현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `TASK-006: Supabase Backup Schema 및 RLS`는 완료되었다. 다음 작업은 `TASK-007: Document Key Model 및 암호화 PoC`다.
+
 ## Phase별 작업 목록
 
 ### Phase 0: 모델과 변환 기반
 
-- [ ] `TASK-001-trip-document-model.md`: Trip 단위 `TripDocumentV1` 타입과 entity boundary 정의
-- [ ] `TASK-002-row-to-document-converter.md`: 기존 Supabase row bundle을 document로 변환
-- [ ] `TASK-003-document-materialized-read-model.md`: document에서 화면용 read model 생성
+- [x] `TASK-001-trip-document-model.md`: Trip 단위 `TripDocumentV1` 타입과 entity boundary 정의
+- [x] `TASK-002-row-to-document-converter.md`: 기존 Supabase row bundle을 document로 변환
+- [x] `TASK-003-document-materialized-read-model.md`: document에서 화면용 read model 생성
 
 ### Phase 1: Repository 경계와 Web 스파이크
 
-- [ ] `TASK-004-repository-abstraction.md`: Supabase query 앞 Repository interface 도입
-- [ ] `TASK-005-web-indexeddb-yjs-checklist-spike.md`: Web IndexedDB + Yjs checklist local-first 스파이크
+- [x] `TASK-004-repository-abstraction.md`: Supabase query 앞 Repository interface 도입
+- [x] `TASK-005-web-indexeddb-yjs-checklist-spike.md`: Web IndexedDB + Yjs checklist local-first 스파이크
 
 ### Phase 2: Backup, 암호화, Restore
 
-- [ ] `TASK-006-backup-schema-and-rls.md`: Supabase backup schema 및 RLS 추가
+- [x] `TASK-006-backup-schema-and-rls.md`: Supabase backup schema 및 RLS 추가
 - [ ] `TASK-007-document-key-model.md`: Server-wrapped key 기반 document 암호화 PoC
 - [ ] `TASK-008-backup-queue-and-restore.md`: backup queue와 snapshot/update restore flow 구현
 
@@ -88,10 +102,9 @@ TASK-004-repository-abstraction.md
 
 ## 권장 시작 순서
 
-1. `TASK-001-trip-document-model.md`
-2. `TASK-002-row-to-document-converter.md`
-3. `TASK-003-document-materialized-read-model.md`
-4. `TASK-004-repository-abstraction.md`
-5. `TASK-005-web-indexeddb-yjs-checklist-spike.md`
+1. `TASK-007-document-key-model.md`
+2. `TASK-008-backup-queue-and-restore.md`
+3. `TASK-009-mobile-webrtc-native-feasibility.md`
+4. `TASK-010-cloudflare-ice-config.md`
 
-이 순서까지 완료되면 Web checklist 도메인에서 local-first read/write 스파이크를 검증할 수 있다. 이후 backup schema와 restore flow를 붙이고, 모바일 WebRTC와 Cloudflare STUN/TURN은 기본 sync가 안정화된 뒤 optional fast path로 검증한다.
+TASK-001~006까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크와 Supabase backup schema/RLS 기반을 검증할 수 있는 상태가 되었다. 다음은 document key model과 backup queue/restore flow를 붙여 기본 sync/restore 경로를 안정화한다. 모바일 WebRTC와 Cloudflare STUN/TURN은 backup/restore 기반이 잡힌 뒤 optional fast path로 검증한다.
