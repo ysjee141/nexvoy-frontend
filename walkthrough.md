@@ -1,26 +1,24 @@
-# Walkthrough: TASK-004 Repository Abstraction
+# Walkthrough: TASK-005 Web IndexedDB + Yjs Checklist Spike
 
 ## Summary
 
-UI가 Supabase row query를 직접 호출하지 않도록 `@nexvoy/core`에 Repository interface와 legacy Supabase 구현체를 추가했다. 이번 변경은 Web checklist 화면을 repository factory 경유로 연결하되, 실제 data source는 기존 Supabase row helper를 유지해 동작 동일성을 우선한다.
+Web checklist 화면에서 feature flag로 켤 수 있는 local-first spike를 추가했다. 기본값은 기존 Supabase row repository이며, spike mode에서는 Yjs Trip document를 IndexedDB에 저장하고 checklist create/update/delete/toggle을 Supabase write 없이 로컬 document에 반영한다.
 
 ## Artifacts
 
-- GitHub Issue: `#260`
-- `docs/refactor/tasks/TASK-004-repository-abstraction.md`
+- GitHub Issue: `#262`
+- `docs/refactor/tasks/TASK-005-web-indexeddb-yjs-checklist-spike.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
-- `docs/develop-context/architecture.md`
-- `docs/develop-context/conventions.md`
+- `docs/refactor/adrs/ADR-001-local-first-data-engine.md`
 
 ## Key Changes
 
-- `packages/core/src/repositories/types.ts`에 `TripRepository`, `ChecklistRepository` 계약을 추가했다.
-- `packages/core/src/supabase/legacyRepository.ts`에 기존 Supabase query helper를 감싸는 legacy repository 구현체를 추가했다.
-- `apps/web/lib/local-first/repositoryFactory.ts`에서 Web repository factory 경계를 만들었다.
-- `apps/web/app/trips/checklist/ChecklistClient.tsx`의 온라인 checklist 조회/생성/수정/삭제/체크 토글을 repository 호출로 전환했다.
-- 기존 `@nexvoy/core/supabase/queries` helper는 제거하지 않고 fallback/legacy adapter 내부에서 계속 사용한다.
-- `apps/mobile/app/trip/[id].tsx`는 이미 core query helper 주입 경계가 있어, Web checklist spike 이후 별도 repository factory 적용 대상으로 TODO를 남겼다.
-- repository mock smoke test를 추가해 interface 소비가 data source와 독립적으로 가능한지 확인한다.
+- `packages/core/src/local-first/yjsTripDocument.ts`에 Trip document용 Yjs encode/apply/read/write helper를 추가했다.
+- Yjs helper는 모바일 번들 유입을 막기 위해 루트 export가 아니라 `@nexvoy/core/local-first/yjsTripDocument` subpath로만 노출한다.
+- `apps/web/lib/local-first/indexedDbStore.ts`에 Web-only IndexedDB persistence와 BroadcastChannel update notification을 추가했다.
+- `apps/web/lib/local-first/localFirstChecklistRepository.ts`에 Yjs/IndexedDB 기반 checklist repository spike를 추가했다.
+- `apps/web/lib/local-first/repositoryFactory.ts`가 `NEXT_PUBLIC_LOCAL_FIRST_CHECKLIST_SPIKE=1`, `?localFirstChecklist=1`, 또는 `localStorage` flag에서 local-first repository를 선택한다.
+- `ChecklistClient`는 local-first mode에서 네트워크가 없어도 add/update/delete/toggle UI를 사용할 수 있고, 템플릿 적용은 Supabase write 방지를 위해 숨긴다.
 
 ## Verification
 
@@ -35,5 +33,5 @@ UI가 Supabase row query를 직접 호출하지 않도록 `@nexvoy/core`에 Repo
 
 ## Notes
 
-- 이번 단계에서는 Supabase row가 계속 primary data source다.
-- `LocalFirstRepository`와 dual-write 전환은 후속 task에서 factory 뒤에 추가한다.
+- feature flag 기본값은 off라 기존 production checklist 화면은 Supabase repository를 계속 사용한다.
+- 수동 브라우저 검증 경로: `/trips/checklist?id=<tripId>&localFirstChecklist=1`에서 항목 추가/수정/삭제/체크 후 새로고침 복원을 확인한다. `?localFirstChecklist=0`으로 localStorage flag를 끌 수 있다.
