@@ -14,12 +14,15 @@
     "./domain/collaboration": "./src/domain/collaboration.ts",
     "./domain/legal": "./src/domain/legal.ts",
     "./local-first/documentModel": "./src/local-first/documentModel.ts",
+    "./local-first/materialize": "./src/local-first/materialize.ts",
     "./local-first/migrations": "./src/local-first/migrations.ts",
+    "./local-first/tombstone": "./src/local-first/tombstone.ts",
     "./local-first/tripDocument": "./src/local-first/tripDocument.ts",
     "./utils/date": "./src/utils/date.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
+    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -28,6 +31,7 @@
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.0.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.0.0"
   },
   "peerDependencies": {
