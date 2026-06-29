@@ -51,6 +51,34 @@
 - **Mobile Client**: `apps/mobile/lib/supabase.ts`에서 RN/Expo용 Supabase client를 구성합니다.
 - **Pattern**: 화면 컴포넌트에 임의의 중복 query를 늘리지 말고, 공유 가능한 로직은 `packages/core`로 끌어올립니다.
 
+### 2-4. Local-First 전환 목표 (Refactor Target)
+
+현재 운영 구조는 Supabase row DB가 primary data source다. `refactoring/local-first-architecture` 전환 작업에서는 이를 즉시 대체하지 않고, 다음 목표 아키텍처로 단계적으로 이관한다.
+
+- **Target primary**: Trip 단위 local-first document (`TripDocumentV1`) + Yjs CRDT
+- **Local persistence**: Web은 IndexedDB, Mobile은 SQLite 계열 저장소 검토
+- **Sync/restore primary**: Supabase encrypted backup snapshot/update pull/push
+- **P2P**: WebRTC는 optional fast path이며 실패해도 local write와 Supabase backup은 유지
+- **Auth/authority**: Supabase Auth, document permission registry, invitation registry는 유지
+- **STUN/TURN**: Cloudflare STUN/TURN을 managed provider 기준선으로 사용
+- **Hosting**: Vercel 웹 호스팅은 단기 유지, Cloudflare Pages/Workers 이전은 별도 후속 검토
+
+전환 순서:
+
+1. Repository abstraction
+2. row → document 변환 및 materialized read model
+3. Web checklist local-first spike
+4. Supabase backup schema/RLS 및 encrypted restore
+5. dual-write mismatch 검증
+6. document-primary 전환
+7. legacy row 의존 축소
+
+구현 기준 문서:
+
+- `docs/refactor/TECHNICAL-SPEC.md`
+- `docs/refactor/adrs/`
+- `docs/refactor/tasks/`
+
 ---
 
 ## 3. Mobile App Architecture (Expo React Native)
@@ -92,6 +120,7 @@
 1.  **View**: `apps/web/app`, `apps/web/components`, `apps/mobile/app`, `apps/mobile/components`.
 2.  **Shared Domain**: `packages/core`, `packages/types`, `packages/design-tokens`.
 3.  **Platform Client**: `apps/web/lib/supabase/*`, `apps/mobile/lib/supabase.ts`.
+4.  **Transition Repository Boundary**: local-first 전환 작업은 UI와 data source 사이에 Repository interface를 둔다. UI는 Supabase query, Yjs document, WebRTC provider를 직접 호출하지 않는다.
 
 > [!IMPORTANT]
 > AI는 컴포넌트(View) 내에 플랫폼별 중복 비즈니스 로직을 늘리지 마십시오. 웹/앱에서 공유 가능한 데이터 접근과 도메인 규칙은 `@nexvoy/core`로 이동합니다.
