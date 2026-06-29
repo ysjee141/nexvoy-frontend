@@ -15,6 +15,7 @@ import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
 import { createWebRepositories } from '@/lib/local-first/repositoryFactory'
+import { subscribeToTripDocumentUpdates } from '@/lib/local-first/indexedDbStore'
 
 const getMemberDisplayName = (p: any, isMe: boolean = false) => {
     if (!p) return isMe ? '나' : '동행자'
@@ -374,6 +375,8 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const supabase = useMemo(() => createClient(), [])
     const repositories = useMemo(() => createWebRepositories(supabase), [supabase])
     const { isOnline } = useNetworkStore()
+    const isLocalFirstChecklistSpike = repositories.mode === 'local-first-checklist-spike'
+    const canUseChecklistActions = (isOnline || isLocalFirstChecklistSpike) && !isOffline
 
     const [isLoading, setIsLoading] = useState(true)
     const [checklistId, setChecklistId] = useState<string | null>(null)
@@ -426,7 +429,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
             // 2. 네트워크 확인
             const { isOfflineMode } = useNetworkStore.getState()
-            if (!isOnline || isOfflineMode) {
+            if (!isLocalFirstChecklistSpike && (!isOnline || isOfflineMode)) {
                 setIsLoading(false)
                 return
             }
@@ -465,9 +468,19 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     useEffect(() => {
         if (isActive) {
             fetchChecklist()
-            supabase.auth.getUser().then(({ data }: { data: { user: any } }) => setCurrentUser(data.user))
+            supabase.auth
+                .getUser()
+                .then(({ data }: { data: { user: any } }) => setCurrentUser(data.user))
+                .catch(() => setCurrentUser(null))
         }
     }, [isActive, fetchChecklist])
+
+    useEffect(() => {
+        if (!tripId || !isLocalFirstChecklistSpike) return
+        return subscribeToTripDocumentUpdates(tripId, () => {
+            void fetchChecklist()
+        })
+    }, [fetchChecklist, isLocalFirstChecklistSpike, tripId])
 
     const toggleItem = async (itemId: string, currentStatus: boolean) => {
         const item = items.find(i => i.id === itemId)
@@ -709,7 +722,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         const isAssignedToMe = item.assignment_type === 'specific'
             ? (assignedIds.length > 0 ? assignedIds.includes(currentUser?.id) : item.assigned_user_id === currentUser?.id)
             : true
-        const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && isOnline && !isOffline
+        const canCheck = (item.assignment_type === 'specific' ? isAssignedToMe : true) && canUseChecklistActions
 
         const controls = useAnimation();
         const [isSwiping, setIsSwiping] = useState(false);
@@ -744,7 +757,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         return (
             <li className={css({ position: 'relative', overflow: 'hidden', borderBottom: '1px solid', borderColor: 'brand.hairlineSoft', bg: 'white' })}>
                 {/* 배경 액션 버튼 (스와이프 시 보임) - 오프라인 모드에서는 숨김 */}
-                {isOnline && !isOffline && (
+                {canUseChecklistActions && (
                     <div className={css({
                         position: 'absolute', top: 0, right: 0, bottom: 0,
                         display: { base: 'flex', sm: 'none' }, // 모바일 전용
@@ -896,7 +909,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     </div>
 
                     {/* PC에서만 보이는 우측 버튼 */}
-                    {isOnline && !isOffline && (
+                    {canUseChecklistActions && (
                         <div className={css({ display: { base: 'none', sm: 'flex' }, gap: '8px' })}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setEditingItem(item); }}
@@ -1229,7 +1242,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     {totalItems === 0 && <div className={css({ display: { base: 'none', sm: 'block' } })}></div>}
 
                     {/* 액션 및 필터 컨트롤 그룹 (주로 모바일/PC 액션) */}
-                    {isOnline && !isOffline && (
+                    {canUseChecklistActions && (
                         <div className={css({ 
                             display: 'flex', 
                             flexDirection: { base: 'column', sm: 'row' },
@@ -1263,21 +1276,23 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     </button>
                                 )}
                                 
-                                <button
-                                    onClick={() => setIsTemplateModalOpen(true)}
-                                    className={css({
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                        px: '12px', h: '42px',
-                                        bg: 'white', color: 'brand.ink', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
-                                        fontSize: '13px', fontWeight: '700', cursor: 'pointer',
-                                        flex: '1',
-                                        whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                        _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.primary' },
-                                        _active: { transform: 'scale(0.98)' }
-                                    })}
-                                >
-                                    <ListTodo size={14} color="var(--colors-brand-primary)" /> 템플릿
-                                </button>
+                                {!isLocalFirstChecklistSpike && (
+                                    <button
+                                        onClick={() => setIsTemplateModalOpen(true)}
+                                        className={css({
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                            px: '12px', h: '42px',
+                                            bg: 'white', color: 'brand.ink', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
+                                            fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+                                            flex: '1',
+                                            whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                            _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.primary' },
+                                            _active: { transform: 'scale(0.98)' }
+                                        })}
+                                    >
+                                        <ListTodo size={14} color="var(--colors-brand-primary)" /> 템플릿
+                                    </button>
+                                )}
                             </div>
 
                             <div className={css({ display: { base: 'none', sm: 'flex' }, gap: '8px', w: { base: '100%', sm: 'auto' } })}>
@@ -1294,22 +1309,24 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     <Plus size={16} /> 항목 추가
                                 </button>
 
-                                <button
-                                    onClick={() => setIsTemplateModalOpen(true)}
-                                    className={css({
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
-                                        px: '16px', h: '42px',
-                                        bg: 'white', color: 'brand.ink', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
-                                        fontSize: '13px', fontWeight: '700', cursor: 'pointer',
-                                        w: { base: '100%', sm: 'auto' }, flex: { base: '1', sm: 'none' },
-                                        flexShrink: '0',
-                                        whiteSpace: 'nowrap', transition: 'all 0.2s',
-                                        _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.primary' },
-                                        _active: { transform: 'scale(0.98)' }
-                                    })}
-                                >
-                                    <ListTodo size={14} color="var(--colors-brand-primary)" /> 템플릿 불러오기
-                                </button>
+                                {!isLocalFirstChecklistSpike && (
+                                    <button
+                                        onClick={() => setIsTemplateModalOpen(true)}
+                                        className={css({
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px',
+                                            px: '16px', h: '42px',
+                                            bg: 'white', color: 'brand.ink', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px',
+                                            fontSize: '13px', fontWeight: '700', cursor: 'pointer',
+                                            w: { base: '100%', sm: 'auto' }, flex: { base: '1', sm: 'none' },
+                                            flexShrink: '0',
+                                            whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                            _hover: { bg: 'bg.surfaceSoft', borderColor: 'brand.primary' },
+                                            _active: { transform: 'scale(0.98)' }
+                                        })}
+                                    >
+                                        <ListTodo size={14} color="var(--colors-brand-primary)" /> 템플릿 불러오기
+                                    </button>
+                                )}
                             </div>
                         </div>
                     )}
@@ -1484,7 +1501,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                         <p className={css({ fontSize: '19px', fontWeight: '700', mb: '12px', color: 'brand.ink', letterSpacing: '-0.5px' })}>
                             여행을 완벽하게 해줄 준비물을 등록해 보세요! ✨
                         </p>
-                        {isOnline && !isOffline && (
+                        {canUseChecklistActions && (
                             <p className={css({ fontSize: '15px', color: 'brand.muted', lineHeight: '1.6', wordBreak: 'keep-all', maxW: '320px', mx: 'auto' })}>
                                 체크리스트로 꼼꼼하게 챙기면 여행의 설렘이 두 배가 됩니다. 🧳
                             </p>
@@ -1591,7 +1608,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 </div>
             )}
             {/* 모바일 하단 플로팅 버튼 - + 항목 추가 - 오프라인 모드에서는 숨김 */}
-            {isActive && !isAdding && !isTemplateModalOpen && isOnline && !isOffline && (
+            {isActive && !isAdding && !isTemplateModalOpen && canUseChecklistActions && (
                 <div
                     onClick={() => setIsAdding(true)}
                     className={css({
@@ -1613,7 +1630,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 </div>
             )}
 
-            {checklistId && (
+            {checklistId && !isLocalFirstChecklistSpike && (
                 <TemplateModal
                     isOpen={isTemplateModalOpen}
                     onClose={() => setIsTemplateModalOpen(false)}
