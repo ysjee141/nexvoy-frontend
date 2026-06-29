@@ -343,31 +343,30 @@ export default function ProfileScreen() {
             />
           </View>
 
-          {/* 계정 */}
-          <View style={styles.navSection}>
-            <NavRow
-              icon="trash-outline"
-              label="회원 탈퇴"
+          {/* 보조 계정 액션 */}
+          <View style={styles.accountFooter}>
+            <Pressable
+              onPress={handleSignOut}
+              hitSlop={10}
+              style={({ pressed }) => pressed && styles.pressedFade}
+              accessibilityRole="button"
+              accessibilityLabel="로그아웃"
+            >
+              <Text style={styles.accountFooterLink}>로그아웃</Text>
+            </Pressable>
+            <Text style={styles.accountFooterDivider}>·</Text>
+            <Pressable
               onPress={() => router.push('/profile/withdrawal')}
-              destructive
-            />
+              hitSlop={10}
+              style={({ pressed }) => pressed && styles.pressedFade}
+              accessibilityRole="button"
+              accessibilityLabel="회원 탈퇴"
+            >
+              <Text style={[styles.accountFooterLink, styles.withdrawalLink]}>
+                회원 탈퇴
+              </Text>
+            </Pressable>
           </View>
-
-          {/* 로그아웃 */}
-          <Pressable
-            onPress={handleSignOut}
-            style={({ pressed }) => [
-              styles.signOutBtn,
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <Ionicons
-              name="log-out-outline"
-              size={18}
-              color={colors.brand.error}
-            />
-            <Text style={styles.signOutText}>로그아웃</Text>
-          </Pressable>
         </ScrollView>
       )}
       <ConfirmSheet
@@ -566,22 +565,27 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.base,
     color: colors.brand.ink,
   },
-  // 로그아웃
-  signOutBtn: {
+  // 보조 계정 액션
+  accountFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    paddingVertical: spacing.base,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.brand.error,
     marginTop: 'auto',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
+    paddingTop: spacing.sm,
   },
-  signOutText: {
-    fontSize: fontSizes.base,
-    fontWeight: fontWeights.semibold,
-    color: colors.brand.error,
+  accountFooterLink: {
+    fontSize: fontSizes.sm,
+    color: colors.brand.mutedSoft,
+    textDecorationLine: 'underline',
   },
+  accountFooterDivider: {
+    fontSize: fontSizes.sm,
+    color: colors.brand.mutedSoft,
+  },
+  withdrawalLink: {
+    color: colors.brand.mutedSoft,
+  },
+  pressedFade: { opacity: 0.6 },
 })
