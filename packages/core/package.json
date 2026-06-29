@@ -20,12 +20,14 @@
     "./local-first/tripDocument": "./src/local-first/tripDocument.ts",
     "./local-first/yjsTripDocument": "./src/local-first/yjsTripDocument.ts",
     "./repositories/types": "./src/repositories/types.ts",
+    "./sync/backupTypes": "./src/sync/backupTypes.ts",
+    "./sync/encryption": "./src/sync/encryption.ts",
     "./supabase/legacyRepository": "./src/supabase/legacyRepository.ts",
     "./utils/date": "./src/utils/date.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/repositories/__tests__/types.test.ts",
+    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/sync/__tests__/encryption.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

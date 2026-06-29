@@ -63,8 +63,9 @@ TASK-005-web-indexeddb-yjs-checklist-spike.md
 | `TASK-004-repository-abstraction.md` | 완료 | PR [#261](https://github.com/ysjee141/nexvoy-frontend/pull/261) |
 | `TASK-005-web-indexeddb-yjs-checklist-spike.md` | 완료 | PR [#263](https://github.com/ysjee141/nexvoy-frontend/pull/263) |
 | `TASK-006-backup-schema-and-rls.md` | 완료 | 로컬 구현 및 검증 완료 |
+| `TASK-007-document-key-model.md` | 완료 | 로컬 구현 및 검증 완료 |
 
-현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `TASK-006: Supabase Backup Schema 및 RLS`는 완료되었다. 다음 작업은 `TASK-007: Document Key Model 및 암호화 PoC`다.
+현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `TASK-006: Supabase Backup Schema 및 RLS`, `TASK-007: Document Key Model 및 암호화 PoC`는 완료되었다. 다음 작업은 `TASK-008: Backup Queue 및 Restore Flow`다.
 
 ## Phase별 작업 목록
 
@@ -82,7 +83,7 @@ TASK-005-web-indexeddb-yjs-checklist-spike.md
 ### Phase 2: Backup, 암호화, Restore
 
 - [x] `TASK-006-backup-schema-and-rls.md`: Supabase backup schema 및 RLS 추가
-- [ ] `TASK-007-document-key-model.md`: Server-wrapped key 기반 document 암호화 PoC
+- [x] `TASK-007-document-key-model.md`: Server-wrapped key 기반 document 암호화 PoC
 - [ ] `TASK-008-backup-queue-and-restore.md`: backup queue와 snapshot/update restore flow 구현
 
 ### Phase 3: P2P Optional Fast Path
@@ -102,9 +103,8 @@ TASK-005-web-indexeddb-yjs-checklist-spike.md
 
 ## 권장 시작 순서
 
-1. `TASK-007-document-key-model.md`
-2. `TASK-008-backup-queue-and-restore.md`
-3. `TASK-009-mobile-webrtc-native-feasibility.md`
-4. `TASK-010-cloudflare-ice-config.md`
+1. `TASK-008-backup-queue-and-restore.md`
+2. `TASK-009-mobile-webrtc-native-feasibility.md`
+3. `TASK-010-cloudflare-ice-config.md`
 
-TASK-001~006까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크와 Supabase backup schema/RLS 기반을 검증할 수 있는 상태가 되었다. 다음은 document key model과 backup queue/restore flow를 붙여 기본 sync/restore 경로를 안정화한다. 모바일 WebRTC와 Cloudflare STUN/TURN은 backup/restore 기반이 잡힌 뒤 optional fast path로 검증한다.
+TASK-001~007까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model 및 암호화 PoC를 검증할 수 있는 상태가 되었다. 다음은 backup queue/restore flow를 붙여 기본 sync/restore 경로를 안정화한다. 모바일 WebRTC와 Cloudflare STUN/TURN은 backup/restore 기반이 잡힌 뒤 optional fast path로 검증한다.
