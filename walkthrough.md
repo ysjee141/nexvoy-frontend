@@ -1,40 +1,37 @@
-# Walkthrough: TASK-006 Supabase Backup Schema 및 RLS
+# Walkthrough: TASK-005 Web IndexedDB + Yjs Checklist Spike
 
 ## Summary
 
-Local-first Phase 2의 첫 단계로 암호화된 CRDT snapshot/update backup을 저장할 Supabase schema와 최소 RLS 기반을 추가했다. 기존 Supabase row 테이블은 그대로 유지하며, document backup/restore 경로가 준비될 때까지 fallback 역할을 계속한다.
+Web checklist 화면에서 feature flag로 켤 수 있는 local-first spike를 추가했다. 기본값은 기존 Supabase row repository이며, spike mode에서는 Yjs Trip document를 IndexedDB에 저장하고 checklist create/update/delete/toggle을 Supabase write 없이 로컬 document에 반영한다.
 
 ## Artifacts
 
-- `docs/refactor/tasks/TASK-006-backup-schema-and-rls.md`
+- GitHub Issue: `#262`
+- `docs/refactor/tasks/TASK-005-web-indexeddb-yjs-checklist-spike.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
 - `docs/refactor/adrs/ADR-001-local-first-data-engine.md`
-- `docs/refactor/adrs/ADR-003-backup-encryption-key-management.md`
 
 ## Key Changes
 
-- `supabase/migrations/20260630000001_local_first_backup_schema.sql`에 `documents`, `document_updates`, `document_devices`, `legacy_row_map`을 추가했다.
-- owner/editor/viewer RLS를 강제하기 위해 최소 authority table인 `document_members`도 함께 추가했다. 초대 링크/RPC와 세부 permission registry는 `TASK-013` 범위로 남겨두었다.
-- `documents.encrypted` 기본값은 `true`이며, `snapshot`과 `document_updates.update_blob`은 `TASK-007` 암호화 PoC 이후 암호문 저장 경로로 사용된다.
-- `check_is_document_owner`, `check_is_document_member`, `check_is_document_editor` security-definer helper를 추가해 RLS 재귀를 피했다.
-- `supabase/tests/task006_backup_rls.sql`에 local-only owner/editor/viewer/outsider RLS 검증 스크립트를 추가했다.
+- `packages/core/src/local-first/yjsTripDocument.ts`에 Trip document용 Yjs encode/apply/read/write helper를 추가했다.
+- Yjs helper는 모바일 번들 유입을 막기 위해 루트 export가 아니라 `@nexvoy/core/local-first/yjsTripDocument` subpath로만 노출한다.
+- `apps/web/lib/local-first/indexedDbStore.ts`에 Web-only IndexedDB persistence와 BroadcastChannel update notification을 추가했다.
+- `apps/web/lib/local-first/localFirstChecklistRepository.ts`에 Yjs/IndexedDB 기반 checklist repository spike를 추가했다.
+- `apps/web/lib/local-first/repositoryFactory.ts`가 `NEXT_PUBLIC_LOCAL_FIRST_CHECKLIST_SPIKE=1`, `?localFirstChecklist=1`, 또는 `localStorage` flag에서 local-first repository를 선택한다.
+- `ChecklistClient`는 local-first mode에서 네트워크가 없어도 add/update/delete/toggle UI를 사용할 수 있고, 템플릿 적용은 Supabase write 방지를 위해 숨긴다.
 
 ## Verification
 
-- `supabase db reset --local` 성공
-- `docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/tests/task006_backup_rls.sql` 성공
-  - owner: document 생성 및 member 등록 가능
-  - editor: `document_updates` insert/read 가능
-  - viewer: `document_updates` read 가능, insert 차단
-  - outsider: document read 차단
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm --filter @nexvoy/core typecheck` 성공
 - `pnpm build` 성공
+- `pnpm --filter nexvoy-app lint` 성공 (기존 warning 6건)
+- `pnpm --filter nexvoy-app typecheck` 성공
 - `pnpm build:mobile` 성공
-
-## Rollback
-
-문제 발생 시 신규 backup schema만 제거하는 보상 migration을 작성한다. 제거 대상은 `legacy_row_map`, `document_devices`, `document_updates`, `document_members`, `documents` 및 `check_is_document_*` helper 함수이며, 기존 row 기반 서비스 테이블은 건드리지 않는다.
+- reviewer 재검토 PASS
+- QA 재검토 PASS
 
 ## Notes
 
-- `document_keys` schema와 암호화 helper는 계획대로 `TASK-007-document-key-model.md`에서 처리한다.
-- `packages/types/src/database.generated.ts`는 이번 작업에서 최종 변경하지 않았다. 새 backup table 타입은 실제 repository/backup 구현에서 소비하기 시작할 때 local schema drift를 함께 정리해 재생성한다.
+- feature flag 기본값은 off라 기존 production checklist 화면은 Supabase repository를 계속 사용한다.
+- 수동 브라우저 검증 경로: `/trips/checklist?id=<tripId>&localFirstChecklist=1`에서 항목 추가/수정/삭제/체크 후 새로고침 복원을 확인한다. `?localFirstChecklist=0`으로 localStorage flag를 끌 수 있다.
