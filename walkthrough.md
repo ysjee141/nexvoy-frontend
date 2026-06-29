@@ -1,36 +1,39 @@
-# Walkthrough: TASK-003 Document Materialized Read Model
+# Walkthrough: TASK-004 Repository Abstraction
 
 ## Summary
 
-`TripDocumentV1` 원본에서 기존 화면과 repository 계층이 소비하기 쉬운 materialized read model을 생성하는 순수 계층을 `@nexvoy/core`에 추가했다. 이번 변경은 UI 연결 없이 trip summary/detail, plan timeline, checklist progress/status, tombstone filtering, 계측 payload만 제공한다.
+UI가 Supabase row query를 직접 호출하지 않도록 `@nexvoy/core`에 Repository interface와 legacy Supabase 구현체를 추가했다. 이번 변경은 Web checklist 화면을 repository factory 경유로 연결하되, 실제 data source는 기존 Supabase row helper를 유지해 동작 동일성을 우선한다.
 
 ## Artifacts
 
-- GitHub Issue: `#258`
-- `docs/refactor/tasks/TASK-003-document-materialized-read-model.md`
+- GitHub Issue: `#260`
+- `docs/refactor/tasks/TASK-004-repository-abstraction.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
-- `docs/refactor/adrs/ADR-005-document-granularity.md`
+- `docs/develop-context/architecture.md`
+- `docs/develop-context/conventions.md`
 
 ## Key Changes
 
-- `packages/core/src/local-first/materialize.ts`에 trip summary/detail, checklist, checklist item, plan timeline materializer를 추가했다.
-- `packages/core/src/local-first/tombstone.ts`에 entity tombstone filtering helper를 추가했다.
-- checklist item status는 기존 Supabase `getChecklistItemStatus()` 의미에 맞춰 `anyone`, `specific`, `everyone`별 `isChecked`, `isMyChecked`, count, permission을 계산한다.
-- plan timeline은 `planOrder`를 우선하고 누락된 plan은 start time, created time, id 순으로 안정 정렬한다.
-- document size와 materialize duration을 `MaterializeMetrics`로 반환해 후속 ADR-005 검토에 사용할 수 있게 했다.
-- `@nexvoy/core` 루트 export와 subpath export에 materializer/tombstone 모듈을 등록했다.
-- typecheck 기반 fixture로 legacy converter 결과, tombstone 숨김, checklist progress, plan URL 보존, Storage photo reference 숨김, 계측 값을 확인한다.
+- `packages/core/src/repositories/types.ts`에 `TripRepository`, `ChecklistRepository` 계약을 추가했다.
+- `packages/core/src/supabase/legacyRepository.ts`에 기존 Supabase query helper를 감싸는 legacy repository 구현체를 추가했다.
+- `apps/web/lib/local-first/repositoryFactory.ts`에서 Web repository factory 경계를 만들었다.
+- `apps/web/app/trips/checklist/ChecklistClient.tsx`의 온라인 checklist 조회/생성/수정/삭제/체크 토글을 repository 호출로 전환했다.
+- 기존 `@nexvoy/core/supabase/queries` helper는 제거하지 않고 fallback/legacy adapter 내부에서 계속 사용한다.
+- `apps/mobile/app/trip/[id].tsx`는 이미 core query helper 주입 경계가 있어, Web checklist spike 이후 별도 repository factory 적용 대상으로 TODO를 남겼다.
+- repository mock smoke test를 추가해 interface 소비가 data source와 독립적으로 가능한지 확인한다.
 
 ## Verification
 
 - `pnpm --filter @nexvoy/core test` 성공
 - `pnpm --filter @nexvoy/core typecheck` 성공
 - `pnpm build` 성공
+- `pnpm --filter nexvoy-app lint` 성공 (기존 warning 6건)
+- `pnpm --filter nexvoy-app typecheck` 성공
 - `pnpm build:mobile` 성공
 - reviewer 재검토 PASS
 - QA 재검토 PASS
 
 ## Notes
 
-- fixture smoke test는 `@nexvoy/core`의 `test` 스크립트에서 `tsx`로 실행한다.
-- UI 연결과 repository boundary 적용은 후속 task 범위다.
+- 이번 단계에서는 Supabase row가 계속 primary data source다.
+- `LocalFirstRepository`와 dual-write 전환은 후속 task에서 factory 뒤에 추가한다.
