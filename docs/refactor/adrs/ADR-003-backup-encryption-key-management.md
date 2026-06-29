@@ -123,6 +123,19 @@ create table public.document_keys (
 - role revoked 또는 member removed 시 해당 사용자의 key를 revoke한다.
 - key rotation은 document membership 변경 또는 보안 이벤트 발생 시 수행한다.
 
+### TASK-007 PoC 구현 기준
+
+초기 PoC는 아래 기준으로 구현한다.
+
+- Snapshot/update payload 암호화: AES-GCM 256-bit
+- DEK wrapping: AES-KW 256-bit
+- `packages/core`는 플랫폼 API를 직접 import하지 않고 `BackupCryptoProvider`를 주입받는다.
+- Web PoC는 브라우저/Node Web Crypto 호환 provider로 검증한다.
+- RN은 `crypto.subtle` 호환 provider 또는 동등한 native crypto adapter를 platform layer에서 주입해야 한다.
+- restore 실패 코드는 `backup_decrypt_failed`, `key_unwrap_failed`, `unsupported_encryption_algorithm`, `unsupported_key_wrapping_algorithm`으로 시작한다.
+- `document_keys.wrapped_dek`에는 wrapped DEK만 저장하며 plain DEK/KEK는 Supabase에 저장하지 않는다.
+- accepted member는 자신의 active wrapped key만 읽고, owner는 key 발급/폐기를 위해 key row를 관리할 수 있다.
+
 추가 검토:
 
 - KEK를 Supabase 세션 기반으로 만들지, 디바이스 local key와 조합할지

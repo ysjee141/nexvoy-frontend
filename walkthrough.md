@@ -1,40 +1,46 @@
-# Walkthrough: TASK-006 Supabase Backup Schema 및 RLS
+# Walkthrough: TASK-007 Document Key Model 및 암호화 PoC
 
 ## Summary
 
-Local-first Phase 2의 첫 단계로 암호화된 CRDT snapshot/update backup을 저장할 Supabase schema와 최소 RLS 기반을 추가했다. 기존 Supabase row 테이블은 그대로 유지하며, document backup/restore 경로가 준비될 때까지 fallback 역할을 계속한다.
+Server-wrapped key 모델을 기준으로 document snapshot/update 암호화 PoC와 `document_keys` schema/RLS를 추가했다. 서버에는 plain DEK/KEK를 저장하지 않고, member별 wrapped DEK만 저장하는 경로를 검증했다.
 
 ## Artifacts
 
-- `docs/refactor/tasks/TASK-006-backup-schema-and-rls.md`
+- `docs/refactor/tasks/TASK-007-document-key-model.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
 - `docs/refactor/adrs/ADR-001-local-first-data-engine.md`
 - `docs/refactor/adrs/ADR-003-backup-encryption-key-management.md`
 
 ## Key Changes
 
-- `supabase/migrations/20260630000001_local_first_backup_schema.sql`에 `documents`, `document_updates`, `document_devices`, `legacy_row_map`을 추가했다.
-- owner/editor/viewer RLS를 강제하기 위해 최소 authority table인 `document_members`도 함께 추가했다. 초대 링크/RPC와 세부 permission registry는 `TASK-013` 범위로 남겨두었다.
-- `documents.encrypted` 기본값은 `true`이며, `snapshot`과 `document_updates.update_blob`은 `TASK-007` 암호화 PoC 이후 암호문 저장 경로로 사용된다.
-- `check_is_document_owner`, `check_is_document_member`, `check_is_document_editor` security-definer helper를 추가해 RLS 재귀를 피했다.
-- `supabase/tests/task006_backup_rls.sql`에 local-only owner/editor/viewer/outsider RLS 검증 스크립트를 추가했다.
+- `packages/core/src/sync/backupTypes.ts`에 encrypted payload, wrapped key, restore error code 타입을 추가했다.
+- `packages/core/src/sync/encryption.ts`에 provider 기반 Web Crypto helper를 추가했다. `packages/core`는 Web/RN/Node platform API를 직접 import하지 않는다.
+- 암호화 PoC는 snapshot/update payload에 AES-GCM-256, DEK wrapping에 AES-KW-256을 사용한다.
+- `supabase/migrations/20260630000002_document_keys.sql`에 `document_keys` table과 RLS를 추가했다.
+- owner는 wrapped key를 발급/폐기할 수 있고, accepted member는 자신의 active wrapped key만 읽을 수 있다.
+- `supabase/tests/task007_document_keys_rls.sql`에 key read/insert/revoke/member revoke RLS 검증을 추가했다.
+- `docs/refactor/adrs/ADR-003-backup-encryption-key-management.md`에 PoC 알고리즘, provider 요구사항, restore error code를 보강했다.
 
 ## Verification
 
 - `supabase db reset --local` 성공
 - `docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/tests/task006_backup_rls.sql` 성공
-  - owner: document 생성 및 member 등록 가능
-  - editor: `document_updates` insert/read 가능
-  - viewer: `document_updates` read 가능, insert 차단
-  - outsider: document read 차단
+- `docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/tests/task007_document_keys_rls.sql` 성공
+  - owner: member별 wrapped key 발급 및 revoke 가능
+  - editor/viewer: 자신의 active wrapped key만 read 가능
+  - editor: key 발급 insert 차단
+  - revoked key 및 revoked member key read 차단
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm --filter @nexvoy/core typecheck` 성공
 - `pnpm build` 성공
 - `pnpm build:mobile` 성공
 
 ## Rollback
 
-문제 발생 시 신규 backup schema만 제거하는 보상 migration을 작성한다. 제거 대상은 `legacy_row_map`, `document_devices`, `document_updates`, `document_members`, `documents` 및 `check_is_document_*` helper 함수이며, 기존 row 기반 서비스 테이블은 건드리지 않는다.
+문제 발생 시 `document_keys` table과 관련 policy/index만 제거하는 보상 migration을 작성한다. `documents`, `document_updates`, `document_members` 등 `TASK-006` backup schema는 유지할 수 있다. 암호화 helper는 backup queue 기본값을 켜기 전까지 import 경로에서 제거하거나 feature flag off 상태로 유지한다.
 
 ## Notes
 
-- `document_keys` schema와 암호화 helper는 계획대로 `TASK-007-document-key-model.md`에서 처리한다.
-- `packages/types/src/database.generated.ts`는 이번 작업에서 최종 변경하지 않았다. 새 backup table 타입은 실제 repository/backup 구현에서 소비하기 시작할 때 local schema drift를 함께 정리해 재생성한다.
+- RN은 `crypto.subtle` 호환 provider 또는 native crypto adapter를 platform layer에서 주입해야 한다.
+- KEK 복구 UX, OAuth 계정 복구 시 unwrap 절차, multi-device key provisioning은 아직 남은 질문으로 ADR-003에 유지했다.
+- `packages/types/src/database.generated.ts`는 이번 작업에서 최종 변경하지 않았다. backup repository 구현에서 DB 타입을 실제로 소비하기 시작할 때 local schema drift와 함께 재생성한다.
