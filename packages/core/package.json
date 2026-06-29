@@ -18,11 +18,13 @@
     "./local-first/migrations": "./src/local-first/migrations.ts",
     "./local-first/tombstone": "./src/local-first/tombstone.ts",
     "./local-first/tripDocument": "./src/local-first/tripDocument.ts",
+    "./repositories/types": "./src/repositories/types.ts",
+    "./supabase/legacyRepository": "./src/supabase/legacyRepository.ts",
     "./utils/date": "./src/utils/date.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts",
+    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/repositories/__tests__/types.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

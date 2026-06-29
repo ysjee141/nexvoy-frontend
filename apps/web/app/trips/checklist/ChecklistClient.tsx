@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { analytics } from '@/services/AnalyticsService'
@@ -14,6 +14,7 @@ import { DownloadService } from '@/services/DownloadService'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
+import { createWebRepositories } from '@/lib/local-first/repositoryFactory'
 
 const getMemberDisplayName = (p: any, isMe: boolean = false) => {
     if (!p) return isMe ? '나' : '동행자'
@@ -370,7 +371,8 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
 export default function ChecklistPage({ isActive = true, tripId: propsTripId, isOffline = false }: { isActive?: boolean; tripId?: string; isOffline?: boolean }) {
     const searchParams = useSearchParams()
     const tripId = propsTripId || searchParams.get('id')
-    const supabase = createClient()
+    const supabase = useMemo(() => createClient(), [])
+    const repositories = useMemo(() => createWebRepositories(supabase), [supabase])
     const { isOnline } = useNetworkStore()
 
     const [isLoading, setIsLoading] = useState(true)
@@ -429,100 +431,36 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 return
             }
 
-            let { data: checklists, error: checklistsError } = await supabase
-                .from('checklists')
-                .select('id, title, created_at')
-                .eq('trip_id', tripId)
-                .order('created_at', { ascending: true })
-            if (checklistsError) throw checklistsError
+            const snapshot = await repositories.checklists.getChecklist(tripId)
+            setChecklistId(snapshot.checklistId)
+            setItems(snapshot.items)
+            setUserChecks(snapshot.userChecks)
+            setItemAssignees(snapshot.itemAssignees)
+            setMembers(snapshot.members)
 
-            let checklistRows = checklists ?? []
-            let currentChecklistId = checklistRows[0]?.id
-
-            if (!currentChecklistId) {
-                const { data: newChecklist } = await supabase
-                    .from('checklists')
-                    .insert({ trip_id: tripId, title: '기본 준비물' })
-                    .select()
-                    .single()
-
-                if (newChecklist) {
-                    currentChecklistId = newChecklist.id
-                    checklistRows = [newChecklist]
-                }
+            if (snapshot.trip) {
+                setTripInfo(snapshot.trip)
+                setTripOwner({ id: snapshot.trip.user_id, profiles: snapshot.trip.profiles, email: snapshot.trip.profiles?.email })
             }
 
-            if (currentChecklistId) {
-                const checklistIds = checklistRows.map((checklist: any) => checklist.id)
+            // 이미 다운로드된 여행이라면 백그라운드에서 전체 데이터 동기화
+            const bundle = await DownloadService.getBundle(tripId!)
+            if (bundle) {
+                DownloadService.downloadTrip(tripId!)
+            }
 
-                const [tripRes, itemsRes, membersRes] = await Promise.all([
-                    supabase.from('trips').select('*, profiles(nickname, email)').eq('id', tripId).single(),
-                    checklistIds.length > 0
-                        ? supabase.from('checklist_items').select('*').in('checklist_id', checklistIds).order('created_at', { ascending: true })
-                        : Promise.resolve({ data: [], error: null }),
-                    supabase.from('trip_members').select('user_id, invited_email, role, status, profiles(nickname, email)').eq('trip_id', tripId).eq('status', 'accepted'),
-                ])
-                if (itemsRes.error) throw itemsRes.error
-
-                if (tripRes.data) {
-                    setTripInfo(tripRes.data)
-                    setTripOwner({ id: tripRes.data.user_id, profiles: tripRes.data.profiles, email: tripRes.data.profiles?.email })
-                }
-                
-                if (itemsRes.data) {
-                    const checklistIdWithItems = checklistIds.find((id: string) =>
-                        itemsRes.data.some((item: any) => item.checklist_id === id)
-                    )
-                    setChecklistId(checklistIdWithItems ?? currentChecklistId)
-                    setItems(itemsRes.data)
-                    // 명시적 다운로드 정책에 따라 자동 저장은 제거
-                    
-                    // 이미 다운로드된 여행이라면 백그라운드에서 전체 데이터 동기화
-                    const bundle = await DownloadService.getBundle(tripId!)
-                    if (bundle) {
-                        DownloadService.downloadTrip(tripId!)
-                    }
-                    
-                    const itemIds = itemsRes.data.map((i: any) => i.id)
-                    if (itemIds.length > 0) {
-                        const [checksRes, assigneesRes] = await Promise.all([
-                            supabase
-                                .from('checklist_item_user_checks')
-                                .select('*')
-                                .in('item_id', itemIds),
-                            supabase
-                                .from('checklist_item_assignees')
-                                .select('*')
-                                .in('item_id', itemIds),
-                        ])
-                        const checks = checksRes.data
-                        if (checks) {
-                            setUserChecks(checks)
-                            // 명시적 다운로드 정책에 따라 자동 저장은 제거
-                        }
-                        if (assigneesRes.data) {
-                            setItemAssignees(assigneesRes.data)
-                        }
-                    }
-
-                    if (tripRes.data) {
-                        const pendingCount = itemsRes.data.filter((i: any) => !i.is_checked).length
-                        import('@/services/NotificationService').then(({ NotificationService }) => {
-                            NotificationService.scheduleChecklistReminder(tripId!, tripRes.data.destination, tripRes.data.start_date, pendingCount)
-                        })
-                    }
-                }
-
-                if (membersRes.data) {
-                    setMembers(membersRes.data)
-                }
+            if (snapshot.trip) {
+                const pendingCount = snapshot.items.filter((i: any) => !i.is_checked).length
+                import('@/services/NotificationService').then(({ NotificationService }) => {
+                    NotificationService.scheduleChecklistReminder(tripId!, snapshot.trip!.destination, snapshot.trip!.start_date, pendingCount)
+                })
             }
         } catch (error) {
             console.error('fetchChecklist error:', error)
         } finally {
             setIsLoading(false)
         }
-    }, [tripId, supabase, isOnline])
+    }, [tripId, repositories, isOnline])
 
     useEffect(() => {
         if (isActive) {
@@ -539,27 +477,38 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         const assignedIds = getAssignedUserIds(item)
         if (item.assignment_type === 'specific') {
             if (assignedIds.length > 1) {
-                if (!assignedIds.includes(currentUser?.id)) {
+                if (!currentUser?.id || !assignedIds.includes(currentUser.id)) {
                     alert('이 항목은 담당자님이 따로 있어요! 내 준비물을 멋지게 챙겨볼까요?')
                     return
                 }
-                const myCheck = userChecks.find(c => c.item_id === itemId && c.user_id === currentUser?.id)
+                const myCheck = userChecks.find(c => c.item_id === itemId && c.user_id === currentUser.id)
                 if (myCheck) {
                     setUserChecks(prev => prev.filter(c => c.id !== myCheck.id))
-                    const { error } = await supabase.from('checklist_item_user_checks').delete().eq('id', myCheck.id)
-                    if (error) setUserChecks(prev => [...prev, myCheck])
+                    try {
+                        const nextChecks = await repositories.checklists.toggleItemForUser({
+                            item,
+                            currentUserId: currentUser.id,
+                            nextChecked: false,
+                            participantIds: participants.map(p => p.user_id),
+                        })
+                        setUserChecks(prev => [...prev.filter(c => c.item_id !== itemId), ...nextChecks])
+                    } catch {
+                        setUserChecks(prev => [...prev, myCheck])
+                    }
                 } else {
                     const tempId = Math.random().toString()
-                    const optimisticCheck = { id: tempId, item_id: itemId, user_id: currentUser?.id }
+                    const optimisticCheck = { id: tempId, item_id: itemId, user_id: currentUser.id }
                     setUserChecks(prev => [...prev, optimisticCheck])
-                    const { data, error } = await supabase.from('checklist_item_user_checks').insert({
-                        item_id: itemId,
-                        user_id: currentUser?.id
-                    }).select().single()
-                    if (error || !data) {
+                    try {
+                        const nextChecks = await repositories.checklists.toggleItemForUser({
+                            item,
+                            currentUserId: currentUser.id,
+                            nextChecked: true,
+                            participantIds: participants.map(p => p.user_id),
+                        })
+                        setUserChecks(prev => [...prev.filter(c => c.item_id !== itemId), ...nextChecks])
+                    } catch {
                         setUserChecks(prev => prev.filter(c => c.id !== tempId))
-                    } else {
-                        setUserChecks(prev => prev.map(c => c.id === tempId ? data : c))
                     }
                 }
                 return
@@ -571,28 +520,37 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         }
 
         if (item.assignment_type === 'everyone') {
-            const myCheck = userChecks.find(c => c.item_id === itemId && c.user_id === currentUser?.id)
+            if (!currentUser?.id) return
+            const myCheck = userChecks.find(c => c.item_id === itemId && c.user_id === currentUser.id)
             if (myCheck) {
                 // 체크 해제 (Optimistic)
                 setUserChecks(prev => prev.filter(c => c.id !== myCheck.id))
-                const { error } = await supabase.from('checklist_item_user_checks').delete().eq('id', myCheck.id)
-                if (error) {
+                try {
+                    const nextChecks = await repositories.checklists.toggleItemForUser({
+                        item,
+                        currentUserId: currentUser.id,
+                        nextChecked: false,
+                        participantIds: participants.map(p => p.user_id),
+                    })
+                    setUserChecks(prev => [...prev.filter(c => c.item_id !== itemId), ...nextChecks])
+                } catch {
                     setUserChecks(prev => [...prev, myCheck]) // Rollback
                 }
             } else {
                 // 체크 추가 (Optimistic)
                 const tempId = Math.random().toString()
-                const optimisticCheck = { id: tempId, item_id: itemId, user_id: currentUser?.id }
+                const optimisticCheck = { id: tempId, item_id: itemId, user_id: currentUser.id }
                 setUserChecks(prev => [...prev, optimisticCheck])
-                const { data, error } = await supabase.from('checklist_item_user_checks').insert({
-                    item_id: itemId,
-                    user_id: currentUser?.id
-                }).select().single()
-                
-                if (error || !data) {
+                try {
+                    const nextChecks = await repositories.checklists.toggleItemForUser({
+                        item,
+                        currentUserId: currentUser.id,
+                        nextChecked: true,
+                        participantIds: participants.map(p => p.user_id),
+                    })
+                    setUserChecks(prev => [...prev.filter(c => c.item_id !== itemId), ...nextChecks])
+                } catch {
                     setUserChecks(prev => prev.filter(c => c.id !== tempId)) // Rollback
-                } else {
-                    setUserChecks(prev => prev.map(c => c.id === tempId ? data : c))
                 }
             }
             
@@ -614,12 +572,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
             analytics.logChecklistCheck(item.item_name, !currentStatus)
         }
 
-        const { error } = await supabase
-            .from('checklist_items')
-            .update({ is_checked: !currentStatus })
-            .eq('id', itemId)
-
-        if (error) {
+        try {
+            await repositories.checklists.toggleItem(itemId, !currentStatus)
+        } catch (error) {
             console.error('Toggle error:', error)
             // Rollback
             setItems(prev => prev.map((item: any) => item.id === itemId ? { ...item, is_checked: currentStatus } : item))
@@ -640,28 +595,19 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 : [])
         const finalAssignedUserId = finalAssignedUserIds[0] || null
 
-        const { data, error } = await supabase
-            .from('checklist_items')
-            .insert({
-                checklist_id: checklistId,
+        try {
+            const { item, assignees } = await repositories.checklists.createItem(checklistId, {
                 item_name: newItemName.trim(),
                 category: newItemCategory,
                 is_private: finalIsPrivate,
                 assignment_type: finalAssignmentType,
-                assigned_user_id: finalAssignedUserId
+                assigned_user_id: finalAssignedUserId,
+                assignee_ids: finalAssignedUserIds,
             })
-            .select()
-            .single()
-
-        if (!error && data) {
-            if (finalAssignedUserIds.length > 0) {
-                const { data: insertedAssignees } = await supabase
-                    .from('checklist_item_assignees')
-                    .insert(finalAssignedUserIds.map(user_id => ({ item_id: data.id, user_id })))
-                    .select()
-                if (insertedAssignees) setItemAssignees(prev => [...prev, ...insertedAssignees])
+            if (assignees.length > 0) {
+                setItemAssignees(prev => [...prev, ...assignees])
             }
-            const updatedItems = [...items, data]
+            const updatedItems = [...items, item]
             setItems(updatedItems)
             setNewItemName('')
             setNewItemIsPrivate(false)
@@ -677,49 +623,39 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     NotificationService.scheduleChecklistReminder(tripId, tripInfo.destination, tripInfo.start_date, pendingCount)
                 })
             }
+        } catch (error) {
+            console.error('Add checklist item error:', error)
         }
     }
 
     const updateItem = async (updatedFields: any) => {
         if (!editingItem) return
         const assigneeIds = updatedFields.assignee_ids as string[] | undefined
-        const fieldsToUpdate = { ...updatedFields }
-        delete fieldsToUpdate.assignee_ids
 
-        const { data, error } = await supabase
-            .from('checklist_items')
-            .update(fieldsToUpdate)
-            .eq('id', editingItem.id)
-            .select()
-            .single()
-
-        if (!error && data) {
+        try {
+            const { item, assignees } = await repositories.checklists.updateItem(editingItem.id, updatedFields)
             if (assigneeIds) {
-                await supabase.from('checklist_item_assignees').delete().eq('item_id', editingItem.id)
-                if (assigneeIds.length > 0) {
-                    const { data: nextAssignees } = await supabase
-                        .from('checklist_item_assignees')
-                        .insert(assigneeIds.map(user_id => ({ item_id: editingItem.id, user_id })))
-                        .select()
-                    if (nextAssignees) {
-                        setItemAssignees(prev => [
-                            ...prev.filter(a => a.item_id !== editingItem.id),
-                            ...nextAssignees
-                        ])
-                    }
-                } else {
-                    setItemAssignees(prev => prev.filter(a => a.item_id !== editingItem.id))
-                }
+                setItemAssignees(prev => [
+                    ...prev.filter(a => a.item_id !== editingItem.id),
+                    ...assignees
+                ])
             }
-            setItems(prev => prev.map(item => item.id === data.id ? data : item))
+            setItems(prev => prev.map(existing => existing.id === item.id ? item : existing))
             setEditingItem(null)
+        } catch (error) {
+            console.error('Update checklist item error:', error)
         }
     }
 
     const deleteItem = async (e: React.MouseEvent, itemId: string) => {
         e.stopPropagation()
         setItems(prev => prev.filter((item: any) => item.id !== itemId))
-        await supabase.from('checklist_items').delete().eq('id', itemId)
+        try {
+            await repositories.checklists.deleteItem(itemId)
+        } catch (error) {
+            console.error('Delete checklist item error:', error)
+            void fetchChecklist()
+        }
     }
 
     const getParticipants = () => {

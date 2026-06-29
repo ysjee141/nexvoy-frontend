@@ -6,6 +6,8 @@
  * - 마운트 시 trip + plans(plan_urls 포함) 로드.
  * - 체크리스트는 준비물 탭 최초 진입 시 lazy load(1회).
  * - isMounted ref 로 언마운트 후 setState 방지.
+ * - TASK-004 조사: 이미 `@nexvoy/core` query helper에 Supabase client를 주입하는 경계가 있다.
+ *   Mobile repository factory 적용은 Web checklist spike 이후 별도 PR에서 진행한다.
  *
  * 날짜/시간 표기는 `new Date()` 생성자 파싱 금지(TZ 왜곡 방지) — 문자열 슬라이싱으로 처리.
  * 단, "N박 M일" 일수 계산은 자정 고정 date 문자열 차이라 안전하게 Date 연산 사용.
