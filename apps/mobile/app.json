@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "scheme": "onvoy",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"
@@ -17,7 +17,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "xyz.nexvoy.app",
-      "bitcode": false
+      "bitcode": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "xyz.nexvoy.app",
