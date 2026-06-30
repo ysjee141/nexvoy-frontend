@@ -23,4 +23,22 @@ config.resolver.disableHierarchicalLookup = false
 // 4) pnpm 가상 스토어 경로(.pnpm) 심볼릭 링크를 따라가도록 unstable_enableSymlinks 보장
 config.resolver.unstable_enableSymlinks = true
 
+// 5) React Native release bundle은 tsconfig paths를 자동 해석하지 않으므로 "@/..." alias를 직접 매핑
+const defaultResolveRequest = config.resolver.resolveRequest
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName.startsWith('@/')) {
+    return context.resolveRequest(
+      context,
+      path.join(projectRoot, moduleName.slice(2)),
+      platform
+    )
+  }
+
+  if (defaultResolveRequest) {
+    return defaultResolveRequest(context, moduleName, platform)
+  }
+
+  return context.resolveRequest(context, moduleName, platform)
+}
+
 module.exports = config
