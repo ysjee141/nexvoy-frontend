@@ -9,6 +9,7 @@ import type {
 } from '@nexvoy/types'
 import {
   createEmptyTripDocumentV1,
+  convertLegacyTripRowsToDocument,
   materializeChecklists,
   type ChecklistRepository,
   type ChecklistRepositorySnapshot,
@@ -25,7 +26,9 @@ import {
   writeTripDocumentToYjs,
 } from '@nexvoy/core/local-first/yjsTripDocument'
 import type { ChecklistItemInput } from '@nexvoy/core/supabase/queries'
+import { getLegacyTripRowBundle } from '@nexvoy/core/supabase/legacyRepository'
 import {
+  loadAllTripDocumentUpdates,
   loadTripDocumentUpdate,
   saveTripDocumentUpdate,
 } from './indexedDbStore'
@@ -38,7 +41,7 @@ export function createWebLocalFirstChecklistRepository(
   return {
     getChecklist: (tripId) => getLocalChecklistSnapshot(supabase, tripId),
     createItem: async (checklistId, input) => {
-      const tripId = parseTripIdFromChecklistId(checklistId)
+      const tripId = await resolveTripIdForChecklistId(checklistId)
       if (!tripId) throw new Error('Local-first checklist id is invalid.')
       let createdItemId = ''
       const document = await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
@@ -65,7 +68,7 @@ export function createWebLocalFirstChecklistRepository(
       return toMutationResult(document, createdItemId)
     },
     updateItem: async (itemId, input) => {
-      const tripId = parseTripIdFromItemId(itemId)
+      const tripId = await resolveTripIdForItemId(itemId)
       if (!tripId) throw new Error('Local-first item id is invalid.')
       const document = await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[itemId]
@@ -85,7 +88,7 @@ export function createWebLocalFirstChecklistRepository(
       return toMutationResult(document, itemId)
     },
     deleteItem: async (itemId) => {
-      const tripId = parseTripIdFromItemId(itemId)
+      const tripId = await resolveTripIdForItemId(itemId)
       if (!tripId) throw new Error('Local-first item id is invalid.')
       await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
         const now = new Date().toISOString()
@@ -99,7 +102,7 @@ export function createWebLocalFirstChecklistRepository(
       })
     },
     toggleItem: async (itemId, isChecked) => {
-      const tripId = parseTripIdFromItemId(itemId)
+      const tripId = await resolveTripIdForItemId(itemId)
       if (!tripId) throw new Error('Local-first item id is invalid.')
       await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[itemId]
@@ -109,8 +112,8 @@ export function createWebLocalFirstChecklistRepository(
       })
     },
     toggleItemForUser: async (input) => {
-      const tripId = parseTripIdFromChecklistId(input.item.checklist_id)
-        ?? parseTripIdFromItemId(input.item.id)
+      const tripId = await resolveTripIdForChecklistId(input.item.checklist_id)
+        ?? await resolveTripIdForItemId(input.item.id)
       if (!tripId) throw new Error('Local-first item id is invalid.')
       const document = await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[input.item.id]
@@ -204,6 +207,9 @@ async function createInitialTripDocument(
   supabase: SupabaseClient,
   tripId: string,
 ): Promise<TripDocumentV1> {
+  const hydratedDocument = await hydrateTripDocumentFromLegacyRows(supabase, tripId)
+  if (hydratedDocument) return hydratedDocument
+
   const now = new Date().toISOString()
   const ownerId = await getCurrentUserId(supabase) ?? SPIKE_USER_ID
   const checklistId = createLocalChecklistId(tripId)
@@ -238,6 +244,31 @@ async function createInitialTripDocument(
   }
 
   return tripDocument
+}
+
+async function hydrateTripDocumentFromLegacyRows(
+  supabase: SupabaseClient,
+  tripId: string,
+): Promise<TripDocumentV1 | null> {
+  try {
+    const bundle = await getLegacyTripRowBundle(supabase, tripId, await getCurrentUserId(supabase))
+    if (!bundle) return null
+
+    const result = convertLegacyTripRowsToDocument(bundle)
+    if (result.validationMessages.length > 0) {
+      console.warn('[local-first hydration]', {
+        tripId,
+        validationCodes: result.validationMessages.map((message) => message.code),
+      })
+    }
+    return result.document
+  } catch (error) {
+    console.warn('[local-first hydration] fallback to empty document', {
+      tripId,
+      error: error instanceof Error ? error.message : 'unknown error',
+    })
+    return null
+  }
 }
 
 function toChecklistRepositorySnapshot(
@@ -439,6 +470,29 @@ function parseTripIdFromItemId(itemId: string): string | null {
   if (!itemId.startsWith('local-item:')) return null
   const [, tripId] = itemId.split(':')
   return tripId || null
+}
+
+async function resolveTripIdForChecklistId(checklistId: string): Promise<string | null> {
+  return parseTripIdFromChecklistId(checklistId)
+    ?? findTripIdInLocalDocuments((tripDocument) => Boolean(tripDocument.checklists[checklistId]))
+}
+
+async function resolveTripIdForItemId(itemId: string): Promise<string | null> {
+  return parseTripIdFromItemId(itemId)
+    ?? findTripIdInLocalDocuments((tripDocument) => Boolean(tripDocument.checklistItems[itemId]))
+}
+
+async function findTripIdInLocalDocuments(
+  matches: (tripDocument: TripDocumentV1) => boolean,
+): Promise<string | null> {
+  const rows = await loadAllTripDocumentUpdates()
+  for (const row of rows) {
+    const ydoc = createYjsTripDocument()
+    applyTripDocumentUpdate(ydoc, new Uint8Array(row.update))
+    const tripDocument = readTripDocumentFromYjs(ydoc)
+    if (tripDocument && matches(tripDocument)) return tripDocument.trip.id
+  }
+  return null
 }
 
 function isPresent<T>(value: T | null | undefined): value is T {
