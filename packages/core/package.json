@@ -22,12 +22,15 @@
     "./repositories/types": "./src/repositories/types.ts",
     "./sync/backupTypes": "./src/sync/backupTypes.ts",
     "./sync/encryption": "./src/sync/encryption.ts",
+    "./sync/restore": "./src/sync/restore.ts",
+    "./sync/syncState": "./src/sync/syncState.ts",
+    "./supabase/backupRepository": "./src/supabase/backupRepository.ts",
     "./supabase/legacyRepository": "./src/supabase/legacyRepository.ts",
     "./utils/date": "./src/utils/date.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/sync/__tests__/encryption.test.ts",
+    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
