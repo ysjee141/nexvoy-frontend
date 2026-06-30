@@ -66,9 +66,9 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-006-backup-schema-and-rls.md` | 완료 | 로컬 구현 및 검증 완료 |
 | `TASK-007-document-key-model.md` | 완료 | 로컬 구현 및 검증 완료 |
 | `TASK-008-backup-queue-and-restore.md` | 완료 | 로컬 구현 및 검증 완료 |
-| `TASK-008a-web-checklist-read-through-hydration.md` | 예정 | `localFirstChecklist=1` 최초 진입 시 legacy row → IndexedDB/Yjs hydration |
+| `TASK-008a-web-checklist-read-through-hydration.md` | 완료 | 로컬 구현 및 검증 완료 |
 
-현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`의 핵심 기반은 완료되었다. 다음 작업은 누락된 read-through 연결인 `TASK-008a: Web Checklist Read-through Hydration`이다.
+현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. 다음 작업은 `TASK-009: Mobile WebRTC Native Feasibility`다.
 
 ## Phase별 작업 목록
 
@@ -91,7 +91,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 
 ### Phase 2.5: Web Read-through 보완
 
-- [ ] `TASK-008a-web-checklist-read-through-hydration.md`: Web checklist local-first 최초 진입 시 기존 Supabase row를 document로 hydrate
+- [x] `TASK-008a-web-checklist-read-through-hydration.md`: Web checklist local-first 최초 진입 시 기존 Supabase row를 document로 hydrate
 
 ### Phase 3: P2P Optional Fast Path
 
@@ -110,8 +110,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 
 ## 권장 시작 순서
 
-1. `TASK-008a-web-checklist-read-through-hydration.md`
-2. `TASK-009-mobile-webrtc-native-feasibility.md`
-3. `TASK-010-cloudflare-ice-config.md`
+1. `TASK-009-mobile-webrtc-native-feasibility.md`
+2. `TASK-010-cloudflare-ice-config.md`
 
-TASK-001~008까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue 및 snapshot/update restore flow를 검증할 수 있는 상태가 되었다. 다만 `localFirstChecklist=1` 최초 진입 시 기존 Supabase row를 IndexedDB/Yjs 문서로 hydrate하는 runtime 연결이 누락되어 있으므로, WebRTC optional fast path 전에 이 보완 작업을 먼저 수행한다.
+TASK-001~008a까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration을 검증할 수 있는 상태가 되었다. 다음은 모바일 WebRTC와 Cloudflare STUN/TURN을 optional fast path로 검증한다.

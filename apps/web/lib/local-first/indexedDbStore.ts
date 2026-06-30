@@ -23,6 +23,20 @@ export async function loadTripDocumentUpdate(documentId: string): Promise<Uint8A
   return row ? new Uint8Array(row.update) : null
 }
 
+export async function loadAllTripDocumentUpdates(): Promise<StoredTripDocumentUpdate[]> {
+  if (!canUseIndexedDb()) return []
+  const db = await openDatabase()
+  const rows = await runTransaction<StoredTripDocumentUpdate[]>(
+    db,
+    TRIP_DOCUMENT_STORE,
+    'readonly',
+    (store) => store.getAll(),
+  )
+  db.close()
+
+  return rows
+}
+
 export async function saveTripDocumentUpdate(
   documentId: string,
   update: Uint8Array,

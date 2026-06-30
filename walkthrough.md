@@ -1,30 +1,26 @@
-# Walkthrough: TASK-008 Backup Queue 및 Restore Flow
+# Walkthrough: TASK-008a Web Checklist Read-through Hydration
 
 ## Summary
 
-Local-first write 이후 Supabase backup/update log로 업로드하고 snapshot + updates로 복원하는 기본 sync/restore foundation을 추가했다. 이번 단계는 platform adapter가 사용할 `@nexvoy/core` queue/state/restore/repository 기반이며, local write 실패와 backup upload 실패를 분리한다.
+`localFirstChecklist=1` 최초 진입 시 IndexedDB에 local-first 문서가 없으면 기존 Supabase row bundle을 읽어 `TripDocumentV1`로 변환하고 Yjs update로 저장하도록 연결했다. 이제 기존 체크리스트가 local-first mode에서도 빈 화면이 아니라 read-through hydrated document로 표시된다.
 
 ## Artifacts
 
-- `docs/refactor/tasks/TASK-008-backup-queue-and-restore.md`
+- `docs/refactor/tasks/TASK-008a-web-checklist-read-through-hydration.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
 - `docs/refactor/adrs/ADR-001-local-first-data-engine.md`
-- `docs/refactor/adrs/ADR-004-p2p-signaling-strategy.md`
 
 ## Key Changes
 
-- `packages/core/src/sync/backupTypes.ts`에 pending update, snapshot/update record, queue state, restore plan 타입을 추가했다.
-- `packages/core/src/sync/syncState.ts`에 queue enqueue, upload start/success/failure, retry state, snapshot threshold, restore plan ordering, hash mismatch validation을 추가했다.
-- `packages/core/src/sync/restore.ts`에 encrypted snapshot/update replay helper를 추가했다. Hash 검증 후 Yjs update를 순서대로 적용해 `TripDocumentV1`을 복원한다.
-- `packages/core/src/supabase/backupRepository.ts`에 `documents` snapshot upsert, `document_updates` upload/list, restore plan download repository를 추가했다.
-- `packages/core` subpath export에 `sync/syncState`, `sync/restore`, `supabase/backupRepository`를 추가했다.
-- `packages/core/src/sync/__tests__/syncState.test.ts`와 `restore.test.ts`로 queue retry, snapshot threshold, restore ordering, hash mismatch, encrypted replay를 검증했다.
+- `packages/core/src/supabase/legacyRepository.ts`에 `getLegacyTripRowBundle()`을 추가해 Trip, Plan, Checklist, Member, Share row를 hydration용 bundle로 조회한다.
+- `apps/web/lib/local-first/localFirstChecklistRepository.ts`가 IndexedDB에 문서가 없을 때 `convertLegacyTripRowsToDocument()`로 Supabase row를 hydrate한다.
+- hydration validation warning은 code만 로그에 남기고 document payload는 기록하지 않는다.
+- hydration 실패 시 기존 spike 빈 문서 생성 fallback을 유지한다.
+- 기존 UUID 기반 checklist/item도 local mutation이 가능하도록 IndexedDB 문서에서 checklist/item id → trip id를 찾는 resolver를 추가했다.
+- `apps/web/lib/local-first/indexedDbStore.ts`에 저장된 trip document update 전체를 조회하는 helper를 추가했다.
 
 ## Verification
 
-- `supabase db reset --local` 성공
-- `docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/tests/task006_backup_rls.sql` 성공
-- `docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/tests/task007_document_keys_rls.sql` 성공
 - `pnpm --filter @nexvoy/core test` 성공
 - `pnpm --filter @nexvoy/core typecheck` 성공
 - `pnpm build` 성공
@@ -32,11 +28,9 @@ Local-first write 이후 Supabase backup/update log로 업로드하고 snapshot 
 
 ## Rollback
 
-문제 발생 시 local-first repository 기본값을 Supabase legacy repository로 유지하고, 새 `@nexvoy/core` sync helper import를 제거한다. Supabase backup table에 쌓인 테스트 document/update row는 cleanup script 또는 SQL로 삭제하며, 기존 row 기반 서비스 테이블은 유지한다.
+문제 발생 시 `localFirstChecklist` flag를 off로 유지하면 기존 Supabase repository 화면으로 돌아간다. 잘못 생성된 spike 문서는 DevTools에서 IndexedDB `onvoy-local-first-spike` DB를 삭제해 초기화할 수 있다.
 
 ## Notes
 
-- `packages/core`는 IndexedDB/SQLite/WebRTC/Next.js/RN API를 직접 import하지 않는다.
-- Web/RN platform adapters는 다음 단계에서 local persistence와 network 상태에 맞춰 `BackupQueueState`를 저장하고 `SupabaseBackupRepository`를 호출하면 된다.
-- Snapshot/update payload는 `TASK-007` encryption helper의 serialized encrypted payload를 저장하는 전제로 설계했다.
-- `packages/types/src/database.generated.ts`는 이번 작업에서 최종 변경하지 않았다. backup repository가 app layer에서 본격 소비될 때 local schema drift와 함께 재생성한다.
+- 이미 빈 spike 문서가 IndexedDB에 저장된 브라우저에서는 legacy hydration이 다시 실행되지 않는다. 해당 DB를 삭제한 뒤 `?localFirstChecklist=1`로 재진입해야 한다.
+- 이 단계는 Web checklist spike의 read-through hydration이며, 아직 document-primary 또는 dual-write 전환은 아니다.

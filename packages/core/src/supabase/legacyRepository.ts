@@ -20,6 +20,7 @@ import {
   updateTrip,
   type ChecklistItemInput,
 } from './queries'
+import type { LegacyTripRowBundle } from '../local-first/migrations'
 import type {
   ChecklistRepository,
   ChecklistRepositorySnapshot,
@@ -88,6 +89,102 @@ export function createSupabaseChecklistRepository(sb: SupabaseClient): Checklist
       return getChecklistItemUserChecks(sb, [input.item.id])
     },
   }
+}
+
+export async function getLegacyTripRowBundle(
+  sb: SupabaseClient,
+  tripId: string,
+  currentUserId?: string | null,
+): Promise<LegacyTripRowBundle | null> {
+  const { data: trip, error: tripError } = await sb
+    .from('trips')
+    .select('*')
+    .eq('id', tripId)
+    .maybeSingle()
+  if (tripError) throw tripError
+  if (!trip) return null
+
+  const [
+    plansRes,
+    checklistsRes,
+    checklistCategoriesRes,
+    membersRes,
+    sharesRes,
+    invitationLinksRes,
+  ] = await Promise.all([
+    sb.from('plans').select('*').eq('trip_id', tripId),
+    sb.from('checklists').select('*').eq('trip_id', tripId).order('created_at', { ascending: true }),
+    currentUserId
+      ? sb
+        .from('checklist_categories')
+        .select('*')
+        .or(`user_id.is.null,user_id.eq.${currentUserId}`)
+        .order('sort_order', { ascending: true })
+      : sb
+        .from('checklist_categories')
+        .select('*')
+        .is('user_id', null)
+        .order('sort_order', { ascending: true }),
+    sb
+      .from('trip_members')
+      .select('id, trip_id, user_id, invited_email, role, status, created_at, profiles(nickname, email)')
+      .eq('trip_id', tripId),
+    sb.from('trip_shares').select('*').eq('trip_id', tripId),
+    sb.from('trip_invitation_links').select('*').eq('trip_id', tripId),
+  ])
+
+  if (plansRes.error) throw plansRes.error
+  if (checklistsRes.error) throw checklistsRes.error
+  if (checklistCategoriesRes.error) throw checklistCategoriesRes.error
+  if (membersRes.error) throw membersRes.error
+  if (sharesRes.error) throw sharesRes.error
+  if (invitationLinksRes.error) throw invitationLinksRes.error
+
+  const checklists = checklistsRes.data ?? []
+  const checklistIds = checklists.map((checklist) => checklist.id)
+  const plans = plansRes.data ?? []
+  const planIds = plans.map((plan) => plan.id)
+
+  const [planUrlsRes, checklistItemsRes] = await Promise.all([
+    planIds.length > 0
+      ? sb.from('plan_urls').select('*').in('plan_id', planIds)
+      : Promise.resolve({ data: [], error: null }),
+    checklistIds.length > 0
+      ? sb.from('checklist_items').select('*').in('checklist_id', checklistIds).order('created_at', { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  if (planUrlsRes.error) throw planUrlsRes.error
+  if (checklistItemsRes.error) throw checklistItemsRes.error
+
+  const checklistItems = checklistItemsRes.data ?? []
+  const checklistItemIds = checklistItems.map((item) => item.id)
+  const [assigneesRes, userChecksRes] = await Promise.all([
+    checklistItemIds.length > 0
+      ? sb.from('checklist_item_assignees').select('*').in('item_id', checklistItemIds)
+      : Promise.resolve({ data: [], error: null }),
+    checklistItemIds.length > 0
+      ? sb.from('checklist_item_user_checks').select('*').in('item_id', checklistItemIds)
+      : Promise.resolve({ data: [], error: null }),
+  ])
+
+  if (assigneesRes.error) throw assigneesRes.error
+  if (userChecksRes.error) throw userChecksRes.error
+
+  return {
+    exportedAt: new Date().toISOString(),
+    trip,
+    plans,
+    planUrls: planUrlsRes.data ?? [],
+    checklists,
+    checklistItems,
+    checklistCategories: checklistCategoriesRes.data ?? [],
+    checklistItemAssignees: assigneesRes.data ?? [],
+    checklistItemUserChecks: userChecksRes.data ?? [],
+    members: (membersRes.data ?? []).map(normalizeLegacyTripMemberRow),
+    shares: sharesRes.data ?? [],
+    invitationLinks: invitationLinksRes.data ?? [],
+  } satisfies LegacyTripRowBundle
 }
 
 async function getLegacyChecklistSnapshot(
@@ -162,6 +259,32 @@ function toChecklistMemberSnapshot(member: {
     ...member,
     invited_email: member.invited_email ?? '',
     profiles: profile ?? undefined,
+  }
+}
+
+function normalizeLegacyTripMemberRow(member: {
+  id: string
+  trip_id: string
+  user_id: string | null
+  invited_email: string | null
+  role: string
+  status: string
+  created_at: string
+  updated_at?: string | null
+  profiles?: { nickname: string | null; email: string | null } | { nickname: string | null; email: string | null }[] | null
+}): NonNullable<LegacyTripRowBundle['members']>[number] {
+  const profile = Array.isArray(member.profiles) ? member.profiles[0] : member.profiles
+
+  return {
+    id: member.id,
+    trip_id: member.trip_id,
+    user_id: member.user_id,
+    invited_email: member.invited_email,
+    role: member.role,
+    status: member.status,
+    created_at: member.created_at,
+    updated_at: member.updated_at ?? member.created_at,
+    profiles: profile ?? null,
   }
 }
 
