@@ -53,11 +53,9 @@ export const LocationService = {
    * 위경도 좌표로 주소 정보 가져오기 (Google Maps Geocoding API)
    */
   getAddress: async (lat: number, lng: number) => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    // External API 호출이므로 apiService.request 사용
-    const response = await apiService.request({
-      url: `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&language=ko&key=${apiKey}`,
-      method: 'GET'
+    const response = await apiService.get(`/api/geocode/`, {
+      lat: lat.toString(),
+      lng: lng.toString()
     });
     return response.data;
   }
