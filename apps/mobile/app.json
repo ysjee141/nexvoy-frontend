@@ -46,7 +46,8 @@
       "expo-router",
       "expo-secure-store",
       "expo-web-browser",
-      "@config-plugins/react-native-webrtc"
+      "@config-plugins/react-native-webrtc",
+      "@react-native-community/datetimepicker"
     ],
     "experiments": {
       "typedRoutes": true

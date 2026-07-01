@@ -87,6 +87,7 @@
 - **App ID**: `xyz.nexvoy.app`
 - **Framework**: Expo + React Native + Expo Router.
 - **Build Strategy**: `pnpm --filter nexvoy-app build`로 Expo export를 검증하고, 스토어 배포는 EAS 기반으로 별도 관리합니다.
+- **Runtime Verification**: native module 또는 EAS build 영향 변경은 [Mobile App Verification Lifecycle](mobile-app-verification-lifecycle.md)을 따른다.
 
 ### 3-2. Essential Libraries
 - **Routing**: `expo-router`

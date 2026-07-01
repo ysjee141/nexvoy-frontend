@@ -21,6 +21,7 @@
 
 # production
 /build
+apps/mobile/build-*.apk
 
 # misc
 .DS_Store
