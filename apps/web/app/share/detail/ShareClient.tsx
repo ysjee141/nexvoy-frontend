@@ -39,6 +39,7 @@ function SharePlanCard({ plan, formatLocalTime, formatDate }: any) {
                     {plan.location && (
                         <LocationTooltip 
                             locationName={plan.location} 
+                            address={plan.address}
                             lat={plan.location_lat} 
                             lng={plan.location_lng} 
                         />
