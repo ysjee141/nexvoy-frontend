@@ -27,6 +27,40 @@ export interface TestUser {
   refreshToken: string;
 }
 
+type AdminUser = {
+  id: string;
+  email?: string;
+};
+
+function extractAdminUsers(body: unknown): AdminUser[] {
+  if (Array.isArray(body)) return body as AdminUser[];
+
+  if (body && typeof body === 'object') {
+    const record = body as Record<string, unknown>;
+    if (Array.isArray(record.users)) return record.users as AdminUser[];
+
+    if (record.data && typeof record.data === 'object') {
+      const data = record.data as Record<string, unknown>;
+      if (Array.isArray(data.users)) return data.users as AdminUser[];
+    }
+  }
+
+  return [];
+}
+
+async function findAdminUserByEmail(url: string, serviceKey: string, email: string): Promise<AdminUser | null> {
+  const listRes = await fetch(`${url}/auth/v1/admin/users?per_page=1000`, {
+    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+  });
+  const listBody = await listRes.json();
+
+  if (!listRes.ok) {
+    throw new Error(`테스트 유저 목록 조회 실패: ${JSON.stringify(listBody)}`);
+  }
+
+  return extractAdminUsers(listBody).find((u) => u.email === email) ?? null;
+}
+
 /**
  * 테스트 전용 유저를 생성하고 세션 토큰을 반환한다.
  * 실제 고객/임직원 정보를 사용하지 말 것.
@@ -54,11 +88,7 @@ export async function createTestUser(email: string, password: string): Promise<T
     userId = createBody.id;
   } else if (createBody.msg?.includes('already') || createBody.code === 'email_exists' || createBody.code === '23505') {
     // 이미 존재하면 목록에서 찾아 비밀번호 업데이트
-    const listRes = await fetch(`${url}/auth/v1/admin/users?per_page=1000`, {
-      headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
-    });
-    const { users } = await listRes.json();
-    const found = (users as any[]).find((u) => u.email === email);
+    const found = await findAdminUserByEmail(url, serviceKey, email);
     if (!found) throw new Error(`테스트 유저를 찾을 수 없음: ${email}`);
     userId = found.id;
 
@@ -107,8 +137,12 @@ export async function deleteTestUser(email: string): Promise<void> {
   const listRes = await fetch(`${url}/auth/v1/admin/users?per_page=1000`, {
     headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
   });
-  const { users } = await listRes.json();
-  const found = (users as any[]).find((u) => u.email === email);
+  const listBody = await listRes.json();
+  if (!listRes.ok) {
+    throw new Error(`테스트 유저 목록 조회 실패: ${JSON.stringify(listBody)}`);
+  }
+
+  const found = extractAdminUsers(listBody).find((u) => u.email === email);
   if (!found) return;
 
   await fetch(`${url}/auth/v1/admin/users/${found.id}`, {
