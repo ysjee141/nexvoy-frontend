@@ -1,15 +1,29 @@
-import { test as base, type BrowserContext } from '@playwright/test';
+import { test as base, type BrowserContext, type TestInfo } from '@playwright/test';
 import { createBrowserClient } from '@supabase/ssr';
 import { createTestUser, type TestUser } from '../helpers/supabase';
 import { installGoogleMapsMock } from '../helpers/google-maps-mock';
 
-const TEST_USER_EMAIL = process.env.E2E_TEST_USER_EMAIL ?? 'e2e-test@onvoy.local';
 const TEST_USER_PASSWORD = process.env.E2E_TEST_USER_PASSWORD ?? 'E2eTestPassword1!';
 
 export type AuthFixtures = {
   authenticatedContext: BrowserContext;
   testUser: TestUser;
 };
+
+function buildTestUserEmail(testInfo: TestInfo): string {
+  const uniqueId = [
+    Date.now(),
+    process.pid,
+    testInfo.workerIndex,
+    testInfo.repeatEachIndex,
+    testInfo.retry,
+  ].join('-');
+
+  const emailSeed = process.env.E2E_TEST_USER_EMAIL ?? 'e2e-test@onvoy.local';
+  const [localPart = 'e2e-test', domain = 'onvoy.local'] = emailSeed.split('@');
+
+  return `${localPart}-${uniqueId}@${domain}`;
+}
 
 /**
  * @supabase/ssr의 createBrowserClient를 사용해 실제 쿠키 이름과 인코딩 방식을
@@ -56,8 +70,8 @@ async function injectSession(context: BrowserContext, user: TestUser) {
 }
 
 export const test = base.extend<AuthFixtures>({
-  testUser: async ({}, use) => {
-    const user = await createTestUser(TEST_USER_EMAIL, TEST_USER_PASSWORD);
+  testUser: async ({}, use, testInfo) => {
+    const user = await createTestUser(buildTestUserEmail(testInfo), TEST_USER_PASSWORD);
     await use(user);
     // 유저 삭제 대신 데이터만 cleanup: deleteTestUser는 병렬 실행 시
     // 다른 테스트의 createTestUser와 충돌하고 profiles cascade 삭제로
