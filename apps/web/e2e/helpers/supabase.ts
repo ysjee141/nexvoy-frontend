@@ -27,38 +27,38 @@ export interface TestUser {
   refreshToken: string;
 }
 
-type AdminUser = {
-  id: string;
-  email?: string;
+type PasswordSession = {
+  access_token?: string;
+  refresh_token?: string;
+  user?: {
+    id?: string;
+  };
 };
 
-function extractAdminUsers(body: unknown): AdminUser[] {
-  if (Array.isArray(body)) return body as AdminUser[];
-
-  if (body && typeof body === 'object') {
-    const record = body as Record<string, unknown>;
-    if (Array.isArray(record.users)) return record.users as AdminUser[];
-
-    if (record.data && typeof record.data === 'object') {
-      const data = record.data as Record<string, unknown>;
-      if (Array.isArray(data.users)) return data.users as AdminUser[];
-    }
-  }
-
-  return [];
+function isAlreadyRegisteredError(error: { message?: string; code?: string } | null): boolean {
+  const message = error?.message?.toLowerCase() ?? '';
+  return (
+    message.includes('already') ||
+    message.includes('registered') ||
+    error?.code === 'email_exists' ||
+    error?.code === '23505'
+  );
 }
 
-async function findAdminUserByEmail(url: string, serviceKey: string, email: string): Promise<AdminUser | null> {
-  const listRes = await fetch(`${url}/auth/v1/admin/users?per_page=1000`, {
-    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
-  });
-  const listBody = await listRes.json();
+async function findExistingUserId(
+  adminClient: any,
+  email: string
+): Promise<string> {
+  const { data, error } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
 
-  if (!listRes.ok) {
-    throw new Error(`테스트 유저 목록 조회 실패: ${JSON.stringify(listBody)}`);
+  if (error) {
+    throw new Error(`테스트 유저 목록 조회 실패: ${error.message}`);
   }
 
-  return extractAdminUsers(listBody).find((u) => u.email === email) ?? null;
+  const found = (data.users as Array<{ id: string; email?: string }>).find((u) => u.email === email);
+  if (!found) throw new Error(`테스트 유저를 찾을 수 없음: ${email}`);
+
+  return found.id;
 }
 
 /**
@@ -69,52 +69,61 @@ export async function createTestUser(email: string, password: string): Promise<T
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
   const anonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
   const serviceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
-
-  // 1. 유저 생성 또는 비밀번호 업데이트 (admin REST API)
-  const createRes = await fetch(`${url}/auth/v1/admin/users`, {
-    method: 'POST',
-    headers: {
-      apikey: serviceKey,
-      Authorization: `Bearer ${serviceKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password, email_confirm: true }),
+  const adminClient = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const createBody = await createRes.json();
-
+  // 1. 유저 생성 또는 비밀번호 업데이트 (admin API)
+  const { data: createData, error: createError } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
   let userId: string;
-  if (createRes.ok) {
-    userId = createBody.id;
-  } else if (createBody.msg?.includes('already') || createBody.code === 'email_exists' || createBody.code === '23505') {
-    // 이미 존재하면 목록에서 찾아 비밀번호 업데이트
-    const found = await findAdminUserByEmail(url, serviceKey, email);
-    if (!found) throw new Error(`테스트 유저를 찾을 수 없음: ${email}`);
-    userId = found.id;
+  let passwordSession: PasswordSession | null = null;
 
-    await fetch(`${url}/auth/v1/admin/users/${userId}`, {
-      method: 'PUT',
-      headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ password, email_confirm: true }),
+  if (createData.user) {
+    userId = createData.user.id;
+  } else if (isAlreadyRegisteredError(createError)) {
+    // CI Supabase projects can fail admin listUsers with "Database error finding users".
+    // Existing e2e users normally keep the same password, so reuse password auth first.
+    const existingSignInRes = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
     });
+    const existingSession = await existingSignInRes.json();
+
+    if (existingSession.access_token && existingSession.user?.id) {
+      passwordSession = existingSession;
+      userId = existingSession.user.id;
+    } else {
+      userId = await findExistingUserId(adminClient, email);
+      const { error: updateError } = await adminClient.auth.admin.updateUserById(userId, {
+        password,
+        email_confirm: true,
+      });
+
+      if (updateError) {
+        throw new Error(`테스트 유저 비밀번호 업데이트 실패: ${updateError.message}`);
+      }
+    }
   } else {
-    throw new Error(`테스트 유저 생성 실패: ${JSON.stringify(createBody)}`);
+    throw new Error(`테스트 유저 생성 실패: ${createError?.message ?? 'Unknown error'}`);
   }
 
   // 1-b. profiles row 보장 (trigger 대기 → 타임아웃 시 직접 upsert)
   await ensureProfile(userId, email, url, serviceKey);
 
   // 2. 세션 발급 (anon key로 signInWithPassword)
-  const signInRes = await fetch(`${url}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: { apikey: anonKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-  });
-  const session = await signInRes.json();
+  const session = passwordSession ?? await (async () => {
+    const signInRes = await fetch(`${url}/auth/v1/token?grant_type=password`, {
+      method: 'POST',
+      headers: { apikey: anonKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    return signInRes.json();
+  })();
   if (!session.access_token) {
     throw new Error(`세션 발급 실패: ${JSON.stringify(session)}`);
   }
@@ -133,20 +142,13 @@ export async function createTestUser(email: string, password: string): Promise<T
 export async function deleteTestUser(email: string): Promise<void> {
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
   const serviceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
-
-  const listRes = await fetch(`${url}/auth/v1/admin/users?per_page=1000`, {
-    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
+  const adminClient = createClient(url, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
   });
-  const listBody = await listRes.json();
-  if (!listRes.ok) {
-    throw new Error(`테스트 유저 목록 조회 실패: ${JSON.stringify(listBody)}`);
-  }
 
-  const found = extractAdminUsers(listBody).find((u) => u.email === email);
-  if (!found) return;
+  const userId = await findExistingUserId(adminClient, email).catch(() => null);
+  if (!userId) return;
 
-  await fetch(`${url}/auth/v1/admin/users/${found.id}`, {
-    method: 'DELETE',
-    headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },
-  });
+  const { error } = await adminClient.auth.admin.deleteUser(userId);
+  if (error) throw new Error(`테스트 유저 삭제 실패: ${error.message}`);
 }
