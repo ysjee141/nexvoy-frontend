@@ -9,8 +9,11 @@ import { useRouter } from 'next/navigation'
 import TemplateForm, { TemplateItemInput } from './TemplateForm'
 import {
     createChecklistCategory,
+    createTemplate,
+    deleteTemplate,
     deleteChecklistCategory,
     getChecklistCategories,
+    replaceTemplateItems,
     updateChecklistCategory,
 } from '@nexvoy/core'
 import type { ChecklistCategory } from '@nexvoy/types'
@@ -99,31 +102,25 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
             const { data: { session } } = await supabase.auth.getSession()
             if (!session?.user) throw new Error('인증 정보가 없습니다.')
 
-            // 1. 템플릿 레코드 생성
-            const { data: newTemplate, error: templateError } = await supabase
-                .from('checklist_templates')
-                .insert({
-                    user_id: session.user.id,
-                    title: title.trim()
-                })
-                .select()
-                .single()
+            const newTemplate = await createTemplate(supabase, {
+                user_id: session.user.id,
+                title: title.trim(),
+            })
 
-            if (templateError) throw templateError
-
-            // 2. 템플릿 하위 항목 생성
-            const itemsToInsert = validItems.map((item) => ({
-                template_id: newTemplate.id,
-                item_name: item.item_name.trim(),
-                category: item.category,
-                is_private: item.is_private
-            }))
-
-            const { error: itemsError } = await supabase
-                .from('checklist_template_items')
-                .insert(itemsToInsert)
-
-            if (itemsError) throw itemsError
+            try {
+                await replaceTemplateItems(
+                    supabase,
+                    newTemplate.id,
+                    validItems.map((item) => ({
+                        item_name: item.item_name.trim(),
+                        category: item.category,
+                        is_private: item.is_private,
+                    }))
+                )
+            } catch (itemError) {
+                await deleteTemplate(supabase, newTemplate.id).catch(() => undefined)
+                throw itemError
+            }
 
             resetForm()
             if (onSuccess) onSuccess()
