@@ -1040,6 +1040,28 @@ export async function replaceTemplateItems(
   templateId: string,
   items: Array<{ item_name: string; category?: string; is_private?: boolean }>
 ): Promise<void> {
+  const hasPrivateItems = items.some((item) => item.is_private)
+  if (hasPrivateItems) {
+    const { error: privacyColumnError } = await sb
+      .from('checklist_template_items')
+      .select('is_private')
+      .limit(1)
+
+    if (privacyColumnError) {
+      const message = String(privacyColumnError.message ?? '').toLowerCase()
+      const code = String((privacyColumnError as { code?: string }).code ?? '')
+      const isPrivateColumnMissing =
+        code === '42703' ||
+        code === 'PGRST204' ||
+        (message.includes('is_private') && (message.includes('column') || message.includes('schema')))
+
+      if (isPrivateColumnMissing) {
+        throw new Error('비공개 템플릿 항목을 저장하려면 데이터베이스 마이그레이션이 필요합니다.')
+      }
+      throw privacyColumnError
+    }
+  }
+
   // 1) 기존 아이템 전체 삭제
   const { error: delErr } = await sb
     .from('checklist_template_items')
@@ -1059,7 +1081,25 @@ export async function replaceTemplateItems(
   const { error: insErr } = await sb
     .from('checklist_template_items')
     .insert(rows)
-  if (insErr) throw insErr
+  if (!insErr) return
+
+  const message = String(insErr.message ?? '').toLowerCase()
+  const code = String((insErr as { code?: string }).code ?? '')
+  const isPrivateColumnMissing =
+    code === '42703' ||
+    code === 'PGRST204' ||
+    (message.includes('is_private') && (message.includes('column') || message.includes('schema')))
+
+  if (!isPrivateColumnMissing) throw insErr
+  if (hasPrivateItems) {
+    throw new Error('비공개 템플릿 항목을 저장하려면 데이터베이스 마이그레이션이 필요합니다.')
+  }
+
+  const legacyRows = rows.map(({ is_private, ...row }) => row)
+  const { error: legacyInsErr } = await sb
+    .from('checklist_template_items')
+    .insert(legacyRows)
+  if (legacyInsErr) throw legacyInsErr
 }
 
 // ─── Profile ──────────────────────────────────────────────────────────────────

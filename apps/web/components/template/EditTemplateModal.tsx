@@ -16,6 +16,7 @@ import {
     getTemplateShares,
     removeTemplateShare,
     shareTemplate,
+    updateTemplate,
     updateChecklistCategory,
     updateTemplateShareRole,
 } from '@nexvoy/core'
@@ -28,6 +29,44 @@ interface EditTemplateModalProps {
     onSuccess?: () => void
 }
 
+function isMissingIsPrivateColumn(error: any): boolean {
+    const message = String(error?.message ?? '').toLowerCase()
+    const code = String(error?.code ?? '')
+    return code === '42703' ||
+        code === 'PGRST204' ||
+        (message.includes('is_private') && (message.includes('column') || message.includes('schema')))
+}
+
+async function writeTemplateItems(
+    supabase: ReturnType<typeof createClient>,
+    mode: 'insert' | 'upsert',
+    rows: Array<{
+        id?: string
+        template_id: string
+        item_name: string
+        category: string
+        is_private: boolean
+    }>
+) {
+    if (rows.length === 0) return
+
+    const { error } = mode === 'upsert'
+        ? await supabase.from('checklist_template_items').upsert(rows)
+        : await supabase.from('checklist_template_items').insert(rows)
+
+    if (!error) return
+    if (!isMissingIsPrivateColumn(error)) throw error
+    if (rows.some((row) => row.is_private)) {
+        throw new Error('비공개 템플릿 항목을 저장하려면 데이터베이스 마이그레이션이 필요합니다.')
+    }
+
+    const legacyRows = rows.map(({ is_private, ...row }) => row)
+    const { error: legacyError } = mode === 'upsert'
+        ? await supabase.from('checklist_template_items').upsert(legacyRows)
+        : await supabase.from('checklist_template_items').insert(legacyRows)
+    if (legacyError) throw legacyError
+}
+
 export default function EditTemplateModal({ isOpen, onClose, templateId, onSuccess }: EditTemplateModalProps) {
     const router = useRouter()
     const supabase = createClient()
@@ -38,7 +77,6 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
     const [title, setTitle] = useState('')
     const [items, setItems] = useState<TemplateItemInput[]>([])
     const [originalItemIds, setOriginalItemIds] = useState<string[]>([])
-    const [deletedItemIds, setDeletedItemIds] = useState<string[]>([])
     const [categories, setCategories] = useState<ChecklistCategory[]>([])
     const [shares, setShares] = useState<ChecklistTemplateShareWithProfile[]>([])
     const [ownerId, setOwnerId] = useState<string | null>(null)
@@ -53,7 +91,7 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
         
         setFetching(true)
         try {
-            const { data, error } = await supabase
+            const initialResult = await supabase
                 .from('checklist_templates')
                 .select(`
                     id, 
@@ -63,6 +101,23 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                 `)
                 .eq('id', templateId)
                 .single()
+            let data: any = initialResult.data
+            let error: any = initialResult.error
+
+            if (error && isMissingIsPrivateColumn(error)) {
+                const fallback = await supabase
+                    .from('checklist_templates')
+                    .select(`
+                        id,
+                        user_id,
+                        title,
+                        checklist_template_items (id, item_name, category)
+                    `)
+                    .eq('id', templateId)
+                    .single()
+                data = fallback.data
+                error = fallback.error
+            }
 
             if (data) {
                 setOwnerId(data.user_id)
@@ -76,7 +131,6 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                 }))
                 setItems(mappedItems)
                 setOriginalItemIds(mappedItems.map((i: any) => i.id))
-                setDeletedItemIds([])
                 const { data: { session } } = await supabase.auth.getSession()
                 setCurrentUserId(session?.user.id ?? null)
                 if (session?.user.id) {
@@ -154,49 +208,40 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
         setLoading(true)
 
         try {
-            // 1. 타이틀 업데이트
-            const { error: titleError } = await supabase
-                .from('checklist_templates')
-                .update({ title: title.trim() })
-                .eq('id', templateId)
-
-            if (titleError) throw titleError
-
-            // 2. 삭제된 항목 처리
-            // UI에서 제거된 항목들 중 원래 DB에 있던 것들 찾기
             const currentItemIds = items.map(i => i.id)
             const itemsToDelete = originalItemIds.filter(id => !currentItemIds.includes(id))
-            
+
+            const existingItems = validItems.filter(i => !i.isNew)
+            const newItems = validItems.filter(i => i.isNew)
+
+            await writeTemplateItems(
+                supabase,
+                'upsert',
+                existingItems.map(i => ({
+                    id: i.id,
+                    template_id: templateId,
+                    item_name: i.item_name.trim(),
+                    category: i.category,
+                    is_private: i.is_private,
+                }))
+            )
+
+            await writeTemplateItems(
+                supabase,
+                'insert',
+                newItems.map(i => ({
+                    template_id: templateId,
+                    item_name: i.item_name.trim(),
+                    category: i.category,
+                    is_private: i.is_private,
+                }))
+            )
+
             if (itemsToDelete.length > 0) {
                 await supabase.from('checklist_template_items').delete().in('id', itemsToDelete)
             }
 
-            // 3. Upsert / Insert
-            const existingItems = validItems.filter(i => !i.isNew)
-            const newItems = validItems.filter(i => i.isNew)
-
-            if (existingItems.length > 0) {
-                await supabase.from('checklist_template_items').upsert(
-                    existingItems.map(i => ({
-                        id: i.id,
-                        template_id: templateId,
-                        item_name: i.item_name.trim(),
-                        category: i.category,
-                        is_private: i.is_private
-                    }))
-                )
-            }
-
-            if (newItems.length > 0) {
-                await supabase.from('checklist_template_items').insert(
-                    newItems.map(i => ({
-                        template_id: templateId,
-                        item_name: i.item_name.trim(),
-                        category: i.category,
-                        is_private: i.is_private
-                    }))
-                )
-            }
+            await updateTemplate(supabase, templateId, { title: title.trim() })
 
             if (onSuccess) onSuccess()
             onClose()
