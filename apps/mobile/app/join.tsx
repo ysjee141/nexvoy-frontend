@@ -13,10 +13,8 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import * as SecureStore from 'expo-secure-store'
 import {
   acceptInvitationWithLegacyFallback,
-  createInvitationRepository,
   getInvitationSummaryWithLegacyFallback,
   type DocumentInvitationSummary,
   type LegacyTripInvitationSummary,
@@ -28,6 +26,10 @@ import {
 } from '@/components/trip/DocumentKeyProvisioningStatusCard'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import {
+  ensureMobileDeviceKeyMaterial,
+  loadOrRequestMobileProvisioningStatus,
+} from '@/lib/local-first/keyProvisioningService'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 type JoinInput = { token?: string; inviteCode?: string }
@@ -53,7 +55,6 @@ type JoinSummary =
     }
 
 const INVALID_INVITE_COPY = '유효하지 않거나 만료된 초대입니다.'
-const MOBILE_DEVICE_ID_STORAGE_KEY = 'onvoy.mobileDeviceId'
 
 export default function JoinScreen() {
   const router = useRouter()
@@ -125,9 +126,13 @@ export default function JoinScreen() {
     try {
       const result = await acceptInvitationWithLegacyFallback(supabase, activeInput)
       if (result.source === 'document') {
-        if (result.result.requiresKeyProvisioning) {
-          const deviceId = await getOrCreateMobileDeviceId()
-          const status = await loadProvisioningStatus(result.result.documentId, deviceId)
+        const { deviceId } = await ensureMobileDeviceKeyMaterial(supabase)
+        const status = await loadOrRequestMobileProvisioningStatus({
+          supabase,
+          documentId: result.result.documentId,
+          deviceId,
+        })
+        if (!status.hasActiveKey && status.status !== 'completed') {
           setAcceptedDocumentId(result.result.documentId)
           setProvisioningStatus(status)
           setProvisioningRequired(true)
@@ -144,34 +149,6 @@ export default function JoinScreen() {
     }
   }
 
-  const loadProvisioningStatus = async (
-    documentId: string,
-    deviceId: string,
-  ): Promise<DocumentKeyProvisioningStatusRecord> => {
-    const repository = createInvitationRepository(supabase)
-    try {
-      const status = await repository.getMyDocumentKeyProvisioningStatus({
-        documentId,
-        deviceId,
-        keyVersion: 1,
-      })
-      if (status.status === 'none' || status.status === 'failed') {
-        return repository.requestDocumentKeyProvisioning({
-          documentId,
-          deviceId,
-          keyVersion: 1,
-        })
-      }
-      return status
-    } catch {
-      return repository.requestDocumentKeyProvisioning({
-        documentId,
-        deviceId,
-        keyVersion: 1,
-      })
-    }
-  }
-
   const handleProvisioningRetry = async () => {
     const documentId = acceptedDocumentId ?? (summary?.source === 'document' ? summary.tripId : null)
     if (!documentId || statusChecking) return
@@ -179,8 +156,12 @@ export default function JoinScreen() {
     setStatusChecking(true)
     setMessage(null)
     try {
-      const deviceId = await getOrCreateMobileDeviceId()
-      const status = await loadProvisioningStatus(documentId, deviceId)
+      const { deviceId } = await ensureMobileDeviceKeyMaterial(supabase)
+      const status = await loadOrRequestMobileProvisioningStatus({
+        supabase,
+        documentId,
+        deviceId,
+      })
       setAcceptedDocumentId(documentId)
       setProvisioningStatus(status)
       setProvisioningRequired(!status.hasActiveKey && status.status !== 'completed')
@@ -253,7 +234,7 @@ export default function JoinScreen() {
                 style={styles.provisioningCard}
                 footer={
                   <Text style={styles.noticeText}>
-                    모바일에서는 이번 버전에서 상태 확인과 재시도만 지원돼요. 실제 데이터 준비는 Web 또는 지원 기기에서 처리됩니다.
+                    이 기기 정보를 등록했습니다. 관리자 또는 편집자가 여정 데이터 준비를 완료하면 다시 시도할 수 있어요.
                   </Text>
                 }
               />
@@ -362,15 +343,6 @@ function sanitizeInviteCode(value: string): string {
 
 function formatInviteCode(value: string): string {
   return sanitizeInviteCode(value).replace(/(.{4})(?=.)/g, '$1-')
-}
-
-async function getOrCreateMobileDeviceId(): Promise<string> {
-  const existing = await SecureStore.getItemAsync(MOBILE_DEVICE_ID_STORAGE_KEY)
-  if (existing) return existing
-
-  const deviceId = `mobile:${Date.now()}-${Math.random().toString(36).slice(2)}`
-  await SecureStore.setItemAsync(MOBILE_DEVICE_ID_STORAGE_KEY, deviceId)
-  return deviceId
 }
 
 function toDisplayProvisioningStatus(status: DocumentKeyProvisioningStatusRecord['status']): DocumentKeyProvisioningStatus {

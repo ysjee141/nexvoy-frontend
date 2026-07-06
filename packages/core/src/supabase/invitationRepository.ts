@@ -87,6 +87,11 @@ export interface RegisterUserKeyMaterialInput {
   wrappingAlg?: 'RSA-OAEP-256'
 }
 
+export interface RevokeUserKeyMaterialInput {
+  deviceId: string
+  materialVersion?: number
+}
+
 export interface RequestDocumentKeyProvisioningInput {
   documentId: string
   deviceId: string
@@ -145,6 +150,7 @@ export interface InvitationRepository {
   getDocumentInvitationSummary(input: DocumentInvitationLookup): Promise<DocumentInvitationSummary | null>
   acceptDocumentInvitation(input: DocumentInvitationLookup): Promise<AcceptedDocumentInvitation>
   registerUserKeyMaterial(input: RegisterUserKeyMaterialInput): Promise<UserKeyMaterialRegistration>
+  revokeUserKeyMaterial(input: RevokeUserKeyMaterialInput): Promise<void>
   requestDocumentKeyProvisioning(input: RequestDocumentKeyProvisioningInput): Promise<DocumentKeyProvisioningStatusRecord>
   getMyDocumentKeyProvisioningStatus(input: RequestDocumentKeyProvisioningInput): Promise<DocumentKeyProvisioningStatusRecord>
   listPendingDocumentKeyProvisioningRequests(input?: ListDocumentKeyProvisioningRequestsInput): Promise<DocumentKeyProvisioningRequest[]>
@@ -199,6 +205,13 @@ export function createInvitationRepository(sb: SupabaseClient): InvitationReposi
       })
       if (error) throw error
       return toUserKeyMaterialRegistration(data)
+    },
+    revokeUserKeyMaterial: async (input) => {
+      const { error } = await sb.rpc('revoke_user_key_material', {
+        p_device_id: input.deviceId,
+        p_material_version: input.materialVersion ?? 1,
+      })
+      if (error) throw error
     },
     requestDocumentKeyProvisioning: async (input) => {
       const { data, error } = await sb.rpc('request_document_key_provisioning', {

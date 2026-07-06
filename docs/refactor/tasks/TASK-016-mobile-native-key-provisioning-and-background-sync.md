@@ -8,13 +8,15 @@
 
 ## 범위
 
-- Mobile RSA-OAEP-256 wrapping provider
+- Mobile RSA-OAEP-256 wrapping provider (`react-native-quick-crypto`)
 - Mobile device key material 생성/보관/등록
 - Mobile invited member status/retry UX의 실제 key material 연결
-- Mobile owner/editor pending provisioning processor
-- foreground/background sync trigger
+- Mobile owner/editor pending provisioning processor (현재 기기가 active RSA document key를 보유한 경우)
+- foreground/resume sync trigger
 - native runtime 검증(EAS local build, 실제 device, Logcat)
 - content-free observability/notification event 연결
+
+> 2026-07-06 구현 범위는 **Mobile Native Key Provisioning MVP**다. OS background task, non-exportable native keystore, key rotation/material version migration은 후속 `TASK-017` 또는 Split B/C로 분리한다.
 
 ## 선행 조건
 
@@ -120,6 +122,37 @@
 
 - Mobile invited member가 device material을 등록하고 active wrapped key를 받은 뒤 encrypted snapshot을 복구할 수 있다.
 - Mobile owner/editor가 raw DEK/KEK를 서버에 노출하지 않고 pending member용 wrapped key를 발급할 수 있다.
-- foreground/background trigger가 중복/오염 없이 best-effort provisioning을 수행한다.
+- foreground/resume trigger가 중복/오염 없이 best-effort provisioning을 수행한다.
 - Mobile native build와 실제 device runtime 검증을 통과한다.
 - reviewer와 qa-engineer 최종 verdict가 PASS다.
+
+## 구현 결과 (2026-07-06)
+
+- `react-native-quick-crypto`와 `expo-build-properties`를 추가하고 `app.config.js`에 config plugin을 등록했다.
+- `apps/mobile/lib/local-first/mobileCryptoProvider.ts`에서 RNQC `subtle` 기반 RSA-OAEP-2048/SHA-256 provider를 core `RsaOaepWrappingProvider` contract에 연결했다.
+- `mobileDeviceIdentity.ts`, `mobileKeyMaterialStore.ts`, `keyProvisioningService.ts`를 추가해 stable mobile device id, SecureStore private/public JWK 저장, public material 등록, active key unwrap, owner/editor foreground provisioning을 구현했다.
+- `join.tsx`는 초대 수락 후 Mobile device material 등록과 device-specific provisioning request/status retry를 실제 RPC path로 수행한다.
+- `trip/[id].tsx`는 owner/editor 권한에서 trip detail 진입, collaborator sheet 수동 CTA, AppState active 전환 시 pending provisioning processor를 best-effort로 실행한다. 현재 기기가 document DEK를 unwrap할 수 없으면 request를 failed로 오염시키지 않고 skip한다.
+- owner/editor Mobile 기기가 아직 active RSA document key를 보유하지 않으면 자기 device provisioning request를 먼저 등록한다. 첫 Mobile owner device의 실제 key bootstrap은 Web 또는 이미 준비된 owner/editor device가 처리해야 한다.
+- `auth-context.tsx`는 logout 시 local notification과 함께 Mobile private key material을 best-effort로 삭제한다.
+
+## 검증 결과 (2026-07-06)
+
+- `pnpm --filter @nexvoy/core typecheck` 성공
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm typecheck` 성공
+- `pnpm build` 성공
+- `pnpm --filter nexvoy-app typecheck` 성공
+- `pnpm --filter nexvoy-app exec expo install --check` 성공
+- `pnpm build:mobile` 성공
+- `git diff --check` 성공
+- reviewer 최종 PASS
+- qa-engineer 최종 PASS (accepted MVP scope)
+
+## 후속 분리
+
+- OS background task registration/handler, network/battery 제약 검증
+- Android/iOS non-exportable keystore 기반 private key hardening
+- material rotation/revoke UX와 server-side cleanup 확장
+- 실제 Android preview APK 설치 및 Logcat native crypto crash 확인
+- Mobile-only first owner bootstrap. 현재 MVP는 active RSA key를 가진 Web/다른 owner/editor device가 Mobile device request를 처리하는 모델이다.
