@@ -1,6 +1,7 @@
 const DATABASE_NAME = 'onvoy-local-first-spike'
-const DATABASE_VERSION = 1
+const DATABASE_VERSION = 2
 const TRIP_DOCUMENT_STORE = 'tripDocuments'
+const KEY_MATERIAL_STORE = 'webDeviceKeyMaterials'
 const BROADCAST_CHANNEL_NAME = 'onvoy-local-first-checklist-spike'
 
 export interface StoredTripDocumentUpdate {
@@ -14,6 +15,15 @@ export interface StoredTripDocumentUpdate {
 export interface TripDocumentStoreKey {
   namespace: string
   documentId: string
+}
+
+export interface StoredWebDeviceKeyMaterial {
+  id: string
+  deviceId: string
+  materialVersion: number
+  publicKeyJwk: Record<string, unknown>
+  privateKeyJwk: Record<string, unknown>
+  updatedAt: string
 }
 
 export async function loadTripDocumentUpdate(input: string | TripDocumentStoreKey): Promise<Uint8Array | null> {
@@ -112,6 +122,38 @@ export async function deleteAllTripDocumentNamespaces(): Promise<void> {
   db.close()
 }
 
+export async function loadWebDeviceKeyMaterial(deviceId: string): Promise<StoredWebDeviceKeyMaterial | null> {
+  if (!canUseIndexedDb()) return null
+  const db = await openDatabase()
+  const row = await runTransaction<StoredWebDeviceKeyMaterial | undefined>(
+    db,
+    KEY_MATERIAL_STORE,
+    'readonly',
+    (store) => store.get(deviceId),
+  )
+  db.close()
+
+  return row ?? null
+}
+
+export async function saveWebDeviceKeyMaterial(
+  material: Omit<StoredWebDeviceKeyMaterial, 'id' | 'updatedAt'>,
+): Promise<void> {
+  if (!canUseIndexedDb()) return
+  const db = await openDatabase()
+  await runTransaction(
+    db,
+    KEY_MATERIAL_STORE,
+    'readwrite',
+    (store) => store.put({
+      ...material,
+      id: material.deviceId,
+      updatedAt: new Date().toISOString(),
+    } satisfies StoredWebDeviceKeyMaterial),
+  )
+  db.close()
+}
+
 export function subscribeToTripDocumentUpdates(
   documentId: string,
   onUpdate: () => void,
@@ -179,6 +221,9 @@ function openDatabase(): Promise<IDBDatabase> {
       const db = request.result
       if (!db.objectStoreNames.contains(TRIP_DOCUMENT_STORE)) {
         db.createObjectStore(TRIP_DOCUMENT_STORE, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(KEY_MATERIAL_STORE)) {
+        db.createObjectStore(KEY_MATERIAL_STORE, { keyPath: 'id' })
       }
     }
     request.onsuccess = () => resolve(request.result)

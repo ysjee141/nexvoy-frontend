@@ -5,10 +5,17 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import {
     acceptInvitationWithLegacyFallback,
+    createInvitationRepository,
     getInvitationSummaryWithLegacyFallback,
     type DocumentInvitationSummary,
     type LegacyTripInvitationSummary,
 } from '@nexvoy/core/supabase/invitationRepository';
+import type { DocumentKeyProvisioningStatusRecord } from '@nexvoy/core/sync/keyProvisioning';
+import {
+    DocumentKeyProvisioningStatusCard,
+    type DocumentKeyProvisioningStatus,
+} from '@/components/trips/DocumentKeyProvisioningStatus';
+import { ensureWebDeviceKeyMaterial, getOrCreateWebDeviceId } from '@/lib/local-first/keyProvisioningService';
 
 type JoinSummary =
     | { source: 'document'; tripId: string; destination: string | null; startDate: string | null; endDate: string | null; ownerNickname: string | null; role: 'editor' | 'viewer' }
@@ -31,11 +38,16 @@ export default function JoinClient() {
     const [codeInput, setCodeInput] = useState('');
     const [activeInput, setActiveInput] = useState<JoinInput | null>(null);
     const [provisioningRequired, setProvisioningRequired] = useState(false);
+    const [acceptedDocumentId, setAcceptedDocumentId] = useState<string | null>(null);
+    const [provisioningStatus, setProvisioningStatus] = useState<DocumentKeyProvisioningStatusRecord | null>(null);
+    const [statusChecking, setStatusChecking] = useState(false);
 
     const resolveInvitation = async (input: JoinInput) => {
         setLoading(true);
         setError(null);
         setProvisioningRequired(false);
+        setAcceptedDocumentId(null);
+        setProvisioningStatus(null);
         try {
             const supabase = createClient();
             const result = await getInvitationSummaryWithLegacyFallback(supabase, input);
@@ -87,9 +99,17 @@ export default function JoinClient() {
         setProvisioningRequired(false);
         try {
             const supabase = createClient();
+            let deviceId: string | null = null;
+            if (summary.source === 'document') {
+                const material = await ensureWebDeviceKeyMaterial(supabase);
+                deviceId = material.deviceId;
+            }
             const result = await acceptInvitationWithLegacyFallback(supabase, activeInput);
             if (result.source === 'document') {
                 if (result.result.requiresKeyProvisioning) {
+                    const status = await loadProvisioningStatus(result.result.documentId, deviceId ?? getOrCreateWebDeviceId());
+                    setAcceptedDocumentId(result.result.documentId);
+                    setProvisioningStatus(status);
                     setProvisioningRequired(true);
                     return;
                 }
@@ -104,6 +124,60 @@ export default function JoinClient() {
                 : '초대를 수락하지 못했습니다. 잠시 후 다시 시도해 주세요.');
         } finally {
             setAccepting(false);
+        }
+    };
+
+    const loadProvisioningStatus = async (
+        documentId: string,
+        deviceId: string,
+        options: { requestIfNeeded?: boolean } = { requestIfNeeded: true },
+    ): Promise<DocumentKeyProvisioningStatusRecord> => {
+        const supabase = createClient();
+        const repository = createInvitationRepository(supabase);
+        try {
+            const status = await repository.getMyDocumentKeyProvisioningStatus({
+                documentId,
+                deviceId,
+                keyVersion: 1,
+            });
+            if ((status.status === 'none' || status.status === 'failed') && options.requestIfNeeded !== false) {
+                return repository.requestDocumentKeyProvisioning({
+                    documentId,
+                    deviceId,
+                    keyVersion: 1,
+                });
+            }
+            return status;
+        } catch {
+            if (options.requestIfNeeded === false) throw new Error('status_failed');
+            return repository.requestDocumentKeyProvisioning({
+                documentId,
+                deviceId,
+                keyVersion: 1,
+            });
+        }
+    };
+
+    const handleProvisioningRetry = async () => {
+        const documentId = acceptedDocumentId ?? (summary?.source === 'document' ? summary.tripId : null);
+        if (!documentId || statusChecking) return;
+
+        setStatusChecking(true);
+        setError(null);
+        try {
+            const supabase = createClient();
+            const { deviceId } = await ensureWebDeviceKeyMaterial(supabase);
+            const status = await loadProvisioningStatus(documentId, deviceId);
+            setAcceptedDocumentId(documentId);
+            setProvisioningStatus(status);
+            setProvisioningRequired(!status.hasActiveKey && status.status !== 'completed');
+            if (status.hasActiveKey || status.status === 'completed') {
+                router.replace(`/trips/detail?id=${documentId}`);
+            }
+        } catch {
+            setError('여정 데이터 준비 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        } finally {
+            setStatusChecking(false);
         }
     };
 
@@ -169,19 +243,25 @@ export default function JoinClient() {
                     <p>권한: {summary.role === 'editor' ? '편집자' : '뷰어'}</p>
                     {summary.startDate && summary.endDate ? <p>기간: {summary.startDate} ~ {summary.endDate}</p> : null}
                 </div>
-                {provisioningRequired ? (
-                    <div className="rounded-xl bg-blue-50 p-4 text-left mb-4">
-                        <p className="font-bold text-gray-900 mb-1">여정 데이터를 안전하게 준비하고 있어요</p>
-                        <p className="text-sm text-gray-600">참여는 완료됐지만 이 기기에서 데이터를 열 수 없습니다. 소유자의 키 준비가 완료된 뒤 다시 시도해 주세요.</p>
-                    </div>
+                {provisioningRequired && provisioningStatus ? (
+                    <DocumentKeyProvisioningStatusCard
+                        status={toDisplayProvisioningStatus(provisioningStatus.status)}
+                        errorCode={provisioningStatus.errorCode}
+                        primaryActionLabel={provisioningStatus.hasActiveKey || provisioningStatus.status === 'completed'
+                            ? '여정 열기'
+                            : '준비 상태 다시 확인'}
+                        primaryActionBusy={statusChecking}
+                        onPrimaryAction={handleProvisioningRetry}
+                        className="mb-4 text-left"
+                    />
                 ) : null}
                 {error ? <p className="text-sm text-red-500 mb-4">{error}</p> : null}
                 <button
-                    onClick={handleAccept}
-                    disabled={accepting}
+                    onClick={provisioningRequired ? handleProvisioningRetry : handleAccept}
+                    disabled={accepting || statusChecking}
                     className="w-full px-6 py-3 bg-primary-500 text-white rounded-full font-medium disabled:opacity-50"
                 >
-                    {accepting ? '참여 중...' : provisioningRequired ? '다시 시도' : '여정에 참여하기'}
+                    {accepting || statusChecking ? '확인 중...' : provisioningRequired ? '준비 상태 다시 확인' : '여정에 참여하기'}
                 </button>
                 <button
                     onClick={() => {
@@ -236,4 +316,11 @@ function sanitizeInviteCode(value: string): string {
 
 function formatInviteCode(value: string): string {
     return sanitizeInviteCode(value).replace(/(.{4})(?=.)/g, '$1-');
+}
+
+function toDisplayProvisioningStatus(status: DocumentKeyProvisioningStatusRecord['status']): DocumentKeyProvisioningStatus {
+    if (status === 'waiting_for_material' || status === 'pending' || status === 'processing' || status === 'failed' || status === 'completed') {
+        return status;
+    }
+    return status === 'none' ? 'pending' : 'failed';
 }

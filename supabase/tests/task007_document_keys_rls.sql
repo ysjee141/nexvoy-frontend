@@ -115,6 +115,8 @@ VALUES
     'accepted'
   );
 
+RESET ROLE;
+
 INSERT INTO public.document_keys (document_id, user_id, key_version, wrapped_dek, wrapping_alg)
 VALUES
   (
@@ -139,6 +141,7 @@ VALUES
     'AES-KW-256'
   );
 
+SET ROLE authenticated;
 SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000012';
 
 DO $$
@@ -188,6 +191,8 @@ END $$;
 
 SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000011';
 
+RESET ROLE;
+
 UPDATE public.document_keys
 SET revoked_at = now()
 WHERE document_id = '20000000-0000-0000-0000-000000000001'
@@ -198,6 +203,7 @@ SET status = 'revoked'
 WHERE document_id = '20000000-0000-0000-0000-000000000001'
   AND user_id = '00000000-0000-0000-0000-000000000012';
 
+SET ROLE authenticated;
 SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000013';
 
 DO $$

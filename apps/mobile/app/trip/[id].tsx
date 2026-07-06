@@ -2273,6 +2273,15 @@ function CollaboratorSheet({
         </View>
       ) : null}
 
+      {canManage ? (
+        <View style={styles.mobileProvisioningNotice}>
+          <Text style={styles.mobileProvisioningNoticeTitle}>여정 데이터 준비 안내</Text>
+          <Text style={styles.mobileProvisioningNoticeText}>
+            이번 모바일 버전에서는 데이터 준비 상태 안내만 제공돼요. 실제 데이터 준비는 Web에서 처리됩니다.
+          </Text>
+        </View>
+      ) : null}
+
       <View style={styles.membersHeader}>
         <Text style={styles.sheetSectionTitle}>참여 중인 멤버</Text>
         <Text style={styles.memberCountText}>{members.length}명</Text>
@@ -5288,6 +5297,25 @@ const styles = StyleSheet.create({
     paddingTop: spacing.base,
     borderTopWidth: 1,
     borderTopColor: colors.brand.hairline,
+  },
+  mobileProvisioningNotice: {
+    marginTop: spacing.base,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+    gap: spacing.xs,
+  },
+  mobileProvisioningNoticeTitle: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  mobileProvisioningNoticeText: {
+    color: colors.brand.muted,
+    fontSize: fontSizes.sm,
+    lineHeight: 20,
   },
   inviteLinkCreateButton: {
     minHeight: 48,

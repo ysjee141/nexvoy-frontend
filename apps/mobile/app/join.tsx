@@ -13,12 +13,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import * as SecureStore from 'expo-secure-store'
 import {
   acceptInvitationWithLegacyFallback,
+  createInvitationRepository,
   getInvitationSummaryWithLegacyFallback,
   type DocumentInvitationSummary,
   type LegacyTripInvitationSummary,
 } from '@nexvoy/core/supabase/invitationRepository'
+import type { DocumentKeyProvisioningStatusRecord } from '@nexvoy/core/sync/keyProvisioning'
+import {
+  DocumentKeyProvisioningStatusCard,
+  type DocumentKeyProvisioningStatus,
+} from '@/components/trip/DocumentKeyProvisioningStatusCard'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
@@ -46,6 +53,7 @@ type JoinSummary =
     }
 
 const INVALID_INVITE_COPY = '유효하지 않거나 만료된 초대입니다.'
+const MOBILE_DEVICE_ID_STORAGE_KEY = 'onvoy.mobileDeviceId'
 
 export default function JoinScreen() {
   const router = useRouter()
@@ -61,11 +69,16 @@ export default function JoinScreen() {
   const [codeInput, setCodeInput] = useState('')
   const [message, setMessage] = useState<string | null>(null)
   const [provisioningRequired, setProvisioningRequired] = useState(false)
+  const [acceptedDocumentId, setAcceptedDocumentId] = useState<string | null>(null)
+  const [provisioningStatus, setProvisioningStatus] = useState<DocumentKeyProvisioningStatusRecord | null>(null)
+  const [statusChecking, setStatusChecking] = useState(false)
 
   const resolveInvitation = async (input: JoinInput) => {
     setLoading(true)
     setMessage(null)
     setProvisioningRequired(false)
+    setAcceptedDocumentId(null)
+    setProvisioningStatus(null)
     try {
       const result = await getInvitationSummaryWithLegacyFallback(supabase, input)
       if (!result.summary) throw new Error(INVALID_INVITE_COPY)
@@ -113,6 +126,10 @@ export default function JoinScreen() {
       const result = await acceptInvitationWithLegacyFallback(supabase, activeInput)
       if (result.source === 'document') {
         if (result.result.requiresKeyProvisioning) {
+          const deviceId = await getOrCreateMobileDeviceId()
+          const status = await loadProvisioningStatus(result.result.documentId, deviceId)
+          setAcceptedDocumentId(result.result.documentId)
+          setProvisioningStatus(status)
           setProvisioningRequired(true)
           return
         }
@@ -124,6 +141,56 @@ export default function JoinScreen() {
       setMessage('초대를 수락하지 못했습니다. 잠시 후 다시 시도해 주세요.')
     } finally {
       setAccepting(false)
+    }
+  }
+
+  const loadProvisioningStatus = async (
+    documentId: string,
+    deviceId: string,
+  ): Promise<DocumentKeyProvisioningStatusRecord> => {
+    const repository = createInvitationRepository(supabase)
+    try {
+      const status = await repository.getMyDocumentKeyProvisioningStatus({
+        documentId,
+        deviceId,
+        keyVersion: 1,
+      })
+      if (status.status === 'none' || status.status === 'failed') {
+        return repository.requestDocumentKeyProvisioning({
+          documentId,
+          deviceId,
+          keyVersion: 1,
+        })
+      }
+      return status
+    } catch {
+      return repository.requestDocumentKeyProvisioning({
+        documentId,
+        deviceId,
+        keyVersion: 1,
+      })
+    }
+  }
+
+  const handleProvisioningRetry = async () => {
+    const documentId = acceptedDocumentId ?? (summary?.source === 'document' ? summary.tripId : null)
+    if (!documentId || statusChecking) return
+
+    setStatusChecking(true)
+    setMessage(null)
+    try {
+      const deviceId = await getOrCreateMobileDeviceId()
+      const status = await loadProvisioningStatus(documentId, deviceId)
+      setAcceptedDocumentId(documentId)
+      setProvisioningStatus(status)
+      setProvisioningRequired(!status.hasActiveKey && status.status !== 'completed')
+      if (status.hasActiveKey || status.status === 'completed') {
+        router.replace({ pathname: '/trip/[id]', params: { id: documentId } })
+      }
+    } catch {
+      setMessage('여정 데이터 준비 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    } finally {
+      setStatusChecking(false)
     }
   }
 
@@ -175,12 +242,21 @@ export default function JoinScreen() {
             ) : null}
 
             {provisioningRequired ? (
-              <View style={styles.noticeBox}>
-                <Text style={styles.noticeTitle}>여정 데이터를 안전하게 준비하고 있어요</Text>
-                <Text style={styles.noticeText}>
-                  참여는 완료됐지만 이 기기에서 데이터를 열 수 없습니다. 소유자의 키 준비가 완료된 뒤 다시 시도해 주세요.
-                </Text>
-              </View>
+              <DocumentKeyProvisioningStatusCard
+                status={toDisplayProvisioningStatus(provisioningStatus?.status ?? 'pending')}
+                errorCode={provisioningStatus?.errorCode}
+                primaryActionLabel={provisioningStatus?.hasActiveKey || provisioningStatus?.status === 'completed'
+                  ? '여정 열기'
+                  : '준비 상태 다시 확인'}
+                primaryActionBusy={statusChecking}
+                onPrimaryAction={handleProvisioningRetry}
+                style={styles.provisioningCard}
+                footer={
+                  <Text style={styles.noticeText}>
+                    모바일에서는 이번 버전에서 상태 확인과 재시도만 지원돼요. 실제 데이터 준비는 Web 또는 지원 기기에서 처리됩니다.
+                  </Text>
+                }
+              />
             ) : null}
 
             {message ? (
@@ -191,16 +267,16 @@ export default function JoinScreen() {
 
             {summary ? (
               <Pressable
-                onPress={handleAccept}
-                disabled={accepting || loading}
+                onPress={provisioningRequired ? handleProvisioningRetry : handleAccept}
+                disabled={accepting || loading || statusChecking}
                 accessibilityRole="button"
                 style={({ pressed }) => [
                   styles.primaryButton,
-                  (accepting || loading) && styles.buttonDisabled,
-                  pressed && !accepting && !loading && styles.pressedSoft,
+                  (accepting || loading || statusChecking) && styles.buttonDisabled,
+                  pressed && !accepting && !loading && !statusChecking && styles.pressedSoft,
                 ]}
               >
-                {accepting ? (
+                {accepting || statusChecking ? (
                   <ActivityIndicator color={colors.bg.canvas} />
                 ) : (
                   <Text style={styles.primaryButtonText}>
@@ -286,6 +362,28 @@ function sanitizeInviteCode(value: string): string {
 
 function formatInviteCode(value: string): string {
   return sanitizeInviteCode(value).replace(/(.{4})(?=.)/g, '$1-')
+}
+
+async function getOrCreateMobileDeviceId(): Promise<string> {
+  const existing = await SecureStore.getItemAsync(MOBILE_DEVICE_ID_STORAGE_KEY)
+  if (existing) return existing
+
+  const deviceId = `mobile:${Date.now()}-${Math.random().toString(36).slice(2)}`
+  await SecureStore.setItemAsync(MOBILE_DEVICE_ID_STORAGE_KEY, deviceId)
+  return deviceId
+}
+
+function toDisplayProvisioningStatus(status: DocumentKeyProvisioningStatusRecord['status']): DocumentKeyProvisioningStatus {
+  if (
+    status === 'waiting_for_material'
+    || status === 'pending'
+    || status === 'processing'
+    || status === 'failed'
+    || status === 'completed'
+  ) {
+    return status
+  }
+  return status === 'none' ? 'pending' : 'failed'
 }
 
 const styles = StyleSheet.create({
@@ -380,6 +478,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.md,
     backgroundColor: colors.bg.surfaceSoft,
+  },
+  provisioningCard: {
+    marginTop: spacing.base,
   },
   noticeTitle: {
     color: colors.brand.ink,

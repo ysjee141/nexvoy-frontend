@@ -119,3 +119,32 @@
 - 서버가 raw DEK/KEK를 알지 않는 원칙이 유지된다.
 - pending/failed/completed provisioning 상태가 Web/Mobile에서 명확히 표시된다.
 - 권한 회수 후 key access와 새 sync/update가 차단된다.
+
+## 구현 결과
+
+- `user_key_materials`와 `document_key_provisioning_requests`를 추가해 device-level RSA-OAEP public material registry와 provisioning queue를 구성했다.
+- `document_keys`는 legacy user-level AES-KW row와 device-scoped RSA-OAEP row를 병행 지원하도록 확장했다.
+- `accept_document_invitation`, `revoke_document_member`, `revoke_trip_document_member`를 provisioning-aware RPC로 교체했다.
+- Web은 IndexedDB에 private/public material을 보관하고 Supabase에는 public JWK만 등록한다.
+- Web guest promotion 초기 backup에서 owner legacy key와 owner device RSA-OAEP key를 함께 bootstrap해 foreground provisioning이 현재 DEK를 얻을 수 있게 했다.
+- Web CollaboratorModal은 owner/editor foreground provisioning, pending list, revoke cleanup RPC를 연결했다.
+- Web/Mobile join은 pending/status/retry UX를 제공한다. Mobile actual crypto/background provisioning은 `TASK-016`으로 분리했다.
+
+## 검증 결과
+
+- `pnpm --filter @nexvoy/core test`: PASS
+- `pnpm --filter @nexvoy/core typecheck`: PASS
+- `pnpm typecheck`: PASS
+- `pnpm build`: PASS
+- `pnpm build:mobile`: PASS
+- `pnpm --filter nexvoy-web build`: PASS
+- `pnpm --filter nexvoy-app typecheck`: PASS
+- `git diff --check`: PASS
+- reviewer 최종 verdict: PASS
+- qa-engineer 최종 verdict: PASS
+
+## Residual Risk
+
+- Supabase SQL runtime smoke는 로컬 DB migration 적용 여부가 보장되지 않아 정적 검증과 테스트 파일 작성까지만 완료했다.
+- Web 실제 브라우저 E2E(초대 수락 -> owner foreground completion -> invited member restore)는 수행하지 않았다.
+- Mobile native RSA-OAEP provider, Mobile owner/editor provisioning, background task/sync, 실제 device/Logcat 검증은 `TASK-016` 범위다.

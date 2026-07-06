@@ -1,11 +1,12 @@
 export type BackupEncryptionAlgorithm = 'AES-GCM-256'
 
-export type DocumentKeyWrappingAlgorithm = 'AES-KW-256'
+export type DocumentKeyWrappingAlgorithm = 'AES-KW-256' | 'RSA-OAEP-256'
 
 export type RestoreErrorCode =
   | 'backup_decrypt_failed'
   | 'backup_encrypt_failed'
   | 'backup_hash_mismatch'
+  | 'key_wrap_failed'
   | 'key_unwrap_failed'
   | 'restore_snapshot_missing'
   | 'unsupported_encryption_algorithm'
@@ -33,6 +34,9 @@ export interface WrappedDocumentKey {
 export interface DocumentKeyMetadata {
   documentId: string
   userId: string
+  deviceId?: string | null
+  materialId?: string | null
+  recipientScope?: 'device' | 'legacy_user'
   keyVersion: number
   wrappingAlg: DocumentKeyWrappingAlgorithm
   revokedAt: string | null

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { removeTripMember } from '@nexvoy/core/supabase/queries'
 
 /**
  * 동행 및 공유 관련 유틸리티
@@ -134,12 +135,12 @@ export const collaboration = {
      */
     async removeMember(memberId: string) {
         const supabase = createClient()
-        const { error } = await supabase
-            .from('trip_members')
-            .delete()
-            .eq('id', memberId)
-
-        return { error }
+        try {
+            await removeTripMember(supabase, memberId)
+            return { error: null }
+        } catch (error) {
+            return { error }
+        }
     },
 
     /**

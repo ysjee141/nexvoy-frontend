@@ -25,6 +25,7 @@ import {
   loadAllTripDocumentUpdates,
   saveTripDocumentUpdate,
 } from './indexedDbStore'
+import { bootstrapWebDeviceDocumentKey } from './keyProvisioningService'
 import {
   getGuestOwnerNamespace,
   removeGuestPromotionMarker,
@@ -167,6 +168,11 @@ async function uploadInitialBackupSnapshot(
     documentId: document.trip.id,
     userId: authUserId,
     wrappedKey,
+  })
+  await bootstrapWebDeviceDocumentKey({
+    supabase,
+    documentId: document.trip.id,
+    documentKey: dek,
   })
 }
 

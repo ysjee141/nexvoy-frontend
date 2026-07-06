@@ -1,4 +1,15 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import {
+  createKeyProvisioningStatusRecord,
+  sanitizeKeyProvisioningErrorCode,
+  sortKeyProvisioningRequests,
+  type BegunDocumentKeyProvisioningRequest,
+  type DocumentKeyProvisioningRequest,
+  type DocumentKeyProvisioningStatus,
+  type DocumentKeyProvisioningStatusRecord,
+  type SafeKeyProvisioningErrorCode,
+  type UserKeyMaterialRegistration,
+} from '../sync/keyProvisioning'
 
 export type DocumentInvitationRole = 'editor' | 'viewer'
 export type DocumentShareType = 'public' | 'password'
@@ -43,6 +54,8 @@ export interface AcceptedDocumentInvitation {
   status: 'accepted'
   alreadyMember: boolean
   requiresKeyProvisioning: boolean
+  keyProvisioningStatus: DocumentKeyProvisioningStatus
+  queuedRequestCount: number
 }
 
 export interface DocumentMemberRoleChange {
@@ -58,11 +71,38 @@ export interface RevokedDocumentMember {
 }
 
 export interface ProvisionAcceptedMemberKeyInput {
+  requestId: string
   documentId: string
   userId: string
+  deviceId: string
   keyVersion: number
   wrappedDek: Uint8Array
-  wrappingAlg?: 'AES-KW-256'
+  wrappingAlg?: 'RSA-OAEP-256'
+}
+
+export interface RegisterUserKeyMaterialInput {
+  deviceId: string
+  publicKeyJwk: Record<string, unknown>
+  materialVersion?: number
+  wrappingAlg?: 'RSA-OAEP-256'
+}
+
+export interface RequestDocumentKeyProvisioningInput {
+  documentId: string
+  deviceId: string
+  keyVersion?: number
+}
+
+export interface ListDocumentKeyProvisioningRequestsInput {
+  documentId?: string | null
+  limit?: number
+}
+
+export interface CompleteDocumentKeyProvisioningInput {
+  requestId: string
+  wrappedDek: Uint8Array
+  keyVersion?: number
+  wrappingAlg?: 'RSA-OAEP-256'
 }
 
 export interface CreateDocumentShareTokenInput {
@@ -104,6 +144,13 @@ export interface InvitationRepository {
   createDocumentInvitationLink(input: CreateDocumentInvitationInput): Promise<CreatedDocumentInvitation>
   getDocumentInvitationSummary(input: DocumentInvitationLookup): Promise<DocumentInvitationSummary | null>
   acceptDocumentInvitation(input: DocumentInvitationLookup): Promise<AcceptedDocumentInvitation>
+  registerUserKeyMaterial(input: RegisterUserKeyMaterialInput): Promise<UserKeyMaterialRegistration>
+  requestDocumentKeyProvisioning(input: RequestDocumentKeyProvisioningInput): Promise<DocumentKeyProvisioningStatusRecord>
+  getMyDocumentKeyProvisioningStatus(input: RequestDocumentKeyProvisioningInput): Promise<DocumentKeyProvisioningStatusRecord>
+  listPendingDocumentKeyProvisioningRequests(input?: ListDocumentKeyProvisioningRequestsInput): Promise<DocumentKeyProvisioningRequest[]>
+  beginDocumentKeyProvisioning(requestId: string): Promise<BegunDocumentKeyProvisioningRequest | DocumentKeyProvisioningStatusRecord>
+  completeDocumentKeyProvisioning(input: CompleteDocumentKeyProvisioningInput): Promise<DocumentKeyProvisioningStatusRecord>
+  markDocumentKeyProvisioningFailed(input: { requestId: string; errorCode: SafeKeyProvisioningErrorCode }): Promise<DocumentKeyProvisioningStatusRecord>
   revokeDocumentInvitationLink(invitationId: string): Promise<void>
   setDocumentMemberRole(input: DocumentMemberRoleChange): Promise<void>
   revokeDocumentMember(memberId: string): Promise<RevokedDocumentMember>
@@ -143,6 +190,70 @@ export function createInvitationRepository(sb: SupabaseClient): InvitationReposi
       if (error) throw error
       return toAcceptedDocumentInvitation(data)
     },
+    registerUserKeyMaterial: async (input) => {
+      const { data, error } = await sb.rpc('register_user_key_material', {
+        p_device_id: input.deviceId,
+        p_wrapping_alg: input.wrappingAlg ?? 'RSA-OAEP-256',
+        p_public_key_jwk: input.publicKeyJwk,
+        p_material_version: input.materialVersion ?? 1,
+      })
+      if (error) throw error
+      return toUserKeyMaterialRegistration(data)
+    },
+    requestDocumentKeyProvisioning: async (input) => {
+      const { data, error } = await sb.rpc('request_document_key_provisioning', {
+        p_document_id: input.documentId,
+        p_device_id: input.deviceId,
+        p_key_version: input.keyVersion ?? 1,
+      })
+      if (error) throw error
+      return toDocumentKeyProvisioningStatus(data, input.documentId, input.deviceId)
+    },
+    getMyDocumentKeyProvisioningStatus: async (input) => {
+      const { data, error } = await sb.rpc('get_my_document_key_provisioning_status', {
+        p_document_id: input.documentId,
+        p_device_id: input.deviceId,
+        p_key_version: input.keyVersion ?? 1,
+      })
+      if (error) throw error
+      return toDocumentKeyProvisioningStatus(data, input.documentId, input.deviceId)
+    },
+    listPendingDocumentKeyProvisioningRequests: async (input = {}) => {
+      const { data, error } = await sb.rpc('list_pending_document_key_provisioning_requests', {
+        p_document_id: input.documentId ?? null,
+        p_limit: input.limit ?? 50,
+      })
+      if (error) throw error
+      const rows = Array.isArray(data) ? data : []
+      return sortKeyProvisioningRequests(rows.map(toDocumentKeyProvisioningRequest))
+    },
+    beginDocumentKeyProvisioning: async (requestId) => {
+      const { data, error } = await sb.rpc('begin_document_key_provisioning', {
+        p_request_id: requestId,
+      })
+      if (error) throw error
+      const row = expectRecord(data)
+      if (row.status === 'processing') return toBegunDocumentKeyProvisioningRequest(row)
+      return toDocumentKeyProvisioningStatus(row, nullableString(row.document_id) ?? '', nullableString(row.device_id))
+    },
+    completeDocumentKeyProvisioning: async (input) => {
+      const { data, error } = await sb.rpc('complete_document_key_provisioning', {
+        p_request_id: input.requestId,
+        p_wrapped_dek: input.wrappedDek,
+        p_wrapping_alg: input.wrappingAlg ?? 'RSA-OAEP-256',
+        p_key_version: input.keyVersion ?? null,
+      })
+      if (error) throw error
+      return toDocumentKeyProvisioningStatus(data, '', null)
+    },
+    markDocumentKeyProvisioningFailed: async (input) => {
+      const { data, error } = await sb.rpc('mark_document_key_provisioning_failed', {
+        p_request_id: input.requestId,
+        p_error_code: input.errorCode,
+      })
+      if (error) throw error
+      return toDocumentKeyProvisioningStatus(data, '', null)
+    },
     revokeDocumentInvitationLink: async (invitationId) => {
       const { error } = await sb.rpc('revoke_document_invitation_link', {
         p_invitation_id: invitationId,
@@ -164,16 +275,12 @@ export function createInvitationRepository(sb: SupabaseClient): InvitationReposi
       return toRevokedDocumentMember(data)
     },
     provisionAcceptedMemberKey: async (input) => {
-      const { error } = await sb
-        .from('document_keys')
-        .upsert({
-          document_id: input.documentId,
-          user_id: input.userId,
-          key_version: input.keyVersion,
-          wrapped_dek: input.wrappedDek,
-          wrapping_alg: input.wrappingAlg ?? 'AES-KW-256',
-          revoked_at: null,
-        }, { onConflict: 'document_id,user_id,key_version' })
+      const { error } = await sb.rpc('complete_document_key_provisioning', {
+        p_request_id: input.requestId,
+        p_wrapped_dek: input.wrappedDek,
+        p_wrapping_alg: input.wrappingAlg ?? 'RSA-OAEP-256',
+        p_key_version: input.keyVersion,
+      })
       if (error) throw error
     },
     createDocumentShareToken: async (input) => {
@@ -312,7 +419,79 @@ function toAcceptedDocumentInvitation(value: unknown): AcceptedDocumentInvitatio
     status: 'accepted',
     alreadyMember: Boolean(row.already_member),
     requiresKeyProvisioning: Boolean(row.requires_key_provisioning),
+    keyProvisioningStatus: row.key_provisioning_status
+      ? createKeyProvisioningStatusRecord({
+        documentId: expectString(row.document_id),
+        deviceId: null,
+        status: row.key_provisioning_status,
+        hasActiveKey: !Boolean(row.requires_key_provisioning),
+      }).status
+      : (Boolean(row.requires_key_provisioning) ? 'pending' : 'completed'),
+    queuedRequestCount: nullableNumber(row.queued_request_count) ?? 0,
   }
+}
+
+function toUserKeyMaterialRegistration(value: unknown): UserKeyMaterialRegistration {
+  const row = expectRecord(value)
+  return {
+    id: expectString(row.id),
+    userId: expectString(row.user_id),
+    deviceId: expectString(row.device_id),
+    wrappingAlg: expectRsaWrappingAlg(row.wrapping_alg),
+    materialVersion: expectNumber(row.material_version),
+    status: expectMaterialStatus(row.status),
+    queuedRequestCount: nullableNumber(row.queued_request_count) ?? 0,
+    createdAt: expectString(row.created_at),
+    updatedAt: expectString(row.updated_at),
+  }
+}
+
+function toDocumentKeyProvisioningStatus(
+  value: unknown,
+  fallbackDocumentId: string,
+  fallbackDeviceId: string | null,
+): DocumentKeyProvisioningStatusRecord {
+  const row = expectRecord(value)
+  return createKeyProvisioningStatusRecord({
+    id: nullableString(row.id) ?? undefined,
+    documentId: nullableString(row.document_id) ?? fallbackDocumentId,
+    userId: nullableString(row.user_id) ?? undefined,
+    deviceId: nullableString(row.device_id) ?? fallbackDeviceId,
+    keyVersion: nullableNumber(row.key_version) ?? 1,
+    status: row.status,
+    errorCode: row.error_code,
+    attemptCount: nullableNumber(row.attempt_count) ?? 0,
+    hasActiveKey: row.has_active_key == null ? undefined : Boolean(row.has_active_key),
+    requestedAt: nullableString(row.requested_at),
+    updatedAt: nullableString(row.updated_at),
+  })
+}
+
+function toDocumentKeyProvisioningRequest(value: unknown): DocumentKeyProvisioningRequest {
+  const row = expectRecord(value)
+  return {
+    id: expectString(row.id),
+    documentId: expectString(row.document_id),
+    userId: expectString(row.user_id),
+    deviceId: expectString(row.device_id),
+    materialId: expectString(row.material_id),
+    wrappingAlg: expectRsaWrappingAlg(row.wrapping_alg),
+    publicKeyJwk: expectJsonObject(row.public_key_jwk),
+    materialVersion: expectNumber(row.material_version),
+    memberRole: expectMemberRole(row.member_role),
+    status: expectProcessableProvisioningStatus(row.status),
+    keyVersion: expectNumber(row.key_version),
+    errorCode: row.error_code == null ? null : sanitizeKeyProvisioningErrorCode(row.error_code),
+    attemptCount: expectNumber(row.attempt_count),
+    requestedAt: expectString(row.requested_at),
+    updatedAt: expectString(row.updated_at),
+  }
+}
+
+function toBegunDocumentKeyProvisioningRequest(value: unknown): BegunDocumentKeyProvisioningRequest {
+  const request = toDocumentKeyProvisioningRequest(value)
+  if (request.status !== 'processing') throw new Error('Unexpected key provisioning RPC response.')
+  return request as BegunDocumentKeyProvisioningRequest
 }
 
 function toRevokedDocumentMember(value: unknown): RevokedDocumentMember {
@@ -385,6 +564,33 @@ function nullableNumber(value: unknown): number | null {
 function expectInvitationRole(value: unknown): DocumentInvitationRole {
   if (value === 'editor' || value === 'viewer') return value
   throw new Error('Unexpected invitation role.')
+}
+
+function expectMemberRole(value: unknown): 'owner' | 'editor' | 'viewer' {
+  if (value === 'owner' || value === 'editor' || value === 'viewer') return value
+  throw new Error('Unexpected member role.')
+}
+
+function expectMaterialStatus(value: unknown): 'active' | 'revoked' {
+  if (value === 'active' || value === 'revoked') return value
+  throw new Error('Unexpected key material status.')
+}
+
+function expectRsaWrappingAlg(value: unknown): 'RSA-OAEP-256' {
+  if (value === 'RSA-OAEP-256') return value
+  throw new Error('Unexpected key wrapping algorithm.')
+}
+
+function expectProcessableProvisioningStatus(value: unknown): 'pending' | 'failed' | 'processing' {
+  if (value === 'pending' || value === 'failed' || value === 'processing') return value
+  throw new Error('Unexpected key provisioning status.')
+}
+
+function expectJsonObject(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Unexpected key material payload.')
+  }
+  return value as Record<string, unknown>
 }
 
 function expectShareType(value: unknown): DocumentShareType {
