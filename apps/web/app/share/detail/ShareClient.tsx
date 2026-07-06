@@ -7,6 +7,7 @@ import { css } from 'styled-system/css'
 import { Globe, Lock, Calendar, MapPin, Clock, BadgeCheck, ChevronDown, ChevronUp } from 'lucide-react'
 import LocationTooltip from '@/components/common/LocationTooltip'
 import UrlPreviewCard from '@/components/common/UrlPreviewCard'
+import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
 
 function SharePlanCard({ plan, formatLocalTime, formatDate }: any) {
     const [isRefsOpen, setIsRefsOpen] = useState(false)
@@ -64,7 +65,7 @@ function SharePlanCard({ plan, formatLocalTime, formatDate }: any) {
                             })}
                         >
                             <span className={css({ fontSize: '14px', fontWeight: '700', color: '#4B5563', display: 'flex', alignItems: 'center', gap: '6px' })}>
-                                <Globe size={16} color="#2EC4B6" /> 참고자료 {plan.plan_urls.length}건 확인하기
+                                <Globe size={16} className={css({ color: 'brand.primary' })} /> 참고자료 {plan.plan_urls.length}건 확인하기
                             </span>
                             {isRefsOpen ? <ChevronUp size={16} color="#9CA3AF" /> : <ChevronDown size={16} color="#9CA3AF" />}
                         </button>
@@ -100,36 +101,73 @@ export default function SharePage() {
 
     const fetchShareInfo = useCallback(async () => {
         setLoading(true)
-        // 1. 공유 토큰으로 정보 조회
-        // password_hash 등 민감 컬럼은 클라이언트로 노출하지 않도록 필요한 컬럼만 명시
-        const { data: shareData, error: shareError } = await supabase
+        setError(null)
+        setIsAuthorized(false)
+        setPlans([])
+        try {
+            if (!shareToken) throw new Error('missing token')
+
+            try {
+                const documentSummary = await createInvitationRepository(supabase).getDocumentShareTokenSummary(shareToken)
+                if (documentSummary) {
+                    const documentShareInfo = {
+                        id: '',
+                        share_token: shareToken,
+                        share_type: documentSummary.shareType,
+                        trip_id: documentSummary.documentId,
+                        expires_at: documentSummary.expiresAt,
+                        source: 'document',
+                    }
+                    setShareInfo(documentShareInfo)
+                    const { data: tripData } = await supabase.from('trips').select('*').eq('id', documentSummary.documentId).maybeSingle()
+                    setTrip(tripData ?? {
+                        id: documentSummary.documentId,
+                        destination: documentSummary.destination,
+                        start_date: documentSummary.startDate,
+                        end_date: documentSummary.endDate,
+                    })
+                    if (documentSummary.shareType === 'public' || isAuthorized) {
+                        setIsAuthorized(true)
+                        await fetchDocumentSharePlans(shareToken)
+                    }
+                    return
+                }
+            } catch {
+                // Document registry miss or unavailable: keep legacy share links working.
+            }
+
+            const shareData = await fetchLegacyShareInfo(shareToken)
+            if (!shareData) throw new Error('invalid token')
+            setShareInfo({ ...shareData, source: 'legacy' })
+
+            let currentTrip: any = shareData.trips
+            if (!currentTrip) {
+                const { data: tripData } = await supabase.from('trips').select('*').eq('id', shareData.trip_id).single()
+                currentTrip = tripData
+            }
+            setTrip(currentTrip)
+
+            if (shareData.share_type === 'public' || isAuthorized) {
+                setIsAuthorized(true)
+                await fetchPlans(shareData.trip_id)
+            }
+        } catch {
+            setError('유효하지 않거나 만료된 공유 링크입니다.')
+        } finally {
+            setLoading(false)
+        }
+    }, [shareToken, supabase])
+
+    const fetchLegacyShareInfo = async (token: string) => {
+        const { data, error } = await supabase
             .from('trip_shares')
             .select('id, share_token, share_type, trip_id, expires_at, trips(*)')
-            .eq('share_token', shareToken ?? '')
+            .eq('share_token', token)
             .single()
 
-        if (shareError || !shareData) {
-            setError('유효하지 않거나 만료된 공유 링크입니다.')
-            setLoading(false)
-            return
-        }
-
-        setShareInfo(shareData)
-
-        let currentTrip: any = shareData.trips
-        if (!currentTrip) {
-            const { data: tripData } = await supabase.from('trips').select('*').eq('id', shareData.trip_id).single()
-            currentTrip = tripData
-        }
-        setTrip(currentTrip)
-
-        // 2. 공개 타입이면 바로 일정 조회
-        if (shareData.share_type === 'public' || isAuthorized) {
-            setIsAuthorized(true)
-            await fetchPlans(shareData.trip_id)
-        }
-        setLoading(false)
-    }, [shareToken, supabase])
+        if (error || !data) return null
+        return data
+    }
 
     const fetchPlans = async (tripId: string) => {
         const { data } = await supabase
@@ -141,8 +179,33 @@ export default function SharePage() {
         if (data) setPlans(data)
     }
 
+    const fetchDocumentSharePlans = async (token: string, password?: string) => {
+        const data = await createInvitationRepository(supabase).getDocumentShareTokenPlans({
+            shareToken: token,
+            password,
+        })
+        setPlans(data as any[])
+    }
+
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
+        if (shareInfo?.source === 'document') {
+            try {
+                const summary = await createInvitationRepository(supabase).verifyDocumentShareToken({
+                    shareToken: shareToken ?? '',
+                    password: passwordInput,
+                })
+                if (!summary) {
+                    alert('비밀번호가 일치하지 않습니다.')
+                    return
+                }
+                setIsAuthorized(true)
+                await fetchDocumentSharePlans(shareToken ?? '', passwordInput)
+            } catch {
+                alert('비밀번호가 일치하지 않습니다.')
+            }
+            return
+        }
         // 비밀번호 검증은 서버 라우트에서 수행 (password_hash는 클라이언트로 노출되지 않음)
         try {
             const res = await fetch('/api/share/verify', {
@@ -191,20 +254,20 @@ export default function SharePage() {
 
     if (shareInfo?.share_type === 'password' && !isAuthorized) {
         return (
-            <div className={css({ display: 'flex', h: '100vh', alignItems: 'center', justifyContent: 'center', bg: '#f8f9fa' })}>
+            <div className={css({ display: 'flex', h: '100vh', alignItems: 'center', justifyContent: 'center', bg: 'bg.softCotton' })}>
                 <div className={css({ bg: 'white', p: '40px', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)', w: '100%', maxW: '400px', textAlign: 'center' })}>
-                    <Lock size={48} className={css({ mx: 'auto', mb: '20px', color: '#2EC4B6' })} />
-                    <h1 className={css({ fontSize: '20px', fontWeight: '700', mb: '8px' })}>비밀번호 보호됨</h1>
-                    <p className={css({ fontSize: '14px', color: '#666', mb: '24px' })}>이 일정을 보려면 비밀번호를 입력해주세요.</p>
+                    <Lock size={48} className={css({ mx: 'auto', mb: '20px', color: 'brand.primary' })} />
+                    <h1 className={css({ fontSize: '20px', fontWeight: '700', mb: '8px', color: 'brand.ink' })}>비밀번호 보호됨</h1>
+                    <p className={css({ fontSize: '14px', color: 'brand.muted', mb: '24px' })}>이 일정을 보려면 비밀번호를 입력해주세요.</p>
                     <form onSubmit={handlePasswordSubmit}>
                         <input
                             type="password"
                             value={passwordInput}
                             onChange={e => setPasswordInput(e.target.value)}
                             placeholder="비밀번호 입력"
-                            className={css({ w: '100%', p: '14px', bg: '#f1f3f4', border: 'none', borderRadius: '16px', mb: '16px', outline: 'none' })}
+                            className={css({ w: '100%', p: '14px', bg: 'bg.softCotton', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '16px', mb: '16px', outline: 'none' })}
                         />
-                        <button className={css({ w: '100%', p: '14px', bg: '#2EC4B6', color: 'white', borderRadius: '16px', fontWeight: 'bold', boxShadow: '0 8px 20px rgba(46, 196, 182, 0.2)' })}>확인</button>
+                        <button className={css({ w: '100%', p: '14px', bg: 'brand.primary', color: 'white', borderRadius: '16px', fontWeight: 'bold', boxShadow: 'shadow.primary' })}>확인</button>
                     </form>
                 </div>
             </div>
@@ -263,8 +326,9 @@ export default function SharePage() {
                             <div className={css({
                                 display: 'flex', alignItems: 'center', gap: '8px', 
                                 pb: '12px', mb: '4px', 
-                                borderBottom: '2px solid #2EC4B6',
-                                color: '#2EC4B6', fontWeight: '700', fontSize: '18px'
+                                borderBottom: '2px solid',
+                                borderColor: 'brand.primary',
+                                color: 'brand.primary', fontWeight: '700', fontSize: '18px'
                             })}>
                                 <Calendar size={20} />
                                 {dayGroup.label}
@@ -283,7 +347,7 @@ export default function SharePage() {
                 <a href="/" className={css({ 
                     px: '32px', py: '16px', bg: 'brand.primary', color: 'white', borderRadius: '16px', 
                     fontWeight: '700', textDecoration: 'none', display: 'inline-block',
-                    boxShadow: '0 8px 16px rgba(46, 196, 182, 0.2)',
+                    boxShadow: 'shadow.primary',
                     transition: 'all 0.2s',
                     _active: { transform: 'scale(0.96)' }
                 })}>온여정 시작하기</a>

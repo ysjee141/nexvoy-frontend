@@ -18,6 +18,7 @@
     "./local-first/guestPromotion": "./src/local-first/guestPromotion.ts",
     "./local-first/materialize": "./src/local-first/materialize.ts",
     "./local-first/migrations": "./src/local-first/migrations.ts",
+    "./local-first/permissions": "./src/local-first/permissions.ts",
     "./local-first/tombstone": "./src/local-first/tombstone.ts",
     "./local-first/tripDocument": "./src/local-first/tripDocument.ts",
     "./local-first/yjsTripDocument": "./src/local-first/yjsTripDocument.ts",
@@ -28,14 +29,16 @@
     "./sync/encryption": "./src/sync/encryption.ts",
     "./sync/iceServers": "./src/sync/iceServers.ts",
     "./sync/restore": "./src/sync/restore.ts",
+    "./sync/signalingPermissions": "./src/sync/signalingPermissions.ts",
     "./sync/syncState": "./src/sync/syncState.ts",
     "./supabase/backupRepository": "./src/supabase/backupRepository.ts",
+    "./supabase/invitationRepository": "./src/supabase/invitationRepository.ts",
     "./supabase/legacyRepository": "./src/supabase/legacyRepository.ts",
     "./utils/date": "./src/utils/date.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/local-first/__tests__/guestIdentity.test.ts && tsx src/local-first/__tests__/guestPromotion.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/checklistMismatchDetector.test.ts && tsx src/repositories/__tests__/dualWriteChecklistRepository.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/iceServers.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
+    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/local-first/__tests__/guestIdentity.test.ts && tsx src/local-first/__tests__/guestPromotion.test.ts && tsx src/local-first/__tests__/permissions.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/checklistMismatchDetector.test.ts && tsx src/repositories/__tests__/dualWriteChecklistRepository.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/iceServers.test.ts && tsx src/sync/__tests__/signalingPermissions.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

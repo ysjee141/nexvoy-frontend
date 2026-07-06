@@ -1,43 +1,45 @@
-# Walkthrough: TASK-012 Guest Auth Promotion
+# Walkthrough: TASK-013 Invitation Permission Registry
 
 ## Summary
 
-로그인 없이 만든 Web local-first guest document를 Supabase Auth 사용자에게 승격하는 흐름을 추가했다. guest/auth user namespace를 분리하고, 로그인 성공 후 owner를 auth user로 바꾼 뒤 encrypted snapshot과 document key를 업로드한다.
+딥 링크 초대와 초대 코드 fallback을 Supabase document registry 기반으로 구현했다. `document_invitation_links`, `document_share_tokens`, `document_members`를 authority로 두고, Web/Mobile 초대 생성·수락·공유 화면은 document RPC를 우선 사용하며 legacy token은 fallback으로 유지한다.
 
 ## Artifacts
 
-- `docs/refactor/tasks/TASK-012-guest-auth-promotion.md`
-- `docs/refactor/adrs/ADR-007-auth-identity-and-delayed-auth.md`
+- `docs/refactor/tasks/TASK-013-invitation-permission-registry.md`
+- `docs/refactor/adrs/ADR-008-invitation-and-permission-registry.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
-- GitHub Issue: `#281`
+- GitHub Issue: `#283`
 
 ## Key Changes
 
-- `packages/core/src/local-first/guestIdentity.ts`에 guest owner id, owner namespace, login-required guard helper를 추가했다.
-- `packages/core/src/local-first/guestPromotion.ts`에 guest document owner/member/reference rewrite helper를 추가했다.
-- `apps/web/lib/local-first/indexedDbStore.ts`는 `guest:*` / `user:*` namespace별 local document 격리를 지원한다.
-- `apps/web/lib/local-first/ownerNamespace.ts`는 Web guest owner id와 auth user namespace를 관리한다.
-- `apps/web/lib/local-first/guestPromotionService.ts`는 로그인 후 guest documents를 auth namespace로 승격하고 encrypted snapshot + `document_keys`를 업로드한다.
-- Web local-first checklist repository와 dual-write document writer는 guest/auth owner context를 사용한다.
-- 로그인, OAuth 후 Home 진입, auth state 변경에서 best-effort promotion을 재시도한다.
-- 로그아웃/회원 탈퇴 시 guest namespace를 포함한 local-first documents를 삭제한다.
-- 같은 `documentId`가 이미 remote/auth namespace에 있으면 덮어쓰지 않고 conflict marker와 안내를 남긴다.
-- `docs/refactor/tasks/README.md`를 갱신해 다음 task를 `TASK-013: Invitation Permission Registry`로 조정했다.
+- `supabase/migrations/20260706000001_document_invitation_permission_registry.sql`에 invitation/share registry, hash-only token/code 저장, RLS, RPC를 추가했다.
+- registry table 직접 write는 닫고, 생성/수락/폐기/검증은 `SECURITY DEFINER` RPC 전용 경로로 제한했다.
+- 초대 코드 정규화는 Web/Mobile/SQL 모두 영숫자 대문자 기준으로 통일했다.
+- `document_share_tokens` password는 salted `crypt()` hash로 저장하고, 검증된 share token으로 plans/plan_urls를 조회하는 RPC를 추가했다.
+- `packages/core/src/local-first/permissions.ts`, `packages/core/src/sync/signalingPermissions.ts`, `packages/core/src/supabase/invitationRepository.ts`를 추가했다.
+- Web `CollaboratorModal`, `/join`, `ShareModal`, `/share/detail`을 document registry 우선 + legacy fallback으로 연결했다.
+- Mobile `/join`, login `next` 복귀, trip detail 초대/공유 UI를 document registry wrapper로 연결했다.
+- 기존 `trip_members` role/revoke 함수는 bridge RPC를 통해 `document_members`와 `document_keys.revoked_at`을 함께 동기화한다.
+- `docs/refactor/tasks/README.md`를 갱신해 다음 task를 `TASK-014: Notification and Observability`로 조정했다.
 
 ## Verification
 
 - `pnpm --filter @nexvoy/core test` 성공
 - `pnpm typecheck` 성공
 - `pnpm build` 성공
+- `pnpm build:mobile` 성공
+- reviewer 최종 PASS
+- qa-engineer 최종 PASS
 
 ## Rollback
 
-문제 발생 시 guest promotion trigger를 제거하고 local-first feature flag를 legacy mode로 유지하면 된다. 코드 롤백은 core guest identity/promotion helper, Web namespace store/promotion service, auth cleanup hook 변경분을 제거하면 된다.
+문제 발생 시 신규 registry RPC 사용을 중단하고 기존 legacy invitation/share flow를 유지한다. 코드 롤백은 신규 migration, core permission/signaling/invitation wrapper, Web/Mobile join/share/invite 변경분을 제거하면 된다. 신규 registry rows는 cleanup migration 또는 admin script로 정리한다.
 
 ## Notes
 
-- ADR-007 Option B 기준으로 Supabase anonymous auth는 사용하지 않는다.
-- Guest document는 서버에 쓰지 않고 local only로 유지하다가 로그인 후 auth user owner로 승격한다.
-- 승격 완료 조건은 encrypted snapshot upload, owner member upsert, `document_keys` upsert 성공이다.
-- 로그아웃/탈퇴 시 guest namespace를 포함한 기기 내 local-first documents를 삭제한다.
-- Promotion conflict나 error marker에는 document content, item name, email, CRDT blob을 남기지 않는다.
+- 사용자 정책 결정에 따라 초대 생성/폐기는 owner/editor 모두 허용한다.
+- raw token/code/share token은 DB/log/localStorage에 저장하지 않고 생성 직후 UI state 또는 입력값으로만 사용한다.
+- Legacy invitation/share token은 document wrapper miss 시 fallback으로 유지한다.
+- 신규 수락자에게 active wrapped document key가 없으면 `requires_key_provisioning=true`를 반환하고 Web/Mobile UI가 문서 진입을 차단한다.
+- 서버는 raw DEK/KEK를 알 수 없으므로 owner-side key provisioning 계약은 `docs/refactor/adrs/ADR-011-invitation-key-provisioning-strategy.md`와 `docs/refactor/tasks/TASK-015-owner-side-document-key-provisioning.md`로 분리했다.

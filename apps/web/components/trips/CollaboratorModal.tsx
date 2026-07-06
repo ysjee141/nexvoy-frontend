@@ -7,6 +7,7 @@ import { X, UserPlus, Mail, Shield, Eye, Pencil, Trash2, Loader2, CheckCircle2, 
 import { CollaborationService } from '@/services/ExternalApiService'
 import { collaboration } from '@/lib/collaboration'
 import { useScrollLock } from '@/hooks/useScrollLock'
+import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -26,6 +27,14 @@ interface Collaborator {
     role: MemberRole
     joined_at: string
     status: string
+}
+
+interface GeneratedInvitationState {
+    id: string
+    inviteUrl: string
+    inviteCode: string
+    role: 'editor' | 'viewer'
+    expiresAt: string | null
 }
 
 const ROLE_LABELS: Record<MemberRole, string> = {
@@ -50,7 +59,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const [success, setSuccess] = useState('')
     const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
-    const [generatedLink, setGeneratedLink] = useState<string | null>(null)
+    const [generatedInvite, setGeneratedInvite] = useState<GeneratedInvitationState | null>(null)
+    const [revokingInvite, setRevokingInvite] = useState(false)
 
     useScrollLock(isOpen)
 
@@ -65,6 +75,15 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen, tripId])
+
+    useEffect(() => {
+        if (!isOpen) setGeneratedInvite(null)
+    }, [isOpen, tripId])
+
+    const currentMemberRole = currentUserId === ownerId
+        ? 'owner'
+        : collaborators.find(member => member.userId === currentUserId)?.role
+    const canInvite = currentMemberRole === 'owner' || currentMemberRole === 'editor'
 
     const fetchCollaborators = async () => {
         const { data, error } = await supabase
@@ -154,6 +173,50 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         }
     }
 
+    const handleCreateInvitationLink = async () => {
+        setLoading(true)
+        setError('')
+        setSuccess('')
+        try {
+            const repo = createInvitationRepository(supabase)
+            const invitation = await repo.createDocumentInvitationLink({
+                documentId: tripId,
+                role: inviteRole,
+                maxUses: 1,
+            })
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+            setGeneratedInvite({
+                id: invitation.id,
+                inviteUrl: `${appUrl}/join?token=${encodeURIComponent(invitation.token)}`,
+                inviteCode: invitation.inviteCode,
+                role: invitation.role,
+                expiresAt: invitation.expiresAt,
+            })
+        } catch (err: any) {
+            setError(err.message || '초대 링크 생성 중 오류가 발생했습니다.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const handleRevokeInvitation = async () => {
+        if (!generatedInvite || revokingInvite) return
+        if (!confirm('방금 생성한 초대를 폐기하시겠습니까?')) return
+
+        setRevokingInvite(true)
+        setError('')
+        setSuccess('')
+        try {
+            await createInvitationRepository(supabase).revokeDocumentInvitationLink(generatedInvite.id)
+            setGeneratedInvite(null)
+            setSuccess('초대가 폐기되었습니다.')
+        } catch (err: any) {
+            setError(err.message || '초대 폐기 중 오류가 발생했습니다.')
+        } finally {
+            setRevokingInvite(false)
+        }
+    }
+
     if (!isOpen) return null
 
     return (
@@ -181,6 +244,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                 </div>
 
                 <div className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '24px' })}>
+                    {canInvite ? (
                     <form onSubmit={handleInvite} className={css({ display: 'flex', flexDirection: 'column', gap: '10px' })}>
                         <label className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>이메일로 초대하기</label>
                         <div className={css({ display: 'flex', gap: '8px' })}>
@@ -233,30 +297,19 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                         {error && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'brand.error', fontWeight: '600', mt: '4px' })}><AlertCircle size={14} /> {error}</div>}
                         {success && <div className={css({ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'brand.primary', fontWeight: '600', mt: '4px' })}><CheckCircle2 size={14} /> {success}</div>}
                     </form>
+                    ) : (
+                        <div className={css({ p: '14px 16px', bg: 'bg.softCotton', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px', fontSize: '13px', color: 'brand.muted', lineHeight: 1.5 })}>
+                            조회 전용 권한입니다. 초대 생성은 관리자 또는 편집자만 사용할 수 있습니다.
+                        </div>
+                    )}
 
+                    {canInvite && (
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px', pt: '16px', borderTop: '1px solid', borderColor: 'brand.hairline' })}>
                         <label className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>링크로 초대하기</label>
-                        {!generatedLink ? (
+                        {!generatedInvite ? (
                             <button
                                 type="button"
-                                onClick={async () => {
-                                    setLoading(true)
-                                    setError('')
-                                    setSuccess('')
-                                    try {
-                                        const { data, error } = await collaboration.createInvitationLink(tripId)
-                                        if (error || !data) throw new Error(error?.message || '링크 생성에 실패했습니다.')
-                                        
-                                        const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
-                                        setGeneratedLink(`${appUrl}/join?token=${data}`)
-                                    } catch (err: any) {
-                                        if (err.name !== 'AbortError') {
-                                            setError(err.message || '링크 생성 중 오류가 발생했습니다.')
-                                        }
-                                    } finally {
-                                        setLoading(false)
-                                    }
-                                }}
+                                onClick={handleCreateInvitationLink}
                                 disabled={loading}
                                 className={css({
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
@@ -271,18 +324,19 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                 초대 링크 생성
                             </button>
                         ) : (
+                            <div className={css({ display: 'flex', flexDirection: 'column', gap: '10px', p: '12px', bg: 'bg.softCotton', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '12px' })}>
                             <div className={css({ display: 'flex', gap: '8px' })}>
-                                <div className={css({ 
-                                    flex: 1, p: '12px 14px', bg: 'bg.softCotton', border: '1.5px solid', borderColor: 'brand.hairline', borderRadius: '12px',
+                                <div className={css({
+                                    flex: 1, p: '12px 14px', bg: 'white', border: '1.5px solid', borderColor: 'brand.hairline', borderRadius: '12px',
                                     fontSize: '14px', color: 'brand.ink', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                     display: 'flex', alignItems: 'center'
                                 })}>
-                                    {generatedLink}
+                                    {generatedInvite.inviteUrl}
                                 </div>
                                 <button
                                     type="button"
                                     onClick={async () => {
-                                        await navigator.clipboard.writeText(generatedLink)
+                                        await navigator.clipboard.writeText(generatedInvite.inviteUrl)
                                         setSuccess('초대 링크가 클립보드에 복사되었습니다.')
                                         setTimeout(() => setSuccess(''), 3000)
                                     }}
@@ -303,13 +357,13 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                             if (navigator.share) {
                                                 await navigator.share({
                                                     title: `${tripTitle} 여정에 초대합니다`,
-                                                    text: `함께 여정을 계획해보세요! 링크는 6시간 동안 유효합니다.`,
-                                                    url: generatedLink
+                                                    text: `함께 여정을 계획해보세요. 링크가 열리지 않으면 초대 코드 ${generatedInvite.inviteCode}를 입력해 주세요.`,
+                                                    url: generatedInvite.inviteUrl
                                                 })
                                                 setSuccess('초대 링크가 공유되었습니다.')
                                                 setTimeout(() => setSuccess(''), 3000)
                                             } else {
-                                                await navigator.clipboard.writeText(generatedLink)
+                                                await navigator.clipboard.writeText(`${generatedInvite.inviteUrl}\n초대 코드: ${generatedInvite.inviteCode}`)
                                                 setSuccess('초대 링크가 클립보드에 복사되었습니다.')
                                                 setTimeout(() => setSuccess(''), 3000)
                                             }
@@ -329,8 +383,39 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                     <Share2 size={18} />
                                 </button>
                             </div>
+                            <div className={css({ display: 'flex', alignItems: 'center', gap: '8px' })}>
+                                <div className={css({ flex: 1, p: '10px 12px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px' })}>
+                                    <div className={css({ fontSize: '11px', color: 'brand.muted', fontWeight: '700', mb: '4px' })}>초대 코드</div>
+                                    <div aria-label={`초대 코드 ${generatedInvite.inviteCode.replaceAll('-', ' ')}`} className={css({ fontSize: '18px', fontWeight: '800', letterSpacing: '1px', color: 'brand.ink' })}>{generatedInvite.inviteCode}</div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={async () => {
+                                        await navigator.clipboard.writeText(generatedInvite.inviteCode)
+                                        setSuccess('초대 코드가 클립보드에 복사되었습니다.')
+                                        setTimeout(() => setSuccess(''), 3000)
+                                    }}
+                                    className={css({ p: '12px', bg: 'white', color: 'brand.ink', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', cursor: 'pointer' })}
+                                    title="초대 코드 복사"
+                                >
+                                    <Copy size={18} />
+                                </button>
+                            </div>
+                            <div className={css({ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', fontSize: '12px', color: 'brand.muted' })}>
+                                <span>권한: {ROLE_LABELS[generatedInvite.role]}{generatedInvite.expiresAt ? ` · 만료: ${new Date(generatedInvite.expiresAt).toLocaleString('ko-KR')}` : ''}</span>
+                                <button
+                                    type="button"
+                                    onClick={handleRevokeInvitation}
+                                    disabled={revokingInvite}
+                                    className={css({ bg: 'transparent', border: 'none', color: 'brand.error', fontWeight: '700', cursor: 'pointer', _disabled: { opacity: 0.5 } })}
+                                >
+                                    {revokingInvite ? '폐기 중...' : '생성한 초대 폐기'}
+                                </button>
+                            </div>
+                            </div>
                         )}
                     </div>
+                    )}
 
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>참여 중인 멤버 ({collaborators.length})</h3>
