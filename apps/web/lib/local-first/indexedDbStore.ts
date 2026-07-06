@@ -5,25 +5,33 @@ const BROADCAST_CHANNEL_NAME = 'onvoy-local-first-checklist-spike'
 
 export interface StoredTripDocumentUpdate {
   id: string
+  namespace?: string
+  documentId?: string
   update: ArrayBuffer
   updatedAt: string
 }
 
-export async function loadTripDocumentUpdate(documentId: string): Promise<Uint8Array | null> {
+export interface TripDocumentStoreKey {
+  namespace: string
+  documentId: string
+}
+
+export async function loadTripDocumentUpdate(input: string | TripDocumentStoreKey): Promise<Uint8Array | null> {
   if (!canUseIndexedDb()) return null
+  const key = normalizeStoreKey(input)
   const db = await openDatabase()
   const row = await runTransaction<StoredTripDocumentUpdate | undefined>(
     db,
     TRIP_DOCUMENT_STORE,
     'readonly',
-    (store) => store.get(documentId),
+    (store) => store.get(key.id),
   )
   db.close()
 
   return row ? new Uint8Array(row.update) : null
 }
 
-export async function loadAllTripDocumentUpdates(): Promise<StoredTripDocumentUpdate[]> {
+export async function loadAllTripDocumentUpdates(namespace?: string): Promise<StoredTripDocumentUpdate[]> {
   if (!canUseIndexedDb()) return []
   const db = await openDatabase()
   const rows = await runTransaction<StoredTripDocumentUpdate[]>(
@@ -34,27 +42,74 @@ export async function loadAllTripDocumentUpdates(): Promise<StoredTripDocumentUp
   )
   db.close()
 
-  return rows
+  return namespace
+    ? rows.filter((row) => row.namespace === namespace)
+    : rows
 }
 
 export async function saveTripDocumentUpdate(
-  documentId: string,
+  input: string | TripDocumentStoreKey,
   update: Uint8Array,
 ): Promise<void> {
   if (!canUseIndexedDb()) return
+  const key = normalizeStoreKey(input)
   const db = await openDatabase()
   await runTransaction(
     db,
     TRIP_DOCUMENT_STORE,
     'readwrite',
     (store) => store.put({
-      id: documentId,
+      id: key.id,
+      namespace: key.namespace,
+      documentId: key.documentId,
       update: toStandaloneArrayBuffer(update),
       updatedAt: new Date().toISOString(),
     } satisfies StoredTripDocumentUpdate),
   )
   db.close()
-  notifyTripDocumentUpdated(documentId)
+  notifyTripDocumentUpdated(key.documentId)
+}
+
+export async function deleteTripDocumentUpdate(input: string | TripDocumentStoreKey): Promise<void> {
+  if (!canUseIndexedDb()) return
+  const key = normalizeStoreKey(input)
+  const db = await openDatabase()
+  await runTransaction(
+    db,
+    TRIP_DOCUMENT_STORE,
+    'readwrite',
+    (store) => store.delete(key.id),
+  )
+  db.close()
+  notifyTripDocumentUpdated(key.documentId)
+}
+
+export async function deleteTripDocumentNamespace(namespace: string): Promise<void> {
+  if (!canUseIndexedDb()) return
+  const rows = await loadAllTripDocumentUpdates(namespace)
+  const db = await openDatabase()
+  await new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(TRIP_DOCUMENT_STORE, 'readwrite')
+    const store = transaction.objectStore(TRIP_DOCUMENT_STORE)
+    for (const row of rows) {
+      store.delete(row.id)
+    }
+    transaction.oncomplete = () => resolve()
+    transaction.onerror = () => reject(transaction.error)
+  })
+  db.close()
+}
+
+export async function deleteAllTripDocumentNamespaces(): Promise<void> {
+  if (!canUseIndexedDb()) return
+  const db = await openDatabase()
+  await runTransaction(
+    db,
+    TRIP_DOCUMENT_STORE,
+    'readwrite',
+    (store) => store.clear(),
+  )
+  db.close()
 }
 
 export function subscribeToTripDocumentUpdates(
@@ -90,6 +145,25 @@ function notifyTripDocumentUpdated(documentId: string): void {
     const channel = new BroadcastChannel(BROADCAST_CHANNEL_NAME)
     channel.postMessage({ documentId })
     channel.close()
+  }
+}
+
+function normalizeStoreKey(input: string | TripDocumentStoreKey): {
+  id: string
+  namespace: string
+  documentId: string
+} {
+  if (typeof input === 'string') {
+    return {
+      id: input,
+      namespace: 'legacy',
+      documentId: input,
+    }
+  }
+  return {
+    id: `${input.namespace}:${input.documentId}`,
+    namespace: input.namespace,
+    documentId: input.documentId,
   }
 }
 

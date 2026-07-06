@@ -10,6 +10,7 @@ import { LogOut, Home, User, BookOpen, LogIn, UserPlus, ListTodo, ChevronLeft, C
 import { useUIStore } from '@/stores/useUIStore'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CacheUtil } from '@/lib/cache'
+import { clearAllLocalFirstDocuments } from '@/lib/local-first/localDocumentCleanup'
 import TripSwitcherModal from '@/components/trips/TripSwitcherModal'
 import { useBugReport } from '@/hooks/useBugReport'
 import BugReportModal from '../profile/BugReportModal'
@@ -88,6 +89,7 @@ export default function Navbar() {
                 await CacheUtil.setAuthUser(currentUser)
             } else if (event === 'SIGNED_OUT') {
                 // 명시적 로그아웃 시에만 캐시 정리
+                await clearAllLocalFirstDocuments()
                 await CacheUtil.clear()
             }
         })
@@ -102,6 +104,7 @@ export default function Navbar() {
 
     const handleSignOut = async () => {
         await supabase.auth.signOut()
+        await clearAllLocalFirstDocuments()
         await CacheUtil.clear()
         router.push('/')
         router.refresh()

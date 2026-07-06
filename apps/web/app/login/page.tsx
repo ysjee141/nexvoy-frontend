@@ -9,6 +9,7 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { LogIn, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react'
 import SocialLoginButtons from '@/components/auth/SocialLoginButtons'
+import { promotePendingGuestDocuments } from '@/lib/local-first/guestPromotionService'
 
 function LoginForm() {
     const router = useRouter()
@@ -29,8 +30,17 @@ function LoginForm() {
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
             if (event === 'SIGNED_IN' && session) {
                 console.log('[Login] Session detected, redirecting to home...')
-                router.push(nextUrl)
-                router.refresh()
+                void promotePendingGuestDocuments(supabase).then((result) => {
+                    if (result.conflicts > 0) {
+                        alert('이미 계정에 연결된 같은 여행 문서가 있어, 게스트 문서는 덮어쓰지 않고 보관했어요.')
+                    }
+                    if (result.failed > 0) {
+                        alert('게스트 문서를 계정에 연결하는 중 일부 백업이 완료되지 않았어요. 다음 로그인 때 다시 시도할게요.')
+                    }
+                }).finally(() => {
+                    router.push(nextUrl)
+                    router.refresh()
+                })
             }
         })
         return () => subscription.unsubscribe()
@@ -65,6 +75,13 @@ function LoginForm() {
                 localStorage.setItem('rememberedEmail', email)
             } else {
                 localStorage.removeItem('rememberedEmail')
+            }
+            const promotionResult = await promotePendingGuestDocuments(supabase)
+            if (promotionResult.conflicts > 0) {
+                alert('이미 계정에 연결된 같은 여행 문서가 있어, 게스트 문서는 덮어쓰지 않고 보관했어요.')
+            }
+            if (promotionResult.failed > 0) {
+                alert('게스트 문서를 계정에 연결하는 중 일부 백업이 완료되지 않았어요. 다음 로그인 때 다시 시도할게요.')
             }
             router.push(nextUrl)
             router.refresh()

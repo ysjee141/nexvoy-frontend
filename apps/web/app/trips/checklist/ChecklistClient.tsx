@@ -582,9 +582,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
         // Optimistic UI update
         setItems(prev => prev.map((item: any) => item.id === itemId ? { ...item, is_checked: !currentStatus } : item))
 
-        if (item) {
-            analytics.logChecklistCheck(item.item_name, !currentStatus)
-        }
+        analytics.logChecklistCheck(!currentStatus)
 
         try {
             await repositories.checklists.toggleItem(itemId, !currentStatus)

@@ -32,8 +32,7 @@ import {
   loadTripDocumentUpdate,
   saveTripDocumentUpdate,
 } from './indexedDbStore'
-
-const SPIKE_USER_ID = 'local-first-spike-user'
+import { resolveWebOwnerContext, type WebOwnerContext } from './ownerNamespace'
 
 export function createWebLocalFirstChecklistRepository(
   supabase: SupabaseClient,
@@ -41,10 +40,11 @@ export function createWebLocalFirstChecklistRepository(
   return {
     getChecklist: (tripId) => getLocalChecklistSnapshot(supabase, tripId),
     createItem: async (checklistId, input) => {
-      const tripId = await resolveTripIdForChecklistId(checklistId)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForChecklistId(ownerContext, checklistId)
       if (!tripId) throw new Error('Local-first checklist id is invalid.')
       let createdItemId = ''
-      const document = await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      const document = await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const now = new Date().toISOString()
         const itemId = createLocalEntityId('item', tripId)
         createdItemId = itemId
@@ -68,9 +68,10 @@ export function createWebLocalFirstChecklistRepository(
       return toMutationResult(document, createdItemId)
     },
     updateItem: async (itemId, input) => {
-      const tripId = await resolveTripIdForItemId(itemId)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForItemId(ownerContext, itemId)
       if (!tripId) throw new Error('Local-first item id is invalid.')
-      const document = await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      const document = await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[itemId]
         if (!item) throw new Error('Local-first checklist item was not found.')
         const now = new Date().toISOString()
@@ -88,9 +89,10 @@ export function createWebLocalFirstChecklistRepository(
       return toMutationResult(document, itemId)
     },
     deleteItem: async (itemId) => {
-      const tripId = await resolveTripIdForItemId(itemId)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForItemId(ownerContext, itemId)
       if (!tripId) throw new Error('Local-first item id is invalid.')
-      await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const now = new Date().toISOString()
         tripDocument.tombstones[`tombstone:${itemId}`] = {
           id: `tombstone:${itemId}`,
@@ -102,9 +104,10 @@ export function createWebLocalFirstChecklistRepository(
       })
     },
     toggleItem: async (itemId, isChecked) => {
-      const tripId = await resolveTripIdForItemId(itemId)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForItemId(ownerContext, itemId)
       if (!tripId) throw new Error('Local-first item id is invalid.')
-      await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[itemId]
         if (!item) throw new Error('Local-first checklist item was not found.')
         item.legacyIsChecked = isChecked
@@ -112,10 +115,11 @@ export function createWebLocalFirstChecklistRepository(
       })
     },
     toggleItemForUser: async (input) => {
-      const tripId = await resolveTripIdForChecklistId(input.item.checklist_id)
-        ?? await resolveTripIdForItemId(input.item.id)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForChecklistId(ownerContext, input.item.checklist_id)
+        ?? await resolveTripIdForItemId(ownerContext, input.item.id)
       if (!tripId) throw new Error('Local-first item id is invalid.')
-      const document = await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      const document = await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[input.item.id]
         if (!item) throw new Error('Local-first checklist item was not found.')
         const checkId = createUserCheckId(input.item.id, input.currentUserId)
@@ -154,64 +158,69 @@ async function getLocalChecklistSnapshot(
   supabase: SupabaseClient,
   tripId: string,
 ): Promise<ChecklistRepositorySnapshot> {
-  const document = await loadOrCreateTripDocument(supabase, tripId)
+  const ownerContext = await resolveWebOwnerContext(supabase)
+  const document = await loadOrCreateTripDocument(supabase, ownerContext, tripId)
   return toChecklistRepositorySnapshot(document, await getCurrentUserId(supabase))
 }
 
 async function mutateLocalTripDocument(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   tripId: string,
   mutate: (tripDocument: TripDocumentV1) => void,
 ): Promise<TripDocumentV1> {
-  const ydoc = await loadYjsTripDocument(supabase, tripId)
+  const ydoc = await loadYjsTripDocument(supabase, ownerContext, tripId)
   const document = mutateTripDocumentInYjs(ydoc, (tripDocument) => {
     mutate(tripDocument)
   })
-  await saveTripDocumentUpdate(tripId, encodeTripDocumentUpdate(ydoc))
+  await saveTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId }, encodeTripDocumentUpdate(ydoc))
   return document
 }
 
 async function loadOrCreateTripDocument(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   tripId: string,
 ): Promise<TripDocumentV1> {
   const ydoc = createYjsTripDocument()
-  const update = await loadTripDocumentUpdate(tripId)
+  const update = await loadTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId })
   if (update) {
     applyTripDocumentUpdate(ydoc, update)
   }
   const document = readTripDocumentFromYjs(ydoc)
   if (document) return document
 
-  const initialDocument = await createInitialTripDocument(supabase, tripId)
+  const initialDocument = await createInitialTripDocument(supabase, ownerContext, tripId)
   writeTripDocumentToYjs(ydoc, initialDocument)
-  await saveTripDocumentUpdate(tripId, encodeTripDocumentUpdate(ydoc))
+  await saveTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId }, encodeTripDocumentUpdate(ydoc))
   return initialDocument
 }
 
 async function loadYjsTripDocument(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   tripId: string,
 ) {
   const ydoc = createYjsTripDocument()
-  const update = await loadTripDocumentUpdate(tripId)
+  const update = await loadTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId })
   if (update) {
     applyTripDocumentUpdate(ydoc, update)
   } else {
-    writeTripDocumentToYjs(ydoc, await createInitialTripDocument(supabase, tripId))
+    writeTripDocumentToYjs(ydoc, await createInitialTripDocument(supabase, ownerContext, tripId))
   }
   return ydoc
 }
 
 async function createInitialTripDocument(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   tripId: string,
 ): Promise<TripDocumentV1> {
   const hydratedDocument = await hydrateTripDocumentFromLegacyRows(supabase, tripId)
   if (hydratedDocument) return hydratedDocument
 
   const now = new Date().toISOString()
-  const ownerId = await getCurrentUserId(supabase) ?? SPIKE_USER_ID
+  const ownerId = ownerContext.ownerId
   const checklistId = createLocalChecklistId(tripId)
   const today = now.slice(0, 10)
   const tripDocument = createEmptyTripDocumentV1({
@@ -241,6 +250,10 @@ async function createInitialTripDocument(
     email: null,
     createdAt: now,
     updatedAt: now,
+  }
+  if (ownerContext.isGuest) {
+    tripDocument.meta.localOwnerId = ownerId
+    tripDocument.meta.promotionStatus = 'guest'
   }
 
   return tripDocument
@@ -472,20 +485,27 @@ function parseTripIdFromItemId(itemId: string): string | null {
   return tripId || null
 }
 
-async function resolveTripIdForChecklistId(checklistId: string): Promise<string | null> {
+async function resolveTripIdForChecklistId(
+  ownerContext: WebOwnerContext,
+  checklistId: string,
+): Promise<string | null> {
   return parseTripIdFromChecklistId(checklistId)
-    ?? findTripIdInLocalDocuments((tripDocument) => Boolean(tripDocument.checklists[checklistId]))
+    ?? findTripIdInLocalDocuments(ownerContext, (tripDocument) => Boolean(tripDocument.checklists[checklistId]))
 }
 
-async function resolveTripIdForItemId(itemId: string): Promise<string | null> {
+async function resolveTripIdForItemId(
+  ownerContext: WebOwnerContext,
+  itemId: string,
+): Promise<string | null> {
   return parseTripIdFromItemId(itemId)
-    ?? findTripIdInLocalDocuments((tripDocument) => Boolean(tripDocument.checklistItems[itemId]))
+    ?? findTripIdInLocalDocuments(ownerContext, (tripDocument) => Boolean(tripDocument.checklistItems[itemId]))
 }
 
 async function findTripIdInLocalDocuments(
+  ownerContext: WebOwnerContext,
   matches: (tripDocument: TripDocumentV1) => boolean,
 ): Promise<string | null> {
-  const rows = await loadAllTripDocumentUpdates()
+  const rows = await loadAllTripDocumentUpdates(ownerContext.namespace)
   for (const row of rows) {
     const ydoc = createYjsTripDocument()
     applyTripDocumentUpdate(ydoc, new Uint8Array(row.update))

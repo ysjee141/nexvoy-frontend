@@ -14,6 +14,8 @@
     "./domain/collaboration": "./src/domain/collaboration.ts",
     "./domain/legal": "./src/domain/legal.ts",
     "./local-first/documentModel": "./src/local-first/documentModel.ts",
+    "./local-first/guestIdentity": "./src/local-first/guestIdentity.ts",
+    "./local-first/guestPromotion": "./src/local-first/guestPromotion.ts",
     "./local-first/materialize": "./src/local-first/materialize.ts",
     "./local-first/migrations": "./src/local-first/migrations.ts",
     "./local-first/tombstone": "./src/local-first/tombstone.ts",
@@ -33,7 +35,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/checklistMismatchDetector.test.ts && tsx src/repositories/__tests__/dualWriteChecklistRepository.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/iceServers.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
+    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/local-first/__tests__/guestIdentity.test.ts && tsx src/local-first/__tests__/guestPromotion.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/checklistMismatchDetector.test.ts && tsx src/repositories/__tests__/dualWriteChecklistRepository.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/iceServers.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
