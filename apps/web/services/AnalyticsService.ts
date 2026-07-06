@@ -1,4 +1,5 @@
 import { sendGAEvent } from '@next/third-parties/google'
+import type { DualWriteMismatchEvent } from '@nexvoy/core/repositories/dualWriteChecklistRepository'
 import type { P2PObservabilityEvent } from '@nexvoy/core/sync/iceServers'
 
 /**
@@ -69,6 +70,22 @@ class AnalyticsService {
         this.logEvent(name, Object.fromEntries(
             Object.entries(params).filter(([, value]) => value !== undefined)
         ));
+    }
+
+    /** Dual-write mismatch 관측 — item name/email/document payload는 포함하지 않는다. */
+    public logDualWriteMismatch(event: DualWriteMismatchEvent) {
+        this.logEvent('local_first_dual_write_mismatch', {
+            domain: event.domain,
+            operation: event.operation,
+            trip_id: event.tripId ?? 'unknown',
+            checklist_id: event.checklistId ?? 'unknown',
+            item_id: event.itemId ?? 'unknown',
+            reason_codes: event.reasonCodes.join(','),
+            legacy_checklist_count: event.legacyChecklistCount,
+            local_checklist_count: event.localChecklistCount,
+            legacy_item_count: event.legacyItemCount,
+            local_item_count: event.localItemCount,
+        });
     }
 
     // --- 사전 정의된 헬퍼 메서드들 ---
