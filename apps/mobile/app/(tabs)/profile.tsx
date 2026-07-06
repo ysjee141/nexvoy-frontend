@@ -372,7 +372,7 @@ export default function ProfileScreen() {
       <ConfirmSheet
         visible={showLogoutSheet}
         title="로그아웃"
-        message="정말 로그아웃 하시겠어요?"
+        message="정말 로그아웃 하시겠어요? 이 기기에 예약된 일정 알림과 푸시 토큰도 함께 정리돼요."
         confirmLabel="로그아웃"
         destructive
         onConfirm={() => {

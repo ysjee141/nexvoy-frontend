@@ -1,0 +1,2 @@
+[functions.check-pending-alarms]
+verify_jwt = true

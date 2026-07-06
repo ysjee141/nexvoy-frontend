@@ -16,6 +16,8 @@ import {
 import { AppState } from 'react-native'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { cancelAllLocalNotifications } from './notifications'
+import { logLocalFirstEvent } from './observability'
 
 interface AuthContextValue {
   session: Session | null
@@ -64,6 +66,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signOut = async () => {
+    try {
+      await cancelAllLocalNotifications()
+    } catch {
+      // 알림 정리 실패가 로그아웃을 막으면 계정 전환 시 더 위험하다.
+    }
+    try {
+      await supabase.rpc('cleanup_current_user_push_tokens')
+      await logLocalFirstEvent('push_token_revoked', {
+        provider: 'fcm',
+        status: 'completed',
+      })
+    } catch {
+      await logLocalFirstEvent('push_token_revoked', {
+        provider: 'fcm',
+        status: 'failed',
+        reason_code: 'cleanup_failed',
+      })
+    }
     await supabase.auth.signOut()
   }
 

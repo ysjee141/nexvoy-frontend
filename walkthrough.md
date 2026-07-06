@@ -1,45 +1,51 @@
-# Walkthrough: TASK-013 Invitation Permission Registry
+# Walkthrough: TASK-014 Notification Metadata 및 Observability
 
 ## Summary
 
-딥 링크 초대와 초대 코드 fallback을 Supabase document registry 기반으로 구현했다. `document_invitation_links`, `document_share_tokens`, `document_members`를 authority로 두고, Web/Mobile 초대 생성·수락·공유 화면은 document RPC를 우선 사용하며 legacy token은 fallback으로 유지한다.
+Local-first 구조에 맞춰 시간 기반 알림, 협업 push metadata, 비용/품질 관측 event boundary를 분리했다. 서버는 Yjs blob이나 문서 내용을 해석하지 않고 metadata-only `notification_events`를 dispatch하며, 모바일 일정 알림은 `expo-notifications` 기반 로컬 scheduler가 담당한다.
 
 ## Artifacts
 
-- `docs/refactor/tasks/TASK-013-invitation-permission-registry.md`
-- `docs/refactor/adrs/ADR-008-invitation-and-permission-registry.md`
-- `docs/refactor/TECHNICAL-SPEC.md`
-- GitHub Issue: `#283`
+- `docs/refactor/tasks/TASK-014-notification-and-observability.md`
+- `docs/refactor/adrs/ADR-009-notification-strategy.md`
+- `docs/refactor/adrs/ADR-010-operating-cost-and-infrastructure.md`
+- GitHub Issue: `#285`
 
 ## Key Changes
 
-- `supabase/migrations/20260706000001_document_invitation_permission_registry.sql`에 invitation/share registry, hash-only token/code 저장, RLS, RPC를 추가했다.
-- registry table 직접 write는 닫고, 생성/수락/폐기/검증은 `SECURITY DEFINER` RPC 전용 경로로 제한했다.
-- 초대 코드 정규화는 Web/Mobile/SQL 모두 영숫자 대문자 기준으로 통일했다.
-- `document_share_tokens` password는 salted `crypt()` hash로 저장하고, 검증된 share token으로 plans/plan_urls를 조회하는 RPC를 추가했다.
-- `packages/core/src/local-first/permissions.ts`, `packages/core/src/sync/signalingPermissions.ts`, `packages/core/src/supabase/invitationRepository.ts`를 추가했다.
-- Web `CollaboratorModal`, `/join`, `ShareModal`, `/share/detail`을 document registry 우선 + legacy fallback으로 연결했다.
-- Mobile `/join`, login `next` 복귀, trip detail 초대/공유 UI를 document registry wrapper로 연결했다.
-- 기존 `trip_members` role/revoke 함수는 bridge RPC를 통해 `document_members`와 `document_keys.revoked_at`을 함께 동기화한다.
-- `docs/refactor/tasks/README.md`를 갱신해 다음 task를 `TASK-014: Notification and Observability`로 조정했다.
+- `notification_events` table, RLS, RPC를 추가하고 direct table access는 닫았다.
+- 협업 push target은 accepted `document_members`에서 서버가 재계산하며 actor는 제외한다.
+- `dispatch-notification-events` Edge Function을 추가하고 service-role/internal 호출만 허용했다.
+- 기존 FCM direct relay와 server alarm function은 content-free/internal-only 경계로 축소했다.
+- legacy content-bearing DB push trigger와 `join_trip_via_token` nickname push를 제거했다.
+- `@nexvoy/core`에 notification metadata sanitizer, batching/dedupe helper, local notification scheduler interface, observability event sanitizer를 추가했다.
+- Mobile은 `expo-notifications` scheduler를 plan save/delete, trip delete, logout/withdrawal cleanup에 연결했다.
+- Web notification은 no-op/unsupported 경계로 정리하고 GA4 local-first event는 core sanitizer를 통과하도록 제한했다.
+- Mobile Firebase Analytics adapter는 설정 파일이 없으면 no-op fallback으로 동작한다.
 
 ## Verification
 
 - `pnpm --filter @nexvoy/core test` 성공
+- `pnpm --filter @nexvoy/core typecheck` 성공
 - `pnpm typecheck` 성공
 - `pnpm build` 성공
 - `pnpm build:mobile` 성공
+- `pnpm --filter nexvoy-app typecheck` 성공
+- `pnpm --filter nexvoy-app lint` 성공 (기존 warning 7건)
+- `pnpm --filter nexvoy-app exec expo install --check` 성공
+- `git diff --check` 성공
 - reviewer 최종 PASS
 - qa-engineer 최종 PASS
 
 ## Rollback
 
-문제 발생 시 신규 registry RPC 사용을 중단하고 기존 legacy invitation/share flow를 유지한다. 코드 롤백은 신규 migration, core permission/signaling/invitation wrapper, Web/Mobile join/share/invite 변경분을 제거하면 된다. 신규 registry rows는 cleanup migration 또는 admin script로 정리한다.
+문제 발생 시 `notification_events` enqueue/dispatcher cron을 비활성화하고 Web/Mobile은 no-op scheduler로 fallback한다. Mobile local notification은 adapter 호출을 끄거나 `cancelAllLocalNotifications()`로 정리한다. 신규 migration rollback은 `notification_events` table/RPC, user_devices lifecycle 컬럼, hardening function replace를 되돌리는 cleanup migration으로 처리한다.
 
 ## Notes
 
-- 사용자 정책 결정에 따라 초대 생성/폐기는 owner/editor 모두 허용한다.
-- raw token/code/share token은 DB/log/localStorage에 저장하지 않고 생성 직후 UI state 또는 입력값으로만 사용한다.
-- Legacy invitation/share token은 document wrapper miss 시 fallback으로 유지한다.
-- 신규 수락자에게 active wrapped document key가 없으면 `requires_key_provisioning=true`를 반환하고 Web/Mobile UI가 문서 진입을 차단한다.
-- 서버는 raw DEK/KEK를 알 수 없으므로 owner-side key provisioning 계약은 `docs/refactor/adrs/ADR-011-invitation-key-provisioning-strategy.md`와 `docs/refactor/tasks/TASK-015-owner-side-document-key-provisioning.md`로 분리했다.
+- push title/body/log/analytics에는 document content, plan title/location/memo, checklist item name, raw token/key/email/nickname/raw ids를 넣지 않는다.
+- push data에는 navigation용 `document_id`/`trip_id`/`plan_id`만 허용했다.
+- 로컬에 `deno` CLI가 없어 Edge Function `deno check`는 수행하지 못했다.
+- Supabase local reset/RPC runtime smoke는 정적 검증까지만 수행했다.
+- `expo-notifications`와 React Native Firebase는 native dependency 영향이 있으므로 EAS preview APK, 실제 Android device 설치/실행, Logcat, OS notification schedule/cancel 검증은 별도 수동 검증이 필요하다.
+- 다음 작업은 `TASK-015: Owner-side Document Key Provisioning`다.

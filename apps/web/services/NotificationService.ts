@@ -6,6 +6,16 @@
 // API 표면을 보존하기 위해 동일 시그니처의 no-op 구현만 남긴다.
 //
 // 향후 웹 푸시(Service Worker + Push API)를 도입할 경우 이 스텁을 실제 구현으로 대체한다.
+import type {
+    LocalNotificationScheduleResult,
+    LocalNotificationScheduler,
+} from '@nexvoy/core/notifications/scheduler'
+
+const unsupportedResult: LocalNotificationScheduleResult = {
+    status: 'unsupported',
+    reason: 'web_local_notification_unsupported',
+}
+
 export const NotificationService = {
     /** 오프라인 일정 리마인더 예약 (웹 no-op) */
     async scheduleOfflineReminders(_plans: any[]): Promise<void> {
@@ -21,4 +31,33 @@ export const NotificationService = {
     ): Promise<void> {
         return
     },
+    async getPermissionStatus() {
+        return 'unsupported' as const
+    },
+    async requestPermission() {
+        return 'unsupported' as const
+    },
+    async schedulePlanAlarm() {
+        return unsupportedResult
+    },
+    async cancelPlanAlarm() {
+        return unsupportedResult
+    },
+    async cancelDocumentAlarms() {
+        return unsupportedResult
+    },
+    async cancelAllLocalNotifications() {
+        return unsupportedResult
+    },
+    async reconcilePlanAlarm() {
+        return unsupportedResult
+    },
+} satisfies LocalNotificationScheduler & {
+    scheduleOfflineReminders(_plans: unknown[]): Promise<void>
+    scheduleChecklistReminder(
+        _tripId: string,
+        _tripTitle: string,
+        _startDate: string,
+        _pendingItemsCount: number,
+    ): Promise<void>
 }

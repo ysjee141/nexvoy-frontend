@@ -100,6 +100,13 @@ import {
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import {
+  cancelDocumentAlarms,
+  cancelPlanAlarm,
+  getPermissionStatus,
+  reconcilePlanAlarm,
+  type LocalNotificationScheduleStatus,
+} from '@/lib/notifications'
+import {
   colors,
   fontSizes,
   fontWeights,
@@ -111,6 +118,7 @@ type PlanWithUrls = Plan & { plan_urls: PlanUrl[] }
 type PlanSheetStep = 'place' | 'details'
 type TimeDisplayMode = 'local' | 'kst' | 'both'
 type ShareType = DocumentShareType
+type PlanLocalAlarmUiStatus = LocalNotificationScheduleStatus | 'unknown'
 
 type GeneratedInvite = Pick<CreatedDocumentInvitation, 'id' | 'role' | 'inviteCode' | 'expiresAt'> & {
   inviteUrl: string
@@ -548,6 +556,22 @@ function formatPlanCost(plan: Plan): string | null {
   return formatCurrency(plan.cost, currency)
 }
 
+function formatAlarmStatusValue(
+  alarmMinutes: number | null | undefined,
+  status?: PlanLocalAlarmUiStatus,
+): string {
+  const minutes = alarmMinutes ?? 0
+  if (minutes <= 0) return '알림 없음'
+
+  const base = `${minutes}분 전`
+  if (status === 'scheduled') return `${base} · 이 기기에 예약됨`
+  if (status === 'permission_required') return `${base} · 알림 권한 필요`
+  if (status === 'failed') return `${base} · 예약 실패`
+  if (status === 'unsupported') return `${base} · 기기 알림 미지원`
+  if (status === 'cancelled' || status === 'skipped') return '알림 없음'
+  return `${base} · 설정됨`
+}
+
 function buildMapUrl(plan: Plan): string | null {
   const lat = planLat(plan)
   const lng = planLng(plan)
@@ -577,6 +601,26 @@ function getTripMemberDisplayName(member: TripMember, fallback = '동행자'): s
   const profileEmail = member.profiles?.email?.trim()
   const invitedEmail = member.invited_email?.trim()
   return nickname || profileEmail || invitedEmail || fallback
+}
+
+function confirmNotificationPermissionPrompt(): Promise<boolean> {
+  return new Promise((resolve) => {
+    Alert.alert(
+      '일정 알림을 받아볼까요?',
+      '앱을 닫아도 여행 일정 전에 이 기기에서 알려드려요. 알림 내용은 최소한으로 표시돼요.',
+      [
+        {
+          text: '나중에',
+          style: 'cancel',
+          onPress: () => resolve(false),
+        },
+        {
+          text: '알림 허용하기',
+          onPress: () => resolve(true),
+        },
+      ],
+    )
+  })
 }
 
 // ─── 화면 ─────────────────────────────────────────────────────────────────────
@@ -630,6 +674,7 @@ export default function TripDetailScreen() {
   const [membersLoading, setMembersLoading] = useState(false)
   const [timeDisplayMode, setTimeDisplayMode] = useState<TimeDisplayMode>('local')
   const [isTimeModeSheetOpen, setIsTimeModeSheetOpen] = useState(false)
+  const [localAlarmStatusByPlanId, setLocalAlarmStatusByPlanId] = useState<Record<string, PlanLocalAlarmUiStatus>>({})
   const [shareInfo, setShareInfo] = useState<ShareLinkInfo | null>(null)
   const [shareType, setShareType] = useState<ShareType>('public')
   const [sharePassword, setSharePassword] = useState('')
@@ -885,6 +930,7 @@ export default function TripDetailScreen() {
     if (!id || !session?.user.id || deletingTrip) return
     setDeletingTrip(true)
     try {
+      await cancelDocumentAlarms(id).catch(() => ({ status: 'failed' as const }))
       const { error: deleteError } = await supabase
         .from('trips')
         .delete()
@@ -918,6 +964,56 @@ export default function TripDetailScreen() {
           timezone_string: input.timezone_string || 'Asia/Seoul',
         })
       }
+      if (savedPlan) {
+        const alarmMinutesBefore = savedPlan.alarm_minutes_before ?? 0
+        let requestPermission = false
+        let skippedPermissionPrompt = false
+        if (alarmMinutesBefore > 0) {
+          const permissionStatus = await getPermissionStatus().catch(() => 'unsupported' as const)
+          if (permissionStatus === 'undetermined') {
+            requestPermission = await confirmNotificationPermissionPrompt()
+            skippedPermissionPrompt = !requestPermission
+          }
+        }
+        const alarmResult = await reconcilePlanAlarm(
+          {
+            tripId: id,
+            documentId: id,
+            planId: savedPlan.id,
+            startDateTimeLocal: savedPlan.start_datetime_local,
+            timezoneString: savedPlan.timezone_string,
+            alarmMinutesBefore,
+          },
+          { requestPermission },
+        ).catch(() => ({ status: 'failed' as const, reason: 'reconcile_error' }))
+
+        setLocalAlarmStatusByPlanId((prev) => ({
+          ...prev,
+          [savedPlan.id]: alarmResult.status,
+        }))
+        if (alarmResult.status === 'permission_required' && !skippedPermissionPrompt) {
+          Alert.alert(
+            '알림 권한 필요',
+            '일정은 저장했지만 기기 알림은 꺼져 있어요. 설정에서 알림을 허용하면 일정 전에 알려드릴게요.',
+            [
+              { text: '나중에', style: 'cancel' },
+              {
+                text: '설정 열기',
+                onPress: () => {
+                  void Linking.openSettings().catch(() => {
+                    Alert.alert('설정을 열 수 없어요', '기기 설정에서 OnVoy 알림을 허용해 주세요.')
+                  })
+                },
+              },
+            ],
+          )
+        } else if (alarmResult.status === 'failed') {
+          Alert.alert(
+            '알림 예약 실패',
+            '일정은 저장됐지만 알림 예약에 실패했어요. 다시 저장하거나 알림 권한을 확인해 주세요.',
+          )
+        }
+      }
       setEditingPlan(null)
       setIsPlanSheetOpen(false)
       await loadTrip()
@@ -950,6 +1046,11 @@ export default function TripDetailScreen() {
   const handleDeletePlan = useCallback(
     async (plan: PlanWithUrls) => {
       await deletePlan(supabase, plan.id)
+      const alarmResult = await cancelPlanAlarm(plan.id).catch(() => ({ status: 'failed' as const }))
+      setLocalAlarmStatusByPlanId((prev) => ({
+        ...prev,
+        [plan.id]: alarmResult.status,
+      }))
       setEditingPlan(null)
       setIsPlanSheetOpen(false)
       await loadTrip()
@@ -1256,21 +1357,25 @@ export default function TripDetailScreen() {
   }
 
   const handleRemoveMember = async (member: TripMember) => {
-    Alert.alert('동행자 삭제', `${getTripMemberDisplayName(member)}님을 제외할까요?`, [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await removeTripMember(supabase, member.id)
-            await loadMembers()
-          } catch {
-            Alert.alert('오류', '동행자 삭제에 실패했어요.')
-          }
+    Alert.alert(
+      '동행자 삭제',
+      `${getTripMemberDisplayName(member)}님을 제외할까요?\n\n동행자 권한을 해제하면 해당 사용자에게 이 여행 알림이 더 이상 전송되지 않아요.`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await removeTripMember(supabase, member.id)
+              await loadMembers()
+            } catch {
+              Alert.alert('오류', '동행자 삭제에 실패했어요.')
+            }
+          },
         },
-      },
-    ])
+      ],
+    )
   }
 
   return (
@@ -1435,6 +1540,7 @@ export default function TripDetailScreen() {
               {activeTab === 'plans' ? (
                 <PlansTab
                   plans={plans}
+                  localAlarmStatusByPlanId={localAlarmStatusByPlanId}
                   onToggleVisited={handleToggleVisited}
                   onEditPlan={(plan) => {
                     setEditingPlan(plan)
@@ -2225,6 +2331,7 @@ function CollaboratorSheet({
 
 interface PlansTabProps {
   plans: PlanWithUrls[]
+  localAlarmStatusByPlanId: Record<string, PlanLocalAlarmUiStatus>
   onToggleVisited: (plan: PlanWithUrls) => void
   onEditPlan: (plan: PlanWithUrls) => void
   onDeletePlan: (plan: PlanWithUrls) => Promise<void>
@@ -2234,6 +2341,7 @@ interface PlansTabProps {
 
 function PlansTab({
   plans,
+  localAlarmStatusByPlanId,
   onToggleVisited,
   onEditPlan,
   onDeletePlan,
@@ -2312,7 +2420,7 @@ function PlansTab({
                             {plan.title}
                           </Text>
                           {hasAlarm ? (
-                            <Ionicons name="notifications" size={13} color={colors.brand.error} />
+                            <Ionicons name="notifications" size={13} color={colors.brand.muted} />
                           ) : null}
                           {hasMemo ? (
                             <Ionicons name="document-text-outline" size={13} color={colors.brand.muted} />
@@ -2395,6 +2503,7 @@ function PlansTab({
     </View>
     <PlanDetailSheet
       plan={selectedPlan}
+      alarmStatus={selectedPlan ? localAlarmStatusByPlanId[selectedPlan.id] : undefined}
       visible={selectedPlanId !== null}
       onClose={() => setSelectedPlanId(null)}
       onToggleVisited={onToggleVisited}
@@ -2409,6 +2518,7 @@ function PlansTab({
 
 function PlanDetailSheet({
   plan,
+  alarmStatus,
   visible,
   onClose,
   onToggleVisited,
@@ -2418,6 +2528,7 @@ function PlanDetailSheet({
   timeDisplayMode,
 }: {
   plan: PlanWithUrls | null
+  alarmStatus?: PlanLocalAlarmUiStatus
   visible: boolean
   onClose: () => void
   onToggleVisited: (plan: PlanWithUrls) => void
@@ -2645,7 +2756,7 @@ function PlanDetailSheet({
                 <DetailInfo
                   icon="notifications-outline"
                   label="알림 설정"
-                  value={`${plan.alarm_minutes_before}분 전`}
+                  value={formatAlarmStatusValue(plan.alarm_minutes_before, alarmStatus)}
                 />
               ) : null}
               <DetailInfo icon="globe-outline" label="타임존" value={timezone} />
@@ -3481,7 +3592,7 @@ function PlanEditSheet({
   const [date, setDate] = useState(defaultDate)
   const [time, setTime] = useState('09:00')
   const [duration, setDuration] = useState('1')
-  const [alarmMinutes, setAlarmMinutes] = useState(60)
+  const [alarmMinutes, setAlarmMinutes] = useState(0)
   const [cost, setCost] = useState('')
   const [planTimezone, setPlanTimezone] = useState(plan?.timezone_string || 'Asia/Seoul')
   const [memo, setMemo] = useState('')
@@ -3511,7 +3622,7 @@ function PlanEditSheet({
     setDate(plan ? parseDate(plan.start_datetime_local) : defaultDate)
     setTime(plan ? parseTime(plan.start_datetime_local) : '09:00')
     setDuration(plan ? getDurationHours(plan.start_datetime_local, plan.end_datetime_local) : '1')
-    setAlarmMinutes(plan?.alarm_minutes_before ?? 60)
+    setAlarmMinutes(plan?.alarm_minutes_before ?? 0)
     setPlanTimezone(plan?.timezone_string || 'Asia/Seoul')
     setCost(plan?.cost ? formatNumberWithCommas(String(plan.cost)) : '')
     setMemo(plan?.memo ?? '')
