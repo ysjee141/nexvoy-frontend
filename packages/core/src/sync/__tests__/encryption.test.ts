@@ -4,9 +4,12 @@ import {
   encryptBackupPayload,
   generateDocumentEncryptionKey,
   generateKeyEncryptionKey,
+  unwrapDocumentEncryptionKeyWithRsaOaep,
   unwrapDocumentEncryptionKey,
+  wrapDocumentEncryptionKeyWithRsaOaep,
   wrapDocumentEncryptionKey,
   type BackupCryptoProvider,
+  type RsaOaepWrappingProvider,
 } from '../encryption'
 
 const provider = globalThis.crypto as BackupCryptoProvider
@@ -76,5 +79,39 @@ async function run(): Promise<void> {
     if (!(error instanceof BackupCryptoError) || error.code !== 'key_unwrap_failed') {
       throw error
     }
+  }
+
+  const mockRsaProvider: RsaOaepWrappingProvider = {
+    importPublicKey: async (publicKeyJwk) => ({ publicKeyJwk }),
+    importPrivateKey: async (privateKeyJwk) => ({ privateKeyJwk }),
+    wrapDocumentKey: async ({ publicKey }) => {
+      if (!publicKey) throw new Error('public key is required')
+      return new TextEncoder().encode('rsa-oaep-wrapped-dek')
+    },
+    unwrapDocumentKey: async ({ wrappedDek, privateKey }) => {
+      if (!privateKey || new TextDecoder().decode(wrappedDek) !== 'rsa-oaep-wrapped-dek') {
+        throw new Error('unwrap failed')
+      }
+      return dek
+    },
+  }
+
+  const rsaWrappedDek = await wrapDocumentEncryptionKeyWithRsaOaep(mockRsaProvider, {
+    dek,
+    publicKeyJwk: { kty: 'RSA', alg: 'RSA-OAEP-256' },
+    keyVersion: 2,
+  })
+
+  if (rsaWrappedDek.algorithm !== 'RSA-OAEP-256' || rsaWrappedDek.keyVersion !== 2) {
+    throw new Error('RSA-OAEP helper should preserve wrapping metadata.')
+  }
+
+  const rsaUnwrappedDek = await unwrapDocumentEncryptionKeyWithRsaOaep(mockRsaProvider, {
+    wrappedKey: rsaWrappedDek,
+    privateKeyJwk: { kty: 'RSA', alg: 'RSA-OAEP-256' },
+  })
+  const rsaDecryptedPayload = await decryptBackupPayload(provider, encrypted, rsaUnwrappedDek)
+  if (new TextDecoder().decode(rsaDecryptedPayload) !== 'local-first backup payload') {
+    throw new Error('RSA-OAEP provider contract should return a usable DEK handle.')
   }
 }

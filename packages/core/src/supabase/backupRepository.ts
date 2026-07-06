@@ -6,6 +6,7 @@ import type {
   WrappedDocumentKey,
   PendingBackupUpdate,
   RestorePlan,
+  DocumentKeyMetadata,
 } from '../sync/backupTypes'
 import { createRestorePlan } from '../sync/syncState'
 
@@ -27,14 +28,21 @@ export interface ListBackupUpdatesInput {
   }
 }
 
+export interface ActiveDocumentKeyRecord extends DocumentKeyMetadata {
+  wrappedDek: Uint8Array
+}
+
 export interface SupabaseBackupRepository {
   hasSnapshot(documentId: string): Promise<boolean>
-  hasDocumentKey(input: { documentId: string; userId: string; keyVersion?: number }): Promise<boolean>
+  hasDocumentKey(input: { documentId: string; userId: string; deviceId?: string | null; keyVersion?: number }): Promise<boolean>
+  getMyActiveDocumentKey(input: { documentId: string; deviceId?: string | null; keyVersion?: number }): Promise<ActiveDocumentKeyRecord | null>
   upsertSnapshot(input: UpsertBackupDocumentInput): Promise<void>
   upsertOwnerMember(input: { documentId: string; userId: string }): Promise<void>
   upsertDocumentKey(input: {
     documentId: string
     userId: string
+    deviceId?: string | null
+    materialVersion?: number | null
     wrappedKey: WrappedDocumentKey
   }): Promise<void>
   uploadUpdate(update: PendingBackupUpdate): Promise<void>
@@ -55,16 +63,35 @@ export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBack
       return Boolean(data)
     },
     hasDocumentKey: async (input) => {
+      if (input.deviceId) {
+        const key = await createSupabaseBackupRepository(sb).getMyActiveDocumentKey({
+          documentId: input.documentId,
+          deviceId: input.deviceId,
+          keyVersion: input.keyVersion,
+        })
+        return Boolean(key)
+      }
+
       let query = sb
         .from('document_keys')
         .select('id')
         .eq('document_id', input.documentId)
         .eq('user_id', input.userId)
         .is('revoked_at', null)
+        .limit(1)
       if (input.keyVersion) query = query.eq('key_version', input.keyVersion)
-      const { data, error } = await query.maybeSingle()
+      const { data, error } = await query
       if (error) throw error
-      return Boolean(data)
+      return Boolean(data?.length)
+    },
+    getMyActiveDocumentKey: async (input) => {
+      const { data, error } = await sb.rpc('get_my_active_document_key', {
+        p_document_id: input.documentId,
+        p_device_id: input.deviceId ?? null,
+        p_key_version: input.keyVersion ?? null,
+      })
+      if (error) throw error
+      return data ? toActiveDocumentKeyRecord(data) : null
     },
     upsertSnapshot: async (input) => {
       const { error } = await sb
@@ -96,16 +123,14 @@ export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBack
       if (error) throw error
     },
     upsertDocumentKey: async (input) => {
-      const { error } = await sb
-        .from('document_keys')
-        .upsert({
-          document_id: input.documentId,
-          user_id: input.userId,
-          key_version: input.wrappedKey.keyVersion,
-          wrapped_dek: input.wrappedKey.wrappedDek,
-          wrapping_alg: input.wrappedKey.algorithm,
-          revoked_at: null,
-        }, { onConflict: 'document_id,user_id,key_version' })
+      const { error } = await sb.rpc('upsert_owner_document_key', {
+        p_document_id: input.documentId,
+        p_wrapped_dek: input.wrappedKey.wrappedDek,
+        p_wrapping_alg: input.wrappedKey.algorithm,
+        p_key_version: input.wrappedKey.keyVersion,
+        p_device_id: input.deviceId ?? null,
+        p_material_version: input.materialVersion ?? null,
+      })
 
       if (error) throw error
     },
@@ -182,11 +207,54 @@ export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBack
   }
 }
 
+function toActiveDocumentKeyRecord(value: unknown): ActiveDocumentKeyRecord {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    throw new Error('Unexpected document key RPC response.')
+  }
+  const row = value as Record<string, unknown>
+  return {
+    documentId: expectString(row.document_id),
+    userId: expectString(row.user_id),
+    deviceId: nullableString(row.device_id),
+    materialId: nullableString(row.material_id),
+    recipientScope: expectRecipientScope(row.recipient_scope),
+    keyVersion: expectNumber(row.key_version),
+    wrappingAlg: expectWrappingAlg(row.wrapping_alg),
+    wrappedDek: toUint8Array(row.wrapped_dek),
+    revokedAt: nullableString(row.revoked_at),
+  }
+}
+
 function toUint8Array(value: unknown): Uint8Array {
   if (value instanceof Uint8Array) return value
   if (value instanceof ArrayBuffer) return new Uint8Array(value)
   if (typeof value === 'string') return decodeByteString(value)
   throw new Error('Unsupported bytea payload returned from Supabase.')
+}
+
+function expectString(value: unknown): string {
+  if (typeof value !== 'string') throw new Error('Unexpected document key RPC response.')
+  return value
+}
+
+function nullableString(value: unknown): string | null {
+  if (value == null) return null
+  return expectString(value)
+}
+
+function expectNumber(value: unknown): number {
+  if (typeof value !== 'number') throw new Error('Unexpected document key RPC response.')
+  return value
+}
+
+function expectWrappingAlg(value: unknown): ActiveDocumentKeyRecord['wrappingAlg'] {
+  if (value === 'AES-KW-256' || value === 'RSA-OAEP-256') return value
+  throw new Error('Unexpected document key wrapping algorithm.')
+}
+
+function expectRecipientScope(value: unknown): ActiveDocumentKeyRecord['recipientScope'] {
+  if (value === 'device' || value === 'legacy_user') return value
+  return undefined
 }
 
 function decodeByteString(value: string): Uint8Array {

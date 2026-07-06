@@ -8,6 +8,13 @@ import { CollaborationService } from '@/services/ExternalApiService'
 import { collaboration } from '@/lib/collaboration'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
+import type { DocumentKeyProvisioningRequest } from '@nexvoy/core/sync/keyProvisioning'
+import {
+    DocumentKeyProvisioningStatusBadge,
+    DocumentKeyProvisioningStatusCard,
+    type DocumentKeyProvisioningStatus,
+} from './DocumentKeyProvisioningStatus'
+import { ensureWebDeviceKeyMaterial, runWebForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -61,6 +68,9 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
     const [generatedInvite, setGeneratedInvite] = useState<GeneratedInvitationState | null>(null)
     const [revokingInvite, setRevokingInvite] = useState(false)
+    const [keyProvisioningRequests, setKeyProvisioningRequests] = useState<DocumentKeyProvisioningRequest[]>([])
+    const [keyProvisioningBusy, setKeyProvisioningBusy] = useState(false)
+    const [keyProvisioningMessage, setKeyProvisioningMessage] = useState<string | null>(null)
 
     useScrollLock(isOpen)
 
@@ -84,6 +94,17 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         ? 'owner'
         : collaborators.find(member => member.userId === currentUserId)?.role
     const canInvite = currentMemberRole === 'owner' || currentMemberRole === 'editor'
+    const pendingProvisioningCount = keyProvisioningRequests.length
+
+    useEffect(() => {
+        if (isOpen && canInvite) {
+            void fetchKeyProvisioningRequests()
+        } else if (!isOpen) {
+            setKeyProvisioningRequests([])
+            setKeyProvisioningMessage(null)
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isOpen, canInvite, tripId])
 
     const fetchCollaborators = async () => {
         const { data, error } = await supabase
@@ -162,7 +183,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
 
         const { error } = await collaboration.removeMember(memberId)
         if (error) {
-            alert((isSelf ? '나가기 실패: ' : '멤버 삭제 실패: ') + (typeof error === 'string' ? error : error.message))
+            alert((isSelf ? '나가기 실패: ' : '멤버 삭제 실패: ') + formatErrorMessage(error))
         } else {
             if (isSelf) {
                 onClose()
@@ -214,6 +235,46 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             setError(err.message || '초대 폐기 중 오류가 발생했습니다.')
         } finally {
             setRevokingInvite(false)
+        }
+    }
+
+    const fetchKeyProvisioningRequests = async () => {
+        try {
+            const requests = await createInvitationRepository(supabase).listPendingDocumentKeyProvisioningRequests({
+                documentId: tripId,
+                limit: 25,
+            })
+            setKeyProvisioningRequests(requests)
+        } catch {
+            setKeyProvisioningMessage('데이터 준비 상태를 불러오지 못했습니다.')
+        }
+    }
+
+    const handleRunKeyProvisioning = async () => {
+        if (keyProvisioningBusy) return
+        setKeyProvisioningBusy(true)
+        setKeyProvisioningMessage(null)
+        try {
+            await ensureWebDeviceKeyMaterial(supabase)
+            const result = await runWebForegroundKeyProvisioning({
+                supabase,
+                documentId: tripId,
+                limit: 25,
+            })
+            if (result.completed > 0) {
+                setKeyProvisioningMessage(`${result.completed}명의 여정 데이터 준비를 완료했습니다.`)
+            } else if (result.skipped > 0) {
+                setKeyProvisioningMessage('이 기기에서는 데이터 준비를 완료할 수 없습니다. 여정을 열었던 Web 기기에서 다시 시도해 주세요.')
+            } else if (result.failed > 0) {
+                setKeyProvisioningMessage('일부 데이터 준비를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+            } else {
+                setKeyProvisioningMessage('처리할 데이터 준비 요청이 없습니다.')
+            }
+            await fetchKeyProvisioningRequests()
+        } catch {
+            setKeyProvisioningMessage('데이터 준비를 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+        } finally {
+            setKeyProvisioningBusy(false)
         }
     }
 
@@ -417,6 +478,21 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                     </div>
                     )}
 
+                    {canInvite && (pendingProvisioningCount > 0 || keyProvisioningMessage) ? (
+                        <DocumentKeyProvisioningStatusCard
+                            status={pendingProvisioningCount > 0 ? 'pending' : 'completed'}
+                            pendingCount={pendingProvisioningCount || undefined}
+                            primaryActionLabel={pendingProvisioningCount > 0 ? '데이터 준비 다시 시도' : '상태 다시 확인'}
+                            primaryActionBusy={keyProvisioningBusy}
+                            onPrimaryAction={pendingProvisioningCount > 0 ? handleRunKeyProvisioning : fetchKeyProvisioningRequests}
+                            footer={keyProvisioningMessage ? (
+                                <p className={css({ color: 'brand.muted', fontSize: '12px', lineHeight: 1.5 })}>
+                                    {keyProvisioningMessage}
+                                </p>
+                            ) : null}
+                        />
+                    ) : null}
+
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
                         <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>참여 중인 멤버 ({collaborators.length})</h3>
                         <div className={css({
@@ -435,6 +511,13 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                             {member.nickname && member.email ? member.email : ''}
                                             {member.status === 'pending' && (member.nickname && member.email ? ' • ' : '') + '수락 대기 중'}
                                         </span>
+                                        {getMemberKeyProvisioningStatus(member.userId, keyProvisioningRequests) ? (
+                                            <div className={css({ mt: '6px' })}>
+                                                <DocumentKeyProvisioningStatusBadge
+                                                    status={getMemberKeyProvisioningStatus(member.userId, keyProvisioningRequests)!}
+                                                />
+                                            </div>
+                                        ) : null}
                                     </div>
                                     {member.role !== 'owner' && (
                                         <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', ml: '8px', flexShrink: 0 })}>
@@ -511,4 +594,23 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             </div>
         </div>
     )
+}
+
+function formatErrorMessage(error: unknown): string {
+    if (typeof error === 'string') return error
+    if (error instanceof Error) return error.message
+    return '잠시 후 다시 시도해 주세요.'
+}
+
+function getMemberKeyProvisioningStatus(
+    userId: string | null,
+    requests: DocumentKeyProvisioningRequest[],
+): DocumentKeyProvisioningStatus | null {
+    if (!userId) return null
+    const request = requests.find((entry) => entry.userId === userId)
+    if (!request) return null
+    if (request.status === 'pending' || request.status === 'processing' || request.status === 'failed') {
+        return request.status
+    }
+    return null
 }

@@ -19,11 +19,38 @@ export interface BackupCryptoProvider {
 
 export type DocumentEncryptionKey = CryptoKey
 export type KeyEncryptionKey = CryptoKey
+export type RsaOaepPublicKeyMaterial = Record<string, unknown>
+export type RsaOaepPrivateKeyMaterial = Record<string, unknown>
+export type RsaOaepKeyHandle = unknown
 
 export interface EncryptBackupPayloadInput {
   plaintext: Uint8Array
   key: DocumentEncryptionKey
   keyVersion: number
+}
+
+export interface RsaOaepWrappingProvider {
+  importPublicKey(publicKeyJwk: RsaOaepPublicKeyMaterial): Promise<RsaOaepKeyHandle>
+  importPrivateKey?(privateKeyJwk: RsaOaepPrivateKeyMaterial): Promise<RsaOaepKeyHandle>
+  wrapDocumentKey(input: {
+    documentKey: DocumentEncryptionKey
+    publicKey: RsaOaepKeyHandle
+  }): Promise<Uint8Array>
+  unwrapDocumentKey?(input: {
+    wrappedDek: Uint8Array
+    privateKey: RsaOaepKeyHandle
+  }): Promise<DocumentEncryptionKey>
+}
+
+export interface WrapDocumentKeyWithRsaOaepInput {
+  dek: DocumentEncryptionKey
+  publicKeyJwk: RsaOaepPublicKeyMaterial
+  keyVersion: number
+}
+
+export interface UnwrapDocumentKeyWithRsaOaepInput {
+  wrappedKey: WrappedDocumentKey
+  privateKeyJwk: RsaOaepPrivateKeyMaterial
 }
 
 export async function generateDocumentEncryptionKey(
@@ -132,6 +159,52 @@ export async function unwrapDocumentEncryptionKey(
       true,
       ['decrypt', 'encrypt'],
     )
+  } catch {
+    throw new BackupCryptoError('key_unwrap_failed', 'Failed to unwrap document key.')
+  }
+}
+
+export async function wrapDocumentEncryptionKeyWithRsaOaep(
+  provider: RsaOaepWrappingProvider,
+  input: WrapDocumentKeyWithRsaOaepInput,
+): Promise<WrappedDocumentKey> {
+  try {
+    const publicKey = await provider.importPublicKey(input.publicKeyJwk)
+    const wrappedDek = await provider.wrapDocumentKey({
+      documentKey: input.dek,
+      publicKey,
+    })
+
+    return {
+      algorithm: 'RSA-OAEP-256',
+      keyVersion: input.keyVersion,
+      wrappedDek,
+    }
+  } catch (error) {
+    throw new BackupCryptoError('key_wrap_failed', getErrorMessage(error))
+  }
+}
+
+export async function unwrapDocumentEncryptionKeyWithRsaOaep(
+  provider: RsaOaepWrappingProvider,
+  input: UnwrapDocumentKeyWithRsaOaepInput,
+): Promise<DocumentEncryptionKey> {
+  if (input.wrappedKey.algorithm !== 'RSA-OAEP-256') {
+    throw new BackupCryptoError(
+      'unsupported_key_wrapping_algorithm',
+      `Unsupported key wrapping algorithm: ${input.wrappedKey.algorithm}`,
+    )
+  }
+  if (!provider.importPrivateKey || !provider.unwrapDocumentKey) {
+    throw new BackupCryptoError('unsupported_key_wrapping_algorithm', 'RSA-OAEP unwrap is unavailable.')
+  }
+
+  try {
+    const privateKey = await provider.importPrivateKey(input.privateKeyJwk)
+    return await provider.unwrapDocumentKey({
+      wrappedDek: input.wrappedKey.wrappedDek,
+      privateKey,
+    })
   } catch {
     throw new BackupCryptoError('key_unwrap_failed', 'Failed to unwrap document key.')
   }

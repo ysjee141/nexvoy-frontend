@@ -1,7 +1,8 @@
 -- TASK-013: document invitation/share registry and permission RPCs.
 -- Raw invitation/share tokens are never persisted; only SHA-256 hashes are stored.
 
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE SCHEMA IF NOT EXISTS extensions;
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
 
 CREATE OR REPLACE FUNCTION public.document_registry_hash(_value text)
 RETURNS text
@@ -10,7 +11,7 @@ IMMUTABLE
 STRICT
 SET search_path = public
 AS $$
-  SELECT encode(digest(_value, 'sha256'), 'hex');
+  SELECT encode(extensions.digest(convert_to(_value, 'UTF8'), 'sha256'), 'hex');
 $$;
 
 CREATE TABLE IF NOT EXISTS public.document_invitation_links (
@@ -99,8 +100,8 @@ BEGIN
   END IF;
 
   FOR attempt IN 1..5 LOOP
-    new_token := replace(replace(rtrim(encode(gen_random_bytes(32), 'base64'), '='), '+', '-'), '/', '_');
-    new_code := upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 10));
+    new_token := replace(replace(rtrim(encode(extensions.gen_random_bytes(32), 'base64'), '='), '+', '-'), '/', '_');
+    new_code := upper(substr(encode(extensions.gen_random_bytes(6), 'hex'), 1, 10));
 
     BEGIN
       INSERT INTO public.document_invitation_links (
@@ -620,7 +621,7 @@ BEGIN
   END IF;
 
   FOR attempt IN 1..5 LOOP
-    new_token := replace(replace(rtrim(encode(gen_random_bytes(32), 'base64'), '='), '+', '-'), '/', '_');
+    new_token := replace(replace(rtrim(encode(extensions.gen_random_bytes(32), 'base64'), '='), '+', '-'), '/', '_');
 
     BEGIN
       INSERT INTO public.document_share_tokens (
@@ -636,7 +637,7 @@ BEGIN
         public.document_registry_hash(new_token),
         p_share_type,
         CASE
-          WHEN p_share_type = 'password' THEN crypt(p_password, gen_salt('bf'))
+          WHEN p_share_type = 'password' THEN extensions.crypt(p_password, extensions.gen_salt('bf'))
           ELSE NULL
         END,
         auth.uid(),
@@ -741,7 +742,7 @@ BEGIN
     OR (share_record.expires_at IS NOT NULL AND share_record.expires_at <= timezone('utc'::text, now()))
     OR share_record.share_type <> 'password'
     OR share_record.password_hash IS NULL
-    OR share_record.password_hash <> crypt(p_password, share_record.password_hash)
+    OR share_record.password_hash <> extensions.crypt(p_password, share_record.password_hash)
   THEN
     RAISE EXCEPTION '유효하지 않거나 만료된 공유입니다.';
   END IF;
@@ -803,7 +804,7 @@ BEGIN
   IF share_record.share_type = 'password' THEN
     IF NULLIF(p_password, '') IS NULL
       OR share_record.password_hash IS NULL
-      OR share_record.password_hash <> crypt(p_password, share_record.password_hash)
+      OR share_record.password_hash <> extensions.crypt(p_password, share_record.password_hash)
     THEN
       RAISE EXCEPTION '유효하지 않거나 만료된 공유입니다.';
     END IF;
