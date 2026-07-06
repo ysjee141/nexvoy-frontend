@@ -115,6 +115,16 @@ Local-first 전환의 P2P는 optional fast path이므로, STUN/TURN 선택은 "�
 - TURN relay bytes, relay 연결 비율, P2P 실패율, 연결 수립 p95 latency를 비용 관측 지표로 둔다.
 - TURN 무료 제공량의 70%를 넘으면 paid quota, provider fallback, P2P 정책 조정을 검토한다.
 
+TASK-010 구현 기준:
+
+- ICE config 발급 경로는 `supabase/functions/ice-servers` Edge Function을 사용한다.
+- TURN credential 발급은 실제 Supabase Auth user JWT를 요구한다. `verify_jwt=true`만으로는 anon key도 통과할 수 있으므로 함수 내부에서 `auth.getUser()`를 추가 검증한다.
+- Cloudflare TURN secret은 `CLOUDFLARE_TURN_KEY_ID`, `CLOUDFLARE_TURN_KEY_SECRET`로만 주입하고 클라이언트 bundle이나 repository에 저장하지 않는다.
+- TTL은 `ICE_CONFIG_TTL_SECONDS`로 조정하되 60초 이상, Cloudflare 최대 48시간(172800초) 이하로 clamp한다.
+- Cloudflare credential이 없거나 발급 실패 시 STUN-only fallback을 반환해 local write와 Supabase backup sync를 막지 않는다.
+- 초기 관측 이벤트는 `p2p_ice_config_fetched`, `p2p_ice_config_failed`, `p2p_connected`, `p2p_unavailable`, `p2p_connection_failed`, `p2p_relay_selected`를 사용한다.
+- 이벤트에는 `provider`, `has_turn`, `ttl_seconds`, `fallback`, `connection_type`, `setup_ms`, `reason` 같은 비용/품질 메타데이터만 포함하고 document content, CRDT payload, signaling room id, raw document id는 포함하지 않는다.
+
 ---
 
 ## Cloudflare 웹 호스팅 이전 검토

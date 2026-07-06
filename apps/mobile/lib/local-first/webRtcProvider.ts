@@ -25,6 +25,11 @@ export function createMobileWebRtcProvider(
       fallbackReason,
     }),
     async createPeerConnection() {
+      options.onEvent?.({
+        name: 'p2p_unavailable',
+        platform: 'web',
+        reason: fallbackReason,
+      })
       throw new Error(fallbackReason)
     },
     async close() {

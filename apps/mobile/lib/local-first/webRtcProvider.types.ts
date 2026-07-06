@@ -1,3 +1,8 @@
+import type {
+  IceServerConfig,
+  P2PObservabilityEvent,
+} from '@nexvoy/core/sync/iceServers'
+
 export type MobileWebRtcCandidate = 'react-native-webrtc'
 
 export type MobileWebRtcAvailability =
@@ -6,15 +11,12 @@ export type MobileWebRtcAvailability =
   | 'dev-client-required'
   | 'ready'
 
-export interface MobileWebRtcIceServer {
-  urls: string | string[]
-  username?: string
-  credential?: string
-}
+export type MobileWebRtcIceServer = IceServerConfig
 
 export interface MobileWebRtcProviderOptions {
   enabled?: boolean
-  iceServers?: MobileWebRtcIceServer[]
+  iceServers?: IceServerConfig[]
+  onEvent?: (event: P2PObservabilityEvent) => void
 }
 
 export interface MobileWebRtcProviderDiagnostics {

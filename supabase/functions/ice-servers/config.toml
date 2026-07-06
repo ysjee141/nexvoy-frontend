@@ -1,0 +1,2 @@
+[functions.ice-servers]
+verify_jwt = true
