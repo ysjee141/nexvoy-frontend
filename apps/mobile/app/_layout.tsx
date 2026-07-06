@@ -60,8 +60,9 @@ function RootNavigator() {
     if (isLoading) return
 
     const inAuthGroup = segments[0] === '(auth)'
+    const isPublicRoute = inAuthGroup || segments[0] === 'auth' || segments[0] === 'join'
 
-    if (!session && !inAuthGroup) {
+    if (!session && !isPublicRoute) {
       // 비로그인 상태인데 보호 라우트에 있음 → 로그인으로
       router.replace('/(auth)/login')
     } else if (session && inAuthGroup) {

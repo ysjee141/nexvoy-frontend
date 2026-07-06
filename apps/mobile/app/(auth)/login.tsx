@@ -8,7 +8,7 @@
  * - 세션 자동 리다이렉트는 Root _layout 의 auth gate 가 담당. 이 화면은 폼만 책임.
  */
 import { useEffect, useState } from 'react'
-import { useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -35,6 +35,7 @@ const REMEMBERED_EMAIL_KEY = 'rememberedEmail'
 
 export default function LoginScreen() {
   const router = useRouter()
+  const params = useLocalSearchParams<{ next?: string }>()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [rememberEmail, setRememberEmail] = useState(false)
@@ -79,7 +80,9 @@ export default function LoginScreen() {
     } else {
       await AsyncStorage.removeItem(REMEMBERED_EMAIL_KEY)
     }
-    // 성공 시 onAuthStateChange → Root auth gate 가 홈으로 리다이렉트.
+    if (params.next?.startsWith('/join')) {
+      router.replace(params.next as never)
+    }
   }
 
   const handleGoogleLogin = async () => {
@@ -109,7 +112,9 @@ export default function LoginScreen() {
           const { error: exchangeError } =
             await supabase.auth.exchangeCodeForSession(code)
           if (exchangeError) throw exchangeError
-          // 세션 생성 성공 → onAuthStateChange → Root auth gate 가 홈으로 리다이렉트.
+          if (params.next?.startsWith('/join')) {
+            router.replace(params.next as never)
+          }
         }
       }
       // result.type 이 'cancel'/'dismiss' 면 사용자가 인증을 중단한 것 → 조용히 화면 잔류.

@@ -1341,11 +1341,16 @@ export async function updateTripMemberRole(
   memberId: string,
   role: 'editor' | 'viewer'
 ): Promise<TripMember> {
+  const { error: rpcError } = await sb.rpc('set_trip_document_member_role', {
+    p_trip_member_id: memberId,
+    p_role: role,
+  })
+  if (rpcError) throw rpcError
+
   const { data, error } = await sb
     .from('trip_members')
-    .update({ role })
-    .eq('id', memberId)
     .select('*, profiles(nickname, email)')
+    .eq('id', memberId)
     .single()
   if (error) throw error
   return data as TripMember
@@ -1355,7 +1360,9 @@ export async function removeTripMember(
   sb: SupabaseClient,
   memberId: string
 ): Promise<void> {
-  const { error } = await sb.from('trip_members').delete().eq('id', memberId)
+  const { error } = await sb.rpc('revoke_trip_document_member', {
+    p_trip_member_id: memberId,
+  })
   if (error) throw error
 }
 

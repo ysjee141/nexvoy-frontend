@@ -2,58 +2,110 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { collaboration } from '@/lib/collaboration';
 import { createClient } from '@/lib/supabase/client';
+import {
+    acceptInvitationWithLegacyFallback,
+    getInvitationSummaryWithLegacyFallback,
+    type DocumentInvitationSummary,
+    type LegacyTripInvitationSummary,
+} from '@nexvoy/core/supabase/invitationRepository';
+
+type JoinSummary =
+    | { source: 'document'; tripId: string; destination: string | null; startDate: string | null; endDate: string | null; ownerNickname: string | null; role: 'editor' | 'viewer' }
+    | { source: 'legacy'; tripId: string; destination: string; startDate: string; endDate: string; ownerNickname: string | null; role: 'editor' }
+
+type JoinInput = { token?: string; inviteCode?: string };
+
+const INVALID_INVITE_COPY = '유효하지 않거나 만료된 초대입니다.';
 
 export default function JoinClient() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const token = searchParams.get('token');
+    const code = searchParams.get('code');
 
     const [loading, setLoading] = useState(true);
+    const [accepting, setAccepting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [tripSummary, setTripSummary] = useState<any>(null);
+    const [summary, setSummary] = useState<JoinSummary | null>(null);
+    const [codeInput, setCodeInput] = useState('');
+    const [activeInput, setActiveInput] = useState<JoinInput | null>(null);
+    const [provisioningRequired, setProvisioningRequired] = useState(false);
+
+    const resolveInvitation = async (input: JoinInput) => {
+        setLoading(true);
+        setError(null);
+        setProvisioningRequired(false);
+        try {
+            const supabase = createClient();
+            const result = await getInvitationSummaryWithLegacyFallback(supabase, input);
+            if (!result.summary) throw new Error(INVALID_INVITE_COPY);
+
+            const normalizedSummary = normalizeSummary(result.source, result.summary);
+            setSummary(normalizedSummary);
+            setActiveInput(input);
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                router.replace(`/login?next=${encodeURIComponent(buildJoinPath(input))}`);
+                return;
+            }
+        } catch {
+            setSummary(null);
+            setActiveInput(null);
+            setError(INVALID_INVITE_COPY);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const init = async () => {
-            try {
-                if (!token) throw new Error('유효하지 않은 초대 링크입니다.');
+        const input = token ? { token } : code ? { inviteCode: code } : null;
+        if (input) {
+            void resolveInvitation(input);
+        } else {
+            setLoading(false);
+            setError('초대 코드 또는 링크를 입력해 주세요.');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [token, code]);
 
-                // 1. Fetch trip summary by token
-                const { data: summary, error: summaryError } = await collaboration.getTripSummaryByToken(token);
-                if (summaryError) throw summaryError;
-                
-                setTripSummary(summary);
+    const handleCodeSubmit = (event: React.FormEvent) => {
+        event.preventDefault();
+        const inviteCode = sanitizeInviteCode(codeInput);
+        if (!inviteCode) {
+            setError('초대 코드를 입력해 주세요.');
+            return;
+        }
+        void resolveInvitation({ inviteCode });
+    };
 
-                // 2. Check auth
-                const supabase = createClient();
-                const { data: { user } } = await supabase.auth.getUser();
-
-                if (!user) {
-                    // Redirect to login with next parameter
-                    router.replace(`/login?next=/join?token=${token}`);
+    const handleAccept = async () => {
+        if (!activeInput || !summary || accepting) return;
+        setAccepting(true);
+        setError(null);
+        setProvisioningRequired(false);
+        try {
+            const supabase = createClient();
+            const result = await acceptInvitationWithLegacyFallback(supabase, activeInput);
+            if (result.source === 'document') {
+                if (result.result.requiresKeyProvisioning) {
+                    setProvisioningRequired(true);
                     return;
                 }
-
-                // 3. Join trip
-                const { data: tripId, error: joinError } = await collaboration.joinTripViaToken(token);
-                if (joinError) throw joinError;
-
-                // 4. Redirect to trip detail
-                router.replace(`/trips/detail?id=${tripId}`);
-
-            } catch (err: any) {
-                console.error(err);
-                setError(err.message || '링크 처리 중 오류가 발생했습니다.');
-            } finally {
-                setLoading(false);
+                router.replace(`/trips/detail?id=${result.result.documentId}`);
+                return;
             }
-        };
-
-        if (token) {
-            init();
+            router.replace(`/trips/detail?id=${result.tripId ?? summary.tripId}`);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : '';
+            setError(message.toLowerCase().includes('already')
+                ? '이미 참여 중인 여정입니다.'
+                : '초대를 수락하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        } finally {
+            setAccepting(false);
         }
-    }, [token, router]);
+    };
 
     if (loading) {
         return (
@@ -75,9 +127,23 @@ export default function JoinClient() {
                 </div>
                 <h1 className="text-xl font-bold mb-2">참여 실패</h1>
                 <p className="text-gray-500 mb-6">{error}</p>
+                <form onSubmit={handleCodeSubmit} className="w-full max-w-sm mb-4">
+                    <input
+                        value={codeInput}
+                        onChange={(event) => setCodeInput(formatInviteCode(event.target.value))}
+                        placeholder="초대 코드 입력"
+                        className="w-full px-4 py-3 border border-gray-200 rounded-xl text-center font-bold tracking-widest mb-3"
+                    />
+                    <button
+                        type="submit"
+                        className="w-full px-6 py-3 bg-primary-500 text-white rounded-full font-medium"
+                    >
+                        초대 확인
+                    </button>
+                </form>
                 <button
                     onClick={() => router.replace('/')}
-                    className="px-6 py-2 bg-primary-500 text-white rounded-full font-medium"
+                    className="px-6 py-2 border border-gray-200 text-gray-700 rounded-full font-medium"
                 >
                     홈으로 가기
                 </button>
@@ -85,5 +151,89 @@ export default function JoinClient() {
         );
     }
 
-    return null;
+    if (!summary) return null;
+
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+            <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-primary-500">
+                    ✈
+                </div>
+                <h1 className="text-xl font-bold mb-2">
+                    {summary.destination ? `${summary.destination} 여정에 초대받았어요` : '여정에 초대받았어요'}
+                </h1>
+                <p className="text-gray-500 mb-4">
+                    {summary.ownerNickname ? `${summary.ownerNickname}님이 초대했습니다.` : '초대 정보를 확인했습니다.'}
+                </p>
+                <div className="text-sm text-gray-600 mb-6 space-y-1">
+                    <p>권한: {summary.role === 'editor' ? '편집자' : '뷰어'}</p>
+                    {summary.startDate && summary.endDate ? <p>기간: {summary.startDate} ~ {summary.endDate}</p> : null}
+                </div>
+                {provisioningRequired ? (
+                    <div className="rounded-xl bg-blue-50 p-4 text-left mb-4">
+                        <p className="font-bold text-gray-900 mb-1">여정 데이터를 안전하게 준비하고 있어요</p>
+                        <p className="text-sm text-gray-600">참여는 완료됐지만 이 기기에서 데이터를 열 수 없습니다. 소유자의 키 준비가 완료된 뒤 다시 시도해 주세요.</p>
+                    </div>
+                ) : null}
+                {error ? <p className="text-sm text-red-500 mb-4">{error}</p> : null}
+                <button
+                    onClick={handleAccept}
+                    disabled={accepting}
+                    className="w-full px-6 py-3 bg-primary-500 text-white rounded-full font-medium disabled:opacity-50"
+                >
+                    {accepting ? '참여 중...' : provisioningRequired ? '다시 시도' : '여정에 참여하기'}
+                </button>
+                <button
+                    onClick={() => {
+                        setSummary(null);
+                        setActiveInput(null);
+                        setError('초대 코드를 입력해 주세요.');
+                    }}
+                    className="mt-3 text-sm font-medium text-gray-500"
+                >
+                    초대 코드로 다시 입력
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function normalizeSummary(source: 'document' | 'legacy', value: DocumentInvitationSummary | LegacyTripInvitationSummary): JoinSummary {
+    if (source === 'document') {
+        const summary = value as DocumentInvitationSummary;
+        return {
+            source,
+            tripId: summary.documentId,
+            destination: summary.destination,
+            startDate: summary.startDate,
+            endDate: summary.endDate,
+            ownerNickname: summary.ownerNickname,
+            role: summary.role,
+        };
+    }
+
+    const summary = value as LegacyTripInvitationSummary;
+    return {
+        source,
+        tripId: summary.trip_id,
+        destination: summary.destination,
+        startDate: summary.start_date,
+        endDate: summary.end_date,
+        ownerNickname: summary.owner_nickname,
+        role: 'editor',
+    };
+}
+
+function buildJoinPath(input: JoinInput): string {
+    if (input.token) return `/join?token=${encodeURIComponent(input.token)}`;
+    if (input.inviteCode) return `/join?code=${encodeURIComponent(input.inviteCode)}`;
+    return '/join';
+}
+
+function sanitizeInviteCode(value: string): string {
+    return value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+}
+
+function formatInviteCode(value: string): string {
+    return sanitizeInviteCode(value).replace(/(.{4})(?=.)/g, '$1-');
 }

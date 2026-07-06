@@ -54,7 +54,6 @@ import {
   inviteTripMember,
   updateTripMemberRole,
   removeTripMember,
-  createInvitationLink,
   getOrCreateTripShareLink,
   updateTrip,
   createPlan,
@@ -72,6 +71,12 @@ import {
   formatCurrency,
   getCurrencyFromTimezone,
 } from '@nexvoy/core'
+import {
+  createInvitationRepository,
+  type CreatedDocumentInvitation,
+  type DocumentInvitationRole,
+  type DocumentShareType,
+} from '@nexvoy/core/supabase/invitationRepository'
 import type {
   Plan,
   PlanUrl,
@@ -82,7 +87,6 @@ import type {
   ChecklistItemAssignee,
   ChecklistItemUserCheck,
   TripMember,
-  TripShare,
   TemplateWithPreview,
 } from '@nexvoy/types'
 import {
@@ -106,7 +110,16 @@ import {
 type PlanWithUrls = Plan & { plan_urls: PlanUrl[] }
 type PlanSheetStep = 'place' | 'details'
 type TimeDisplayMode = 'local' | 'kst' | 'both'
-type ShareType = 'public' | 'password'
+type ShareType = DocumentShareType
+
+type GeneratedInvite = Pick<CreatedDocumentInvitation, 'id' | 'role' | 'inviteCode' | 'expiresAt'> & {
+  inviteUrl: string
+}
+
+type ShareLinkInfo = {
+  shareToken: string
+  shareType: ShareType
+}
 
 type PlaceOption = {
   name: string
@@ -617,12 +630,12 @@ export default function TripDetailScreen() {
   const [membersLoading, setMembersLoading] = useState(false)
   const [timeDisplayMode, setTimeDisplayMode] = useState<TimeDisplayMode>('local')
   const [isTimeModeSheetOpen, setIsTimeModeSheetOpen] = useState(false)
-  const [shareInfo, setShareInfo] = useState<TripShare | null>(null)
+  const [shareInfo, setShareInfo] = useState<ShareLinkInfo | null>(null)
   const [shareType, setShareType] = useState<ShareType>('public')
   const [sharePassword, setSharePassword] = useState('')
   const [shareLoading, setShareLoading] = useState(false)
   const [inviteLoading, setInviteLoading] = useState(false)
-  const [inviteLink, setInviteLink] = useState('')
+  const [generatedInvite, setGeneratedInvite] = useState<GeneratedInvite | null>(null)
 
   useEffect(() => {
     isMounted.current = true
@@ -632,7 +645,7 @@ export default function TripDetailScreen() {
   }, [])
 
   useEffect(() => {
-    setInviteLink('')
+    setGeneratedInvite(null)
   }, [id])
 
   const loadTripList = useCallback(async () => {
@@ -1029,23 +1042,35 @@ export default function TripDetailScreen() {
   )
 
   const publicShareUrl = shareInfo
-    ? `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${shareInfo.share_token}`
+    ? `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${shareInfo.shareToken}`
     : ''
 
-  const ensureShareLink = async (type: ShareType = shareType, password = sharePassword): Promise<TripShare | null> => {
+  const ensureShareLink = async (type: ShareType = shareType, password = sharePassword): Promise<ShareLinkInfo | null> => {
     if (!id) return null
     if (type === 'password' && !password.trim()) {
       Alert.alert('비밀번호 필요', '공유용 비밀번호를 입력해 주세요.')
       return null
     }
-    const data = await getOrCreateTripShareLink(
-      supabase,
-      id,
-      type,
-      type === 'password' ? password.trim() : undefined
-    )
-    setShareInfo(data)
-    return data
+    try {
+      const documentShare = await createInvitationRepository(supabase).createDocumentShareToken({
+        documentId: id,
+        shareType: type,
+        password: type === 'password' ? password.trim() : null,
+      })
+      const nextInfo = { shareToken: documentShare.shareToken, shareType: documentShare.shareType }
+      setShareInfo(nextInfo)
+      return nextInfo
+    } catch {
+      const legacyShare = await getOrCreateTripShareLink(
+        supabase,
+        id,
+        type,
+        type === 'password' ? password.trim() : undefined
+      )
+      const nextInfo = { shareToken: legacyShare.share_token, shareType: legacyShare.share_type as ShareType }
+      setShareInfo(nextInfo)
+      return nextInfo
+    }
   }
 
   const handleSwitchTrip = (tripId: string) => {
@@ -1088,7 +1113,7 @@ export default function TripDetailScreen() {
     try {
       const data = shareInfo ?? (await ensureShareLink())
       if (!data) return
-      const url = `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${data.share_token}`
+      const url = `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${data.shareToken}`
       await Share.share({
         title: `${trip?.destination ?? '여행'} 일정 공유`,
         message: `${trip?.destination ?? '여행'} 일정을 확인해 보세요.\n${url}`,
@@ -1117,7 +1142,7 @@ export default function TripDetailScreen() {
     try {
       const data = shareInfo ?? (await ensureShareLink())
       if (!data) return
-      const url = `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${data.share_token}`
+      const url = `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${data.shareToken}`
       const subject = encodeURIComponent(`[온여정] ${trip?.destination ?? '여행'} 여행 일정 공유`)
       const body = encodeURIComponent(`안녕하세요,\n\n${trip?.destination ?? '여행'} 여행 일정을 함께 확인해보세요!\n\n링크: ${url}\n\n감사합니다.`)
       await Linking.openURL(`mailto:?subject=${subject}&body=${body}`)
@@ -1151,13 +1176,22 @@ export default function TripDetailScreen() {
     }
   }
 
-  const handleCreateInviteLink = async () => {
+  const handleCreateInviteLink = async (role: DocumentInvitationRole) => {
     if (!id || inviteLoading) return
     setInviteLoading(true)
     try {
-      const token = await createInvitationLink(supabase, id)
-      const url = `${WEB_APP_BASE.replace(/\/$/, '')}/join?token=${token}`
-      setInviteLink(url)
+      const invitation = await createInvitationRepository(supabase).createDocumentInvitationLink({
+        documentId: id,
+        role,
+        maxUses: 1,
+      })
+      setGeneratedInvite({
+        id: invitation.id,
+        role: invitation.role,
+        inviteCode: invitation.inviteCode,
+        expiresAt: invitation.expiresAt,
+        inviteUrl: `${WEB_APP_BASE.replace(/\/$/, '')}/join?token=${encodeURIComponent(invitation.token)}`,
+      })
     } catch {
       Alert.alert('오류', '초대 링크를 만들지 못했어요.')
     } finally {
@@ -1166,25 +1200,49 @@ export default function TripDetailScreen() {
   }
 
   const handleCopyInviteLink = async () => {
-    if (!inviteLink) return
+    if (!generatedInvite) return
     try {
-      await Clipboard.setStringAsync(inviteLink)
+      await Clipboard.setStringAsync(generatedInvite.inviteUrl)
       Alert.alert('완료', '초대 링크가 클립보드에 복사되었어요.')
     } catch {
       Alert.alert('오류', '초대 링크를 복사하지 못했어요.')
     }
   }
 
+  const handleCopyInviteCode = async () => {
+    if (!generatedInvite) return
+    try {
+      await Clipboard.setStringAsync(generatedInvite.inviteCode)
+      Alert.alert('완료', '초대 코드가 클립보드에 복사되었어요.')
+    } catch {
+      Alert.alert('오류', '초대 코드를 복사하지 못했어요.')
+    }
+  }
+
   const handleShareInviteLink = async () => {
-    if (!inviteLink) return
+    if (!generatedInvite) return
     try {
       await Share.share({
         title: `${trip?.destination ?? '여행'} 여정 초대`,
-        message: `함께 여정을 계획해보세요. 링크는 6시간 동안 유효합니다.\n${inviteLink}`,
-        url: inviteLink,
+        message: `함께 여정을 계획해보세요. 링크가 열리지 않으면 초대 코드 ${generatedInvite.inviteCode}를 입력해 주세요.\n${generatedInvite.inviteUrl}`,
+        url: generatedInvite.inviteUrl,
       })
     } catch {
       Alert.alert('오류', '초대 링크를 공유하지 못했어요.')
+    }
+  }
+
+  const handleRevokeInviteLink = async () => {
+    if (!generatedInvite || inviteLoading) return
+    setInviteLoading(true)
+    try {
+      await createInvitationRepository(supabase).revokeDocumentInvitationLink(generatedInvite.id)
+      setGeneratedInvite(null)
+      Alert.alert('완료', '초대가 폐기되었어요.')
+    } catch {
+      Alert.alert('오류', '초대 폐기에 실패했어요.')
+    } finally {
+      setInviteLoading(false)
     }
   }
 
@@ -1581,11 +1639,13 @@ export default function TripDetailScreen() {
             ownerId={trip.user_id}
             canManage={canEditTrip}
             canInvite={canEditContent}
-            inviteLink={inviteLink}
+            generatedInvite={generatedInvite}
             onInvite={handleInviteMember}
             onCreateInviteLink={handleCreateInviteLink}
             onCopyInviteLink={handleCopyInviteLink}
+            onCopyInviteCode={handleCopyInviteCode}
             onShareInviteLink={handleShareInviteLink}
+            onRevokeInviteLink={handleRevokeInviteLink}
             onUpdateRole={handleUpdateMemberRole}
             onRemove={handleRemoveMember}
             onClose={() => setIsCollaboratorSheetOpen(false)}
@@ -1853,7 +1913,14 @@ function ShareTripSheet({
             style={styles.sharePasswordInput}
           />
         </View>
-      ) : null}
+      ) : (
+        <View style={styles.viewerInviteNotice}>
+          <Ionicons name="eye-outline" size={18} color={colors.brand.muted} />
+          <Text style={styles.viewerInviteNoticeText}>
+            조회 전용 권한입니다. 초대 생성은 관리자 또는 편집자만 사용할 수 있어요.
+          </Text>
+        </View>
+      )}
 
       {shareUrl ? (
         <Pressable
@@ -1929,11 +1996,13 @@ function CollaboratorSheet({
   ownerId,
   canManage,
   canInvite,
-  inviteLink,
+  generatedInvite,
   onInvite,
   onCreateInviteLink,
   onCopyInviteLink,
+  onCopyInviteCode,
   onShareInviteLink,
+  onRevokeInviteLink,
   onUpdateRole,
   onRemove,
   onClose,
@@ -1946,11 +2015,13 @@ function CollaboratorSheet({
   ownerId: string
   canManage: boolean
   canInvite: boolean
-  inviteLink: string
-  onInvite: (email: string, role: 'editor' | 'viewer') => void
-  onCreateInviteLink: () => void
+  generatedInvite: GeneratedInvite | null
+  onInvite: (email: string, role: DocumentInvitationRole) => void
+  onCreateInviteLink: (role: DocumentInvitationRole) => void
   onCopyInviteLink: () => void
+  onCopyInviteCode: () => void
   onShareInviteLink: () => void
+  onRevokeInviteLink: () => void
   onUpdateRole: (memberId: string, role: 'editor' | 'viewer') => void
   onRemove: (member: TripMember) => void
   onClose: () => void
@@ -2017,33 +2088,69 @@ function CollaboratorSheet({
           </View>
           <View style={styles.inviteLinkPanel}>
             <Text style={styles.sheetSectionTitle}>링크로 초대하기</Text>
-            {inviteLink ? (
-              <View style={styles.inviteLinkResultRow}>
+            {generatedInvite ? (
+              <View style={styles.inviteResultCard}>
                 <View style={styles.inviteLinkBox}>
+                  <Text style={styles.inviteResultLabel}>초대 링크</Text>
                   <Text style={styles.inviteLinkText} numberOfLines={1}>
-                    {inviteLink}
+                    {generatedInvite.inviteUrl}
                   </Text>
                 </View>
+                <View style={styles.inviteCodeBox}>
+                  <Text style={styles.inviteResultLabel}>초대 코드</Text>
+                  <Text
+                    style={styles.inviteCodeText}
+                    accessibilityLabel={`초대 코드 ${generatedInvite.inviteCode.replaceAll('-', ' ')}`}
+                  >
+                    {generatedInvite.inviteCode}
+                  </Text>
+                </View>
+                <Text style={styles.inviteResultMeta}>
+                  권한: {ROLE_LABELS[generatedInvite.role]}
+                  {generatedInvite.expiresAt ? ` · 만료: ${formatDate(generatedInvite.expiresAt.slice(0, 10))}` : ''}
+                </Text>
+                <View style={styles.inviteResultActions}>
+                  <Pressable
+                    onPress={onCopyInviteLink}
+                    accessibilityRole="button"
+                    accessibilityLabel="초대 링크 복사"
+                    style={({ pressed }) => [styles.inviteLinkIconButton, pressed && styles.pressedFade]}
+                  >
+                    <Ionicons name="copy-outline" size={18} color={colors.brand.ink} />
+                    <Text style={styles.inviteSmallActionText}>링크</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={onCopyInviteCode}
+                    accessibilityRole="button"
+                    accessibilityLabel="초대 코드 복사"
+                    style={({ pressed }) => [styles.inviteLinkIconButton, pressed && styles.pressedFade]}
+                  >
+                    <Ionicons name="keypad-outline" size={18} color={colors.brand.ink} />
+                    <Text style={styles.inviteSmallActionText}>코드</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={onShareInviteLink}
+                    accessibilityRole="button"
+                    accessibilityLabel="초대 링크 공유"
+                    style={({ pressed }) => [styles.inviteLinkShareButton, pressed && styles.pressedSoft]}
+                  >
+                    <Ionicons name="share-outline" size={18} color={colors.bg.canvas} />
+                    <Text style={styles.inviteShareText}>공유</Text>
+                  </Pressable>
+                </View>
                 <Pressable
-                  onPress={onCopyInviteLink}
+                  onPress={onRevokeInviteLink}
+                  disabled={inviteLoading}
                   accessibilityRole="button"
-                  accessibilityLabel="초대 링크 복사"
-                  style={({ pressed }) => [styles.inviteLinkIconButton, pressed && styles.pressedFade]}
+                  accessibilityLabel="생성한 초대 폐기"
+                  style={({ pressed }) => [styles.inviteRevokeButton, pressed && !inviteLoading && styles.pressedFade]}
                 >
-                  <Ionicons name="copy-outline" size={18} color={colors.brand.ink} />
-                </Pressable>
-                <Pressable
-                  onPress={onShareInviteLink}
-                  accessibilityRole="button"
-                  accessibilityLabel="초대 링크 공유"
-                  style={({ pressed }) => [styles.inviteLinkShareButton, pressed && styles.pressedSoft]}
-                >
-                  <Ionicons name="share-outline" size={18} color={colors.bg.canvas} />
+                  <Text style={styles.inviteRevokeText}>{inviteLoading ? '폐기 중...' : '생성한 초대 폐기'}</Text>
                 </Pressable>
               </View>
             ) : (
               <Pressable
-                onPress={onCreateInviteLink}
+                onPress={() => onCreateInviteLink(role)}
                 disabled={inviteLoading}
                 accessibilityRole="button"
                 style={({ pressed }) => [
@@ -5092,6 +5199,14 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
     gap: spacing.sm,
   },
+  inviteResultCard: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
   inviteLinkBox: {
     flex: 1,
     minWidth: 0,
@@ -5108,23 +5223,99 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.semibold,
   },
+  inviteCodeBox: {
+    minHeight: 62,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.canvas,
+  },
+  inviteResultLabel: {
+    marginBottom: spacing.xxs,
+    color: colors.brand.muted,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  inviteCodeText: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.xl,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 1,
+  },
+  inviteResultMeta: {
+    color: colors.brand.muted,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+  },
+  inviteResultActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
   inviteLinkIconButton: {
-    width: 46,
+    flex: 1,
     minHeight: 46,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.brand.hairline,
     backgroundColor: colors.bg.canvas,
   },
   inviteLinkShareButton: {
-    width: 46,
+    flex: 1,
     minHeight: 46,
     alignItems: 'center',
     justifyContent: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
     borderRadius: radii.md,
     backgroundColor: colors.brand.primary,
+  },
+  inviteSmallActionText: {
+    color: colors.brand.ink,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  inviteShareText: {
+    color: colors.bg.canvas,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+  },
+  inviteRevokeButton: {
+    minHeight: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.error,
+    backgroundColor: colors.bg.canvas,
+  },
+  inviteRevokeText: {
+    color: colors.brand.error,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  viewerInviteNotice: {
+    minHeight: 54,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  viewerInviteNoticeText: {
+    flex: 1,
+    color: colors.brand.muted,
+    fontSize: fontSizes.sm,
+    lineHeight: 20,
+    fontWeight: fontWeights.semibold,
   },
   membersHeader: {
     marginTop: spacing.lg,
