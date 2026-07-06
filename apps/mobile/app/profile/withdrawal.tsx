@@ -26,6 +26,7 @@ import { useRouter } from 'expo-router'
 import { deleteUser } from '@nexvoy/core'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { cancelAllLocalNotifications } from '@/lib/notifications'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const CONFIRM_KEYWORD = '탈퇴'
@@ -99,6 +100,12 @@ export default function WithdrawalScreen() {
     setDeleting(true)
     setError(null)
     try {
+      try {
+        await cancelAllLocalNotifications()
+        await supabase.rpc('cleanup_current_user_push_tokens')
+      } catch {
+        // 탈퇴 본 작업은 서버 delete_user RPC가 최종 책임을 가진다.
+      }
       await deleteUser(supabase)
       await signOut()
       // auth gate 가 세션 소멸을 감지해 자동 리다이렉트하지만,
@@ -156,7 +163,7 @@ export default function WithdrawalScreen() {
                   />
                   <Text style={styles.warnText}>
                     탈퇴 시 계정과 모든 데이터가 영구적으로 삭제되며 복구할 수
-                    없어요.
+                    없어요. 이 기기의 예약 알림과 푸시 토큰도 함께 정리돼요.
                   </Text>
                 </View>
 

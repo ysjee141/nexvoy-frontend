@@ -1,4 +1,11 @@
 import { sendGAEvent } from '@next/third-parties/google'
+import {
+    createLocalFirstObservabilityEvent,
+    sanitizeLocalFirstObservabilityEvent,
+    type LocalFirstObservabilityEvent,
+    type LocalFirstObservabilityEventName,
+    type LocalFirstObservabilityParams,
+} from '@nexvoy/core/observability/events'
 import type { DualWriteMismatchEvent } from '@nexvoy/core/repositories/dualWriteChecklistRepository'
 import type { P2PObservabilityEvent } from '@nexvoy/core/sync/iceServers'
 
@@ -36,13 +43,9 @@ class AnalyticsService {
     /**
      * 사용자 ID 설정
      */
-    public async setUserId(userId: string) {
-        if (typeof window === 'undefined') return;
-        try {
-            sendGAEvent('set', { user_id: userId });
-        } catch (e) {
-            console.error('[Analytics] setUserId error:', e);
-        }
+    public async setUserId(_userId: string) {
+        // TASK-014: raw Supabase user ids must not leave the app boundary.
+        // Keep the compatibility method as a no-op until a pseudonymous id contract exists.
     }
 
     /**
@@ -55,7 +58,7 @@ class AnalyticsService {
     /**
      * 커스텀 이벤트 기록
      */
-    public async logEvent(name: string, params: any = {}) {
+    public async logEvent(name: string, params: Record<string, unknown> = {}) {
         if (typeof window === 'undefined') return;
         try {
             sendGAEvent('event', name, params);
@@ -64,42 +67,68 @@ class AnalyticsService {
         }
     }
 
+    /** Local-first 공용 관측 이벤트 — core sanitizer allowlist를 통과한 params만 전송한다. */
+    public logLocalFirstEvent(
+        nameOrEvent: LocalFirstObservabilityEventName | LocalFirstObservabilityEvent,
+        params: LocalFirstObservabilityParams = {},
+    ) {
+        const event = typeof nameOrEvent === 'string'
+            ? (() => {
+                try {
+                    return createLocalFirstObservabilityEvent(nameOrEvent, {
+                        platform: 'web',
+                        ...params,
+                    })
+                } catch {
+                    return sanitizeLocalFirstObservabilityEvent(nameOrEvent, {
+                        platform: 'web',
+                        ...params,
+                    }).event
+                }
+            })()
+            : sanitizeLocalFirstObservabilityEvent(nameOrEvent.name, {
+                platform: 'web',
+                ...nameOrEvent.params,
+            }).event
+
+        this.logEvent(event.name, event.params)
+    }
+
     /** Local-first P2P 관측 이벤트 — document content/room id/CRDT payload는 포함하지 않는다. */
     public logP2PEvent(event: P2PObservabilityEvent) {
         const { name, ...params } = event;
-        this.logEvent(name, Object.fromEntries(
-            Object.entries(params).filter(([, value]) => value !== undefined)
-        ));
+        this.logLocalFirstEvent(name as LocalFirstObservabilityEventName, params as LocalFirstObservabilityParams);
     }
 
     /** Dual-write mismatch 관측 — item name/email/document payload는 포함하지 않는다. */
     public logDualWriteMismatch(event: DualWriteMismatchEvent) {
-        this.logEvent('local_first_dual_write_mismatch', {
-            domain: event.domain,
-            operation: event.operation,
-            trip_id: event.tripId ?? 'unknown',
-            checklist_id: event.checklistId ?? 'unknown',
-            item_id: event.itemId ?? 'unknown',
-            reason_codes: event.reasonCodes.join(','),
-            legacy_checklist_count: event.legacyChecklistCount,
-            local_checklist_count: event.localChecklistCount,
-            legacy_item_count: event.legacyItemCount,
-            local_item_count: event.localItemCount,
+        this.logLocalFirstEvent('local_first_dual_write_mismatch', {
+            document_type: event.domain === 'checklist' ? 'trip' : undefined,
+            operation: event.operation.startsWith('delete')
+                ? 'deleted'
+                : event.operation.startsWith('create')
+                    ? 'created'
+                    : 'updated',
+            entity_type: 'checklist',
+            status: 'failed',
+            reason_code: event.reasonCodes.join('_'),
+            count: event.reasonCodes.length,
+            pending_count: (event.legacyChecklistCount ?? 0) + (event.legacyItemCount ?? 0),
+            queued_count: (event.localChecklistCount ?? 0) + (event.localItemCount ?? 0),
         });
     }
 
     // --- 사전 정의된 헬퍼 메서드들 ---
 
     /** 여행 생성 */
-    public logTripCreate(destination: string) {
-        this.logEvent('trip_create', { destination });
+    public logTripCreate(_destination: string) {
+        this.logEvent('trip_create', { document_type: 'trip' });
     }
 
     /** 일정 추가 */
-    public logPlanAdd(category: string, location: string, hasAlarm: boolean) {
+    public logPlanAdd(category: string, _location: string, hasAlarm: boolean) {
         this.logEvent('plan_add', {
             category,
-            location,
             has_alarm: hasAlarm ? 'true' : 'false'
         });
     }
@@ -122,8 +151,8 @@ class AnalyticsService {
     }
 
     /** 알림 클릭 */
-    public logNotificationClick(type: 'local' | 'push', planId: string) {
-        this.logEvent('notif_click', { type, plan_id: planId });
+    public logNotificationClick(type: 'local' | 'push', _planId: string) {
+        this.logEvent('notif_click', { type, entity_type: 'plan' });
     }
 
     /** 오프라인 모드 진입 */
