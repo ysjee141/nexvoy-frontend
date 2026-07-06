@@ -69,8 +69,9 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-008a-web-checklist-read-through-hydration.md` | 완료 | 로컬 구현 및 검증 완료 |
 | `TASK-009-mobile-webrtc-native-feasibility.md` | 완료 | 로컬 구현 및 검증 완료 |
 | `TASK-010-cloudflare-ice-config.md` | 완료 | 로컬 구현 및 검증 완료 |
+| `TASK-011-dual-write-and-mismatch-detector.md` | 완료 | 로컬 구현 및 검증 완료 |
 
-현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `Phase 3`의 모바일 WebRTC native feasibility와 Cloudflare ICE config 발급 경로는 provider boundary, Edge Function, 검증 보고서로 정리했다. 다음 작업은 `TASK-011: Dual-write and Mismatch Detector`다.
+현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `Phase 3`의 모바일 WebRTC native feasibility와 Cloudflare ICE config 발급 경로는 provider boundary, Edge Function, 검증 보고서로 정리했다. `Phase 4`의 dual-write 및 mismatch detector는 checklist domain 범위로 구현했다. 다음 작업은 `TASK-012: Guest Auth Promotion`이다.
 
 ## Phase별 작업 목록
 
@@ -102,7 +103,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 
 ### Phase 4: 이관 안정화
 
-- [ ] `TASK-011-dual-write-and-mismatch-detector.md`: dual-write와 mismatch detector 도입
+- [x] `TASK-011-dual-write-and-mismatch-detector.md`: dual-write와 mismatch detector 도입
 - [ ] `TASK-012-guest-auth-promotion.md`: guest local document를 Supabase Auth 계정으로 승격
 
 ### Phase 5: 협업/알림/관측
@@ -112,6 +113,6 @@ TASK-008a-web-checklist-read-through-hydration.md
 
 ## 권장 시작 순서
 
-1. `TASK-011-dual-write-and-mismatch-detector.md`
+1. `TASK-012-guest-auth-promotion.md`
 
-TASK-001~010까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로를 검증할 수 있는 상태가 되었다. 다음은 dual-write와 mismatch detector를 도입한다.
+TASK-001~011까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로, checklist dual-write/mismatch detector를 검증할 수 있는 상태가 되었다. 다음은 guest local document를 Supabase Auth 계정으로 승격하는 흐름을 구현한다.

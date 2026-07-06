@@ -27,11 +27,24 @@
 
 ## 구현 단계
 
-1. dual-write repository를 feature flag 뒤에 추가한다.
-2. checklist mutation부터 Supabase row write와 document update를 동시에 수행한다.
-3. mutation 후 materialized read model과 legacy query 결과를 비교한다.
-4. mismatch 발생 시 `local_first_dual_write_mismatch` 이벤트를 남긴다.
-5. mismatch가 나도 legacy row 결과를 사용자에게 보여주는 fallback을 유지한다.
+1. dual-write repository를 feature flag 뒤에 추가한다. ✅
+2. checklist mutation부터 Supabase row write와 document update를 동시에 수행한다. ✅
+3. mutation 후 materialized read model과 legacy query 결과를 비교한다. ✅
+4. mismatch 발생 시 `local_first_dual_write_mismatch` 이벤트를 남긴다. ✅
+5. mismatch가 나도 legacy row 결과를 사용자에게 보여주는 fallback을 유지한다. ✅
+
+## 구현 결과
+
+- `packages/core/src/repositories/dualWriteChecklistRepository.ts`에 platform-free dual-write `ChecklistRepository` decorator를 추가했다.
+- `packages/core/src/repositories/checklistMismatchDetector.ts`에 legacy snapshot과 local materialized snapshot canonical 비교기를 추가했다.
+- dual-write는 legacy Supabase mutation을 먼저 실행하고, local document update는 second path로 수행한다.
+- create mutation은 Supabase가 생성한 `checklist_items.id`를 local document item id로 재사용해 local 중복 item을 방지한다.
+- local write 실패, detector 실패, mismatch 발생은 reporter로 관측하되 사용자 반환값은 legacy result를 유지한다.
+- `apps/web/lib/local-first/checklistDocumentWriter.ts`는 IndexedDB/Yjs local document에 checklist mutation을 적용한다.
+- `apps/web/lib/local-first/dualWriteChecklistRepository.ts`는 legacy repository, local writer, Analytics reporter를 조립한다.
+- `apps/web/lib/local-first/repositoryFactory.ts`에 `local-first-checklist-dual-write` mode를 추가했다.
+- feature flag는 `NEXT_PUBLIC_LOCAL_FIRST_CHECKLIST_DUAL_WRITE=1`, query `?localFirstChecklistDualWrite=1`, localStorage `onvoy.localFirstChecklistDualWrite`를 지원한다.
+- mismatch event payload에는 reason/count/id 메타데이터만 포함하고 item name, email, document content, CRDT payload는 포함하지 않는다.
 
 ## 데이터 호환성 고려사항
 
@@ -39,11 +52,21 @@
 - idempotent mutation과 retry를 고려한다.
 - 사용자에게 중복 아이템이 보이지 않아야 한다.
 
+정책:
+
+- legacy row를 전환 기간 source of truth로 유지하므로 local document update 실패 시 legacy rollback을 수행하지 않는다.
+- local 실패는 `local_write_failed`, detector 실패는 `detector_failed` reason으로 관측한다.
+- create는 legacy row id를 document entity id로 사용하고 local writer는 upsert 방식으로 동작한다.
+- Supabase row 자체의 idempotency key/unique constraint는 이번 PR 범위 밖이며 후속 안정화 과제로 둔다.
+
 ## 검증 방법
 
 - checklist create/update/delete/toggle dual-write 테스트
 - 의도적 mismatch fixture로 detector 동작 확인
 - feature flag off 시 기존 Supabase 동작 확인
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm typecheck` 성공
+- `pnpm build` 성공
 
 ## 롤백 방법
 
@@ -52,6 +75,6 @@
 
 ## 완료 조건
 
-- checklist domain에서 dual-write가 동작한다.
-- mismatch를 관측할 수 있다.
-- rollback 기준이 명확하다.
+- checklist domain에서 dual-write가 동작한다. ✅
+- mismatch를 관측할 수 있다. ✅
+- rollback 기준이 명확하다. ✅

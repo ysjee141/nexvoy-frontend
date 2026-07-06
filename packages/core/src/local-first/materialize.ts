@@ -359,10 +359,13 @@ function getItemUserChecks(document: TripDocumentV1, itemId: EntityId): Checklis
 }
 
 function getAcceptedParticipantIds(document: TripDocumentV1): string[] {
-  return filterActiveNodes(document.members, document.tombstones, 'member')
+  return Array.from(new Set([
+    document.trip.ownerId,
+    ...filterActiveNodes(document.members, document.tombstones, 'member')
     .filter((member) => member.status === 'accepted' && member.userId)
     .map((member) => member.userId)
-    .filter(isPresent)
+    .filter(isPresent),
+  ]))
 }
 
 function toTripMemberReadModel(member: TripMemberNode): TripMemberReadModel {

@@ -376,6 +376,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const repositories = useMemo(() => createWebRepositories(supabase), [supabase])
     const { isOnline } = useNetworkStore()
     const isLocalFirstChecklistSpike = repositories.mode === 'local-first-checklist-spike'
+    const canApplyTemplates = repositories.mode === 'legacy-supabase'
     const canUseChecklistActions = (isOnline || isLocalFirstChecklistSpike) && !isOffline
 
     const [isLoading, setIsLoading] = useState(true)
@@ -1276,7 +1277,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     </button>
                                 )}
                                 
-                                {!isLocalFirstChecklistSpike && (
+                                {canApplyTemplates && (
                                     <button
                                         onClick={() => setIsTemplateModalOpen(true)}
                                         className={css({
@@ -1309,7 +1310,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                                     <Plus size={16} /> 항목 추가
                                 </button>
 
-                                {!isLocalFirstChecklistSpike && (
+                                {canApplyTemplates && (
                                     <button
                                         onClick={() => setIsTemplateModalOpen(true)}
                                         className={css({
@@ -1630,7 +1631,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                 </div>
             )}
 
-            {checklistId && !isLocalFirstChecklistSpike && (
+            {checklistId && canApplyTemplates && (
                 <TemplateModal
                     isOpen={isTemplateModalOpen}
                     onClose={() => setIsTemplateModalOpen(false)}

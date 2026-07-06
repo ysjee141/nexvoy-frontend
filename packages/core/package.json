@@ -19,6 +19,8 @@
     "./local-first/tombstone": "./src/local-first/tombstone.ts",
     "./local-first/tripDocument": "./src/local-first/tripDocument.ts",
     "./local-first/yjsTripDocument": "./src/local-first/yjsTripDocument.ts",
+    "./repositories/checklistMismatchDetector": "./src/repositories/checklistMismatchDetector.ts",
+    "./repositories/dualWriteChecklistRepository": "./src/repositories/dualWriteChecklistRepository.ts",
     "./repositories/types": "./src/repositories/types.ts",
     "./sync/backupTypes": "./src/sync/backupTypes.ts",
     "./sync/encryption": "./src/sync/encryption.ts",
@@ -31,7 +33,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/iceServers.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
+    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/checklistMismatchDetector.test.ts && tsx src/repositories/__tests__/dualWriteChecklistRepository.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/iceServers.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

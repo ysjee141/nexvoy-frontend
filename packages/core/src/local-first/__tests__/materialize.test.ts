@@ -254,6 +254,25 @@ if (!everyoneItem.status.isMyChecked || !everyoneItem.status.canCheck) {
   throw new Error('Current user status should be materialized for checklist items.')
 }
 
+const ownerOnlyDocument: TripDocumentV1 = {
+  ...document,
+  members: {},
+  checklistItemUserChecks: {
+    'check:item-2:user-1': {
+      id: 'check:item-2:user-1',
+      itemId: 'item-2',
+      userId: 'user-1',
+      createdAt: '2026-06-01T00:00:00.000Z',
+    },
+  },
+}
+const ownerOnlyEveryoneItem = materializeChecklists(ownerOnlyDocument, { currentUserId: 'user-1' })
+  .flatMap((itemChecklist) => itemChecklist.items)
+  .find((item) => item.id === 'item-2')
+if (!ownerOnlyEveryoneItem?.status.isChecked || ownerOnlyEveryoneItem.status.requiredCount !== 1) {
+  throw new Error('Owner should be included in everyone-assigned checklist participants.')
+}
+
 if (detail.metrics.documentSizeBytes !== estimateDocumentSizeBytes(document)) {
   throw new Error('Materialize metrics should include document byte size.')
 }
