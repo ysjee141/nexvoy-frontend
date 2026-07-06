@@ -1,4 +1,5 @@
 import { sendGAEvent } from '@next/third-parties/google'
+import type { P2PObservabilityEvent } from '@nexvoy/core/sync/iceServers'
 
 /**
  * 서비스 개선을 위한 애널리틱스 이벤트 관리 서비스 (ADR-002)
@@ -60,6 +61,14 @@ class AnalyticsService {
         } catch (e) {
             console.error(`[Analytics] LogEvent Error (${name}):`, e);
         }
+    }
+
+    /** Local-first P2P 관측 이벤트 — document content/room id/CRDT payload는 포함하지 않는다. */
+    public logP2PEvent(event: P2PObservabilityEvent) {
+        const { name, ...params } = event;
+        this.logEvent(name, Object.fromEntries(
+            Object.entries(params).filter(([, value]) => value !== undefined)
+        ));
     }
 
     // --- 사전 정의된 헬퍼 메서드들 ---

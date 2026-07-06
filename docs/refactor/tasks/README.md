@@ -68,8 +68,9 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-008-backup-queue-and-restore.md` | 완료 | 로컬 구현 및 검증 완료 |
 | `TASK-008a-web-checklist-read-through-hydration.md` | 완료 | 로컬 구현 및 검증 완료 |
 | `TASK-009-mobile-webrtc-native-feasibility.md` | 완료 | 로컬 구현 및 검증 완료 |
+| `TASK-010-cloudflare-ice-config.md` | 완료 | 로컬 구현 및 검증 완료 |
 
-현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `Phase 3`의 모바일 WebRTC native feasibility는 provider boundary와 검증 보고서로 정리했다. 다음 작업은 `TASK-010: Cloudflare ICE Config`다.
+현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `Phase 3`의 모바일 WebRTC native feasibility와 Cloudflare ICE config 발급 경로는 provider boundary, Edge Function, 검증 보고서로 정리했다. 다음 작업은 `TASK-011: Dual-write and Mismatch Detector`다.
 
 ## Phase별 작업 목록
 
@@ -97,7 +98,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 ### Phase 3: P2P Optional Fast Path
 
 - [x] `TASK-009-mobile-webrtc-native-feasibility.md`: Expo dev client/EAS Build 기반 모바일 WebRTC 검증
-- [ ] `TASK-010-cloudflare-ice-config.md`: Cloudflare STUN/TURN ICE config 발급 경로 구현
+- [x] `TASK-010-cloudflare-ice-config.md`: Cloudflare STUN/TURN ICE config 발급 경로 구현
 
 ### Phase 4: 이관 안정화
 
@@ -111,6 +112,6 @@ TASK-008a-web-checklist-read-through-hydration.md
 
 ## 권장 시작 순서
 
-1. `TASK-010-cloudflare-ice-config.md`
+1. `TASK-011-dual-write-and-mismatch-detector.md`
 
-TASK-001~009까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건을 검증할 수 있는 상태가 되었다. 다음은 Cloudflare STUN/TURN ICE config 발급 경로를 구현한다.
+TASK-001~010까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로를 검증할 수 있는 상태가 되었다. 다음은 dual-write와 mismatch detector를 도입한다.
