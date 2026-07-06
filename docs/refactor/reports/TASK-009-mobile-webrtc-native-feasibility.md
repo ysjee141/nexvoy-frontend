@@ -48,6 +48,7 @@ Expo SDK 54 모바일 앱에서 native WebRTC는 가능성이 있지만 Expo Go�
 - Foreground/background 전환은 native dependency 설치 후 실기기에서 검증해야 한다.
 - 현재 provider는 `AppState.currentState`를 diagnostic에 포함해 추후 연결 해제/복구 로그의 기준점을 제공한다.
 - WebRTC는 optional fast path이므로 unavailable 상태에서도 local write와 Supabase backup queue는 계속 동작해야 한다.
+- iOS/Android 실기기 WebRTC peer connection lifecycle 검증은 현재 기기 부재로 deferred 처리한다.
 
 ## Manual Verification Plan
 
@@ -83,6 +84,13 @@ Expo SDK 54 모바일 앱에서 native WebRTC는 가능성이 있지만 Expo Go�
   - Add Metro alias resolver for `@/`.
   - Add explicit `metro-runtime` and `babel-preset-expo@54.0.11` dependencies for SDK 54 bundling.
 - Verification: local preview Android build completed successfully and produced a release APK.
+
+## Android Emulator Smoke Verification
+
+- Android Emulator에 preview APK를 설치한 뒤 일정 생성 및 체크리스트 템플릿 적용 플로우를 수동 검증했다.
+- 해당 구간 Logcat에서 `FATAL EXCEPTION`, `JavascriptException`, `NoClassDefFoundError`, `Unable to resolve`, `Cannot find module`, WebRTC native module load error는 확인되지 않았다.
+- 확인된 로그는 `ImeTracker`, `GoogleInputMethodService`, `CoreBackPreview`, `InputManager-JNI`, `PackageConfigPersister` 중심의 입력/시스템 warning으로, 앱 crash 또는 native module load failure로 보지 않는다.
+- Emulator smoke 검증은 APK 설치, standalone startup, native module load crash 여부를 확인하는 범위이며, 실기기 네트워크/NAT/background lifecycle 검증을 대체하지 않는다.
 
 ## Decision
 
