@@ -7,6 +7,9 @@
 ## Artifacts
 
 - `docs/refactor/tasks/TASK-016-mobile-native-key-provisioning-and-background-sync.md`
+- `docs/refactor/tasks/TASK-017-mobile-background-provisioning-sync.md`
+- `docs/refactor/tasks/TASK-018-mobile-non-exportable-key-storage.md`
+- `docs/refactor/tasks/TASK-019-mobile-first-owner-key-bootstrap.md`
 - `docs/refactor/adrs/ADR-011-invitation-key-provisioning-strategy.md`
 - `_workspace/03_reviewer_feedback.md`
 - `_workspace/04_qa_report.md`
@@ -41,4 +44,4 @@
 - Expo Go는 custom native module을 지원하지 않으므로 RNQC runtime 검증은 dev client/preview APK 기준이다.
 - 실제 Android preview APK 설치와 Logcat native crypto crash 확인은 아직 수행하지 않았다.
 - 첫 Mobile owner device는 Web 또는 이미 준비된 owner/editor device가 해당 Mobile request를 처리해야 active key를 얻을 수 있다.
-- 다음 split은 OS background task hardening과 non-exportable keystore 검토다.
+- 다음 split 문서로 `TASK-017` background provisioning sync, `TASK-018` non-exportable key storage, `TASK-019` Mobile-first owner key bootstrap을 추가했다.
