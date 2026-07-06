@@ -9,7 +9,7 @@ Expo SDK 54 모바일 앱에서 native WebRTC를 optional fast path로 둘 수 �
 - `docs/refactor/tasks/TASK-009-mobile-webrtc-native-feasibility.md`
 - `docs/refactor/reports/TASK-009-mobile-webrtc-native-feasibility.md`
 - `docs/refactor/adrs/ADR-002-mobile-webrtc-runtime.md`
-- `docs/refactor/adrs/ADR-004-p2p-optional-fast-path.md`
+- `docs/refactor/adrs/ADR-004-p2p-signaling-strategy.md`
 
 ## Key Changes
 
@@ -30,6 +30,8 @@ Expo SDK 54 모바일 앱에서 native WebRTC를 optional fast path로 둘 수 �
 - `pnpm build` 성공
 - `pnpm build:mobile` 성공
 - `pnpm exec eas build --profile preview --platform android --local --clear-cache` 성공
+- Android Emulator에서 preview APK 설치 후 일정 생성 및 체크리스트 템플릿 적용 플로우 수동 검증 성공
+- 해당 emulator 검증 구간 Logcat에서 `FATAL EXCEPTION`, `JavascriptException`, `NoClassDefFoundError`, WebRTC native module load error 미확인
 
 ## Rollback
 
@@ -38,5 +40,6 @@ Expo SDK 54 모바일 앱에서 native WebRTC를 optional fast path로 둘 수 �
 ## Notes
 
 - Android EAS build `c10e9239-8154-43cf-879b-4235681a8a1c`는 prebuild에서 실패했으며, 직접 원인은 WebRTC가 아니라 존재하지 않는 asset 파일 참조였다.
-- 실제 iOS/Android peer connection 동작은 EAS dev client 실기기 설치 후 수동 검증 대상으로 남겼다.
+- 실제 iOS/Android peer connection lifecycle 및 foreground/background 동작은 실기기 부재로 deferred 처리했다.
+- Android Emulator smoke 검증은 native module load와 standalone startup crash 여부만 확인하며, 실기기 네트워크/NAT/background 동작을 대체하지 않는다.
 - WebRTC는 optional fast path이며 unavailable 상태에서도 local write와 Supabase backup/restore가 데이터 안전성의 기본 경로다.
