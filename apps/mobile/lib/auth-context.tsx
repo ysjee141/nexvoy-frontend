@@ -18,6 +18,7 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { cancelAllLocalNotifications } from './notifications'
 import { logLocalFirstEvent } from './observability'
+import { revokeAndClearCurrentMobileKeyMaterial } from './local-first/keyProvisioningService'
 
 interface AuthContextValue {
   session: Session | null
@@ -70,6 +71,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await cancelAllLocalNotifications()
     } catch {
       // 알림 정리 실패가 로그아웃을 막으면 계정 전환 시 더 위험하다.
+    }
+    try {
+      await revokeAndClearCurrentMobileKeyMaterial(supabase)
+    } catch {
+      // 서버/로컬 키 정리 실패도 로그아웃 자체를 막지 않는다.
     }
     try {
       await supabase.rpc('cleanup_current_user_push_tokens')

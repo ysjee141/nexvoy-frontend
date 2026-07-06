@@ -15,6 +15,12 @@ module.exports = () => {
   const hasAndroidFirebaseConfig = fileExists(androidGoogleServicesFile)
   const hasIosFirebaseConfig = fileExists(iosGoogleServicesFile)
 
+  config.plugins = [
+    ...(config.plugins ?? []),
+    'expo-build-properties',
+    'react-native-quick-crypto',
+  ]
+
   if (hasAndroidFirebaseConfig || hasIosFirebaseConfig) {
     config.plugins = [
       ...(config.plugins ?? []),

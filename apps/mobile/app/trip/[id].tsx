@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Image,
   KeyboardAvoidingView,
   Linking,
@@ -99,6 +100,7 @@ import {
 } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { runMobileForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
 import {
   cancelDocumentAlarms,
   cancelPlanAlarm,
@@ -631,6 +633,7 @@ export default function TripDetailScreen() {
   const { session } = useAuth()
   const insets = useSafeAreaInsets()
   const isMounted = useRef(true)
+  const keyProvisioningInFlight = useRef(false)
   const scrollRef = useRef<ScrollView>(null)
   const detailTopHeightRef = useRef(0)
   const scrollOffsetRef = useRef(0)
@@ -681,6 +684,8 @@ export default function TripDetailScreen() {
   const [shareLoading, setShareLoading] = useState(false)
   const [inviteLoading, setInviteLoading] = useState(false)
   const [generatedInvite, setGeneratedInvite] = useState<GeneratedInvite | null>(null)
+  const [keyProvisioningBusy, setKeyProvisioningBusy] = useState(false)
+  const [keyProvisioningMessage, setKeyProvisioningMessage] = useState<string | null>(null)
 
   useEffect(() => {
     isMounted.current = true
@@ -759,6 +764,52 @@ export default function TripDetailScreen() {
   useEffect(() => {
     loadTripList()
   }, [loadTripList])
+
+  const runTripKeyProvisioning = useCallback(async (source: 'auto' | 'sheet' = 'auto') => {
+    if (!id || !canEditContent || keyProvisioningInFlight.current) return
+    keyProvisioningInFlight.current = true
+    setKeyProvisioningBusy(true)
+    try {
+      const result = await runMobileForegroundKeyProvisioning({
+        supabase,
+        documentId: id,
+        limit: 25,
+      })
+      if (!isMounted.current) return
+      if (result.completed > 0) {
+        setKeyProvisioningMessage(`${result.completed}명의 여정 데이터 준비를 완료했어요.`)
+      } else if (result.skipped > 0 && source === 'sheet') {
+        setKeyProvisioningMessage('이 기기 데이터 준비 요청을 등록했어요. Web 또는 이미 준비된 기기에서 완료할 수 있어요.')
+      } else if (result.failed > 0) {
+        setKeyProvisioningMessage('일부 데이터 준비를 완료하지 못했어요. 잠시 후 다시 시도해 주세요.')
+      } else if (source === 'sheet') {
+        setKeyProvisioningMessage('처리할 데이터 준비 요청이 없어요.')
+      }
+    } catch {
+      if (isMounted.current && source === 'sheet') {
+        setKeyProvisioningMessage('데이터 준비 상태를 확인하지 못했어요.')
+      }
+    } finally {
+      keyProvisioningInFlight.current = false
+      if (isMounted.current) setKeyProvisioningBusy(false)
+    }
+  }, [canEditContent, id])
+
+  useEffect(() => {
+    if (canEditContent && id) {
+      void runTripKeyProvisioning('auto')
+    }
+  }, [canEditContent, id, runTripKeyProvisioning])
+
+  useEffect(() => {
+    if (!canEditContent || !id) return undefined
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void runTripKeyProvisioning('auto')
+      }
+    })
+    return () => subscription.remove()
+  }, [canEditContent, id, runTripKeyProvisioning])
 
   useEffect(() => {
     setChecklist(null)
@@ -1754,6 +1805,11 @@ export default function TripDetailScreen() {
             onRevokeInviteLink={handleRevokeInviteLink}
             onUpdateRole={handleUpdateMemberRole}
             onRemove={handleRemoveMember}
+            keyProvisioningBusy={keyProvisioningBusy}
+            keyProvisioningMessage={keyProvisioningMessage}
+            onRunKeyProvisioning={() => {
+              void runTripKeyProvisioning('sheet')
+            }}
             onClose={() => setIsCollaboratorSheetOpen(false)}
           />
         </>
@@ -2111,6 +2167,9 @@ function CollaboratorSheet({
   onRevokeInviteLink,
   onUpdateRole,
   onRemove,
+  keyProvisioningBusy,
+  keyProvisioningMessage,
+  onRunKeyProvisioning,
   onClose,
 }: {
   visible: boolean
@@ -2130,6 +2189,9 @@ function CollaboratorSheet({
   onRevokeInviteLink: () => void
   onUpdateRole: (memberId: string, role: 'editor' | 'viewer') => void
   onRemove: (member: TripMember) => void
+  keyProvisioningBusy: boolean
+  keyProvisioningMessage: string | null
+  onRunKeyProvisioning: () => void
   onClose: () => void
 }) {
   const [email, setEmail] = useState('')
@@ -2277,8 +2339,27 @@ function CollaboratorSheet({
         <View style={styles.mobileProvisioningNotice}>
           <Text style={styles.mobileProvisioningNoticeTitle}>여정 데이터 준비 안내</Text>
           <Text style={styles.mobileProvisioningNoticeText}>
-            이번 모바일 버전에서는 데이터 준비 상태 안내만 제공돼요. 실제 데이터 준비는 Web에서 처리됩니다.
+            이 기기가 여정 데이터를 이미 열 수 있으면 참여자의 데이터 준비를 처리해요. 아직이면 이 기기 준비 요청을 등록합니다.
           </Text>
+          {keyProvisioningMessage ? (
+            <Text style={styles.mobileProvisioningNoticeMeta}>{keyProvisioningMessage}</Text>
+          ) : null}
+          <Pressable
+            onPress={onRunKeyProvisioning}
+            disabled={keyProvisioningBusy}
+            accessibilityRole="button"
+            accessibilityState={{ busy: keyProvisioningBusy, disabled: keyProvisioningBusy }}
+            style={({ pressed }) => [
+              styles.mobileProvisioningButton,
+              keyProvisioningBusy && styles.buttonDisabled,
+              pressed && !keyProvisioningBusy && styles.pressedFade,
+            ]}
+          >
+            {keyProvisioningBusy ? <ActivityIndicator color={colors.brand.primary} /> : null}
+            <Text style={styles.mobileProvisioningButtonText}>
+              {keyProvisioningBusy ? '확인 중...' : '데이터 준비 확인'}
+            </Text>
+          </Pressable>
         </View>
       ) : null}
 
@@ -5316,6 +5397,28 @@ const styles = StyleSheet.create({
     color: colors.brand.muted,
     fontSize: fontSizes.sm,
     lineHeight: 20,
+  },
+  mobileProvisioningNoticeMeta: {
+    color: colors.brand.primary,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+    lineHeight: 18,
+  },
+  mobileProvisioningButton: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.primary,
+    backgroundColor: colors.bg.canvas,
+  },
+  mobileProvisioningButtonText: {
+    color: colors.brand.primary,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
   },
   inviteLinkCreateButton: {
     minHeight: 48,

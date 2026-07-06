@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "scheme": "onvoy",
     "userInterfaceStyle": "light",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#FFFFFF"

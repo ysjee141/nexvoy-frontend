@@ -237,14 +237,20 @@ AS $$
   SELECT EXISTS (
     SELECT 1
     FROM public.document_keys dk
+    LEFT JOIN public.user_key_materials ukm
+      ON ukm.id = dk.material_id
     WHERE dk.document_id = p_document_id
       AND dk.user_id = p_user_id
       AND dk.revoked_at IS NULL
       AND (p_key_version IS NULL OR dk.key_version = p_key_version)
       AND (
-        NULLIF(p_device_id, '') IS NULL
-        OR dk.device_id = p_device_id
-        OR dk.device_id IS NULL
+        (NULLIF(p_device_id, '') IS NULL AND dk.device_id IS NULL)
+        OR (
+          NULLIF(p_device_id, '') IS NOT NULL
+          AND dk.device_id = trim(p_device_id)
+          AND ukm.status = 'active'
+          AND ukm.revoked_at IS NULL
+        )
       )
   );
 $$;
@@ -540,6 +546,7 @@ SET search_path = public
 AS $$
 DECLARE
   revoked_material_count integer := 0;
+  revoked_key_count integer := 0;
   cancelled_request_count integer := 0;
 BEGIN
   IF auth.uid() IS NULL THEN
@@ -557,6 +564,14 @@ BEGIN
 
   GET DIAGNOSTICS revoked_material_count = ROW_COUNT;
 
+  UPDATE public.document_keys
+    SET revoked_at = COALESCE(revoked_at, timezone('utc'::text, now()))
+    WHERE user_id = auth.uid()
+      AND device_id = trim(COALESCE(p_device_id, ''))
+      AND revoked_at IS NULL;
+
+  GET DIAGNOSTICS revoked_key_count = ROW_COUNT;
+
   UPDATE public.document_key_provisioning_requests
     SET status = 'cancelled',
         cancelled_at = COALESCE(cancelled_at, timezone('utc'::text, now())),
@@ -569,6 +584,7 @@ BEGIN
 
   RETURN jsonb_build_object(
     'revoked_material_count', revoked_material_count,
+    'revoked_key_count', revoked_key_count,
     'cancelled_request_count', cancelled_request_count
   );
 END;
@@ -1145,20 +1161,25 @@ BEGIN
     RAISE EXCEPTION '권한이 없습니다.';
   END IF;
 
-  SELECT *
+  SELECT dk.*
     INTO key_record
   FROM public.document_keys dk
+  LEFT JOIN public.user_key_materials ukm
+    ON ukm.id = dk.material_id
   WHERE dk.document_id = p_document_id
     AND dk.user_id = auth.uid()
     AND dk.revoked_at IS NULL
     AND (p_key_version IS NULL OR dk.key_version = p_key_version)
     AND (
-      NULLIF(p_device_id, '') IS NULL
-      OR dk.device_id = p_device_id
-      OR dk.device_id IS NULL
+      (NULLIF(p_device_id, '') IS NULL AND dk.device_id IS NULL)
+      OR (
+        NULLIF(p_device_id, '') IS NOT NULL
+        AND dk.device_id = trim(p_device_id)
+        AND ukm.status = 'active'
+        AND ukm.revoked_at IS NULL
+      )
     )
   ORDER BY
-    CASE WHEN dk.device_id = p_device_id THEN 0 ELSE 1 END,
     dk.created_at DESC
   LIMIT 1;
 
