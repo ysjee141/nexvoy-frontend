@@ -110,9 +110,8 @@ class AnalyticsService {
     }
 
     /** 체크리스트 항목 체크/해제 */
-    public logChecklistCheck(itemName: string, isChecked: boolean) {
+    public logChecklistCheck(isChecked: boolean) {
         this.logEvent('checklist_check', {
-            item_name: itemName,
             is_checked: isChecked ? 'true' : 'false'
         });
     }

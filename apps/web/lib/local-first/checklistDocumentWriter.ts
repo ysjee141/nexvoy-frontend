@@ -32,29 +32,30 @@ import {
   loadTripDocumentUpdate,
   saveTripDocumentUpdate,
 } from './indexedDbStore'
-
-const SPIKE_USER_ID = 'local-first-spike-user'
+import { resolveWebOwnerContext, type WebOwnerContext } from './ownerNamespace'
 
 export function createWebChecklistDocumentWriter(
   supabase: SupabaseClient,
 ): DualWriteChecklistLocalWriter {
   return {
     getChecklist: async (tripId) => toChecklistRepositorySnapshot(
-      await loadOrCreateTripDocument(supabase, tripId),
+      await loadOrCreateTripDocument(supabase, await resolveWebOwnerContext(supabase), tripId),
       await getCurrentUserId(supabase),
     ),
     applyCreateItem: async (checklistId, input, result) => {
-      const tripId = await resolveTripIdForChecklistId(supabase, checklistId)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForChecklistId(supabase, ownerContext, checklistId)
       if (!tripId) throw new Error('Dual-write checklist id is invalid.')
-      await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         upsertItemFromLegacyResult(tripDocument, input, result)
       })
       return { tripId }
     },
     applyUpdateItem: async (itemId, input) => {
-      const tripId = await resolveTripIdForItemId(supabase, itemId)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForItemId(supabase, ownerContext, itemId)
       if (!tripId) throw new Error('Dual-write item id is invalid.')
-      await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[itemId]
         if (!item) throw new Error('Dual-write checklist item was not found.')
         const now = new Date().toISOString()
@@ -72,9 +73,10 @@ export function createWebChecklistDocumentWriter(
       return { tripId }
     },
     applyDeleteItem: async (itemId) => {
-      const tripId = await resolveTripIdForItemId(supabase, itemId)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForItemId(supabase, ownerContext, itemId)
       if (!tripId) throw new Error('Dual-write item id is invalid.')
-      await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const now = new Date().toISOString()
         tripDocument.tombstones[`tombstone:${itemId}`] = {
           id: `tombstone:${itemId}`,
@@ -87,9 +89,10 @@ export function createWebChecklistDocumentWriter(
       return { tripId }
     },
     applyToggleItem: async (itemId, isChecked) => {
-      const tripId = await resolveTripIdForItemId(supabase, itemId)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForItemId(supabase, ownerContext, itemId)
       if (!tripId) throw new Error('Dual-write item id is invalid.')
-      await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[itemId]
         if (!item) throw new Error('Dual-write checklist item was not found.')
         item.legacyIsChecked = isChecked
@@ -98,10 +101,11 @@ export function createWebChecklistDocumentWriter(
       return { tripId }
     },
     applyToggleItemForUser: async (input, result) => {
-      const tripId = await resolveTripIdForChecklistId(supabase, input.item.checklist_id)
-        ?? await resolveTripIdForItemId(supabase, input.item.id)
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripId = await resolveTripIdForChecklistId(supabase, ownerContext, input.item.checklist_id)
+        ?? await resolveTripIdForItemId(supabase, ownerContext, input.item.id)
       if (!tripId) throw new Error('Dual-write item id is invalid.')
-      await mutateLocalTripDocument(supabase, tripId, (tripDocument) => {
+      await mutateLocalTripDocument(supabase, ownerContext, tripId, (tripDocument) => {
         const item = tripDocument.checklistItems[input.item.id]
         if (!item) throw new Error('Dual-write checklist item was not found.')
 
@@ -128,56 +132,60 @@ export function createWebChecklistDocumentWriter(
 
 async function mutateLocalTripDocument(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   tripId: string,
   mutate: (tripDocument: TripDocumentV1) => void,
 ): Promise<TripDocumentV1> {
-  const ydoc = await loadYjsTripDocument(supabase, tripId)
+  const ydoc = await loadYjsTripDocument(supabase, ownerContext, tripId)
   const document = mutateTripDocumentInYjs(ydoc, mutate)
-  await saveTripDocumentUpdate(tripId, encodeTripDocumentUpdate(ydoc))
+  await saveTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId }, encodeTripDocumentUpdate(ydoc))
   return document
 }
 
 async function loadOrCreateTripDocument(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   tripId: string,
 ): Promise<TripDocumentV1> {
   const ydoc = createYjsTripDocument()
-  const update = await loadTripDocumentUpdate(tripId)
+  const update = await loadTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId })
   if (update) {
     applyTripDocumentUpdate(ydoc, update)
   }
   const document = readTripDocumentFromYjs(ydoc)
   if (document) return document
 
-  const initialDocument = await createInitialTripDocument(supabase, tripId)
+  const initialDocument = await createInitialTripDocument(supabase, ownerContext, tripId)
   writeTripDocumentToYjs(ydoc, initialDocument)
-  await saveTripDocumentUpdate(tripId, encodeTripDocumentUpdate(ydoc))
+  await saveTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId }, encodeTripDocumentUpdate(ydoc))
   return initialDocument
 }
 
 async function loadYjsTripDocument(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   tripId: string,
 ) {
   const ydoc = createYjsTripDocument()
-  const update = await loadTripDocumentUpdate(tripId)
+  const update = await loadTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId })
   if (update) {
     applyTripDocumentUpdate(ydoc, update)
   } else {
-    writeTripDocumentToYjs(ydoc, await createInitialTripDocument(supabase, tripId))
+    writeTripDocumentToYjs(ydoc, await createInitialTripDocument(supabase, ownerContext, tripId))
   }
   return ydoc
 }
 
 async function createInitialTripDocument(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   tripId: string,
 ): Promise<TripDocumentV1> {
   const hydratedDocument = await hydrateTripDocumentFromLegacyRows(supabase, tripId)
   if (hydratedDocument) return hydratedDocument
 
   const now = new Date().toISOString()
-  const ownerId = await getCurrentUserId(supabase) ?? SPIKE_USER_ID
+  const ownerId = ownerContext.ownerId
   const checklistId = createLocalChecklistId(tripId)
   const today = now.slice(0, 10)
   const tripDocument = createEmptyTripDocumentV1({
@@ -196,6 +204,10 @@ async function createInitialTripDocument(
     id: checklistId,
     title: '로컬 준비물',
     createdAt: now,
+  }
+  if (ownerContext.isGuest) {
+    tripDocument.meta.localOwnerId = ownerId
+    tripDocument.meta.promotionStatus = 'guest'
   }
   return tripDocument
 }
@@ -428,18 +440,20 @@ function parseTripIdFromChecklistId(checklistId: string): string | null {
 
 async function resolveTripIdForChecklistId(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   checklistId: string,
 ): Promise<string | null> {
   return parseTripIdFromChecklistId(checklistId)
-    ?? findTripIdInLocalDocuments((tripDocument) => Boolean(tripDocument.checklists[checklistId]))
+    ?? findTripIdInLocalDocuments(ownerContext, (tripDocument) => Boolean(tripDocument.checklists[checklistId]))
     ?? findTripIdForLegacyChecklistId(supabase, checklistId)
 }
 
 async function resolveTripIdForItemId(
   supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
   itemId: string,
 ): Promise<string | null> {
-  return findTripIdInLocalDocuments((tripDocument) => Boolean(tripDocument.checklistItems[itemId]))
+  return findTripIdInLocalDocuments(ownerContext, (tripDocument) => Boolean(tripDocument.checklistItems[itemId]))
     ?? findTripIdForLegacyItemId(supabase, itemId)
 }
 
@@ -472,9 +486,10 @@ async function findTripIdForLegacyItemId(
 }
 
 async function findTripIdInLocalDocuments(
+  ownerContext: WebOwnerContext,
   matches: (tripDocument: TripDocumentV1) => boolean,
 ): Promise<string | null> {
-  const rows = await loadAllTripDocumentUpdates()
+  const rows = await loadAllTripDocumentUpdates(ownerContext.namespace)
   for (const row of rows) {
     const ydoc = createYjsTripDocument()
     applyTripDocumentUpdate(ydoc, new Uint8Array(row.update))

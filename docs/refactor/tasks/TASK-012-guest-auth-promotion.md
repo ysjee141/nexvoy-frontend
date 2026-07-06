@@ -28,11 +28,22 @@
 
 ## 구현 단계
 
-1. guest document owner model을 정의한다.
-2. local store namespace를 guest/auth user 단위로 분리한다.
-3. 공유/백업/동기화 요청 시 로그인 필요 상태를 반환한다.
-4. 로그인 성공 후 owner id를 auth user id로 승격한다.
-5. 최초 snapshot upload가 성공하거나 retry queue에 들어가야 승격 완료로 본다.
+1. guest document owner model을 정의한다. ✅
+2. local store namespace를 guest/auth user 단위로 분리한다. ✅
+3. 공유/백업/동기화 요청 시 로그인 필요 상태를 반환한다. ✅
+4. 로그인 성공 후 owner id를 auth user id로 승격한다. ✅
+5. 최초 snapshot upload와 document key 저장이 성공해야 승격 완료로 본다. ✅
+
+## 구현 결과
+
+- `packages/core/src/local-first/guestIdentity.ts`에 guest owner id, owner namespace, login-required guard helper를 추가했다.
+- `packages/core/src/local-first/guestPromotion.ts`에 guest document owner/member/reference rewrite와 promotion 상태 helper를 추가했다.
+- `apps/web/lib/local-first/indexedDbStore.ts`를 namespace-aware store로 확장해 guest/auth user local document를 분리했다.
+- Web local-first checklist repository와 dual-write document writer가 guest/auth owner context를 사용하도록 변경했다.
+- `apps/web/lib/local-first/guestPromotionService.ts`가 로그인 후 guest namespace 문서를 auth namespace 문서로 승격하고 encrypted snapshot 및 `document_keys`를 업로드한다.
+- remote/auth namespace에 같은 document id가 있으면 덮어쓰지 않고 `conflict` marker를 남기며 로그인 직후 사용자에게 안내한다.
+- 로그아웃과 회원 탈퇴 시 guest namespace를 포함한 기기 내 local-first document를 삭제한다.
+- OAuth callback처럼 login page를 거치지 않는 경로를 위해 Home 진입/인증 상태 변경 시 promotion을 재시도한다.
 
 ## 데이터 호환성 고려사항
 
@@ -40,11 +51,22 @@
 - 앱 삭제 시 guest 데이터가 유실될 수 있음을 UX에 안내한다.
 - 회원 탈퇴 시 local documents, backup rows, push tokens를 정리한다.
 
+정책:
+
+- 같은 `documentId`가 remote/auth namespace에 있으면 remote를 덮어쓰지 않고 사용자 선택이 필요한 conflict로 기록한다.
+- 로그아웃 시 guest/auth namespace를 포함한 local-first documents를 모두 삭제한다.
+- 회원 탈퇴 성공 후 기기 내 OnVoy local-first documents를 모두 삭제한다.
+- 승격 완료 조건은 encrypted snapshot upload, owner member upsert, `document_keys` upsert 성공이다.
+- guest 데이터 유실 안내는 백업/공유/동기화 로그인 CTA 근처를 우선 위치로 둔다.
+
 ## 검증 방법
 
 - guest 작성 → 로그인 → backup upload 통합 테스트
 - 로그아웃 후 다른 계정 local store 격리 확인
 - 앱 삭제/데이터 초기화 안내 UX 확인
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm typecheck` 성공
+- `pnpm build` 성공
 
 ## 롤백 방법
 
@@ -53,6 +75,6 @@
 
 ## 완료 조건
 
-- guest document가 authenticated document로 승격된다.
-- 중복 document가 생기지 않는다.
-- 계정 전환과 탈퇴 정리 정책이 테스트된다.
+- guest document가 authenticated document로 승격된다. ✅
+- 중복 document가 생기지 않는다. ✅
+- 계정 전환과 탈퇴 정리 정책이 테스트된다. ✅

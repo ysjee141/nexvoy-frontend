@@ -203,6 +203,13 @@ export interface TripDocumentMeta {
   createdFromLegacyAt?: IsoDateTimeString
   lastLegacyExportAt?: IsoDateTimeString
   lastBackupAt?: IsoDateTimeString
+  localOwnerId?: UserId
+  promotedOwnerId?: UserId
+  promotionStatus?: 'guest' | 'backup_pending' | 'backup_queued' | 'completed' | 'failed' | 'conflict'
+  promotedAt?: IsoDateTimeString
+  firstBackupQueuedAt?: IsoDateTimeString
+  firstBackupUploadedAt?: IsoDateTimeString
+  promotionErrorCode?: string
 }
 
 export type LegacyTripRowTable =

@@ -3,6 +3,7 @@ import type {
   BackupDocumentType,
   BackupSnapshotRecord,
   BackupUpdateRecord,
+  WrappedDocumentKey,
   PendingBackupUpdate,
   RestorePlan,
 } from '../sync/backupTypes'
@@ -27,7 +28,15 @@ export interface ListBackupUpdatesInput {
 }
 
 export interface SupabaseBackupRepository {
+  hasSnapshot(documentId: string): Promise<boolean>
+  hasDocumentKey(input: { documentId: string; userId: string; keyVersion?: number }): Promise<boolean>
   upsertSnapshot(input: UpsertBackupDocumentInput): Promise<void>
+  upsertOwnerMember(input: { documentId: string; userId: string }): Promise<void>
+  upsertDocumentKey(input: {
+    documentId: string
+    userId: string
+    wrappedKey: WrappedDocumentKey
+  }): Promise<void>
   uploadUpdate(update: PendingBackupUpdate): Promise<void>
   getLatestSnapshot(documentId: string): Promise<BackupSnapshotRecord | null>
   listUpdates(input: ListBackupUpdatesInput): Promise<BackupUpdateRecord[]>
@@ -36,6 +45,27 @@ export interface SupabaseBackupRepository {
 
 export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBackupRepository {
   return {
+    hasSnapshot: async (documentId) => {
+      const { data, error } = await sb
+        .from('documents')
+        .select('id')
+        .eq('id', documentId)
+        .maybeSingle()
+      if (error) throw error
+      return Boolean(data)
+    },
+    hasDocumentKey: async (input) => {
+      let query = sb
+        .from('document_keys')
+        .select('id')
+        .eq('document_id', input.documentId)
+        .eq('user_id', input.userId)
+        .is('revoked_at', null)
+      if (input.keyVersion) query = query.eq('key_version', input.keyVersion)
+      const { data, error } = await query.maybeSingle()
+      if (error) throw error
+      return Boolean(data)
+    },
     upsertSnapshot: async (input) => {
       const { error } = await sb
         .from('documents')
@@ -49,6 +79,33 @@ export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBack
           encrypted: input.encrypted ?? true,
           updated_at: new Date().toISOString(),
         })
+
+      if (error) throw error
+    },
+    upsertOwnerMember: async (input) => {
+      const { error } = await sb
+        .from('document_members')
+        .upsert({
+          document_id: input.documentId,
+          user_id: input.userId,
+          role: 'owner',
+          status: 'accepted',
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'document_id,user_id' })
+
+      if (error) throw error
+    },
+    upsertDocumentKey: async (input) => {
+      const { error } = await sb
+        .from('document_keys')
+        .upsert({
+          document_id: input.documentId,
+          user_id: input.userId,
+          key_version: input.wrappedKey.keyVersion,
+          wrapped_dek: input.wrappedKey.wrappedDek,
+          wrapping_alg: input.wrappedKey.algorithm,
+          revoked_at: null,
+        }, { onConflict: 'document_id,user_id,key_version' })
 
       if (error) throw error
     },
