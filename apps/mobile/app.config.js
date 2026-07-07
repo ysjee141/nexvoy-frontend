@@ -10,6 +10,11 @@ function fileExists(relativePath) {
   return fs.existsSync(path.join(projectRoot, relativePath))
 }
 
+function addUnique(values, nextValue) {
+  const current = Array.isArray(values) ? values : []
+  return current.includes(nextValue) ? current : [...current, nextValue]
+}
+
 module.exports = () => {
   const config = JSON.parse(JSON.stringify(appJson.expo))
   const hasAndroidFirebaseConfig = fileExists(androidGoogleServicesFile)
@@ -17,9 +22,22 @@ module.exports = () => {
 
   config.plugins = [
     ...(config.plugins ?? []),
+    'expo-background-task',
     'expo-build-properties',
     'react-native-quick-crypto',
   ]
+
+  config.ios = {
+    ...(config.ios ?? {}),
+    infoPlist: {
+      ...(config.ios?.infoPlist ?? {}),
+      UIBackgroundModes: addUnique(config.ios?.infoPlist?.UIBackgroundModes, 'processing'),
+      BGTaskSchedulerPermittedIdentifiers: addUnique(
+        config.ios?.infoPlist?.BGTaskSchedulerPermittedIdentifiers,
+        'com.expo.modules.backgroundtask.processing',
+      ),
+    },
+  }
 
   if (hasAndroidFirebaseConfig || hasIosFirebaseConfig) {
     config.plugins = [

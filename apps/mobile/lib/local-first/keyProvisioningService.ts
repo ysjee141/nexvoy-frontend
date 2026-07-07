@@ -24,6 +24,15 @@ import {
   createMobileRsaOaepWrappingProvider,
   generateMobileRsaOaepKeyMaterial,
 } from './mobileCryptoProvider'
+import {
+  isMobileBackgroundWorkPaused,
+  runExclusiveMobileBackgroundWork,
+} from '@/lib/backgroundTaskCoordinator'
+
+const MOBILE_KEY_PROVISIONING_WORKER_NAME = 'mobile-key-provisioning'
+const MOBILE_BACKGROUND_KEY_PROVISIONING_LIMIT = 5
+
+type MobileKeyProvisioningRunSource = 'foreground' | 'background'
 
 export interface MobileKeyProvisioningResult {
   processed: number
@@ -31,6 +40,16 @@ export interface MobileKeyProvisioningResult {
   failed: number
   skipped: number
   errorCode?: SafeKeyProvisioningErrorCode
+}
+
+interface MobileKeyProvisioningRunInput {
+  supabase: SupabaseClient
+  documentId?: string | null
+  documentKey?: DocumentEncryptionKey
+  limit?: number
+  provider?: RsaOaepWrappingProvider
+  source: MobileKeyProvisioningRunSource
+  markWrapFailures: boolean
 }
 
 export async function ensureMobileDeviceKeyMaterial(
@@ -143,9 +162,82 @@ export async function runMobileForegroundKeyProvisioning(input: {
   limit?: number
   provider?: RsaOaepWrappingProvider
 }): Promise<MobileKeyProvisioningResult> {
+  return runExclusiveMobileBackgroundWork(
+    MOBILE_KEY_PROVISIONING_WORKER_NAME,
+    () => runMobileKeyProvisioning({
+      ...input,
+      limit: input.limit ?? 25,
+      source: 'foreground',
+      markWrapFailures: true,
+    }),
+    () => createSkippedProvisioningResult('retry_later', 1),
+  )
+}
+
+export async function runMobileBackgroundKeyProvisioning(input: {
+  supabase: SupabaseClient
+  limit?: number
+  provider?: RsaOaepWrappingProvider
+}): Promise<MobileKeyProvisioningResult> {
+  if (isMobileBackgroundWorkPaused()) {
+    return createSkippedProvisioningResult('retry_later')
+  }
+
+  try {
+    const { data } = await input.supabase.auth.getSession()
+    if (!data.session) {
+      await emitProvisioningEvent('document_key_provisioning_pending', {
+        status: 'skipped',
+        reason_code: 'background_session_unavailable',
+      })
+      return createSkippedProvisioningResult('retry_later')
+    }
+  } catch {
+    await emitProvisioningEvent('document_key_provisioning_pending', {
+      status: 'skipped',
+      reason_code: 'background_session_unavailable',
+    })
+    return createSkippedProvisioningResult('retry_later')
+  }
+
+  try {
+    return await runExclusiveMobileBackgroundWork(
+      MOBILE_KEY_PROVISIONING_WORKER_NAME,
+      () => runMobileKeyProvisioning({
+        ...input,
+        limit: input.limit ?? MOBILE_BACKGROUND_KEY_PROVISIONING_LIMIT,
+        source: 'background',
+        markWrapFailures: false,
+      }),
+      () => createSkippedProvisioningResult('retry_later', 1),
+    )
+  } catch {
+    await emitProvisioningEvent('document_key_provisioning_pending', {
+      status: 'skipped',
+      reason_code: 'background_interrupted',
+    })
+    return createSkippedProvisioningResult('retry_later')
+  }
+}
+
+async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): Promise<MobileKeyProvisioningResult> {
+  if (isMobileBackgroundWorkPaused()) {
+    return createSkippedProvisioningResult('retry_later')
+  }
+
   const repository = createInvitationRepository(input.supabase)
   const provider = input.provider ?? createMobileRsaOaepWrappingProvider()
-  if (input.documentId) {
+  const backgroundDeviceId = input.source === 'background' ? await getMobileDeviceId() : undefined
+
+  if (input.source === 'background' && !backgroundDeviceId) {
+    await emitProvisioningEvent('document_key_provisioning_pending', {
+      status: 'skipped',
+      reason_code: 'material_unavailable',
+    })
+    return createSkippedProvisioningResult('material_unavailable')
+  }
+
+  if (input.documentId && input.source === 'foreground') {
     try {
       const { deviceId } = await ensureMobileDeviceKeyMaterial(input.supabase)
       await loadOrRequestMobileProvisioningStatus({
@@ -162,7 +254,7 @@ export async function runMobileForegroundKeyProvisioning(input: {
   }
   const requests = await repository.listPendingDocumentKeyProvisioningRequests({
     documentId: input.documentId ?? null,
-    limit: input.limit ?? 25,
+    limit: input.limit,
   })
   const result: MobileKeyProvisioningResult = {
     processed: 0,
@@ -170,29 +262,48 @@ export async function runMobileForegroundKeyProvisioning(input: {
     failed: 0,
     skipped: 0,
   }
-  const documentKey = input.documentKey ?? (input.documentId
-    ? await getCurrentMobileDocumentKey({
+  const documentKeys = new Map<string, DocumentEncryptionKey | null>()
+
+  const resolveDocumentKey = async (documentId: string): Promise<DocumentEncryptionKey | null> => {
+    if (input.documentKey && input.documentId === documentId) return input.documentKey
+    if (documentKeys.has(documentId)) return documentKeys.get(documentId) ?? null
+    const documentKey = await getCurrentMobileDocumentKey({
       supabase: input.supabase,
-      documentId: input.documentId,
+      documentId,
+      deviceId: backgroundDeviceId ?? undefined,
       provider,
     })
-    : null)
+    documentKeys.set(documentId, documentKey)
+    return documentKey
+  }
 
-  if (!documentKey) {
-    await emitProvisioningEvent('document_key_provisioning_pending', {
-      status: 'skipped',
-      reason_code: 'owner_device_key_unavailable',
-      pending_count: requests.length,
-    })
-    return {
-      ...result,
-      skipped: requests.length,
-      errorCode: 'owner_device_key_unavailable',
+  if (input.documentId && requests.length > 0) {
+    const documentKey = await resolveDocumentKey(input.documentId)
+    if (!documentKey) {
+      await emitProvisioningEvent('document_key_provisioning_pending', {
+        status: 'skipped',
+        reason_code: 'owner_device_key_unavailable',
+        pending_count: requests.length,
+      })
+      return createSkippedProvisioningResult('owner_device_key_unavailable', requests.length)
     }
   }
 
   for (const request of requests) {
     result.processed += 1
+    if (isMobileBackgroundWorkPaused()) {
+      result.skipped += 1
+      result.errorCode = 'retry_later'
+      continue
+    }
+
+    const documentKey = await resolveDocumentKey(request.documentId)
+    if (!documentKey) {
+      result.skipped += 1
+      result.errorCode = 'owner_device_key_unavailable'
+      continue
+    }
+
     let begun: Awaited<ReturnType<typeof repository.beginDocumentKeyProvisioning>>
     try {
       begun = await repository.beginDocumentKeyProvisioning(request.id)
@@ -205,6 +316,12 @@ export async function runMobileForegroundKeyProvisioning(input: {
       continue
     }
 
+    if (isMobileBackgroundWorkPaused()) {
+      result.skipped += 1
+      result.errorCode = 'retry_later'
+      continue
+    }
+
     let wrappedKey: Awaited<ReturnType<typeof wrapDocumentEncryptionKeyWithRsaOaep>>
     try {
       wrappedKey = await wrapDocumentEncryptionKeyWithRsaOaep(provider, {
@@ -213,12 +330,21 @@ export async function runMobileForegroundKeyProvisioning(input: {
         keyVersion: begun.keyVersion,
       })
     } catch {
-      await markProvisioningFailed(repository, request, 'wrap_failed')
-      result.failed += 1
+      if (input.markWrapFailures) {
+        await markProvisioningFailed(repository, request, 'wrap_failed')
+        result.failed += 1
+      } else {
+        result.skipped += 1
+      }
       continue
     }
 
     try {
+      if (isMobileBackgroundWorkPaused()) {
+        result.skipped += 1
+        result.errorCode = 'retry_later'
+        continue
+      }
       await repository.completeDocumentKeyProvisioning({
         requestId: request.id,
         wrappedDek: wrappedKey.wrappedDek,
@@ -231,17 +357,42 @@ export async function runMobileForegroundKeyProvisioning(input: {
     }
   }
 
-  await emitProvisioningEvent(
-    result.failed > 0 ? 'document_key_provisioning_failed' : 'document_key_provisioning_completed',
-    {
-      status: result.failed > 0 ? 'failed' : 'completed',
-      reason_code: result.failed > 0 ? 'wrap_failed' : 'foreground_completed',
+  if (result.failed > 0) {
+    await emitProvisioningEvent('document_key_provisioning_failed', {
+      status: 'failed',
+      reason_code: 'wrap_failed',
       count: result.completed,
       pending_count: Math.max(0, requests.length - result.completed),
-    },
-  )
+    })
+  } else if (result.completed > 0 || requests.length === 0) {
+    await emitProvisioningEvent('document_key_provisioning_completed', {
+      status: 'completed',
+      reason_code: `${input.source}_completed`,
+      count: result.completed,
+      pending_count: Math.max(0, requests.length - result.completed),
+    })
+  } else {
+    await emitProvisioningEvent('document_key_provisioning_pending', {
+      status: 'skipped',
+      reason_code: result.errorCode ?? `${input.source}_skipped`,
+      pending_count: requests.length,
+    })
+  }
 
   return result
+}
+
+function createSkippedProvisioningResult(
+  errorCode: SafeKeyProvisioningErrorCode,
+  skipped = 0,
+): MobileKeyProvisioningResult {
+  return {
+    processed: 0,
+    completed: 0,
+    failed: 0,
+    skipped,
+    errorCode,
+  }
 }
 
 async function markProvisioningFailed(

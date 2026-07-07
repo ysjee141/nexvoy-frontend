@@ -18,7 +18,12 @@ import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { cancelAllLocalNotifications } from './notifications'
 import { logLocalFirstEvent } from './observability'
+import { setMobileBackgroundWorkPaused } from './backgroundTaskCoordinator'
 import { revokeAndClearCurrentMobileKeyMaterial } from './local-first/keyProvisioningService'
+import {
+  registerMobileProvisioningBackgroundTask,
+  unregisterMobileProvisioningBackgroundTask,
+} from './local-first/provisioningBackgroundTask'
 
 interface AuthContextValue {
   session: Session | null
@@ -66,7 +71,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  useEffect(() => {
+    if (isLoading) return
+    if (session) {
+      setMobileBackgroundWorkPaused(false)
+      void registerMobileProvisioningBackgroundTask()
+      return
+    }
+    setMobileBackgroundWorkPaused(true)
+    void unregisterMobileProvisioningBackgroundTask()
+  }, [isLoading, session])
+
   const signOut = async () => {
+    setMobileBackgroundWorkPaused(true)
+    await unregisterMobileProvisioningBackgroundTask()
     try {
       await cancelAllLocalNotifications()
     } catch {
