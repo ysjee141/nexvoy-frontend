@@ -94,3 +94,44 @@
 - foreground processor와 background task가 같은 request를 오염시키지 않는다.
 - native preview APK와 실제 device/Logcat 검증을 통과한다.
 - reviewer와 qa-engineer 최종 verdict가 PASS다.
+
+## 구현 결과
+
+### Background task runtime
+
+- Expo SDK 54 호환 모듈로 `expo-background-task`와 `expo-task-manager`를 추가했다.
+- `apps/mobile/index.js`에서 `expo-router/entry`보다 먼저 `apps/mobile/lib/local-first/provisioningBackgroundTask.ts`를 import해 `TaskManager.defineTask`가 global scope에서 평가되도록 했다.
+- `apps/mobile/lib/local-first/provisioningBackgroundTask.ts`는 provisioning background task를 정의하고 authenticated session lifecycle에서 best-effort register/unregister한다.
+- `apps/mobile/lib/backgroundTaskCoordinator.ts`를 추가해 background worker registry, process-wide exclusive runner, signOut/sessionless pause guard를 제공한다.
+
+### Provisioning processor
+
+- `runMobileBackgroundKeyProvisioning()`을 추가해 small batch(`limit: 5`)로 pending request를 처리한다.
+- foreground와 background processor는 동일 worker lock을 공유한다.
+- background path는 user-approved skip-only policy를 따른다. active RSA document key 없음, network failure, wrap/import failure, complete RPC failure, OS interruption은 request를 `failed`로 mark하지 않는다.
+- signOut/sessionless 전환 시 pause guard를 먼저 켜고, worker는 begin/wrap/complete 전후로 pause 상태를 재확인한다.
+- `list_pending_document_key_provisioning_requests()`는 10분 이상 stale 된 `processing` row를 다시 반환한다. background가 `begin` 후 interruption/skip으로 빠져도 request가 재시도 큐에서 영구 이탈하지 않는다.
+
+### Native config
+
+- `apps/mobile/app.config.js`에 `expo-background-task` plugin을 추가했다.
+- iOS config에 `UIBackgroundModes: ["processing"]`와 `BGTaskSchedulerPermittedIdentifiers: ["com.expo.modules.backgroundtask.processing"]`를 반영했다.
+- Android는 WorkManager 기반 실행을 사용하며 추가 broad permission은 넣지 않았다.
+
+## 검증 결과
+
+- `git diff --check`: PASS
+- `pnpm --filter @nexvoy/core test`: PASS
+- `pnpm --filter nexvoy-app typecheck`: PASS
+- `pnpm --filter nexvoy-app lint`: PASS, 기존 warning 7건
+- `pnpm --filter nexvoy-app exec expo install --check`: PASS
+- `pnpm build`: PASS
+- `pnpm build:mobile`: PASS
+- `pnpm --filter nexvoy-app build:preview:android:local`: PASS
+- reviewer 최종 verdict: PASS
+- qa-engineer 최종 verdict: PASS
+
+## 잔여 검증
+
+- 현재 shell에는 `adb`가 없어 Android device install/run/Logcat 검증은 수행하지 못했다.
+- iOS는 config smoke 범위로만 확인했다. physical device background execution 검증은 후속 QA에서 수행한다.
