@@ -39,6 +39,24 @@ module.exports = () => {
     },
   }
 
+  const googleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY
+  if (googleMapsApiKey) {
+    config.android = {
+      ...(config.android ?? {}),
+      config: {
+        ...(config.android?.config ?? {}),
+        googleMaps: { apiKey: googleMapsApiKey },
+      },
+    }
+    config.ios = {
+      ...(config.ios ?? {}),
+      config: {
+        ...(config.ios?.config ?? {}),
+        googleMapsApiKey,
+      },
+    }
+  }
+
   if (hasAndroidFirebaseConfig || hasIosFirebaseConfig) {
     config.plugins = [
       ...(config.plugins ?? []),
