@@ -3,6 +3,9 @@ import {
   getKeyProvisioningRetryDelayMs,
   isKeyProvisioningRetryable,
   normalizeKeyProvisioningStatus,
+  normalizeUserKeyMaterialAttestationStatus,
+  normalizeUserKeyMaterialPlatform,
+  normalizeUserKeyMaterialType,
   sanitizeKeyProvisioningErrorCode,
   sortKeyProvisioningRequests,
 } from '../keyProvisioning'
@@ -16,6 +19,30 @@ function run(): void {
 
   if (normalizeKeyProvisioningStatus('raw_dek_leaked') !== 'none') {
     throw new Error('Unknown provisioning status should normalize to none.')
+  }
+
+  if (normalizeUserKeyMaterialType('native_rsa') !== 'native_rsa') {
+    throw new Error('Known material type should be preserved.')
+  }
+
+  if (normalizeUserKeyMaterialType('private_key_handle') !== 'securestore_jwk') {
+    throw new Error('Unknown material type should normalize to a non-native default.')
+  }
+
+  if (normalizeUserKeyMaterialPlatform('ios') !== 'ios') {
+    throw new Error('Known material platform should be preserved.')
+  }
+
+  if (normalizeUserKeyMaterialPlatform('device-id-123') !== 'unknown') {
+    throw new Error('Unknown material platform should not preserve device identifiers.')
+  }
+
+  if (normalizeUserKeyMaterialAttestationStatus('verified') !== 'verified') {
+    throw new Error('Known attestation status should be preserved.')
+  }
+
+  if (normalizeUserKeyMaterialAttestationStatus('hardware_verified:alias') !== 'not_verified') {
+    throw new Error('Unknown attestation status should not overclaim verification.')
   }
 
   if (sanitizeKeyProvisioningErrorCode('wrap_failed') !== 'wrap_failed') {

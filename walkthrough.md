@@ -1,12 +1,12 @@
-# Walkthrough: TASK-017 Mobile Background Provisioning Sync
+# Walkthrough: TASK-018 Mobile Non-exportable Key Storage
 
 ## Summary
 
-`TASK-016`의 Mobile foreground/resume provisioning path를 Expo OS background task까지 확장했다. owner/editor Mobile 기기는 authenticated session 상태에서 background task를 best-effort로 등록하고, 현재 device가 active RSA document key를 가진 request만 small batch로 처리한다.
+`TASK-016~017`의 Mobile key provisioning 기반을 Android Keystore/iOS Keychain 기반 non-exportable private key storage로 강화했다. Mobile v2 material은 native private key를 JS JWK로 장기 저장하지 않고, Supabase에는 public JWK와 coarse metadata만 등록한다.
 
 ## Artifacts
 
-- `docs/refactor/tasks/TASK-017-mobile-background-provisioning-sync.md`
+- `docs/refactor/tasks/TASK-018-mobile-non-exportable-key-storage.md`
 - `_workspace/01_planner_analysis.md`
 - `_workspace/02b_frontend_changes.md`
 - `_workspace/02c_backend_changes.md`
@@ -15,12 +15,14 @@
 
 ## Key Changes
 
-- `expo-background-task`와 `expo-task-manager`를 추가하고 global task definition을 `apps/mobile/index.js`에서 router entry보다 먼저 import한다.
-- `provisioningBackgroundTask.ts`가 background task definition, register/unregister, dev-only trigger helper를 제공한다.
-- `backgroundTaskCoordinator.ts`가 shared worker registry, exclusive runner, signOut/sessionless pause guard를 제공한다.
-- `runMobileBackgroundKeyProvisioning()`은 small batch로 pending request를 처리하며 background에서는 모든 failure를 retryable skip으로 둔다.
-- stale `processing` provisioning request가 재시도 큐에 다시 잡히도록 `list_pending_document_key_provisioning_requests()`를 보강했다.
-- iOS background processing config와 Expo background task plugin을 app config에 반영했다.
+- `apps/mobile/modules/onvoy-native-crypto` Expo local module을 추가했다.
+- Android는 Android Keystore RSA-OAEP private key를 local alias 내부에 보관하고 public JWK만 JS로 반환한다.
+- iOS는 Keychain permanent RSA private key를 `ThisDeviceOnly` + non-extractable 속성으로 생성하고 public JWK만 JS로 반환한다.
+- `mobileNativeKeyProvider`가 native bridge를 감싸고, v2 native unwrap은 private JWK 없이 native module에서 수행한다.
+- Mobile v2 material store는 `publicKeyJwk`, `platform`, `hardwareBacked`, `attestationStatus`만 저장한다.
+- `user_key_materials.material_version=2`와 document key version `1`을 분리했다.
+- `register_user_key_material()` RPC에 metadata와 strict public RSA-OAEP JWK whitelist를 추가했다.
+- legacy SecureStore fallback은 explicit feature flag가 있을 때만 동작하고, v1 cleanup은 foreground v2 active unwrap 성공 또는 logout/revoke cleanup으로 제한한다.
 
 ## Verification
 
@@ -31,18 +33,20 @@
 - `pnpm build` 성공
 - `pnpm build:mobile` 성공
 - `pnpm --filter nexvoy-app build:preview:android:local` 성공
+- `docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/tests/task015_key_provisioning.sql` 성공
 - `git diff --check` 성공
 - reviewer 최종 PASS
 - qa-engineer 최종 PASS
 
 ## Rollback
 
-문제 발생 시 background task registration/import를 비활성화하고 `expo-background-task`/`expo-task-manager` 및 iOS background config를 제거한다. Foreground/resume provisioning processor는 `TASK-016` 상태로 유지한다. 이미 `processing` 상태인 request는 failed로 일괄 변경하지 않고 stale timeout 후 retry path에 맡긴다.
+문제 발생 시 `onvoy-native-crypto` local module dependency와 v2 native provider 경로를 feature flag로 비활성화하고, legacy SecureStore fallback을 제한적으로 재활성화한다. 서버에는 raw private key/raw DEK를 저장하지 않으며, 새 `native_rsa` material rows는 revoked 처리한다.
 
 ## Notes
 
 - raw DEK/KEK/private key/document content/CRDT blob/invitation token/share token은 DB/RPC/log/analytics/push에 포함하지 않는다.
-- Background task는 best-effort다. OS battery/network/force-quit 조건에 따라 실행이 지연되거나 생략될 수 있다.
-- 현재 shell에는 `adb`가 없어 Android device install/run/Logcat 검증은 수행하지 못했다.
-- iOS는 config smoke만 완료했다. physical device background execution은 후속 QA residual이다.
-- 다음 권장 작업은 `TASK-018` Mobile non-exportable key storage hardening이다.
+- Native key alias/tag는 local-only이며 JS bridge/RPC/log/analytics에 반환하지 않는다.
+- Android preview APK build는 성공했지만 실제 device/emulator install/run/Logcat 검증은 후속 수동 검증으로 남긴다.
+- iOS physical device native key generation/unwrap 검증은 residual이다.
+- native unwrap 결과 raw DEK가 JS로 transient 반환되는 구조는 후속 hardening에서 AES-GCM `extractable: false` 또는 native AES-GCM 확장으로 재검토한다.
+- 다음 권장 작업은 `TASK-019` Mobile-first owner key bootstrap이다.

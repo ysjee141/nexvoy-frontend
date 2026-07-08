@@ -113,7 +113,7 @@ SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000152';
 SELECT public.register_user_key_material(
   'web-editor-1',
   'RSA-OAEP-256',
-  '{"kty":"RSA","alg":"RSA-OAEP-256","kid":"task015-editor-public"}'::jsonb,
+  '{"kty":"RSA","alg":"RSA-OAEP-256","key_ops":["wrapKey"],"ext":true,"n":"dGFzazAxNWVkaXRvcnB1YmxpYw","e":"AQAB"}'::jsonb,
   1
 );
 
@@ -135,7 +135,7 @@ END $$;
 CREATE TEMP TABLE task015_request_ids (
   name text PRIMARY KEY,
   request_id uuid NOT NULL
-) ON COMMIT DROP;
+) ON COMMIT PRESERVE ROWS;
 
 RESET ROLE;
 INSERT INTO task015_request_ids (name, request_id)
@@ -197,7 +197,7 @@ SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000153';
 SELECT public.register_user_key_material(
   'web-viewer-1',
   'RSA-OAEP-256',
-  '{"kty":"RSA","alg":"RSA-OAEP-256","kid":"task015-viewer-public"}'::jsonb,
+  '{"kty":"RSA","alg":"RSA-OAEP-256","key_ops":["wrapKey"],"ext":true,"n":"dGFzazAxNXZpZXdlcnB1YmxpYw","e":"AQAB"}'::jsonb,
   1
 );
 
