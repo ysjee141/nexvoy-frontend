@@ -19,12 +19,20 @@ export type SafeKeyProvisioningErrorCode =
   | 'network_failed'
   | 'retry_later'
 
+export type UserKeyMaterialType = 'securestore_jwk' | 'native_rsa'
+export type UserKeyMaterialPlatform = 'web' | 'ios' | 'android' | 'unknown'
+export type UserKeyMaterialAttestationStatus = 'not_supported' | 'not_verified' | 'verified'
+
 export interface UserKeyMaterialRegistration {
   id: string
   userId: string
   deviceId: string
   wrappingAlg: 'RSA-OAEP-256'
   materialVersion: number
+  materialType?: UserKeyMaterialType
+  platform?: UserKeyMaterialPlatform
+  hardwareBacked?: boolean | null
+  attestationStatus?: UserKeyMaterialAttestationStatus
   status: 'active' | 'revoked'
   queuedRequestCount: number
   createdAt: string
@@ -103,6 +111,24 @@ const SAFE_ERROR_CODES = new Set<SafeKeyProvisioningErrorCode>([
   'retry_later',
 ])
 
+const USER_KEY_MATERIAL_TYPES = new Set<UserKeyMaterialType>([
+  'securestore_jwk',
+  'native_rsa',
+])
+
+const USER_KEY_MATERIAL_PLATFORMS = new Set<UserKeyMaterialPlatform>([
+  'web',
+  'ios',
+  'android',
+  'unknown',
+])
+
+const USER_KEY_MATERIAL_ATTESTATION_STATUSES = new Set<UserKeyMaterialAttestationStatus>([
+  'not_supported',
+  'not_verified',
+  'verified',
+])
+
 export function sanitizeKeyProvisioningErrorCode(input: unknown): SafeKeyProvisioningErrorCode {
   if (typeof input !== 'string') return 'unknown'
   const normalized = input.trim().replace(/[^a-zA-Z0-9:_-]/g, '').slice(0, 80)
@@ -126,6 +152,30 @@ export function normalizeKeyProvisioningStatus(input: unknown): DocumentKeyProvi
     return input
   }
   return 'none'
+}
+
+export function normalizeUserKeyMaterialType(input: unknown): UserKeyMaterialType {
+  if (typeof input === 'string' && USER_KEY_MATERIAL_TYPES.has(input as UserKeyMaterialType)) {
+    return input as UserKeyMaterialType
+  }
+  return 'securestore_jwk'
+}
+
+export function normalizeUserKeyMaterialPlatform(input: unknown): UserKeyMaterialPlatform {
+  if (typeof input === 'string' && USER_KEY_MATERIAL_PLATFORMS.has(input as UserKeyMaterialPlatform)) {
+    return input as UserKeyMaterialPlatform
+  }
+  return 'unknown'
+}
+
+export function normalizeUserKeyMaterialAttestationStatus(input: unknown): UserKeyMaterialAttestationStatus {
+  if (
+    typeof input === 'string'
+    && USER_KEY_MATERIAL_ATTESTATION_STATUSES.has(input as UserKeyMaterialAttestationStatus)
+  ) {
+    return input as UserKeyMaterialAttestationStatus
+  }
+  return 'not_verified'
 }
 
 export function isKeyProvisioningTerminalStatus(status: DocumentKeyProvisioningStatus): boolean {

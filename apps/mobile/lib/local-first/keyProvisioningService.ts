@@ -15,15 +15,26 @@ import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepo
 import { logLocalFirstEvent } from '@/lib/observability'
 import { clearMobileDeviceId, getMobileDeviceId, getOrCreateMobileDeviceId } from './mobileDeviceIdentity'
 import {
-  clearMobileDeviceKeyMaterial,
-  getMobileKeyMaterialVersion,
+  MOBILE_LEGACY_SECURESTORE_MATERIAL_VERSION,
+  MOBILE_NATIVE_MATERIAL_VERSION,
+  clearAllMobileDeviceKeyMaterial,
+  clearLegacyMobileDeviceKeyMaterial,
+  loadLegacyMobileDeviceKeyMaterial,
   loadMobileDeviceKeyMaterial,
+  saveLegacyMobileDeviceKeyMaterial,
   saveMobileDeviceKeyMaterial,
+  type StoredNativeMobileDeviceKeyMaterial,
 } from './mobileKeyMaterialStore'
 import {
   createMobileRsaOaepWrappingProvider,
   generateMobileRsaOaepKeyMaterial,
 } from './mobileCryptoProvider'
+import {
+  deleteMobileNativeRsaKey,
+  ensureMobileNativeRsaKeyMaterial,
+  MobileNativeKeyProviderError,
+  unwrapMobileDocumentKeyWithNativeRsa,
+} from './mobileNativeKeyProvider'
 import {
   isMobileBackgroundWorkPaused,
   runExclusiveMobileBackgroundWork,
@@ -31,6 +42,9 @@ import {
 
 const MOBILE_KEY_PROVISIONING_WORKER_NAME = 'mobile-key-provisioning'
 const MOBILE_BACKGROUND_KEY_PROVISIONING_LIMIT = 5
+const DOCUMENT_KEY_VERSION = 1
+const ENABLE_LEGACY_SECURESTORE_KEY_MATERIAL_FALLBACK =
+  process.env.EXPO_PUBLIC_ONVOY_ENABLE_LEGACY_SECURESTORE_KEY_MATERIAL_FALLBACK === 'true'
 
 type MobileKeyProvisioningRunSource = 'foreground' | 'background'
 
@@ -56,22 +70,47 @@ export async function ensureMobileDeviceKeyMaterial(
   supabase: SupabaseClient,
 ): Promise<{ deviceId: string; materialVersion: number }> {
   const deviceId = await getOrCreateMobileDeviceId()
+
+  const repository = createInvitationRepository(supabase)
+  let registration: Awaited<ReturnType<typeof repository.registerUserKeyMaterial>> | null = null
+
   const existing = await loadMobileDeviceKeyMaterial(deviceId)
-  const material = existing ?? {
-    deviceId,
-    materialVersion: getMobileKeyMaterialVersion(),
-    ...(await generateMobileRsaOaepKeyMaterial()),
+  let material: Omit<StoredNativeMobileDeviceKeyMaterial, 'updatedAt'> | StoredNativeMobileDeviceKeyMaterial | null = null
+  try {
+    material = existing ?? await createAndStoreNativeKeyMaterial(deviceId)
+  } catch (error) {
+    if (
+      !ENABLE_LEGACY_SECURESTORE_KEY_MATERIAL_FALLBACK
+      || !(error instanceof MobileNativeKeyProviderError)
+      || error.code !== 'provider_unavailable'
+    ) {
+      throw error
+    }
+    const legacyMaterial = await createAndStoreLegacyKeyMaterialFallback(deviceId)
+    registration = await repository.registerUserKeyMaterial({
+      deviceId,
+      publicKeyJwk: legacyMaterial.publicKeyJwk,
+      materialVersion: MOBILE_LEGACY_SECURESTORE_MATERIAL_VERSION,
+      materialType: 'securestore_jwk',
+      platform: 'unknown',
+      hardwareBacked: null,
+      attestationStatus: 'not_verified',
+    })
   }
 
-  if (!existing) {
-    await saveMobileDeviceKeyMaterial(material)
+  if (!registration && material) {
+    registration = await repository.registerUserKeyMaterial({
+      deviceId,
+      publicKeyJwk: material.publicKeyJwk,
+      materialVersion: MOBILE_NATIVE_MATERIAL_VERSION,
+      materialType: 'native_rsa',
+      platform: material.platform,
+      hardwareBacked: material.hardwareBacked,
+      attestationStatus: material.attestationStatus,
+    })
   }
 
-  const registration = await createInvitationRepository(supabase).registerUserKeyMaterial({
-    deviceId,
-    publicKeyJwk: material.publicKeyJwk,
-    materialVersion: material.materialVersion,
-  })
+  if (!registration) throw new Error('mobile_key_material_unavailable')
 
   return {
     deviceId,
@@ -83,15 +122,64 @@ export async function revokeAndClearCurrentMobileKeyMaterial(supabase: SupabaseC
   const deviceId = await getMobileDeviceId()
   if (!deviceId) return
   try {
-    await createInvitationRepository(supabase).revokeUserKeyMaterial({
-      deviceId,
-      materialVersion: getMobileKeyMaterialVersion(),
-    })
+    const repository = createInvitationRepository(supabase)
+    await Promise.allSettled([
+      repository.revokeUserKeyMaterial({
+        deviceId,
+        materialVersion: MOBILE_NATIVE_MATERIAL_VERSION,
+      }),
+      repository.revokeUserKeyMaterial({
+        deviceId,
+        materialVersion: MOBILE_LEGACY_SECURESTORE_MATERIAL_VERSION,
+      }),
+    ])
   } finally {
     await Promise.all([
-      clearMobileDeviceKeyMaterial(deviceId),
+      clearAllMobileDeviceKeyMaterial(deviceId),
+      deleteMobileNativeRsaKey(deviceId),
       clearMobileDeviceId(),
     ])
+  }
+}
+
+async function createAndStoreNativeKeyMaterial(deviceId: string) {
+  const nativeMaterial = await ensureMobileNativeRsaKeyMaterial(deviceId)
+  const material: Omit<StoredNativeMobileDeviceKeyMaterial, 'updatedAt'> = {
+    deviceId,
+    materialVersion: MOBILE_NATIVE_MATERIAL_VERSION,
+    materialType: 'native_rsa' as const,
+    platform: nativeMaterial.platform,
+    hardwareBacked: nativeMaterial.hardwareBacked,
+    attestationStatus: nativeMaterial.attestationStatus,
+    publicKeyJwk: nativeMaterial.publicKeyJwk,
+  }
+  await saveMobileDeviceKeyMaterial(material)
+  return material
+}
+
+async function createAndStoreLegacyKeyMaterialFallback(deviceId: string) {
+  const existing = await loadLegacyMobileDeviceKeyMaterial(deviceId)
+  const material = existing ?? {
+    deviceId,
+    materialVersion: MOBILE_LEGACY_SECURESTORE_MATERIAL_VERSION,
+    ...(await generateMobileRsaOaepKeyMaterial()),
+  }
+  if (!existing) await saveLegacyMobileDeviceKeyMaterial(material)
+  return material
+}
+
+async function revokeAndClearLegacyMobileKeyMaterial(supabase: SupabaseClient, deviceId: string): Promise<void> {
+  const legacyMaterial = await loadLegacyMobileDeviceKeyMaterial(deviceId)
+  if (!legacyMaterial) return
+  try {
+    await createInvitationRepository(supabase).revokeUserKeyMaterial({
+      deviceId,
+      materialVersion: MOBILE_LEGACY_SECURESTORE_MATERIAL_VERSION,
+    })
+  } catch {
+    // Upgrade cleanup is best effort; local private JWK removal must still happen.
+  } finally {
+    await clearLegacyMobileDeviceKeyMaterial(deviceId)
   }
 }
 
@@ -107,13 +195,13 @@ export async function loadOrRequestMobileProvisioningStatus(input: {
     const status = await repository.getMyDocumentKeyProvisioningStatus({
       documentId: input.documentId,
       deviceId,
-      keyVersion: getMobileKeyMaterialVersion(),
+      keyVersion: DOCUMENT_KEY_VERSION,
     })
     if ((status.status === 'none' || status.status === 'failed') && input.requestIfNeeded !== false) {
       return repository.requestDocumentKeyProvisioning({
         documentId: input.documentId,
         deviceId,
-        keyVersion: getMobileKeyMaterialVersion(),
+        keyVersion: DOCUMENT_KEY_VERSION,
       })
     }
     return status
@@ -122,7 +210,7 @@ export async function loadOrRequestMobileProvisioningStatus(input: {
     return repository.requestDocumentKeyProvisioning({
       documentId: input.documentId,
       deviceId,
-      keyVersion: getMobileKeyMaterialVersion(),
+      keyVersion: DOCUMENT_KEY_VERSION,
     })
   }
 }
@@ -132,6 +220,7 @@ export async function getCurrentMobileDocumentKey(input: {
   documentId: string
   deviceId?: string
   provider?: RsaOaepWrappingProvider
+  cleanupLegacyAfterNativeUnwrap?: boolean
 }): Promise<DocumentEncryptionKey | null> {
   const deviceId = input.deviceId ?? (await getOrCreateMobileDeviceId())
   const [material, activeKey] = await Promise.all([
@@ -139,20 +228,43 @@ export async function getCurrentMobileDocumentKey(input: {
     createSupabaseBackupRepository(input.supabase).getMyActiveDocumentKey({
       documentId: input.documentId,
       deviceId,
-      keyVersion: getMobileKeyMaterialVersion(),
+      keyVersion: DOCUMENT_KEY_VERSION,
     }),
   ])
 
-  if (!material || !activeKey || activeKey.wrappingAlg !== 'RSA-OAEP-256') return null
+  if (!activeKey || activeKey.wrappingAlg !== 'RSA-OAEP-256') return null
 
-  return unwrapDocumentEncryptionKeyWithRsaOaep(input.provider ?? createMobileRsaOaepWrappingProvider(), {
-    wrappedKey: {
-      algorithm: activeKey.wrappingAlg,
-      keyVersion: activeKey.keyVersion,
-      wrappedDek: activeKey.wrappedDek,
-    },
-    privateKeyJwk: material.privateKeyJwk,
-  })
+  if (material) {
+    try {
+    const documentKey = await unwrapMobileDocumentKeyWithNativeRsa({
+        deviceId,
+        wrappedDek: activeKey.wrappedDek,
+      })
+    if (input.cleanupLegacyAfterNativeUnwrap === true) {
+      await revokeAndClearLegacyMobileKeyMaterial(input.supabase, deviceId)
+    }
+    return documentKey
+    } catch {
+      return null
+    }
+  }
+
+  if (!ENABLE_LEGACY_SECURESTORE_KEY_MATERIAL_FALLBACK) return null
+  const legacyMaterial = await loadLegacyMobileDeviceKeyMaterial(deviceId)
+  if (!legacyMaterial) return null
+
+  try {
+    return await unwrapDocumentEncryptionKeyWithRsaOaep(input.provider ?? createMobileRsaOaepWrappingProvider(), {
+      wrappedKey: {
+        algorithm: activeKey.wrappingAlg,
+        keyVersion: activeKey.keyVersion,
+        wrappedDek: activeKey.wrappedDek,
+      },
+      privateKeyJwk: legacyMaterial.privateKeyJwk,
+    })
+  } catch {
+    return null
+  }
 }
 
 export async function runMobileForegroundKeyProvisioning(input: {
@@ -234,7 +346,7 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
       status: 'skipped',
       reason_code: 'material_unavailable',
     })
-    return createSkippedProvisioningResult('material_unavailable')
+    return createSkippedProvisioningResult('retry_later')
   }
 
   if (input.documentId && input.source === 'foreground') {
@@ -272,6 +384,7 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
       documentId,
       deviceId: backgroundDeviceId ?? undefined,
       provider,
+      cleanupLegacyAfterNativeUnwrap: input.source === 'foreground',
     })
     documentKeys.set(documentId, documentKey)
     return documentKey
@@ -285,7 +398,10 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
         reason_code: 'owner_device_key_unavailable',
         pending_count: requests.length,
       })
-      return createSkippedProvisioningResult('owner_device_key_unavailable', requests.length)
+      return createSkippedProvisioningResult(
+        input.source === 'background' ? 'retry_later' : 'owner_device_key_unavailable',
+        requests.length,
+      )
     }
   }
 
@@ -300,7 +416,7 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
     const documentKey = await resolveDocumentKey(request.documentId)
     if (!documentKey) {
       result.skipped += 1
-      result.errorCode = 'owner_device_key_unavailable'
+      result.errorCode = input.source === 'background' ? 'retry_later' : 'owner_device_key_unavailable'
       continue
     }
 

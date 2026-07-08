@@ -69,7 +69,7 @@ Mobile private key가 JS 문자열/JWK로 장기 보관되지 않도록 하고, 
 
 ## 데이터 호환성 고려사항
 
-- 기존 SecureStore JWK material row는 즉시 삭제하지 않고 revoked 상태로 전환한다.
+- 기존 SecureStore JWK material row는 v2 native active document key unwrap 성공 후 또는 explicit logout/revoke cleanup에서 revoked 상태로 전환한다.
 - 기존 active document key는 새 material로 rewrap되기 전까지 current device에서 restore가 막힐 수 있으므로 retry UX가 필요하다.
 - server는 raw private key나 raw DEK를 받지 않는다.
 
@@ -100,3 +100,35 @@ Mobile private key가 JS 문자열/JWK로 장기 보관되지 않도록 하고, 
 - 기존 SecureStore JWK material에서 안전한 migration/retry UX가 있다.
 - native preview/device/Logcat 검증을 통과한다.
 - reviewer와 qa-engineer 최종 verdict가 PASS다.
+
+## 구현 결과
+
+- `apps/mobile/modules/onvoy-native-crypto` Expo local module을 추가했다.
+  - Android: Android Keystore RSA-OAEP private key를 local alias 내부에 보관하고 public JWK만 JS로 반환한다.
+  - iOS: Security.framework/Keychain permanent RSA private key를 `ThisDeviceOnly` + non-extractable 속성으로 생성하고 public JWK만 JS로 반환한다.
+- Mobile v2 material store는 `publicKeyJwk`, `platform`, `hardwareBacked`, `attestationStatus` metadata만 저장하며 `privateKeyJwk`가 섞이면 해당 v2 payload를 폐기한다.
+- `ensureMobileDeviceKeyMaterial()`는 기본 경로에서 `native_rsa` material v2를 등록한다.
+- `DOCUMENT_KEY_VERSION = 1`과 `MOBILE_NATIVE_MATERIAL_VERSION = 2`를 분리해 document key version과 material version 혼동을 막았다.
+- `register_user_key_material()` RPC에 `material_type`, `platform`, `hardware_backed`, `attestation_status` metadata를 추가하고 public RSA-OAEP JWK whitelist를 강제했다.
+- legacy SecureStore fallback은 `EXPO_PUBLIC_ONVOY_ENABLE_LEGACY_SECURESTORE_KEY_MATERIAL_FALLBACK=true`일 때만 사용한다.
+- background provisioning은 native provider/key/session/unwrap 실패를 skip/retry로 남기며 request를 `failed`로 오염시키지 않는다.
+
+## 검증 결과
+
+- reviewer 최종 PASS
+- qa-engineer 최종 PASS
+- `pnpm --filter nexvoy-app typecheck` 성공
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm --filter nexvoy-app exec expo install --check` 성공
+- `pnpm --filter nexvoy-app lint` 성공 (기존 warning 7건)
+- `pnpm build:mobile` 성공
+- `pnpm build` 성공
+- `pnpm --filter nexvoy-app build:preview:android:local` 성공
+- `docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d postgres < supabase/tests/task015_key_provisioning.sql` 성공
+- `git diff --check` 성공
+
+## 잔여 검증
+
+- Android preview APK 실제 device/emulator 설치, 실행, Logcat 검증은 후속 수동 검증으로 남긴다.
+- iOS physical device에서 Keychain RSA-OAEP key generation/unwrap runtime 검증은 residual이다.
+- native unwrap 결과 raw DEK가 JS로 transient 반환되는 구조는 후속 hardening에서 AES-GCM `extractable: false` 또는 native AES-GCM 확장으로 재검토한다.

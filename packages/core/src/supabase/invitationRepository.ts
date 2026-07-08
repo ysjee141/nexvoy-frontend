@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   createKeyProvisioningStatusRecord,
+  normalizeUserKeyMaterialAttestationStatus,
+  normalizeUserKeyMaterialPlatform,
+  normalizeUserKeyMaterialType,
   sanitizeKeyProvisioningErrorCode,
   sortKeyProvisioningRequests,
   type BegunDocumentKeyProvisioningRequest,
@@ -8,7 +11,10 @@ import {
   type DocumentKeyProvisioningStatus,
   type DocumentKeyProvisioningStatusRecord,
   type SafeKeyProvisioningErrorCode,
+  type UserKeyMaterialAttestationStatus,
+  type UserKeyMaterialPlatform,
   type UserKeyMaterialRegistration,
+  type UserKeyMaterialType,
 } from '../sync/keyProvisioning'
 
 export type DocumentInvitationRole = 'editor' | 'viewer'
@@ -85,6 +91,10 @@ export interface RegisterUserKeyMaterialInput {
   publicKeyJwk: Record<string, unknown>
   materialVersion?: number
   wrappingAlg?: 'RSA-OAEP-256'
+  materialType?: UserKeyMaterialType
+  platform?: UserKeyMaterialPlatform
+  hardwareBacked?: boolean | null
+  attestationStatus?: UserKeyMaterialAttestationStatus
 }
 
 export interface RevokeUserKeyMaterialInput {
@@ -202,6 +212,10 @@ export function createInvitationRepository(sb: SupabaseClient): InvitationReposi
         p_wrapping_alg: input.wrappingAlg ?? 'RSA-OAEP-256',
         p_public_key_jwk: input.publicKeyJwk,
         p_material_version: input.materialVersion ?? 1,
+        p_material_type: input.materialType ?? 'securestore_jwk',
+        p_platform: input.platform ?? 'unknown',
+        p_hardware_backed: input.hardwareBacked ?? null,
+        p_attestation_status: input.attestationStatus ?? 'not_verified',
       })
       if (error) throw error
       return toUserKeyMaterialRegistration(data)
@@ -452,6 +466,12 @@ function toUserKeyMaterialRegistration(value: unknown): UserKeyMaterialRegistrat
     deviceId: expectString(row.device_id),
     wrappingAlg: expectRsaWrappingAlg(row.wrapping_alg),
     materialVersion: expectNumber(row.material_version),
+    materialType: row.material_type == null ? undefined : normalizeUserKeyMaterialType(row.material_type),
+    platform: row.platform == null ? undefined : normalizeUserKeyMaterialPlatform(row.platform),
+    hardwareBacked: row.hardware_backed == null ? undefined : Boolean(row.hardware_backed),
+    attestationStatus: row.attestation_status == null
+      ? undefined
+      : normalizeUserKeyMaterialAttestationStatus(row.attestation_status),
     status: expectMaterialStatus(row.status),
     queuedRequestCount: nullableNumber(row.queued_request_count) ?? 0,
     createdAt: expectString(row.created_at),
