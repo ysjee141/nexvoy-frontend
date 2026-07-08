@@ -1,98 +1,41 @@
 ---
 name: qa-verify
-description: "OnVoy(온여정) 프로젝트의 빌드 검증, 통합 정합성 검사, 크로스 플랫폼 호환성 확인을 수행하는 QA 스킬. 'QA해줘', '검증해줘', '빌드 확인', '테스트해줘', '품질 검사', '통합 확인', '배포 전 점검' 요청 시 사용. 코드 변경 후 품질 보증이 필요한 모든 경우에 반드시 이 스킬을 사용."
+description: "OnVoy QA 검증 절차. qa-engineer 에이전트가 사용한다. 빌드 검증과 통합 정합성을 확인한다."
 ---
 
-# OnVoy QA Verification
+# QA Verify
 
-OnVoy 프로젝트의 변경 사항을 빌드, 통합 정합성, 플랫폼 호환성 관점에서 검증하는 스킬.
+## 빌드 검증 (순서대로 실행)
 
-## 검증 절차
-
-### 1. 빌드 검증
-
-**웹 빌드:**
 ```bash
-pnpm --filter nexvoy-web build
-```
-- TypeScript 컴파일 에러 없음
-- Panda CSS 빌드 정상
-- Next.js 정적/동적 라우트 생성 정상
-
-**모바일 빌드 (변경이 모바일에 영향 있을 때):**
-```bash
-pnpm --filter nexvoy-app lint
-pnpm --filter nexvoy-app typecheck
-pnpm --filter nexvoy-app build
-```
-- Expo/RN lint 및 TypeScript 검증 성공
-- Expo export 성공
-
-### 2. 통합 정합성 -- "양쪽 동시 읽기" 원칙
-
-경계면 검증은 반드시 생산자와 소비자 코드를 **동시에** 비교한다.
-
-**Service <-> 컴포넌트 연결:**
-1. `packages/core` 또는 `apps/web/services` 에서 Service/query 메서드의 반환 타입 추출
-2. 해당 Service를 호출하는 `apps/web/components` 또는 `apps/mobile/components` 컴포넌트의 사용 타입 확인
-3. 양쪽 shape 일치 여부 검증
-4. 옵셔널 필드 null/undefined 처리 일관성 확인
-
-**Store <-> 컴포넌트 연결:**
-1. `apps/web/stores` Zustand store의 상태 shape 확인
-2. 컴포넌트에서 구독하는 selector의 반환 타입 확인
-3. persist 미들웨어 사용 시 직렬화 호환성 확인
-
-**라우팅 정합성:**
-1. `apps/web/app` 및 `apps/mobile/app` 하위 라우트에서 URL/화면 패턴 추출
-2. 코드 내 모든 `href`, `router.push()`, `redirect()` 값 수집
-3. 모든 링크가 실제 존재하는 페이지 경로와 매칭되는지 확인
-4. route group `(group)`이 URL에서 제거되는 것을 고려
-
-**Supabase 연동:**
-1. Service에서 호출하는 테이블/함수 확인
-2. RLS 정책이 해당 CRUD 시나리오를 커버하는지 확인
-3. auth.uid() 기반 접근 제어 빈틈 없는지 확인
-4. Storage 경로 규칙 준수: `trips/[user_id]/[trip_id]/[filename]`, `profiles/[user_id]/avatar_[timestamp].jpg`
-
-### 3. 플랫폼 호환성
-
-**웹/모바일 분기 검증:**
-- 새로운 네트워크 요청: 웹/RN Supabase client 경계 확인
-- 새로운 UI: Safe Area 처리 확인 (top/bottom)
-- 알림/푸시: 플랫폼별 처리 확인
-- 공유 기능: 웹 API / Expo/RN native module 경계 확인
-
-### 4. 피드백 루프 분석
-
-매 검증 후:
-1. 발견된 이슈를 분류 (빌드/통합/플랫폼)
-2. 이전 QA 보고서가 `_workspace/`에 있으면 읽고 반복 패턴 대조
-3. 반복 패턴 발견 시 근본 원인 분석 + 프로세스 개선 제안
-4. 예: "Safe Area 누락 반복 -> reviewer 체크리스트에 항목 추가 권장"
-
-### 5. 결과 작성
-
-```markdown
-# QA 검증 보고서
-
-## 빌드: PASS | FAIL
-### 웹 빌드: PASS | FAIL
-### 모바일 빌드: PASS | FAIL | N/A
-
-## 통합 정합성: PASS | ISSUES_FOUND
-### Service <-> 컴포넌트: OK | 이슈
-### Store <-> 컴포넌트: OK | 이슈
-### 라우팅: OK | 이슈
-### Supabase 연동: OK | 이슈
-
-## 발견된 이슈
-- [CRITICAL] 파일:라인 + 설명 + 수정 방향
-- [WARNING] 파일:라인 + 설명 + 수정 방향
-
-## 피드백 루프
-### 반복 패턴 (이전 검증과 비교)
-### 프로세스 개선 제안
+pnpm typecheck        # 타입 오류 확인
+pnpm build            # 웹 앱 빌드
+pnpm build:mobile     # 모바일 빌드 (인프라 버그로 실패 시: 기록 후 Pass 처리)
 ```
 
-상세 통합 정합성 체크리스트는 `references/integration-checklist.md`를 읽어 항목별로 검증한다.
+## 통합 정합성 (양쪽 동시 읽기 원칙)
+
+각 경계를 양쪽 동시에 읽어 타입·형태 불일치를 검출한다. 한쪽만 읽으면 불일치를 놓친다.
+
+| 검증 항목 | 확인 방법 |
+|----------|---------|
+| Service ↔ 컴포넌트 | 반환 타입과 사용 측 타입 동시 비교 |
+| Store ↔ 컴포넌트 selector | store 상태 형태와 selector 소비 형태 비교 |
+| 라우팅 일관성 | `href`/`router.push` 경로와 실제 page 파일 경로 비교 |
+| RLS 커버리지 | 신규 테이블 전체에 RLS 활성화 여부 |
+
+## 추가 검증
+
+- Storage 경로 규칙: `trips/[user_id]/[trip_id]/[filename]`, `profiles/[user_id]/avatar_[timestamp].jpg`
+- 마이그레이션 파일 ↔ Service 레이어 ↔ RLS 정책 3자 일치 여부
+- 세부 체크리스트: `references/integration-checklist.md`
+
+## 출력: `_workspace/04_qa_result.md`
+```
+# QA 검증 결과
+## 판정: PASS | FAIL
+## 빌드 결과
+## 통합 정합성 이슈
+## 재작업 요청 (에이전트명 + 구체적 수정 사항)
+## 플랫폼 호환성 메모
+```
