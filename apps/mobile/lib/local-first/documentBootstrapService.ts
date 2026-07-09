@@ -5,7 +5,7 @@ import {
   encryptBackupPayload,
   type BackupCryptoProvider,
 } from '@nexvoy/core/sync/encryption'
-import type { EncryptedBackupPayload } from '@nexvoy/core/sync/backupTypes'
+import { serializeEncryptedBackupPayload } from '@nexvoy/core/sync/backupPayloadCodec'
 import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import { TRIP_DOCUMENT_SCHEMA_VERSION } from '@nexvoy/core/local-first/documentModel'
 import { bootstrapMobileDeviceDocumentKey } from './keyProvisioningService'
@@ -13,7 +13,7 @@ import { bootstrapMobileDeviceDocumentKey } from './keyProvisioningService'
 // Document key version must match the value in keyProvisioningService.ts
 const DOCUMENT_KEY_VERSION = 1
 
-function getMobileBackupCryptoProvider(): BackupCryptoProvider {
+export function getMobileBackupCryptoProvider(): BackupCryptoProvider {
   return {
     subtle: subtle as unknown as BackupCryptoProvider['subtle'],
     getRandomValues: <T extends Uint8Array>(array: T): T => randomFillSync(array) as T,
@@ -149,7 +149,7 @@ async function bootstrapOwnerDocument({
     key: dek,
     keyVersion: DOCUMENT_KEY_VERSION,
   })
-  const encryptedSnapshot = serializeMobileEncryptedBackupPayload(encryptedPayload)
+  const encryptedSnapshot = serializeEncryptedBackupPayload(encryptedPayload)
   const snapshotHash = await sha256Hex(snapshotPayload)
 
   // upsertSnapshot MUST precede upsertOwnerMember: the "Insert documents as
@@ -170,28 +170,6 @@ async function bootstrapOwnerDocument({
 
   // Store the DEK wrapped with this device's non-exportable RSA public key.
   await bootstrapMobileDeviceDocumentKey({ supabase, documentId, documentKey: dek })
-}
-
-/**
- * Serializes an encrypted backup payload to a Uint8Array using the same
- * JSON envelope format as `serializeEncryptedBackupPayload` in core/sync/restore.
- *
- * Inlined here to avoid importing from `@nexvoy/core/sync/restore`, which
- * transitively depends on Yjs/lib0 and is incompatible with the React Native bundle.
- */
-function serializeMobileEncryptedBackupPayload(payload: EncryptedBackupPayload): Uint8Array {
-  const encoded = JSON.stringify({
-    algorithm: payload.algorithm,
-    keyVersion: payload.keyVersion,
-    iv: encodeBase64(payload.iv),
-    ciphertext: encodeBase64(payload.ciphertext),
-  })
-  return new TextEncoder().encode(encoded)
-}
-
-function encodeBase64(bytes: Uint8Array): string {
-  const binary = Array.from(bytes, (byte) => String.fromCharCode(byte)).join('')
-  return globalThis.btoa(binary)
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {

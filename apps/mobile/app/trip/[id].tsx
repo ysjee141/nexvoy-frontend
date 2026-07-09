@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  AccessibilityInfo,
   ActivityIndicator,
   Alert,
   AppState,
@@ -101,6 +102,7 @@ import {
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { runMobileForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
+import type { MobileRestoreOutcome } from '@/lib/local-first/mobileSnapshotRestoreService'
 import {
   cancelDocumentAlarms,
   cancelPlanAlarm,
@@ -625,6 +627,67 @@ function confirmNotificationPermissionPrompt(): Promise<boolean> {
   })
 }
 
+type RestoreStatusTone = 'progress' | 'success' | 'partial' | 'error'
+
+interface RestoreStatusDisplay {
+  tone: RestoreStatusTone
+  text: string
+  // progress는 아이콘 없음(ActivityIndicator로 대체)
+  icon?: 'checkmark-circle-outline' | 'time-outline' | 'alert-circle-outline'
+}
+
+const MOBILE_RESTORE_PROGRESS_STATUS: RestoreStatusDisplay = {
+  tone: 'progress',
+  text: '여정 데이터를 복구하고 있어요…',
+}
+
+// MobileRestoreOutcome → RestoreStatusDisplay 매핑. skipped는 상태 슬롯을 건드리지
+// 않기 위해 null을 반환한다(01b_ux_design.md §1.3, §3, §8 참고).
+function mapMobileRestoreOutcomeToStatus(outcome: MobileRestoreOutcome): RestoreStatusDisplay | null {
+  if (outcome.status === 'restored') {
+    if (outcome.snapshotKind === 'mobile_marker') {
+      return {
+        tone: 'success',
+        text: '이 기기에서 여정 데이터 준비를 마쳤어요. 최신 내용을 볼 수 있어요.',
+        icon: 'checkmark-circle-outline',
+      }
+    }
+    // opaque(Yjs snapshot): decrypt+hash 검증만 성공, 콘텐츠는 아직 미반영.
+    // "복구"/"동기화" 단어를 쓰지 않는 중립 카피 — brand.error/success 톤이 아닌 muted.
+    return {
+      tone: 'partial',
+      text: '여정 데이터 확인이 끝났어요. 최신 내용은 곧 이 기기에도 반영돼요.',
+      icon: 'time-outline',
+    }
+  }
+  if (outcome.status === 'failed') {
+    // hash_mismatch/decrypt_failed/unknown 모두 동일한 generic 카피로 통합.
+    return {
+      tone: 'error',
+      text: '데이터 복구 중 문제가 발생했어요. 다시 시도해 주세요.',
+      icon: 'alert-circle-outline',
+    }
+  }
+  // skipped(no_snapshot/key_unavailable): UI 미노출.
+  return null
+}
+
+// 01b_ux_design.md §3/§6 — 아이콘 색상과 본문 텍스트 색상이 tone마다 다르다
+// (success는 아이콘만 success, 본문은 ink; progress는 아이콘 없이 spinner만 primary).
+const MOBILE_RESTORE_ICON_COLOR: Record<RestoreStatusTone, string> = {
+  progress: colors.brand.primary,
+  success: colors.brand.success,
+  partial: colors.brand.muted,
+  error: colors.brand.error,
+}
+
+const MOBILE_RESTORE_TEXT_COLOR: Record<RestoreStatusTone, string> = {
+  progress: colors.brand.muted,
+  success: colors.brand.ink,
+  partial: colors.brand.muted,
+  error: colors.brand.error,
+}
+
 // ─── 화면 ─────────────────────────────────────────────────────────────────────
 
 export default function TripDetailScreen() {
@@ -634,6 +697,7 @@ export default function TripDetailScreen() {
   const insets = useSafeAreaInsets()
   const isMounted = useRef(true)
   const keyProvisioningInFlight = useRef(false)
+  const mobileRestoreStatusRef = useRef<RestoreStatusDisplay | null>(null)
   const scrollRef = useRef<ScrollView>(null)
   const detailTopHeightRef = useRef(0)
   const scrollOffsetRef = useRef(0)
@@ -686,6 +750,10 @@ export default function TripDetailScreen() {
   const [generatedInvite, setGeneratedInvite] = useState<GeneratedInvite | null>(null)
   const [keyProvisioningBusy, setKeyProvisioningBusy] = useState(false)
   const [keyProvisioningMessage, setKeyProvisioningMessage] = useState<string | null>(null)
+  // restoreMobileEncryptedSnapshot 결과 전용 상태. keyProvisioningMessage("이 기기가
+  // *다른 멤버*의 키 요청을 처리한 결과")와 의미가 다르므로 절대 병합하지 않는다
+  // (01b_ux_design.md §2.1/§5 근거 — 슬롯을 공유하면 마지막 쓰기가 이전 정보를 덮어씀).
+  const [mobileRestoreStatus, setMobileRestoreStatus] = useState<RestoreStatusDisplay | null>(null)
 
   useEffect(() => {
     isMounted.current = true
@@ -693,6 +761,10 @@ export default function TripDetailScreen() {
       isMounted.current = false
     }
   }, [])
+
+  useEffect(() => {
+    mobileRestoreStatusRef.current = mobileRestoreStatus
+  }, [mobileRestoreStatus])
 
   useEffect(() => {
     setGeneratedInvite(null)
@@ -769,6 +841,10 @@ export default function TripDetailScreen() {
     if (!id || !canEditContent || keyProvisioningInFlight.current) return
     keyProvisioningInFlight.current = true
     setKeyProvisioningBusy(true)
+    // restore 상태 슬롯은 keyProvisioningMessage와 독립적으로 진행 → 최종 상태로 전이한다
+    // (01b_ux_design.md §1.3/§5 — 두 슬롯을 공유하면 마지막에 쓰는 쪽이 이겨 정보가 유실됨).
+    const previousRestoreStatus = mobileRestoreStatusRef.current
+    setMobileRestoreStatus(MOBILE_RESTORE_PROGRESS_STATUS)
     try {
       const result = await runMobileForegroundKeyProvisioning({
         supabase,
@@ -787,9 +863,25 @@ export default function TripDetailScreen() {
       } else if (source === 'sheet') {
         setKeyProvisioningMessage('처리할 데이터 준비 요청이 없어요.')
       }
+
+      const mappedRestoreStatus = result.restoreOutcome
+        ? mapMobileRestoreOutcomeToStatus(result.restoreOutcome)
+        : null
+      if (mappedRestoreStatus) {
+        setMobileRestoreStatus(mappedRestoreStatus)
+        if (mappedRestoreStatus.tone === 'error' || mappedRestoreStatus.tone === 'partial') {
+          AccessibilityInfo.announceForAccessibility(mappedRestoreStatus.text)
+        }
+      } else {
+        // skipped(no_snapshot/key_unavailable): 상태 슬롯을 건드리지 않고 progress 진입 이전으로 원복.
+        setMobileRestoreStatus(previousRestoreStatus)
+      }
     } catch {
-      if (isMounted.current && source === 'sheet') {
-        setKeyProvisioningMessage('데이터 준비 상태를 확인하지 못했어요.')
+      if (isMounted.current) {
+        setMobileRestoreStatus(previousRestoreStatus)
+        if (source === 'sheet') {
+          setKeyProvisioningMessage('데이터 준비 상태를 확인하지 못했어요.')
+        }
       }
     } finally {
       keyProvisioningInFlight.current = false
@@ -1807,8 +1899,10 @@ export default function TripDetailScreen() {
             onRevokeInviteLink={handleRevokeInviteLink}
             onUpdateRole={handleUpdateMemberRole}
             onRemove={handleRemoveMember}
+            canEditContent={canEditContent}
             keyProvisioningBusy={keyProvisioningBusy}
             keyProvisioningMessage={keyProvisioningMessage}
+            mobileRestoreStatus={mobileRestoreStatus}
             onRunKeyProvisioning={() => {
               void runTripKeyProvisioning('sheet')
             }}
@@ -2169,8 +2263,10 @@ function CollaboratorSheet({
   onRevokeInviteLink,
   onUpdateRole,
   onRemove,
+  canEditContent,
   keyProvisioningBusy,
   keyProvisioningMessage,
+  mobileRestoreStatus,
   onRunKeyProvisioning,
   onClose,
 }: {
@@ -2191,8 +2287,10 @@ function CollaboratorSheet({
   onRevokeInviteLink: () => void
   onUpdateRole: (memberId: string, role: 'editor' | 'viewer') => void
   onRemove: (member: TripMember) => void
+  canEditContent: boolean
   keyProvisioningBusy: boolean
   keyProvisioningMessage: string | null
+  mobileRestoreStatus: RestoreStatusDisplay | null
   onRunKeyProvisioning: () => void
   onClose: () => void
 }) {
@@ -2334,6 +2432,49 @@ function CollaboratorSheet({
               </Pressable>
             )}
           </View>
+        </View>
+      ) : null}
+
+      {canEditContent && mobileRestoreStatus ? (
+        <View style={styles.mobileRestoreNotice}>
+          <View style={styles.mobileRestoreNoticeRow}>
+            {mobileRestoreStatus.tone === 'progress' || !mobileRestoreStatus.icon ? (
+              <ActivityIndicator size="small" color={colors.brand.primary} />
+            ) : (
+              <Ionicons
+                name={mobileRestoreStatus.icon}
+                size={18}
+                color={MOBILE_RESTORE_ICON_COLOR[mobileRestoreStatus.tone]}
+              />
+            )}
+            <Text
+              style={[
+                styles.mobileRestoreNoticeText,
+                { color: MOBILE_RESTORE_TEXT_COLOR[mobileRestoreStatus.tone] },
+              ]}
+            >
+              {mobileRestoreStatus.text}
+            </Text>
+          </View>
+          {mobileRestoreStatus.tone === 'error' ? (
+            <Pressable
+              onPress={onRunKeyProvisioning}
+              disabled={keyProvisioningBusy}
+              accessibilityRole="button"
+              accessibilityLabel="데이터 복구 다시 시도"
+              accessibilityState={{ busy: keyProvisioningBusy, disabled: keyProvisioningBusy }}
+              style={({ pressed }) => [
+                styles.mobileRestoreRetryButton,
+                keyProvisioningBusy && styles.buttonDisabled,
+                pressed && !keyProvisioningBusy && styles.pressedFade,
+              ]}
+            >
+              {keyProvisioningBusy ? <ActivityIndicator color={colors.brand.error} /> : null}
+              <Text style={styles.mobileRestoreRetryButtonText}>
+                {keyProvisioningBusy ? '확인 중...' : '다시 시도'}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
       ) : null}
 
@@ -5419,6 +5560,41 @@ const styles = StyleSheet.create({
   },
   mobileProvisioningButtonText: {
     color: colors.brand.primary,
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+  },
+  mobileRestoreNotice: {
+    marginTop: spacing.base,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.hairline,
+    backgroundColor: colors.bg.surfaceSoft,
+    gap: spacing.xs,
+  },
+  mobileRestoreNoticeRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+  },
+  mobileRestoreNoticeText: {
+    flex: 1,
+    fontSize: fontSizes.sm,
+    lineHeight: 20,
+  },
+  mobileRestoreRetryButton: {
+    minHeight: 42,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.error,
+    backgroundColor: colors.bg.canvas,
+  },
+  mobileRestoreRetryButtonText: {
+    color: colors.brand.error,
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.bold,
   },

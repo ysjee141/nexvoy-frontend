@@ -40,6 +40,7 @@ import {
   runExclusiveMobileBackgroundWork,
 } from '@/lib/backgroundTaskCoordinator'
 import { ensureMobileOwnerDocumentKey } from './documentBootstrapService'
+import { restoreMobileEncryptedSnapshot, type MobileRestoreOutcome } from './mobileSnapshotRestoreService'
 
 const MOBILE_KEY_PROVISIONING_WORKER_NAME = 'mobile-key-provisioning'
 const MOBILE_BACKGROUND_KEY_PROVISIONING_LIMIT = 5
@@ -55,6 +56,16 @@ export interface MobileKeyProvisioningResult {
   failed: number
   skipped: number
   errorCode?: SafeKeyProvisioningErrorCode
+  /**
+   * Result of the mobile encrypted snapshot restore attempt chained after
+   * this provisioning run, if one was triggered (only when `documentId` is
+   * set — i.e. the caller is viewing a specific trip). `undefined` when no
+   * restore attempt was made (e.g. background runs with no documentId, or
+   * the run short-circuited before reaching a restore trigger point).
+   * Restore success/failure never affects `completed`/`failed`/`skipped`
+   * above — the two are tracked and reported independently.
+   */
+  restoreOutcome?: MobileRestoreOutcome
 }
 
 interface MobileKeyProvisioningRunInput {
@@ -393,6 +404,10 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
   const repository = createInvitationRepository(input.supabase)
   const provider = input.provider ?? createMobileRsaOaepWrappingProvider()
   const backgroundDeviceId = input.source === 'background' ? await getMobileDeviceId() : undefined
+  // Tracks the most recent mobile snapshot restore attempt for `input.documentId`,
+  // if any. Restore is a read/verify-only operation and is completely
+  // independent of provisioning request status — see `restoreOutcome` doc.
+  let restoreOutcome: MobileRestoreOutcome | undefined
 
   if (input.source === 'background' && !backgroundDeviceId) {
     await emitProvisioningEvent('document_key_provisioning_pending', {
@@ -420,6 +435,19 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
         // Bootstrap failure must not block provisioning or mark requests as failed.
         // The owner_device_key_unavailable path below handles the deferred state.
       }
+
+      // Retry trigger (1/2): right after owner bootstrap succeeds or is a
+      // no-op (this device already had an active key). Safe to call
+      // unconditionally — restoreMobileEncryptedSnapshot re-derives its own
+      // readiness (snapshot + DEK availability) and never throws.
+      // This is the only restore attempt for the common steady-state path
+      // (no pending provisioning request to process) — see retry trigger
+      // 2/2 below, which only re-attempts when a request actually completed
+      // in this same run.
+      restoreOutcome = await restoreMobileEncryptedSnapshot({
+        supabase: input.supabase,
+        documentId: input.documentId,
+      })
 
       await loadOrRequestMobileProvisioningStatus({
         supabase: input.supabase,
@@ -556,6 +584,25 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
       count: result.completed,
       pending_count: Math.max(0, requests.length - result.completed),
     })
+
+    // Retry trigger (2/2): only when this run actually completed a pending
+    // request (`result.completed > 0`) — i.e. a device that just received
+    // its wrapped key (e.g. an invited editor) may find
+    // `getCurrentMobileDocumentKey` newly succeeds after this point.
+    // When `requests.length === 0` (the common steady-state path — no
+    // pending request to process), nothing changed since retry trigger 1/2
+    // above already ran unconditionally for this same documentId, so
+    // re-running restore here would just duplicate that attempt (double
+    // decrypt/hash work and doubled `local_first_restore_*` observability
+    // events) without any new state to react to — skip it.
+    // Provisioning's own completed/failed/skipped result above is already
+    // finalized and is never mutated by this call.
+    if (input.documentId && result.completed > 0) {
+      restoreOutcome = await restoreMobileEncryptedSnapshot({
+        supabase: input.supabase,
+        documentId: input.documentId,
+      })
+    }
   } else {
     await emitProvisioningEvent('document_key_provisioning_pending', {
       status: 'skipped',
@@ -563,6 +610,8 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
       pending_count: requests.length,
     })
   }
+
+  if (restoreOutcome) result.restoreOutcome = restoreOutcome
 
   return result
 }
