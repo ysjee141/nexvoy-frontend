@@ -778,6 +778,8 @@ export default function TripDetailScreen() {
       if (!isMounted.current) return
       if (result.completed > 0) {
         setKeyProvisioningMessage(`${result.completed}명의 여정 데이터 준비를 완료했어요.`)
+      } else if (result.errorCode === 'owner_device_key_unavailable' && source === 'sheet') {
+        setKeyProvisioningMessage('이 기기 데이터 준비 중이에요. 다른 기기 또는 Web에서 먼저 열어주세요.')
       } else if (result.skipped > 0 && source === 'sheet') {
         setKeyProvisioningMessage('이 기기 데이터 준비 요청을 등록했어요. Web 또는 이미 준비된 기기에서 완료할 수 있어요.')
       } else if (result.failed > 0) {
@@ -2339,7 +2341,7 @@ function CollaboratorSheet({
         <View style={styles.mobileProvisioningNotice}>
           <Text style={styles.mobileProvisioningNoticeTitle}>여정 데이터 준비 안내</Text>
           <Text style={styles.mobileProvisioningNoticeText}>
-            이 기기가 여정 데이터를 이미 열 수 있으면 참여자의 데이터 준비를 처리해요. 아직이면 이 기기 준비 요청을 등록합니다.
+            이 기기가 여정 데이터를 열 수 있으면 참여자의 데이터 준비를 처리해요. 처음 생성 기기라면 자동으로 암호화 준비를 시작합니다.
           </Text>
           {keyProvisioningMessage ? (
             <Text style={styles.mobileProvisioningNoticeMeta}>{keyProvisioningMessage}</Text>
