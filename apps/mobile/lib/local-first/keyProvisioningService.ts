@@ -39,6 +39,7 @@ import {
   isMobileBackgroundWorkPaused,
   runExclusiveMobileBackgroundWork,
 } from '@/lib/backgroundTaskCoordinator'
+import { ensureMobileOwnerDocumentKey } from './documentBootstrapService'
 
 const MOBILE_KEY_PROVISIONING_WORKER_NAME = 'mobile-key-provisioning'
 const MOBILE_BACKGROUND_KEY_PROVISIONING_LIMIT = 5
@@ -267,6 +268,58 @@ export async function getCurrentMobileDocumentKey(input: {
   }
 }
 
+/**
+ * Wraps the given DEK with this device's stored RSA public key material and
+ * upserts a device-scoped row in `document_keys`.
+ *
+ * Mirrors `bootstrapWebDeviceDocumentKey` from the web provisioning service.
+ * The native private RSA key is never exported — wrapping always uses the
+ * stored `publicKeyJwk` retrieved from `mobileKeyMaterialStore`.
+ *
+ * Throws 'mobile_device_material_unavailable' when no key material is found
+ * (caller should invoke `ensureMobileDeviceKeyMaterial` first).
+ * All other internal/native crypto errors are re-thrown as generic to avoid
+ * leaking provider or DEK details into logs or analytics.
+ */
+export async function bootstrapMobileDeviceDocumentKey({
+  supabase,
+  documentId,
+  documentKey,
+  provider,
+}: {
+  supabase: SupabaseClient
+  documentId: string
+  documentKey: DocumentEncryptionKey
+  provider?: RsaOaepWrappingProvider
+}): Promise<void> {
+  const { deviceId } = await ensureMobileDeviceKeyMaterial(supabase)
+  const material = await loadMobileDeviceKeyMaterial(deviceId)
+  if (!material) throw new Error('mobile_device_material_unavailable')
+
+  let wrappedKey: Awaited<ReturnType<typeof wrapDocumentEncryptionKeyWithRsaOaep>>
+  try {
+    wrappedKey = await wrapDocumentEncryptionKeyWithRsaOaep(
+      provider ?? createMobileRsaOaepWrappingProvider(),
+      {
+        dek: documentKey,
+        publicKeyJwk: material.publicKeyJwk,
+        keyVersion: material.materialVersion,
+      },
+    )
+  } catch {
+    // Do not surface native/provider internals; only a safe reason code is thrown.
+    throw new Error('mobile_device_key_wrap_failed')
+  }
+
+  await createSupabaseBackupRepository(supabase).upsertDocumentKey({
+    documentId,
+    userId: '',
+    deviceId,
+    materialVersion: material.materialVersion,
+    wrappedKey,
+  })
+}
+
 export async function runMobileForegroundKeyProvisioning(input: {
   supabase: SupabaseClient
   documentId?: string | null
@@ -352,6 +405,22 @@ async function runMobileKeyProvisioning(input: MobileKeyProvisioningRunInput): P
   if (input.documentId && input.source === 'foreground') {
     try {
       const { deviceId } = await ensureMobileDeviceKeyMaterial(input.supabase)
+
+      // Attempt to bootstrap the owner document key if this device does not yet
+      // have one. This is a no-op when already bootstrapped, and silently skipped
+      // when the user is not the document owner (RPC validates ownership server-side).
+      // Failure is non-fatal: the existing resolveDocumentKey + owner_device_key_unavailable
+      // flow handles the pending state correctly.
+      try {
+        await ensureMobileOwnerDocumentKey({
+          supabase: input.supabase,
+          documentId: input.documentId,
+        })
+      } catch {
+        // Bootstrap failure must not block provisioning or mark requests as failed.
+        // The owner_device_key_unavailable path below handles the deferred state.
+      }
+
       await loadOrRequestMobileProvisioningStatus({
         supabase: input.supabase,
         documentId: input.documentId,

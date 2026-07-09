@@ -11,9 +11,11 @@
 - Mobile document creation/guest promotion/auth promotion 경로의 DEK lifecycle 분석
 - Mobile owner device RSA key bootstrap
 - legacy AES-KW owner key와 device RSA key의 전환/공존 정책
-- encrypted snapshot restore와 provisioning processor 연결
-- first-device UX와 recovery state copy
+- owner/editor bootstrap과 provisioning processor 연결
+- first-device UX와 pending-device state copy
 - SQL/RPC contract 보강 필요성 검토
+
+> **범위 제외**: encrypted snapshot restore 재시도와 관련 recovery UX는 `TASK-020-mobile-encrypted-snapshot-restore.md`로 이관했다. 모바일 앱은 아직 snapshot restore 파이프라인 자체가 없어(Web의 Yjs 기반 restore를 그대로 쓸 수 없음), 이 작업의 owner key bootstrap 범위와 분리해서 다룬다.
 
 ## 선행 조건
 
@@ -53,17 +55,16 @@
    - Mobile이 legacy AES-KW owner key를 unwrap할지 여부를 명확히 한다.
    - 권장 기본값은 legacy AES-KW unwrap을 Mobile에서 새로 추가하지 않고, DEK를 실제로 보유한 creation/restore moment에서 RSA row를 bootstrap하는 것이다.
 
-4. Restore flow와 연결한다.
-   - Mobile invited/owner device가 active key를 받으면 encrypted snapshot restore를 재시도한다.
-   - restore 성공 시 current device RSA key row가 없으면 bootstrap한다.
+4. ~~Restore flow와 연결한다.~~ → `TASK-020-mobile-encrypted-snapshot-restore.md`로 이관.
 
 5. Owner/editor processor와 연결한다.
    - bootstrap 완료 후 pending member request를 처리한다.
    - bootstrap 전에는 request를 failed로 오염시키지 않는다.
 
 6. UX를 정리한다.
-   - "이 기기 데이터 준비 중", "다른 기기에서 준비 필요", "복구 후 자동 준비" 같은 generic copy를 사용한다.
+   - "이 기기 데이터 준비 중", "다른 기기에서 준비 필요" 같은 generic copy를 사용한다.
    - raw key/error/provider detail은 표시하지 않는다.
+   - "복구 후 자동 준비" copy는 restore 흐름과 함께 `TASK-020`에서 다룬다.
 
 ## 데이터 호환성 고려사항
 
@@ -82,7 +83,7 @@
 ## 검증 방법
 
 - Mobile에서 새 document를 만든 owner device가 device-scoped RSA key row를 생성하는지 확인한다.
-- Mobile restore 성공 후 owner/editor device가 pending provisioning request를 처리할 수 있는지 확인한다.
+- Mobile owner/editor device가 bootstrap 완료 후 pending provisioning request를 처리할 수 있는지 확인한다.
 - Web 없이 Mobile owner + Mobile invited member 조합에서 accepted member가 active wrapped key를 받는지 확인한다.
 - revoked material/member가 active key lookup에서 제외되는지 확인한다.
 - offline/poor network에서 bootstrap/provisioning request가 failed로 오염되지 않는지 확인한다.
@@ -98,6 +99,7 @@
 
 - 첫 Mobile owner device가 Web 도움 없이 자기 device-scoped active RSA key를 bootstrap할 수 있다.
 - Mobile owner/editor가 bootstrap 후 pending member key provisioning을 완료할 수 있다.
-- Mobile invited member가 active key 수신 후 encrypted snapshot restore를 재시도할 수 있다.
 - raw DEK/KEK/private key/document content가 서버/log/analytics/push에 노출되지 않는다.
 - reviewer와 qa-engineer 최종 verdict가 PASS다.
+
+> encrypted snapshot restore 재시도는 `TASK-020-mobile-encrypted-snapshot-restore.md`의 완료 조건으로 이관했다.
