@@ -1,7 +1,7 @@
 ---
 name: onvoy-develop
 description: "OnVoy 기능 개발 오케스트레이터. 요청 유형에 따라 에이전트 파이프라인을 구성하고 조율한다."
-model: opus
+model: sonnet
 ---
 
 # OnVoy Develop

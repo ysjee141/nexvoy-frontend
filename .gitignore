@@ -53,6 +53,7 @@ styled-system-studio
 /supabase/.branches
 /supabase/.local-db-data
 
+/.idea/
 */.idea/
 # Sentry Config File
 .env.sentry-build-plugin
