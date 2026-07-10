@@ -76,45 +76,4 @@
                                                               (피드백 루프 3)
 ```
 
-**디렉토리 구조:**
-```
-.claude/
-├── agents/
-│   ├── planner.md
-│   ├── ux-designer.md
-│   ├── ui-developer.md
-│   ├── frontend-developer.md
-│   ├── backend-developer.md
-│   ├── reviewer.md
-│   └── qa-engineer.md
-└── skills/
-    ├── onvoy-develop/SKILL.md
-    ├── analyze/SKILL.md
-    ├── ux-design/
-    │   ├── SKILL.md
-    │   └── references/
-    │       ├── design-system-checklist.md
-    │       └── a11y-checklist.md
-    ├── backend-develop/
-    │   ├── SKILL.md
-    │   └── references/
-    │       ├── rls-patterns.md
-    │       ├── api-route-template.md
-    │       └── resend-integration.md
-    ├── code-review/
-    │   ├── SKILL.md
-    │   └── references/checklist.md
-    └── qa-verify/
-        ├── SKILL.md
-        └── references/integration-checklist.md
-```
-
-**변경 이력:**
-
-| 날짜 | 변경 내용 | 대상 | 사유 |
-|------|----------|------|------|
-| 2026-04-10 | 초기 구성 | 전체 | 1인 개발자를 위한 가상 개발 팀 하네스 구축 |
-| 2026-04-10 | 절대 규칙 추가 | CLAUDE.md, developer, orchestrator | standard-dev-flow.md 기반 워크플로우 통합 |
-| 2026-04-10 | 참조 경로 수정 | CLAUDE.md, orchestrator | standard-dev-flow.md를 docs/develop-context/로 이동 |
-| 2026-04-17 | 토큰 최적화 | 전체 | SSOT 원칙 적용: 중복 규칙 참조화, 오케스트레이터 경량화(262→85줄), 에이전트 경량화 |
-| 2026-05-12 | 팀 확장 4→7명 | agents/{ux-designer,ui-developer,frontend-developer,backend-developer}.md, skills/{ux-design,backend-develop}, onvoy-develop, CLAUDE.md | UX/UI 전문 영역 분리, developer를 frontend/backend로 분할하여 Supabase·Resend·디자인 시스템 도메인을 명확화. 기존 developer.md 제거. |
+**디렉토리 구조 및 변경 이력:** `docs/develop-context/harness-structure.md` 참조
