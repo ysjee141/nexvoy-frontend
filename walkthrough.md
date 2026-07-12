@@ -162,3 +162,51 @@ Mobile restore 재시도 트리거(`keyProvisioningService.ts`의 두 지점)를
   담지 않는다(고정 스키마만 사용).
 - Yjs update를 데이터 채널로 실제 교환하는 것과 Mobile 시그널링 배선은 명시적으로 범위 밖이며 후속
   TASK로 이관되어 있다.
+
+---
+
+# Walkthrough: TASK-022 Document Registry Bootstrap for Regular Trips
+
+## Summary
+
+TASK-021 수동 검증 준비 중 일반 로그인 사용자가 만든 trip이 `public.documents`와
+`public.document_members`에 등록되지 않는 선결 문제를 확인했다. 초대 링크와 P2P signaling은
+`document_id`가 `documents(id)`를 참조하므로, 일반 Web 계정 trip도 checklist read/write 진입 시 lazy하게
+document registry를 보장하도록 TASK-022를 구현했다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-022-document-registry-bootstrap-for-regular-trips.md`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/01b_ux_design.md`
+- `_workspace/02a_ui_components.md`
+- `_workspace/02b_frontend_changes.md`
+- `_workspace/02c_backend_changes.md`
+- `_workspace/03_review_result.md`
+- `_workspace/04_qa_result.md`
+
+## Key Changes
+
+- `packages/core/src/local-first/documentRegistryBootstrap.ts`(신규): owner 접근만 registry bootstrap을 허용하는 순수 판별 함수 추가.
+- `packages/core/src/local-first/__tests__/documentRegistryBootstrap.test.ts`(신규): owner, non-owner, guest 판별 테스트 추가.
+- `packages/core/src/supabase/backupRepository.ts`: `ensureDocumentBootstrapped()` 추가. `documents`는 `ignoreDuplicates: true`로 insert-only 보장 후 기존 `upsertOwnerMember()`를 재사용한다.
+- `apps/web/lib/local-first/checklistDocumentWriter.ts`: checklist read/write 양쪽에서 owner 접근 시 document registry bootstrap을 시도한다. 실패는 catch로 격리해 기존 legacy row 기반 checklist 동작을 깨지 않는다.
+- `docs/refactor/tasks/README.md`: TASK-022 상태를 완료로 갱신하고 다음 권장 순서를 TASK-023부터로 조정했다.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공. 최초 sandbox 실행은 `tsx` IPC pipe 권한 문제로 실패했고, 승인된 환경에서 동일 명령을 재실행해 통과 확인.
+- `pnpm typecheck` 성공.
+- `pnpm build` 성공. 최초 sandbox 실행은 `apps/web/.next` 쓰기 권한 문제로 실패했고, 승인된 환경에서 동일 명령을 재실행해 통과 확인.
+- `pnpm build:mobile` 성공.
+- 자체 코드 리뷰 결과 APPROVE, QA 결과 PASS.
+
+## Rollback
+
+`checklistDocumentWriter.ts`의 bootstrap 호출과 `SupabaseBackupRepository.ensureDocumentBootstrapped()`를 되돌리면 기존 checklist dual-write/legacy 흐름으로 복귀한다. DB schema 변경은 없으므로 migration rollback은 필요 없다.
+
+## Notes
+
+- 이번 작업은 Web local-first adapter 배선이다. Mobile은 TASK-019 owner bootstrap 경로를 유지한다.
+- 실제 Supabase row 생성 E2E 수동 확인은 dual-write 모드와 로컬/개발 Supabase 인스턴스가 필요하다. 이번 세션에서는 코드 레벨 통합 정합성과 빌드 검증까지 완료했다.
+- 다음 권장 작업은 TASK-023 Mobile signaling channel wiring이다.

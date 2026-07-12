@@ -11,12 +11,14 @@ import {
   createEmptyTripDocumentV1,
   convertLegacyTripRowsToDocument,
   materializeChecklists,
+  shouldBootstrapDocumentRegistry,
   type ChecklistItemMutationResult,
   type ChecklistRepositorySnapshot,
   type DualWriteChecklistLocalWriter,
   type ToggleChecklistItemForUserInput,
   type TripDocumentV1,
 } from '@nexvoy/core'
+import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import {
   applyTripDocumentUpdate,
   createYjsTripDocument,
@@ -38,10 +40,12 @@ export function createWebChecklistDocumentWriter(
   supabase: SupabaseClient,
 ): DualWriteChecklistLocalWriter {
   return {
-    getChecklist: async (tripId) => toChecklistRepositorySnapshot(
-      await loadOrCreateTripDocument(supabase, await resolveWebOwnerContext(supabase), tripId),
-      await getCurrentUserId(supabase),
-    ),
+    getChecklist: async (tripId) => {
+      const ownerContext = await resolveWebOwnerContext(supabase)
+      const tripDocument = await loadOrCreateTripDocument(supabase, ownerContext, tripId)
+      await ensureDocumentRegistryBootstrapped(supabase, ownerContext, tripDocument)
+      return toChecklistRepositorySnapshot(tripDocument, await getCurrentUserId(supabase))
+    },
     applyCreateItem: async (checklistId, input, result) => {
       const ownerContext = await resolveWebOwnerContext(supabase)
       const tripId = await resolveTripIdForChecklistId(supabase, ownerContext, checklistId)
@@ -139,7 +143,36 @@ async function mutateLocalTripDocument(
   const ydoc = await loadYjsTripDocument(supabase, ownerContext, tripId)
   const document = mutateTripDocumentInYjs(ydoc, mutate)
   await saveTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId }, encodeTripDocumentUpdate(ydoc))
+  await ensureDocumentRegistryBootstrapped(supabase, ownerContext, document)
   return document
+}
+
+const documentRegistryBootstrapAttempted = new Set<string>()
+
+async function ensureDocumentRegistryBootstrapped(
+  supabase: SupabaseClient,
+  ownerContext: WebOwnerContext,
+  tripDocument: TripDocumentV1,
+): Promise<void> {
+  if (ownerContext.isGuest || !ownerContext.authUserId) return
+  if (documentRegistryBootstrapAttempted.has(tripDocument.trip.id)) return
+  documentRegistryBootstrapAttempted.add(tripDocument.trip.id)
+
+  if (!shouldBootstrapDocumentRegistry({
+    authUserId: ownerContext.authUserId,
+    tripOwnerId: tripDocument.trip.ownerId,
+  })) {
+    return
+  }
+
+  try {
+    await createSupabaseBackupRepository(supabase).ensureDocumentBootstrapped({
+      documentId: tripDocument.trip.id,
+      ownerId: ownerContext.authUserId,
+    })
+  } catch {
+    // Registry bootstrap must not affect the legacy row based checklist flow.
+  }
 }
 
 async function loadOrCreateTripDocument(
