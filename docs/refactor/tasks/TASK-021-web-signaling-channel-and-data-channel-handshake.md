@@ -65,20 +65,47 @@ Yjs update 실제 교환은 이 TASK 범위에서 제외해 후속 TASK로 이�
 ## 구현 단계
 
 1. `ADR-012` 결정에 따라 Supabase Realtime private channel 설계와 `realtime.messages` Authorization
-   RLS policy를 작성한다. `document_members.status = 'accepted'` 여부로 join/broadcast를 통제한다.
+   RLS policy를 작성한다. `document_members.status = 'accepted'` 여부로 join/broadcast를 통제한다. ✅
 2. `packages/core/src/sync/signalingChannel.ts`에 시그널링 메시지 타입(offer/answer/ice-candidate),
    room id 결정적 파생 함수(documentId 기반), 직렬화 유틸을 정의한다. Supabase client, WebRTC API는
-   포함하지 않는다.
+   포함하지 않는다. ✅
 3. `apps/web/lib/local-first/signalingChannel.ts`에서 Supabase Realtime Broadcast로 채널을 열기 전에
    `validateSignalingJoinPolicy()`를 호출해 로컬 membership snapshot 기준으로 fail-fast 검증한다.
-   거부되면 채널을 구독하지 않고 reason을 노출한다.
+   거부되면 채널을 구독하지 않고 reason을 노출한다. ✅
 4. `apps/web/lib/local-first/webRtcProvider.ts`의 `createPeerConnection()` 결과에 `createDataChannel`
-   (initiator) 또는 `ondatachannel`(answerer)을 연동한다.
+   (initiator) 또는 `ondatachannel`(answerer)을 연동한다. ✅
 5. 시그널링 채널을 통해 SDP offer/answer, ICE candidate를 교환해 `RTCPeerConnection`이 `connected`
-   상태에 도달하도록 배선한다.
+   상태에 도달하도록 배선한다. ✅ (`apps/web/lib/local-first/webP2PConnection.ts`)
 6. 데이터 채널 open 시 최소 handshake payload(`{ type: 'ping', ts }` → `{ type: 'pong', ts }`)를
-   왕복시키고, 성공/실패를 관측 이벤트로 남긴다.
-7. 같은 문서의 accepted 상태 두 브라우저 세션으로 실제 연결을 수동 검증한다.
+   왕복시키고, 성공/실패를 관측 이벤트로 남긴다. ✅
+7. 같은 문서의 accepted 상태 두 브라우저 세션으로 실제 연결을 수동 검증한다. ⬜ 미착수 — 아래
+   "구현 결과" 참고.
+
+## 구현 결과
+
+- `supabase/migrations/20260712000001_task021_signaling_realtime_authorization.sql`: `realtime.messages`
+  Authorization RLS. accepted 멤버는 수신, accepted owner/editor만 송신 가능(viewer는 read-only).
+  room topic은 기존 `public.document_registry_hash()`를 재사용해 `signaling:<sha256-hex(documentId)>`로
+  파생.
+- `packages/core/src/sync/signalingChannel.ts`(신규): offer/answer/ice-candidate 메시지 타입, 방어적
+  파싱, `deriveSignalingRoomTopic()`. `BackupCryptoProvider`와 동일하게 `SubtleCrypto`를 주입받아
+  플랫폼 API를 core에 넣지 않는다. `packages/core/src/index.ts`/`package.json` exports에 등록.
+- `apps/web/lib/local-first/signalingChannel.ts`(신규): Supabase Realtime Broadcast private channel
+  join. `validateSignalingJoinPolicy()`는 client-side fail-fast guard로만 쓰고, 실제 경계는 RLS.
+- `apps/web/lib/local-first/webRtcProvider.ts`: `createHandshakeDataChannel()`/
+  `wireHandshakeDataChannel()` 추가 — ping/pong 왕복과 `p2p_data_channel_open` 이벤트.
+- `apps/web/lib/local-first/webP2PConnection.ts`(신규): `connectWebP2PPeer()` — signaling과
+  webRtcProvider를 연결하는 최초의 실제 소비처. offer/answer/ICE 교환, 데이터 채널 배선, viewer는
+  초기화자가 될 수 없도록 방어(client no-op + server RLS 이중 방어).
+- `packages/core/src/sync/iceServers.ts`: `p2p_signaling_joined`/`p2p_data_channel_open` 이벤트 추가.
+
+## 알려진 제약
+
+- 항목 7(실기기/실브라우저 두 세션 간 실제 연결 확인)은 이번 세션에서 수행하지 못했다. 자동화된
+  typecheck/test/build는 모두 통과했지만, 로컬 Supabase 스택 기동 + 두 브라우저 세션으로 실제
+  `connected` 상태 도달과 ping/pong 왕복을 눈으로 확인하는 절차는 후속 작업이 필요하다.
+- `connectWebP2PPeer()`를 호출하는 UI 진입점은 이번 TASK 범위에 포함되지 않았다(범위 문서 기준
+  library 레벨 조립까지). 수동 검증 시 임시 호출 코드나 최소 테스트 페이지가 필요하다.
 
 ## 데이터 호환성 고려사항
 
