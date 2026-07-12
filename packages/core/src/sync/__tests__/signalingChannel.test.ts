@@ -62,4 +62,17 @@ async function run(): Promise<void> {
   if (topic !== topicAgain) {
     throw new Error('Signaling room topic derivation must be deterministic.')
   }
+
+  const rnShapedTopic = await deriveSignalingRoomTopic(documentId, {
+    digest: async (algorithm, data) => {
+      // Mobile passes a SubtleCrypto-shaped provider from react-native-quick-crypto.
+      // This checks that the shared derivation contract only relies on digest()
+      // semantics and produces the exact same room topic as Web/server.
+      return globalThis.crypto.subtle.digest(algorithm, data)
+    },
+  })
+
+  if (rnShapedTopic !== topic) {
+    throw new Error('React Native-shaped digest provider must derive the same signaling room topic.')
+  }
 }
