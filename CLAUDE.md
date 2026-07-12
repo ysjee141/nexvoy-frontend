@@ -24,56 +24,38 @@
 
 ---
 
-## 하네스: OnVoy Development Team
+## 하네스: OnVoy Development
 
-**목표:** 1인 개발자를 위한 가상 개발 팀 -- 분석/구현/리뷰/QA 파이프라인과 피드백 루프로 최고 품질 코드 생산
-
-**에이전트 팀 (7명):**
-
-| 에이전트 | 역할 |
-|---------|------|
-| planner | 요구사항 분석, 영향 범위 파악, 구현 계획 수립 |
-| ux-designer | UX 플로우 설계, 와이어프레임, 디자인 시스템(Clear Departure) 점검, a11y/반응형 가이드 |
-| ui-developer | UI 컴포넌트 구현, Panda CSS 스타일링, 디자인 토큰, Framer Motion 인터랙션 |
-| frontend-developer | Next.js 페이지/라우팅, Zustand 상태, 데이터 페칭, Capacitor 플랫폼 분기 |
-| backend-developer | Supabase 스키마/RLS, Service 레이어, Next.js API Routes, Resend 이메일, 인증 |
-| reviewer | 코드 리뷰, 아키텍처 검증, 디자인 시스템 감사 |
-| qa-engineer | 빌드 검증, 통합 정합성 검사, 플랫폼 호환성 확인 |
+**목표:** 1인 개발자를 위한 분석/구현/리뷰/QA 절차 -- 서브에이전트 없이 현재 세션이 직접 전 과정을 수행해, opus 서브에이전트 토큰 비용 없이 동일한 파이프라인 품질을 유지한다.
 
 **스킬:**
 
-| 스킬 | 용도 | 사용 에이전트 |
-|------|------|-------------|
-| onvoy-develop | 개발 팀 오케스트레이터 (전체 파이프라인 조율) | 리더 (메인) |
-| analyze | 요구사항 분석 및 구현 계획 수립 | planner |
-| ux-design | UX 플로우·와이어프레임·디자인 시스템 점검·a11y | ux-designer |
-| backend-develop | Supabase RLS·API Routes·Resend 패턴 | backend-developer |
-| code-review | 코드 리뷰 및 UX 감사 | reviewer |
-| qa-verify | 빌드 및 통합 정합성 검증 | qa-engineer |
+| 스킬 | 용도 | 사용 Phase |
+|------|------|-----------|
+| onvoy-develop | 전체 파이프라인 오케스트레이터 (분석→구현→리뷰→QA→PR을 현재 세션이 직접 수행) | 전체 |
+| analyze | 요구사항 분석 및 구현 계획 수립 | Phase 1 |
+| ux-design | UX 플로우·와이어프레임·디자인 시스템(Clear Departure) 점검·a11y | Phase 1.7 |
+| ui-develop | UI 컴포넌트 구현, Panda CSS 스타일링, 디자인 토큰, Framer Motion 인터랙션 | Phase 2a |
+| frontend-develop | Next.js 페이지/라우팅, Zustand 상태, 데이터 페칭, Capacitor 플랫폼 분기 | Phase 2b |
+| backend-develop | Supabase RLS·API Routes·Resend 패턴 | Phase 2c |
+| code-review | 코드 리뷰, 아키텍처 검증, 디자인 시스템 감사 | Phase 3 |
+| qa-verify | 빌드 검증, 통합 정합성 검사, 플랫폼 호환성 확인 | Phase 4 |
 
 **실행 규칙:**
-- 기능 개발, 버그 수정 요청 시 `onvoy-develop` 스킬을 통해 에이전트로 처리하라
-- `code-review`, `qa-verify`, `analyze` 스킬은 독립적으로도 호출 가능
-- 단순 질문, 파일 확인, 설정 변경은 에이전트 없이 직접 응답
-- 모든 에이전트는 `model: "opus"` 사용
+- 기능 개발, 버그 수정 요청 시 `onvoy-develop` 스킬로 처리하라 (서브에이전트를 스폰하지 않는다)
+- `analyze`, `ux-design`, `code-review`, `qa-verify` 등은 독립적으로도 호출 가능
+- 단순 질문, 파일 확인, 설정 변경은 스킬 없이 직접 응답
 - 중간 산출물: `_workspace/` 디렉토리
+- 서브에이전트는 사용자가 "독립적으로 검토해줘"처럼 명시적으로 요청한 예외적인 경우에만
+  general-purpose로 1회 사용한다 — 기본 동작이 아니다
 
-**파이프라인 및 피드백 루프:**
+**파이프라인:**
 ```
-[planner] --> [ux-designer] --> [backend-developer] ──┐
-                            │                          │
-                            ├──> [ui-developer] ───────┤
-                            │                          │
-                            └──> [frontend-developer] ─┤
-                                                       ↓
-                                                  [reviewer]
-                                            (피드백 루프 1: dev 재호출)
-                                                       ↓
-                                                 [qa-engineer]
-                                            (피드백 루프 2: dev 재호출)
-                                                       ↓
-                                              [사용자 피드백] --> 해당 Phase 재실행
-                                                              (피드백 루프 3)
+[Phase 1: 분석] --> [Phase 1.5: 이슈/브랜치] --> [Phase 1.7: UX 설계]
+      --> [Phase 2a: UI] --> [Phase 2b: Frontend]  (2c: Backend는 독립적으로 병행 가능)
+      --> [Phase 3: 리뷰] --> [Phase 4: QA] --> [Phase 5: 워크스루] --> [Phase 6: PR]
 ```
+모두 현재 세션이 순서대로 직접 수행한다. Phase 3/4에서 이슈 발견 시 해당 Phase로 돌아가 수정 후
+재실행한다(최대 2회 루프).
 
 **디렉토리 구조 및 변경 이력:** `docs/develop-context/harness-structure.md` 참조

@@ -1,9 +1,14 @@
 ---
 name: backend-develop
-description: "OnVoy 백엔드 개발 절차. Supabase 스키마/RLS, Service 레이어, API Routes, Resend 이메일 패턴을 정의한다."
+description: "OnVoy 백엔드 개발 절차. Supabase 스키마/RLS, Service 레이어, API Routes, Resend 이메일 패턴을 정의한다. onvoy-develop 오케스트레이터의 Phase 2c에서 사용하며, 백엔드(API/DB)만 필요한 요청에도 직접 사용한다."
 ---
 
 # Backend Develop
+
+## 역할 경계
+
+- 담당: `src/services/`, `src/app/api/`, `supabase/migrations/`, Edge Functions
+- 비담당: 페이지·컴포넌트 (`frontend-develop`/`ui-develop` 스킬 영역)
 
 ## 절차
 

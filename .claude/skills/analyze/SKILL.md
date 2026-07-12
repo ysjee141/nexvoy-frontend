@@ -1,6 +1,6 @@
 ---
 name: analyze
-description: "OnVoy 요구사항 분석 및 구현 계획 수립 절차. planner 에이전트가 사용한다."
+description: "OnVoy 요구사항 분석 및 구현 계획 수립 절차. onvoy-develop 오케스트레이터의 Phase 1에서 사용하며, '분석만 해줘' 같은 요청에도 직접 사용한다."
 ---
 
 # Analyze

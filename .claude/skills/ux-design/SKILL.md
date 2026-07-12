@@ -1,9 +1,14 @@
 ---
 name: ux-design
-description: "OnVoy UX 설계 절차. ux-designer 에이전트가 사용한다. 화면 구조, 인터랙션, 디자인 시스템 점검, 접근성을 다룬다."
+description: "OnVoy UX 설계 절차. onvoy-develop 오케스트레이터의 Phase 1.7에서 사용하며, UX 설계만 필요한 요청에도 직접 사용한다. 화면 구조, 인터랙션, 디자인 시스템 점검, 접근성을 다룬다. 코드는 작성하지 않는다."
 ---
 
 # UX Design
+
+## 역할 경계
+
+- 담당: UX 플로우, 와이어프레임, 디자인 시스템 점검, a11y·반응형 가이드
+- 비담당: 코드 구현 일체 (구현은 `ui-develop`/`frontend-develop` 스킬 영역)
 
 ## 절차
 

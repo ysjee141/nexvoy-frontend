@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: "OnVoy 코드 리뷰 절차. reviewer 에이전트가 사용한다. 아키텍처·타입·보안·플랫폼·스타일 순으로 검토한다."
+description: "OnVoy 코드 리뷰 절차. onvoy-develop 오케스트레이터의 Phase 3에서 사용하며, '리뷰만 해줘' 같은 요청에도 직접 사용한다. 아키텍처·타입·보안·플랫폼·스타일 순으로 검토한다."
 ---
 
 # Code Review
@@ -38,5 +38,5 @@ description: "OnVoy 코드 리뷰 절차. reviewer 에이전트가 사용한다.
 ## Critical 이슈
 ## Major 이슈
 ## Minor 이슈
-## 재작업 요청 (에이전트명 + 구체적 수정 사항)
+## 재작업 요청 (영역: ui/frontend/backend + 구체적 수정 사항)
 ```

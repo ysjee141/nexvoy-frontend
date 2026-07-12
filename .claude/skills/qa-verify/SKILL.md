@@ -1,6 +1,6 @@
 ---
 name: qa-verify
-description: "OnVoy QA 검증 절차. qa-engineer 에이전트가 사용한다. 빌드 검증과 통합 정합성을 확인한다."
+description: "OnVoy QA 검증 절차. onvoy-develop 오케스트레이터의 Phase 4에서 사용하며, 빌드/통합 검증만 필요한 요청에도 직접 사용한다. 빌드 검증과 통합 정합성을 확인한다."
 ---
 
 # QA Verify
@@ -36,6 +36,6 @@ pnpm build:mobile     # 모바일 빌드 (인프라 버그로 실패 시: 기록
 ## 판정: PASS | FAIL
 ## 빌드 결과
 ## 통합 정합성 이슈
-## 재작업 요청 (에이전트명 + 구체적 수정 사항)
+## 재작업 요청 (영역: ui/frontend/backend + 구체적 수정 사항)
 ## 플랫폼 호환성 메모
 ```
