@@ -1,5 +1,6 @@
 import { AppState, Platform } from 'react-native'
 import { RTCPeerConnection } from 'react-native-webrtc'
+import type RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel'
 import type { P2PObservabilityEvent } from '@nexvoy/core/sync/iceServers'
 import {
   REACT_NATIVE_WEBRTC_FEASIBILITY,
@@ -7,6 +8,15 @@ import {
   type MobileWebRtcProviderDiagnostics,
   type MobileWebRtcProviderOptions,
 } from './webRtcProvider.types'
+
+export interface MobileWebRtcDataChannelHandshakeResult {
+  rttMs: number
+}
+
+export interface WireMobileHandshakeDataChannelOptions {
+  onEvent?: (event: P2PObservabilityEvent) => void
+  onHandshakeComplete?: (result: MobileWebRtcDataChannelHandshakeResult) => void
+}
 
 function createDiagnostics(
   availability: MobileWebRtcProviderDiagnostics['availability'],
@@ -24,6 +34,48 @@ function createDiagnostics(
     requiredPackages: REACT_NATIVE_WEBRTC_FEASIBILITY.requiredPackages,
     fallbackReason,
   }
+}
+
+/** The initiator side creates this channel; the answerer receives it through the peer connection's `datachannel` event. */
+export function createMobileHandshakeDataChannel(
+  peerConnection: RTCPeerConnection,
+  label = 'signaling-handshake',
+): RTCDataChannel {
+  return peerConnection.createDataChannel(label)
+}
+
+/**
+ * Wires a minimal ping/pong round trip used to prove the RN data channel is
+ * open end-to-end. Payload is fixed to { type, ts }; no document content or
+ * CRDT updates are sent in TASK-023.
+ */
+export function wireMobileHandshakeDataChannel(
+  dataChannel: RTCDataChannel,
+  options: WireMobileHandshakeDataChannelOptions = {},
+): void {
+  const eventTarget = dataChannel as unknown as {
+    addEventListener?: (eventName: 'open' | 'message', listener: (event: { data?: unknown }) => void) => void
+  }
+
+  eventTarget.addEventListener?.('open', () => {
+    emitEvent(options, {
+      name: 'p2p_data_channel_open',
+      platform: getDiagnosticsPlatform(),
+    })
+    dataChannel.send(JSON.stringify({ type: 'ping', ts: Date.now() }))
+  })
+
+  eventTarget.addEventListener?.('message', (event) => {
+    const parsed = parseHandshakePayload(event.data)
+    if (!parsed) return
+
+    if (parsed.type === 'ping') {
+      dataChannel.send(JSON.stringify({ type: 'pong', ts: parsed.ts }))
+      return
+    }
+
+    options.onHandshakeComplete?.({ rttMs: Date.now() - parsed.ts })
+  })
 }
 
 export function createMobileWebRtcProvider(
@@ -73,6 +125,24 @@ export function createMobileWebRtcProvider(
       return undefined
     },
   }
+}
+
+function parseHandshakePayload(raw: unknown): { type: 'ping' | 'pong'; ts: number } | null {
+  if (typeof raw !== 'string') return null
+
+  try {
+    const data: unknown = JSON.parse(raw)
+    if (
+      isRecord(data)
+      && (data.type === 'ping' || data.type === 'pong')
+      && typeof data.ts === 'number'
+    ) {
+      return { type: data.type, ts: data.ts }
+    }
+  } catch {
+    return null
+  }
+  return null
 }
 
 function getDiagnosticsPlatform(): P2PObservabilityEvent['platform'] {
