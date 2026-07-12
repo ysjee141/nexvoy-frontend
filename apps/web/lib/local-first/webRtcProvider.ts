@@ -26,6 +26,68 @@ export interface WebRtcProvider {
   close: () => Promise<void>
 }
 
+export interface WebRtcDataChannelHandshakeResult {
+  rttMs: number
+}
+
+export interface WireHandshakeDataChannelOptions {
+  onEvent?: (event: P2PObservabilityEvent) => void
+  onHandshakeComplete?: (result: WebRtcDataChannelHandshakeResult) => void
+}
+
+/** The initiator side creates this channel; the answerer receives it via the peer connection's `datachannel` event. */
+export function createHandshakeDataChannel(
+  peerConnection: RTCPeerConnection,
+  label = 'signaling-handshake',
+): RTCDataChannel {
+  return peerConnection.createDataChannel(label)
+}
+
+/**
+ * Wires a minimal ping/pong round trip used to prove the data channel is
+ * actually open end-to-end (TASK-021). Payload is a fixed { type, ts }
+ * schema only — never document content or CRDT data.
+ */
+export function wireHandshakeDataChannel(
+  dataChannel: RTCDataChannel,
+  options: WireHandshakeDataChannelOptions = {},
+): void {
+  dataChannel.addEventListener('open', () => {
+    emitEvent(options, { name: 'p2p_data_channel_open', platform: 'web' })
+    dataChannel.send(JSON.stringify({ type: 'ping', ts: Date.now() }))
+  })
+
+  dataChannel.addEventListener('message', (event: MessageEvent) => {
+    const parsed = parseHandshakePayload(event.data)
+    if (!parsed) return
+
+    if (parsed.type === 'ping') {
+      dataChannel.send(JSON.stringify({ type: 'pong', ts: parsed.ts }))
+      return
+    }
+
+    options.onHandshakeComplete?.({ rttMs: Date.now() - parsed.ts })
+  })
+}
+
+function parseHandshakePayload(raw: unknown): { type: 'ping' | 'pong'; ts: number } | null {
+  if (typeof raw !== 'string') return null
+
+  try {
+    const data: unknown = JSON.parse(raw)
+    if (
+      isRecord(data)
+      && (data.type === 'ping' || data.type === 'pong')
+      && typeof data.ts === 'number'
+    ) {
+      return { type: data.type, ts: data.ts }
+    }
+  } catch {
+    return null
+  }
+  return null
+}
+
 export function createWebRtcProvider(options: WebRtcProviderOptions = {}): WebRtcProvider {
   const peerConnections = new Set<RTCPeerConnection>()
   const availability = resolveAvailability(options)
