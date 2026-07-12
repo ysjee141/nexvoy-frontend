@@ -27,6 +27,8 @@ export type P2PObservabilityEventName =
   | 'p2p_unavailable'
   | 'p2p_connection_failed'
   | 'p2p_relay_selected'
+  | 'p2p_signaling_joined'
+  | 'p2p_data_channel_open'
 
 export interface P2PObservabilityEvent {
   name: P2PObservabilityEventName
