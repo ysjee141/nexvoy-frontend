@@ -79,8 +79,21 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-018-mobile-non-exportable-key-storage.md` | 완료 | Mobile native non-exportable key storage hardening 구현 및 검증 완료 |
 | `TASK-019-mobile-first-owner-key-bootstrap.md` | 완료 | 로컬 구현 및 검증 완료 (restore 재시도는 TASK-020으로 이관) |
 | `TASK-020-mobile-encrypted-snapshot-restore.md` | 완료 | 로컬 구현 및 검증 완료 (reviewer APPROVE, qa-engineer PASS) |
+| `TASK-021-web-signaling-channel-and-data-channel-handshake.md` | PR 리뷰 대기 | typecheck/test/build 통과, PR [#300](https://github.com/ysjee141/nexvoy-frontend/pull/300), 실브라우저 2세션 수동 검증은 후속 |
+| `TASK-022-document-registry-bootstrap-for-regular-trips.md` | 계획됨 | TASK-021 수동 검증 중 발견한 선결 문제 — 일반 trip이 documents/document_members에 미등록 |
+| `TASK-023-mobile-signaling-channel-wiring.md` | 계획됨 | TASK-021을 Mobile까지 확장(Web-Mobile, Mobile-Mobile 연결) |
+| `TASK-024-p2p-data-channel-yjs-update-exchange.md` | 계획됨 | 데이터 채널로 실제 Yjs update 교환(연결 증명 이후 실질적 동기화 가속) |
+| `TASK-025-p2p-connection-status-ui.md` | 계획됨 | 사용자 대상 연결 상태 UI/UX |
+| `TASK-026-p2p-connection-lifecycle-hardening.md` | 계획됨 | 재연결, 백그라운드/탭 종료 정리, rotating room secret 하드닝 |
 
 현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `Phase 3`의 모바일 WebRTC native feasibility와 Cloudflare ICE config 발급 경로는 provider boundary, Edge Function, 검증 보고서로 정리했다. `Phase 4`의 dual-write 및 mismatch detector와 guest auth promotion은 Web-first 범위로 구현했다. `TASK-013`에서 초대/권한 registry, invite/share RPC, Web/Mobile join fallback을 구현했고, `TASK-014`에서 notification metadata, local notification scheduler, observability event boundary를 구현했다. `TASK-015`에서 owner/editor Web foreground document key provisioning과 pending/status UX를 구현했다. `TASK-016`은 Mobile Native Key Provisioning MVP를 구현하고 accepted scope 기준 검증했다. `TASK-017`은 Mobile background task 기반 provisioning retry path를 구현하고 Android-first 검증 범위에서 PASS를 받았다. `TASK-018`은 Android Keystore/iOS Keychain 기반 non-exportable key storage hardening을 구현하고 native preview build와 SQL smoke까지 검증했다. `TASK-019`는 Mobile-first owner bootstrap 후속 문서다. `TASK-020`은 `restore.ts`의 Yjs 비의존 부분(snapshot 복호화·hash 검증)을 `backupPayloadCodec.ts`/`mobileRestore.ts`로 분리해 Mobile 전용 encrypted snapshot restore 경로(`restoreMobileEncryptedSnapshot`)를 구현하고, `TASK-019`의 owner bootstrap 성공/provisioning completion 트리거에 재시도를 연결했다. updates replay(Web/Yjs 기반 최신 콘텐츠 반영)는 이번 범위에서 제외했다.
+
+`TASK-021`은 `ADR-004`가 유보했던 시그널링 전송 계층을 `ADR-012`(Supabase Realtime Broadcast)로
+결정하고, Web에서 시그널링 채널과 데이터 채널을 실제로 연결해 P2P fast path의 최초 연결을 증명했다
+(PR #300, 자동 검증 완료·실브라우저 수동 검증 후속). 수동 검증 중 일반 trip이 `documents`/
+`document_members`에 전혀 등록되지 않는다는 선결 문제를 발견해 `TASK-022`로 분리했다. P2P를 완전한
+기능으로 만들기 위한 나머지 작업(`TASK-023`~`TASK-026`: Mobile 배선, 실제 데이터 교환, 사용자 UI,
+생명주기 하드닝)을 계획 문서로 정리했다 — 구현은 아직 착수하지 않았다.
 
 ## Phase별 작업 목록
 
@@ -126,6 +139,20 @@ TASK-008a-web-checklist-read-through-hydration.md
 - [x] `TASK-019-mobile-first-owner-key-bootstrap.md`: 첫 Mobile owner device key bootstrap
 - [x] `TASK-020-mobile-encrypted-snapshot-restore.md`: Mobile encrypted snapshot restore와 restore 후 key bootstrap 연결
 
+### Phase 6: P2P Fast Path 완성
+
+- [x] `TASK-021-web-signaling-channel-and-data-channel-handshake.md`: Web 시그널링 채널(Supabase Realtime Broadcast) + 데이터 채널 배선으로 P2P fast path 최초 연결 증명 (PR #300, 실브라우저 2세션 수동 검증은 후속)
+- [ ] `TASK-022-document-registry-bootstrap-for-regular-trips.md`: 일반 trip이 documents/document_members에 자동 등록되도록 bootstrap (선결 문제)
+- [ ] `TASK-023-mobile-signaling-channel-wiring.md`: TASK-021을 Mobile까지 확장(Web-Mobile, Mobile-Mobile 연결)
+- [ ] `TASK-024-p2p-data-channel-yjs-update-exchange.md`: 데이터 채널로 실제 Yjs update 교환
+- [ ] `TASK-025-p2p-connection-status-ui.md`: 사용자 대상 연결 상태 UI/UX
+- [ ] `TASK-026-p2p-connection-lifecycle-hardening.md`: 재연결/생명주기/rotating room secret 하드닝
+
 ## 권장 시작 순서
 
-TASK-001~020까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로, checklist dual-write/mismatch detector, guest auth promotion, 초대/권한 registry, notification/observability boundary, Web foreground owner-side key provisioning, Mobile native key provisioning MVP와 foreground/resume/background sync, native non-exportable key storage hardening, Mobile-first owner device key bootstrap, Mobile encrypted snapshot restore(updates replay 제외)까지 검증을 완료했다. 다음 단계는 별도 task로 지정될 예정이다(예: Web/Yjs 기반 최신 콘텐츠를 Mobile에 반영하는 updates replay 지원).
+TASK-001~020까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로, checklist dual-write/mismatch detector, guest auth promotion, 초대/권한 registry, notification/observability boundary, Web foreground owner-side key provisioning, Mobile native key provisioning MVP와 foreground/resume/background sync, native non-exportable key storage hardening, Mobile-first owner device key bootstrap, Mobile encrypted snapshot restore(updates replay 제외)까지 검증을 완료했다.
+
+`TASK-021`은 Web-to-Web P2P 연결을 최초로 증명했다(자동 검증 완료, PR 리뷰 대기). 다음 권장 순서는
+`TASK-022`(문서 등록 갭 해소 — 이게 없으면 나머지가 일반 계정으로 테스트 불가) → `TASK-023`(Mobile
+배선) → `TASK-024`(실제 데이터 교환) → `TASK-025`(UI) → `TASK-026`(생명주기 하드닝)이다. 통합
+테스트 케이스/코드는 이 구현들이 어느 정도 갖춰진 뒤 별도로 작성한다.
