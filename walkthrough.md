@@ -85,3 +85,80 @@ Mobile restore 재시도 트리거(`keyProvisioningService.ts`의 두 지점)를
 
 - 사용자가 나중에 위 옵션 중 하나를 선택해 진행할 예정. 재개 시 이 섹션을 참고해 옵션을 다시 확인할 것.
 - 관련 ADR: ADR-002 (모바일 WebRTC는 Option B — EAS Build + react-native-webrtc, optional fast path).
+
+---
+
+# Walkthrough: TASK-021 Web Signaling Channel and Data Channel Handshake
+
+## Summary
+
+위 조사에서 이어진 작업. `TASK-009`/`TASK-010`이 만든 WebRTC 부품(peer connection factory, ICE config
+발급, signaling 권한 로직)은 있었지만 실제로 두 기기를 연결하는 배선이 전혀 없었다. `ADR-012`로
+시그널링 전송 계층을 Supabase Realtime Broadcast(private channel + Realtime Authorization)로 결정하고,
+`TASK-021`에서 Web-to-Web 연결을 실제로 배선했다. Mobile 배선과 Yjs update 실제 교환은 범위 밖이며,
+데이터 채널은 연결 증명(ping/pong handshake)까지만 다룬다. 토큰 사용량을 고려해 서브에이전트 없이
+메인 세션에서 직접 구현했고, 각 파일 단위로 커밋을 쪼개 중간에 세션이 끊겨도 재개 가능하도록 했다.
+
+## Artifacts
+
+- `docs/refactor/adrs/ADR-012-p2p-signaling-transport-supabase-realtime-broadcast.md`
+- `docs/refactor/tasks/TASK-021-web-signaling-channel-and-data-channel-handshake.md`
+- GitHub Issue [#299](https://github.com/ysjee141/nexvoy-frontend/issues/299)
+- 브랜치: `feature/task-021-web-signaling-channel-and-data-channel-handshake-299`
+
+## Key Changes
+
+- `supabase/migrations/20260712000001_task021_signaling_realtime_authorization.sql`(신규):
+  `realtime.messages` Authorization RLS. accepted 멤버는 수신 가능, accepted owner/editor만 송신
+  가능(viewer는 read-only). 기존 `public.document_registry_hash()`를 재사용해 room topic을
+  `signaling:<sha256-hex(documentId)>`로 파생 — 별도 해시 함수를 새로 만들지 않았다.
+- `packages/core/src/sync/signalingChannel.ts`(신규): offer/answer/ice-candidate 메시지 타입, 방어적
+  파싱, `deriveSignalingRoomTopic()`. `encryption.ts`의 `BackupCryptoProvider`와 동일한 패턴으로
+  `SubtleCrypto`를 주입받아 core 패키지에 플랫폼 API를 넣지 않는다. `index.ts`/`package.json`
+  exports·test 스크립트에 등록.
+- `apps/web/lib/local-first/signalingChannel.ts`(신규): Supabase Realtime Broadcast private channel에
+  join. `validateSignalingJoinPolicy()`는 client-side fail-fast guard로만 쓰고(`decision.allowed`가
+  false면 채널 구독 자체를 하지 않음), 실제 접근 통제 경계는 Realtime Authorization RLS.
+- `apps/web/lib/local-first/webRtcProvider.ts`: `createHandshakeDataChannel()`/
+  `wireHandshakeDataChannel()` 추가 — `{type, ts}` 고정 스키마의 ping/pong 왕복과
+  `p2p_data_channel_open` 관측 이벤트.
+- `apps/web/lib/local-first/webP2PConnection.ts`(신규): `connectWebP2PPeer()` — signaling channel과
+  webRtcProvider를 잇는 최초의 실제 소비처. SDP offer/answer·ICE candidate 교환, initiator/answerer에
+  따른 데이터 채널 배선, signaling 거부 시 `WebP2PSignalingDeniedError`로 명시적 실패, viewer는
+  `isInitiator`가 잘못 전달돼도 offer를 보낼 수 없도록 이중 방어(client no-op + server RLS).
+- `packages/core/src/sync/iceServers.ts`: `P2PObservabilityEventName`에 `p2p_signaling_joined`/
+  `p2p_data_channel_open` 추가.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공 (signalingChannel.test.ts 신규 포함)
+- `pnpm --filter @nexvoy/core typecheck`, `@nexvoy/types`, `@nexvoy/design-tokens` typecheck 성공
+- `pnpm --filter nexvoy-app typecheck` 성공, `pnpm --filter nexvoy-app lint` 성공(기존 warning 7건은
+  이번 변경과 무관한 기존 라인)
+- `pnpm build` 성공 (Web, Next.js TypeScript 체크 포함)
+- `pnpm build:mobile` 성공 (Web/iOS/Android 3개 플랫폼 번들)
+- 커밋을 7개 단위(문서, RLS migration, core 모듈, Web 어댑터, data channel 배선, provider 조립,
+  빌드 검증)로 쪼개 진행 — 각 커밋 시점에 typecheck/test 통과를 확인해 중간에 세션이 끊겨도 안전하게
+  재개 가능한 상태를 유지했다.
+
+## Rollback
+
+- signaling channel 조립 지점(`webP2PConnection.ts`)을 호출하는 곳이 없으므로 파일을 되돌리거나
+  제거해도 기존 기능에 영향이 없다.
+- `20260712000001_task021_signaling_realtime_authorization.sql`을 되돌려도(RLS policy 제거) 기존
+  `document_members` 기반 REST/RPC 권한 검증에는 영향이 없다.
+- 신규 코드는 모두 미사용 상태(진입점 없음)이므로 롤백 시 별도 데이터 정리가 필요 없다.
+
+## Notes
+
+- **실기기/실브라우저 검증 미수행**: 같은 문서의 accepted 상태 두 브라우저 세션으로 실제
+  `RTCPeerConnection.connectionState === 'connected'` 도달과 ping/pong 왕복을 눈으로 확인하는 절차
+  (TASK-021 검증 방법의 항목 7)는 이번 세션에서 수행하지 못했다. 로컬 Supabase 스택 기동(Realtime
+  Authorization 포함)과 두 세션 수동 테스트가 필요하며, 자동화된 typecheck/test/build만으로는 실제
+  네트워크 연결 성공을 보장하지 않는다.
+- `connectWebP2PPeer()`를 호출하는 UI 진입점은 이번 TASK 범위에 없다. 수동 검증 시 임시 트리거
+  코드나 최소 테스트 페이지가 필요하다.
+- signaling broadcast payload와 데이터 채널 handshake payload에는 document content나 CRDT 데이터를
+  담지 않는다(고정 스키마만 사용).
+- Yjs update를 데이터 채널로 실제 교환하는 것과 Mobile 시그널링 배선은 명시적으로 범위 밖이며 후속
+  TASK로 이관되어 있다.
