@@ -2,6 +2,11 @@ import type {
   IceServerConfig,
   P2PObservabilityEvent,
 } from '@nexvoy/core/sync/iceServers'
+import {
+  createP2PUpdateMessages,
+  parseP2PUpdateProtocolMessage,
+  type P2PUpdateProtocolMessage,
+} from '@nexvoy/core/sync/p2pUpdateProtocol'
 import { logP2PEvent } from './iceServers'
 
 export type WebRtcAvailability = 'disabled' | 'browser-api-missing' | 'ready'
@@ -33,6 +38,7 @@ export interface WebRtcDataChannelHandshakeResult {
 export interface WireHandshakeDataChannelOptions {
   onEvent?: (event: P2PObservabilityEvent) => void
   onHandshakeComplete?: (result: WebRtcDataChannelHandshakeResult) => void
+  onUpdateMessage?: (message: P2PUpdateProtocolMessage) => void
 }
 
 /** The initiator side creates this channel; the answerer receives it via the peer connection's `datachannel` event. */
@@ -59,7 +65,11 @@ export function wireHandshakeDataChannel(
 
   dataChannel.addEventListener('message', (event: MessageEvent) => {
     const parsed = parseHandshakePayload(event.data)
-    if (!parsed) return
+    if (!parsed) {
+      const updateMessage = parseDataChannelUpdateMessage(event.data)
+      if (updateMessage) options.onUpdateMessage?.(updateMessage)
+      return
+    }
 
     if (parsed.type === 'ping') {
       dataChannel.send(JSON.stringify({ type: 'pong', ts: parsed.ts }))
@@ -68,6 +78,27 @@ export function wireHandshakeDataChannel(
 
     options.onHandshakeComplete?.({ rttMs: Date.now() - parsed.ts })
   })
+}
+
+export function sendP2PUpdateOverDataChannel(input: {
+  dataChannel: RTCDataChannel
+  documentId: string
+  update: Uint8Array
+}): boolean {
+  if (input.dataChannel.readyState !== 'open') return false
+
+  try {
+    const messages = createP2PUpdateMessages({
+      documentId: input.documentId,
+      update: input.update,
+    })
+    for (const message of messages) {
+      input.dataChannel.send(JSON.stringify(message))
+    }
+    return true
+  } catch {
+    return false
+  }
 }
 
 function parseHandshakePayload(raw: unknown): { type: 'ping' | 'pong'; ts: number } | null {
@@ -86,6 +117,15 @@ function parseHandshakePayload(raw: unknown): { type: 'ping' | 'pong'; ts: numbe
     return null
   }
   return null
+}
+
+function parseDataChannelUpdateMessage(raw: unknown): P2PUpdateProtocolMessage | null {
+  if (typeof raw !== 'string') return null
+  try {
+    return parseP2PUpdateProtocolMessage(JSON.parse(raw) as unknown)
+  } catch {
+    return null
+  }
 }
 
 export function createWebRtcProvider(options: WebRtcProviderOptions = {}): WebRtcProvider {
