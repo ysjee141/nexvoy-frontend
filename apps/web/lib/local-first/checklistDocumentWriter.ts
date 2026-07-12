@@ -35,6 +35,7 @@ import {
   saveTripDocumentUpdate,
 } from './indexedDbStore'
 import { resolveWebOwnerContext, type WebOwnerContext } from './ownerNamespace'
+import { publishLocalTripDocumentUpdate } from './p2pUpdateBridge'
 
 export function createWebChecklistDocumentWriter(
   supabase: SupabaseClient,
@@ -142,7 +143,9 @@ async function mutateLocalTripDocument(
 ): Promise<TripDocumentV1> {
   const ydoc = await loadYjsTripDocument(supabase, ownerContext, tripId)
   const document = mutateTripDocumentInYjs(ydoc, mutate)
-  await saveTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId }, encodeTripDocumentUpdate(ydoc))
+  const update = encodeTripDocumentUpdate(ydoc)
+  await saveTripDocumentUpdate({ namespace: ownerContext.namespace, documentId: tripId }, update)
+  publishLocalTripDocumentUpdate({ documentId: tripId, update })
   await ensureDocumentRegistryBootstrapped(supabase, ownerContext, document)
   return document
 }
