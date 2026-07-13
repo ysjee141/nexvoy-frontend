@@ -380,7 +380,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const isLocalFirstChecklistSpike = repositories.mode === 'local-first-checklist-spike'
     const isLocalFirstChecklistMode = repositories.mode === 'local-first-checklist-spike'
         || repositories.mode === 'local-first-checklist-dual-write'
+        || repositories.mode === 'document-primary'
     const canApplyTemplates = repositories.mode === 'legacy-supabase'
+        || repositories.mode === 'document-primary'
     const canUseChecklistActions = (isOnline || isLocalFirstChecklistSpike) && !isOffline
 
     const [isLoading, setIsLoading] = useState(true)
@@ -441,7 +443,7 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
 
             // 2. 네트워크 확인
             const { isOfflineMode } = useNetworkStore.getState()
-            if (!isLocalFirstChecklistSpike && (!isOnline || isOfflineMode)) {
+            if (!isLocalFirstChecklistMode && (!isOnline || isOfflineMode)) {
                 setIsLoading(false)
                 return
             }
@@ -695,6 +697,9 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     }
 
     const participants = getParticipants()
+    const currentUserRole = currentUser?.id === tripOwner?.id
+        ? 'owner'
+        : members.find((member) => member.user_id === currentUser?.id)?.role ?? null
     const totalMembersCount = participants.length
     const getAssignedUserIds = (item: any): string[] => {
         const assigned = itemAssignees
@@ -1651,6 +1656,8 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                     isOpen={isTemplateModalOpen}
                     onClose={() => setIsTemplateModalOpen(false)}
                     checklistId={checklistId}
+                    tripId={tripId!}
+                    currentUserRole={currentUserRole}
                     currentUser={currentUser}
                     onSuccess={(newItems) => {
                         setItems(prev => [...prev, ...newItems])

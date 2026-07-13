@@ -15,6 +15,7 @@ import {
     type DocumentKeyProvisioningStatus,
 } from './DocumentKeyProvisioningStatus'
 import { ensureWebDeviceKeyMaterial, runWebForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
+import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -128,6 +129,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         }))
 
         setCollaborators(formatted)
+        await syncCollaboratorSnapshot(formatted)
     }
 
     const handleInvite = async (e: React.FormEvent) => {
@@ -174,6 +176,10 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             setCollaborators(prev =>
                 prev.map(m => m.memberId === memberId ? { ...m, role: newRole } : m)
             )
+            const member = collaborators.find((candidate) => candidate.memberId === memberId)
+            if (member) {
+                await upsertCollaboratorSnapshot({ ...member, role: newRole })
+            }
         }
         setEditingRoleId(null)
     }
@@ -186,11 +192,52 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             alert((isSelf ? '나가기 실패: ' : '멤버 삭제 실패: ') + formatErrorMessage(error))
         } else {
             if (isSelf) {
+                await revokeCollaboratorSnapshot(memberId)
                 onClose()
                 window.location.href = '/'
             } else {
+                await revokeCollaboratorSnapshot(memberId)
                 fetchCollaborators()
             }
+        }
+    }
+
+    const syncCollaboratorSnapshot = async (members: Collaborator[]) => {
+        try {
+            const repositories = await createWebDocumentPrimaryRepositories(supabase, {
+                actorRole: currentMemberRole ?? null,
+            })
+            await Promise.all(members.map((member) =>
+                repositories.members.upsertMember(tripId, {
+                    member: toTripMemberNode(member),
+                }),
+            ))
+        } catch (err) {
+            console.warn('[CollaboratorModal] member snapshot sync failed', err)
+        }
+    }
+
+    const upsertCollaboratorSnapshot = async (member: Collaborator) => {
+        try {
+            const repositories = await createWebDocumentPrimaryRepositories(supabase, {
+                actorRole: currentMemberRole ?? null,
+            })
+            await repositories.members.upsertMember(tripId, {
+                member: toTripMemberNode(member),
+            })
+        } catch (err) {
+            console.warn('[CollaboratorModal] member snapshot upsert failed', err)
+        }
+    }
+
+    const revokeCollaboratorSnapshot = async (memberId: string) => {
+        try {
+            const repositories = await createWebDocumentPrimaryRepositories(supabase, {
+                actorRole: currentMemberRole ?? null,
+            })
+            await repositories.members.revokeMember(tripId, memberId)
+        } catch (err) {
+            console.warn('[CollaboratorModal] member snapshot revoke failed', err)
         }
     }
 
@@ -600,6 +647,25 @@ function formatErrorMessage(error: unknown): string {
     if (typeof error === 'string') return error
     if (error instanceof Error) return error.message
     return '잠시 후 다시 시도해 주세요.'
+}
+
+function toTripMemberNode(member: Collaborator) {
+    const now = new Date().toISOString()
+    return {
+        id: member.memberId,
+        userId: member.userId,
+        invitedEmail: member.userId ? null : member.email,
+        role: member.role,
+        status: member.status === 'revoked'
+            ? 'revoked' as const
+            : member.status === 'pending'
+                ? 'pending' as const
+                : 'accepted' as const,
+        nickname: member.nickname,
+        email: member.email,
+        createdAt: member.joined_at || now,
+        updatedAt: now,
+    }
 }
 
 function getMemberKeyProvisioningStatus(

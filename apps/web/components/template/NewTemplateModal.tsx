@@ -7,6 +7,7 @@ import { X, Sparkles } from 'lucide-react'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useRouter } from 'next/navigation'
 import TemplateForm, { TemplateItemInput } from './TemplateForm'
+import { createWebTemplateDocument } from '@/lib/local-first/documentPrimaryRepositories'
 import {
     createChecklistCategory,
     deleteChecklistCategory,
@@ -99,37 +100,20 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
             const { data: { session } } = await supabase.auth.getSession()
             if (!session?.user) throw new Error('인증 정보가 없습니다.')
 
-            // 1. 템플릿 레코드 생성
-            const { data: newTemplate, error: templateError } = await supabase
-                .from('checklist_templates')
-                .insert({
-                    user_id: session.user.id,
-                    title: title.trim()
-                })
-                .select()
-                .single()
-
-            if (templateError) throw templateError
-
-            // 2. 템플릿 하위 항목 생성
-            const itemsToInsert = validItems.map((item) => ({
-                template_id: newTemplate.id,
-                item_name: item.item_name.trim(),
-                category: item.category,
-                is_private: item.is_private
-            }))
-
-            const { error: itemsError } = await supabase
-                .from('checklist_template_items')
-                .insert(itemsToInsert)
-
-            if (itemsError) throw itemsError
+            await createWebTemplateDocument({
+                supabase,
+                title: title.trim(),
+                items: validItems.map((item) => ({
+                    item_name: item.item_name.trim(),
+                    category: item.category,
+                    is_private: item.is_private,
+                })),
+            })
 
             resetForm()
             if (onSuccess) onSuccess()
             onClose()
             router.refresh()
-
         } catch (error: any) {
             console.error('Error creating template:', error)
             alert('저장 중에 잠시 문제가 생겼어요. 다시 한번 시도해 주시겠어요?')

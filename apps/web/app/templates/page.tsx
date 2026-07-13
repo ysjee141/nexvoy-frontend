@@ -7,11 +7,12 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Skeleton from '@/components/ui/Skeleton'
 import CommonListSkeleton from '@/components/common/CommonListSkeleton'
-import { formatDate, getTemplatesWithPreview } from '@nexvoy/core'
+import { formatDate } from '@nexvoy/core'
 import type { TemplateWithPreview } from '@nexvoy/types'
 
 import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/lib/cache'
+import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
 
 export default function TemplatesPage() {
     const supabase = createClient()
@@ -37,7 +38,21 @@ export default function TemplatesPage() {
                 return
             }
 
-            setTemplates(await getTemplatesWithPreview(supabase, user.id))
+            const repositories = await createWebDocumentPrimaryRepositories(supabase)
+            const templateSummaries = await repositories.templates.listTemplates(user.id)
+            setTemplates(templateSummaries.map((template) => ({
+                id: template.id,
+                title: template.title,
+                user_id: template.ownerId,
+                item_count: template.itemCount,
+                preview_items: template.previewItems,
+                created_at: template.updatedAt,
+                access: template.ownerId === user.id
+                    ? 'owner'
+                    : template.visibility === 'public'
+                        ? 'default'
+                        : 'viewer',
+            })))
             setLoading(false)
         }
 
