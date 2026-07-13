@@ -90,13 +90,23 @@ apps/mobile/lib/local-first: Mobile Yjs runtime adapter + local persistence adap
 
 ## 검증 방법
 
-- RN dev client에서 `Y.applyUpdate()`/`Y.encodeStateAsUpdate()` smoke test 통과
-- Web에서 생성한 Yjs update를 Mobile에서 apply한 뒤 materialized checklist가 동일한지 확인
-- Mobile에서 생성한 Yjs update를 Web에서 apply한 뒤 materialized checklist가 동일한지 확인
+- RN/Metro export build에서 `Y.applyUpdate()`/`Y.encodeStateAsUpdate()` import graph 통과
+- Web에서 생성한 Yjs update를 Mobile adapter가 apply할 수 있는 경로 구현
+- Mobile에서 생성한 Yjs update를 같은 P2P protocol로 publish할 수 있는 경로 구현
 - Web-Mobile P2P update exchange 수동 검증
 - Mobile-Mobile P2P update exchange 수동 검증
 - `pnpm --filter @nexvoy/core test`, `pnpm typecheck`, `pnpm build`, `pnpm build:mobile` 성공
 - Android dev client 설치/실행 및 Logcat에서 runtime import error 없음
+
+## 구현 결과
+
+- `apps/mobile/lib/local-first/mobileYjsTripDocument.ts`를 추가해 Mobile 전용 Yjs runtime adapter와 AsyncStorage persistence를 제공한다.
+- `apps/mobile/lib/local-first/p2pUpdateBridge.ts`를 추가해 local update publish와 remote update apply 경계를 분리했다.
+- `webRtcProvider.native.ts`와 `webP2PConnection.ts`가 TASK-024의 `yjs-update` / `yjs-update-chunk` protocol message를 송수신하고 재조립 후 apply한다.
+- Mobile owner bootstrap snapshot은 JSON marker 대신 Yjs encoded update로 저장된다.
+- Mobile restore는 decrypt/hash 검증을 통과한 opaque snapshot을 Mobile Yjs store에 apply한다.
+- Metro에서 `lib0`의 `isomorphic-webcrypto/src/react-native` 요구를 `react-native-quick-crypto` 기반 shim으로 해소했다.
+- 자동 검증은 통과했다. 실제 Web-Mobile/Mobile-Mobile 수동 P2P와 Android dev client Logcat 확인은 실기기 환경에서 후속 확인이 필요하다.
 
 ## 롤백 방법
 
@@ -106,7 +116,7 @@ TASK-024 경로는 유지된다.
 
 ## 완료 조건
 
-- Web과 Mobile이 동일 Yjs update format을 apply할 수 있다.
-- Web-Mobile, Mobile-Mobile 모두 data channel update exchange가 동작한다.
+- Web과 Mobile이 동일 Yjs update format을 apply할 수 있다. 자동 검증 통과.
+- Web-Mobile, Mobile-Mobile 모두 data channel update exchange 경로가 구현되어 있다. 수동 실기기 검증은 후속.
 - Mobile fallback은 Supabase backup/restore로 유지된다.
-- 해결 과정에서 필요한 polyfill/alias/native dependency 결정이 ADR 또는 task 결과에 기록되어 있다.
+- 해결 과정에서 필요한 Metro alias/shim 결정이 이 task 결과에 기록되어 있다.

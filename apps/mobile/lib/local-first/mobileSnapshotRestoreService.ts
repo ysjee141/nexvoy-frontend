@@ -8,6 +8,7 @@ import { logLocalFirstEvent } from '@/lib/observability'
 import { getOrCreateMobileDeviceId } from './mobileDeviceIdentity'
 import { getMobileBackupCryptoProvider } from './documentBootstrapService'
 import { bootstrapMobileDeviceDocumentKey, getCurrentMobileDocumentKey } from './keyProvisioningService'
+import { applyAndPersistMobileTripDocumentUpdate } from './mobileYjsTripDocument'
 
 // Document key version must match the value in keyProvisioningService.ts /
 // documentBootstrapService.ts.
@@ -80,6 +81,12 @@ async function computeRestoreOutcome({
         key: documentKey,
         hash: sha256Hex,
       })
+      if (result.kind === 'opaque') {
+        await applyAndPersistMobileTripDocumentUpdate({
+          documentId,
+          update: result.plaintext,
+        })
+      }
       outcome = { status: 'restored', snapshotKind: result.kind }
     } catch (error) {
       outcome = { status: 'failed', reason: mapRestoreErrorReason(error) }

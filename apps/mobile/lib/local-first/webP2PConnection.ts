@@ -1,8 +1,11 @@
 import { RTCPeerConnection } from 'react-native-webrtc'
+import type RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel'
 import type { SignalingMessage } from '@nexvoy/core/sync/signalingChannel'
+import { P2PUpdateReassembler } from '@nexvoy/core/sync/p2pUpdateProtocol'
 import {
   createMobileHandshakeDataChannel,
   createMobileWebRtcProvider,
+  sendP2PUpdateOverMobileDataChannel,
   wireMobileHandshakeDataChannel,
   type MobileWebRtcDataChannelHandshakeResult,
 } from './webRtcProvider.native'
@@ -11,6 +14,10 @@ import {
   type MobileSignalingChannelMembership,
 } from './signalingChannel'
 import { fetchMobileIceServerConfig } from './iceServers'
+import {
+  applyRemoteMobileTripDocumentUpdate,
+  registerMobileP2PUpdateSender,
+} from './p2pUpdateBridge'
 
 export interface ConnectMobileP2PPeerInput {
   documentId: string
@@ -19,10 +26,12 @@ export interface ConnectMobileP2PPeerInput {
   /** Caller decides which side offers; a viewer (canWrite=false) is never allowed to act as initiator. */
   isInitiator: boolean
   onHandshakeComplete?: (result: MobileWebRtcDataChannelHandshakeResult) => void
+  onUpdateApplied?: (input: { updateId: string; byteLength: number }) => void
 }
 
 export interface MobileP2PConnection {
   readonly peerConnection: RTCPeerConnection
+  sendUpdate(update: Uint8Array): boolean
   close(): Promise<void>
 }
 
@@ -34,15 +43,18 @@ export class MobileP2PSignalingDeniedError extends Error {
 
 /**
  * Ties the mobile signaling channel and native WebRTC provider together for
- * Web-Mobile and Mobile-Mobile connectivity validation. Yjs update exchange is
- * intentionally out of scope for TASK-023.
+ * Web-Mobile and Mobile-Mobile connectivity. TASK-027 extends the TASK-023
+ * handshake proof by applying canonical Yjs update payloads locally.
  */
 export async function connectMobileP2PPeer(
   input: ConnectMobileP2PPeerInput,
 ): Promise<MobileP2PConnection> {
   let peerConnection: RTCPeerConnection | null = null
+  let dataChannel: RTCDataChannel | null = null
   let sendSignalingMessage: (message: SignalingMessage) => void = () => {}
   const pendingMessages: SignalingMessage[] = []
+  const unregisterUpdateSenders: Array<() => void> = []
+  const updateReassembler = new P2PUpdateReassembler()
 
   const signaling = await joinMobileSignalingChannel({
     documentId: input.documentId,
@@ -92,10 +104,8 @@ export async function connectMobileP2PPeer(
     })
 
     if (isInitiator) {
-      const dataChannel = createMobileHandshakeDataChannel(peerConnection)
-      wireMobileHandshakeDataChannel(dataChannel, {
-        onHandshakeComplete: input.onHandshakeComplete,
-      })
+      dataChannel = createMobileHandshakeDataChannel(peerConnection)
+      attachDataChannel(dataChannel)
 
       const offer = await peerConnection.createOffer()
       await peerConnection.setLocalDescription(offer)
@@ -103,9 +113,8 @@ export async function connectMobileP2PPeer(
     } else {
       peerConnectionEvents.addEventListener?.('datachannel', (event) => {
         if (!event.channel) return
-        wireMobileHandshakeDataChannel(event.channel, {
-          onHandshakeComplete: input.onHandshakeComplete,
-        })
+        dataChannel = event.channel
+        attachDataChannel(event.channel)
       })
     }
 
@@ -113,14 +122,58 @@ export async function connectMobileP2PPeer(
       void handleSignalingMessage(peerConnection, sendSignalingMessage, input.userId, message)
     }
   } catch (error) {
+    for (const unregister of unregisterUpdateSenders.splice(0)) {
+      unregister()
+    }
+    updateReassembler.clear()
     await signaling.leave()
     await provider?.close()
     throw error
   }
 
+  function attachDataChannel(channel: RTCDataChannel): void {
+    wireMobileHandshakeDataChannel(channel, {
+      onHandshakeComplete: input.onHandshakeComplete,
+      onUpdateMessage: (message) => {
+        const reassembled = updateReassembler.ingest(message)
+        if (!reassembled || reassembled.documentId !== input.documentId) return
+        void applyRemoteMobileTripDocumentUpdate({
+          documentId: input.documentId,
+          update: reassembled.update,
+        }).then(() => {
+          input.onUpdateApplied?.({
+            updateId: reassembled.updateId,
+            byteLength: reassembled.update.byteLength,
+          })
+        }).catch(() => undefined)
+      },
+    })
+    unregisterUpdateSenders.push(registerMobileP2PUpdateSender({
+      documentId: input.documentId,
+      send: (update) => sendP2PUpdateOverMobileDataChannel({
+        dataChannel: channel,
+        documentId: input.documentId,
+        update,
+      }),
+    }))
+  }
+
   return {
     peerConnection,
+    sendUpdate(update) {
+      return dataChannel
+        ? sendP2PUpdateOverMobileDataChannel({
+          dataChannel,
+          documentId: input.documentId,
+          update,
+        })
+        : false
+    },
     async close() {
+      for (const unregister of unregisterUpdateSenders.splice(0)) {
+        unregister()
+      }
+      updateReassembler.clear()
       await signaling.leave()
       await provider.close()
     },
