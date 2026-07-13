@@ -19,6 +19,8 @@
     "./local-first/materialize": "./src/local-first/materialize.ts",
     "./local-first/migrations": "./src/local-first/migrations.ts",
     "./local-first/permissions": "./src/local-first/permissions.ts",
+    "./local-first/documentMutationWriter": "./src/local-first/documentMutationWriter.ts",
+    "./local-first/templateDocument": "./src/local-first/templateDocument.ts",
     "./local-first/tombstone": "./src/local-first/tombstone.ts",
     "./local-first/tripDocument": "./src/local-first/tripDocument.ts",
     "./local-first/yjsTripDocument": "./src/local-first/yjsTripDocument.ts",
@@ -26,6 +28,7 @@
     "./notifications/metadata": "./src/notifications/metadata.ts",
     "./observability/events": "./src/observability/events.ts",
     "./repositories/checklistMismatchDetector": "./src/repositories/checklistMismatchDetector.ts",
+    "./repositories/documentPrimaryRepository": "./src/repositories/documentPrimaryRepository.ts",
     "./repositories/dualWriteChecklistRepository": "./src/repositories/dualWriteChecklistRepository.ts",
     "./repositories/types": "./src/repositories/types.ts",
     "./sync/backupPayloadCodec": "./src/sync/backupPayloadCodec.ts",
@@ -47,7 +50,7 @@
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/local-first/__tests__/guestIdentity.test.ts && tsx src/local-first/__tests__/guestPromotion.test.ts && tsx src/local-first/__tests__/documentRegistryBootstrap.test.ts && tsx src/local-first/__tests__/permissions.test.ts && tsx src/notifications/__tests__/metadata.test.ts && tsx src/notifications/__tests__/batching.test.ts && tsx src/observability/__tests__/events.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/checklistMismatchDetector.test.ts && tsx src/repositories/__tests__/dualWriteChecklistRepository.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/keyProvisioning.test.ts && tsx src/sync/__tests__/iceServers.test.ts && tsx src/sync/__tests__/signalingChannel.test.ts && tsx src/sync/__tests__/p2pLifecycle.test.ts && tsx src/sync/__tests__/p2pUpdateProtocol.test.ts && tsx src/sync/__tests__/signalingPermissions.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
+    "test": "tsx src/local-first/__tests__/migrations.test.ts && tsx src/local-first/__tests__/materialize.test.ts && tsx src/local-first/__tests__/yjsTripDocument.test.ts && tsx src/local-first/__tests__/templateDocument.test.ts && tsx src/local-first/__tests__/guestIdentity.test.ts && tsx src/local-first/__tests__/guestPromotion.test.ts && tsx src/local-first/__tests__/documentRegistryBootstrap.test.ts && tsx src/local-first/__tests__/permissions.test.ts && tsx src/notifications/__tests__/metadata.test.ts && tsx src/notifications/__tests__/batching.test.ts && tsx src/observability/__tests__/events.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/checklistMismatchDetector.test.ts && tsx src/repositories/__tests__/dualWriteChecklistRepository.test.ts && tsx src/repositories/__tests__/documentPrimaryRepository.test.ts && tsx src/sync/__tests__/encryption.test.ts && tsx src/sync/__tests__/keyProvisioning.test.ts && tsx src/sync/__tests__/iceServers.test.ts && tsx src/sync/__tests__/signalingChannel.test.ts && tsx src/sync/__tests__/p2pLifecycle.test.ts && tsx src/sync/__tests__/p2pUpdateProtocol.test.ts && tsx src/sync/__tests__/signalingPermissions.test.ts && tsx src/sync/__tests__/syncState.test.ts && tsx src/sync/__tests__/restore.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

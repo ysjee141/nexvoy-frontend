@@ -250,6 +250,12 @@
 - `TripRepository`, `PlanRepository`, `ChecklistRepository`, `TemplateRepository`, `MemberRepository`를 document-primary로 정리
 - Web/Mobile에서 공유 가능한 core repository contract 확정
 
+상태:
+
+- 완료. `@nexvoy/core`에 `TemplateDocumentV1`, document mutation writer, `DocumentPrimaryRepositoryBundle`,
+  Trip/Plan/Checklist/Template/Member repository contract를 추가했다.
+- 이번 작업은 schema 변경이 없으므로 실행해야 할 SQL/query 파일이 없다.
+
 ### TASK-031: Web Full Document-primary 전환
 
 범위:
