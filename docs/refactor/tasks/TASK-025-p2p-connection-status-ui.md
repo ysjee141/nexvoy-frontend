@@ -48,6 +48,15 @@
 4. 실패 케이스(시그널링 거부, ICE 실패, 데이터 채널 미개방)를 모두 동일한 "사용 불가 → 기존 방식
    사용 중" 상태로 수렴시켜 raw reason을 노출하지 않는다.
 
+## 구현 결과
+
+- `apps/web/components/trips/P2PConnectionStatusBadge.tsx`를 추가해 연결 중/연결됨/fallback 상태를 작은 배지로 표시한다.
+- `apps/web/lib/local-first/webP2PChecklistConnection.ts`를 추가해 준비물 화면에서 Web P2P 연결을 자동 시도한다.
+- accepted owner/editor만 연결 대상이며, writable member id 정렬로 initiator를 결정한다.
+- 준비물 화면은 local-first checklist spike/dual-write 모드에서 document update subscription을 사용한다.
+- dual-write 모드의 `getChecklist()`는 local document를 우선 읽고 실패 시 legacy read로 fallback한다.
+- raw WebRTC/signaling/ICE reason은 UI에 노출하지 않고 generic fallback copy로 수렴한다.
+
 ## 데이터 호환성 고려사항
 
 - 해당 없음(UI 전용 task, 데이터 모델 변경 없음).
@@ -58,6 +67,13 @@
 - 스크린리더로 상태 변화가 인지 가능한지 확인한다(a11y).
 - 반응형 레이아웃(모바일 웹/네이티브 뷰포트)에서 인디케이터가 깨지지 않는지 확인한다.
 - reviewer의 디자인 시스템 감사 통과
+- 자동 검증: `pnpm --filter @nexvoy/core test`, `pnpm typecheck`, `pnpm build`, `pnpm build:mobile`, `pnpm --filter nexvoy-app lint`
+
+## 수동 검증 메모
+
+- 같은 Supabase userId로 두 브라우저를 열면 현재 signaling 구현이 `senderId` 동일 메시지를 무시하므로 P2P 연결 검증이 어렵다.
+- Web-to-Web 실검증은 서로 다른 accepted owner/editor 계정 2개로 수행한다.
+- viewer는 answer signaling을 보낼 수 없으므로 이번 자동 연결 대상이 아니다.
 
 ## 롤백 방법
 

@@ -16,6 +16,8 @@ import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
 import { createWebRepositories } from '@/lib/local-first/repositoryFactory'
 import { subscribeToTripDocumentUpdates } from '@/lib/local-first/indexedDbStore'
+import P2PConnectionStatusBadge from '@/components/trips/P2PConnectionStatusBadge'
+import { useWebP2PChecklistConnection } from '@/lib/local-first/webP2PChecklistConnection'
 
 const getMemberDisplayName = (p: any, isMe: boolean = false) => {
     if (!p) return isMe ? '나' : '동행자'
@@ -376,6 +378,8 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const repositories = useMemo(() => createWebRepositories(supabase), [supabase])
     const { isOnline } = useNetworkStore()
     const isLocalFirstChecklistSpike = repositories.mode === 'local-first-checklist-spike'
+    const isLocalFirstChecklistMode = repositories.mode === 'local-first-checklist-spike'
+        || repositories.mode === 'local-first-checklist-dual-write'
     const canApplyTemplates = repositories.mode === 'legacy-supabase'
     const canUseChecklistActions = (isOnline || isLocalFirstChecklistSpike) && !isOffline
 
@@ -404,6 +408,13 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
 
     const [showTemplateModal, setShowTemplateModal] = useState(false)
+    const p2pStatus = useWebP2PChecklistConnection({
+        enabled: Boolean(isActive && !isOffline && isOnline && isLocalFirstChecklistMode),
+        documentId: tripId,
+        currentUserId: currentUser?.id ?? null,
+        ownerId: tripOwner?.id ?? null,
+        members,
+    })
 
     const handleAddItem = () => {
         setIsAdding(!isAdding)
@@ -477,11 +488,11 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     }, [isActive, fetchChecklist])
 
     useEffect(() => {
-        if (!tripId || !isLocalFirstChecklistSpike) return
+        if (!tripId || !isLocalFirstChecklistMode) return
         return subscribeToTripDocumentUpdates(tripId, () => {
             void fetchChecklist()
         })
-    }, [fetchChecklist, isLocalFirstChecklistSpike, tripId])
+    }, [fetchChecklist, isLocalFirstChecklistMode, tripId])
 
     const toggleItem = async (itemId: string, currentStatus: boolean) => {
         const item = items.find(i => i.id === itemId)
@@ -1197,6 +1208,12 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
                             totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>
                         )}
                     </h2>
+                    <div className={css({ display: { base: 'none', sm: 'block' } })}>
+                        <P2PConnectionStatusBadge status={p2pStatus} />
+                    </div>
+                </div>
+                <div className={css({ display: { base: 'flex', sm: 'none' }, justifyContent: 'flex-start' })}>
+                    <P2PConnectionStatusBadge status={p2pStatus} />
                 </div>
 
                 {/* PC/모바일 분기 액션 버튼 및 필터 라인 */}

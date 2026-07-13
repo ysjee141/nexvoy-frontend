@@ -83,7 +83,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-022-document-registry-bootstrap-for-regular-trips.md` | 완료 | 일반 Web trip의 documents/document_members lazy bootstrap 구현 및 검증 완료 |
 | `TASK-023-mobile-signaling-channel-wiring.md` | 완료 | Mobile signaling channel, native data-channel handshake, P2P 조립 지점 구현 및 자동 검증 완료 |
 | `TASK-024-p2p-data-channel-yjs-update-exchange.md` | 완료 | Web-to-Web data channel Yjs update 교환 구현 및 자동 검증 완료 |
-| `TASK-025-p2p-connection-status-ui.md` | 계획됨 | 사용자 대상 연결 상태 UI/UX |
+| `TASK-025-p2p-connection-status-ui.md` | 완료 | Web 준비물 화면 P2P 연결 자동 시도 및 사용자 대상 연결 상태 UI 구현 |
 | `TASK-026-p2p-connection-lifecycle-hardening.md` | 계획됨 | 재연결, 백그라운드/탭 종료 정리, rotating room secret 하드닝 |
 | `TASK-027-mobile-yjs-runtime-adapter.md` | 완료 | Mobile Yjs runtime adapter, AsyncStorage persistence, P2P update apply 경로 구현 및 자동 검증 완료 |
 
@@ -93,8 +93,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 결정하고, Web에서 시그널링 채널과 데이터 채널을 실제로 연결해 P2P fast path의 최초 연결을 증명했다
 (PR #300, 자동 검증 완료·실브라우저 수동 검증 후속). 수동 검증 중 일반 trip이 `documents`/
 `document_members`에 전혀 등록되지 않는다는 선결 문제를 발견해 `TASK-022`로 분리했다. P2P를 완전한
-기능으로 만들기 위한 나머지 작업(`TASK-025`~`TASK-026`: 사용자 UI,
-생명주기 하드닝)을 계획 문서로 정리했다.
+기능으로 만들기 위한 나머지 작업 중 `TASK-025` 사용자 UI는 완료했고, `TASK-026` 생명주기 하드닝을 계획 문서로 유지한다.
 
 ## Phase별 작업 목록
 
@@ -147,7 +146,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 - [x] `TASK-022-document-registry-bootstrap-for-regular-trips.md`: 일반 trip이 documents/document_members에 자동 등록되도록 bootstrap
 - [x] `TASK-023-mobile-signaling-channel-wiring.md`: TASK-021을 Mobile까지 확장(Web-Mobile, Mobile-Mobile 연결 조립 지점)
 - [x] `TASK-024-p2p-data-channel-yjs-update-exchange.md`: Web-to-Web 데이터 채널로 실제 Yjs update 교환
-- [ ] `TASK-025-p2p-connection-status-ui.md`: 사용자 대상 연결 상태 UI/UX
+- [x] `TASK-025-p2p-connection-status-ui.md`: 사용자 대상 연결 상태 UI/UX
 - [ ] `TASK-026-p2p-connection-lifecycle-hardening.md`: 재연결/생명주기/rotating room secret 하드닝
 - [x] `TASK-027-mobile-yjs-runtime-adapter.md`: Mobile Yjs runtime adapter로 Web/Mobile 공통 update format 적용
 
@@ -155,6 +154,6 @@ TASK-008a-web-checklist-read-through-hydration.md
 
 TASK-001~027까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로, checklist dual-write/mismatch detector, guest auth promotion, 초대/권한 registry, notification/observability boundary, Web foreground owner-side key provisioning, Mobile native key provisioning MVP와 foreground/resume/background sync, native non-exportable key storage hardening, Mobile-first owner device key bootstrap, Mobile encrypted snapshot restore, Web/Mobile P2P signaling/data-channel wiring, Web-to-Web Yjs update exchange, Mobile Yjs runtime adapter까지 검증을 완료했다.
 
-`TASK-021`은 Web-to-Web P2P 연결을 최초로 증명했고, `TASK-022`는 일반 계정 trip의 document registry 등록 갭을 해소했다. `TASK-023`은 Mobile 배선까지 확장했고, `TASK-024`는 Web-to-Web Yjs update 교환을 구현했다. `TASK-027`은 Mobile도 같은 Yjs update format을 apply하도록 runtime adapter와 P2P apply 경로를 추가했다. 다음 권장 순서는
-`TASK-025`(UI) → `TASK-026`(생명주기 하드닝)이다. 통합
+`TASK-021`은 Web-to-Web P2P 연결을 최초로 증명했고, `TASK-022`는 일반 계정 trip의 document registry 등록 갭을 해소했다. `TASK-023`은 Mobile 배선까지 확장했고, `TASK-024`는 Web-to-Web Yjs update 교환을 구현했다. `TASK-027`은 Mobile도 같은 Yjs update format을 apply하도록 runtime adapter와 P2P apply 경로를 추가했다. `TASK-025`는 Web 준비물 화면에서 P2P 연결을 자동 시도하고 상태를 표시하도록 연결했다. 다음 권장 순서는
+`TASK-026`(생명주기 하드닝)이다. 통합
 테스트 케이스/코드는 이 구현들이 어느 정도 갖춰진 뒤 별도로 작성한다.

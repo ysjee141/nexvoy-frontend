@@ -1,45 +1,45 @@
-# TASK-027 Implementation Plan
+# TASK-025 Implementation Plan
 
 ## Scope
 
-Introduce a Mobile Yjs runtime adapter so Web and Mobile use the same Yjs update format for local storage, encrypted restore, and P2P data-channel exchange. Keep RN/Expo APIs inside `apps/mobile/lib/local-first`; do not add platform dependencies to `packages/core`.
+Add a user-facing P2P connection status indicator and wire Web checklist screens to automatically attempt the optional WebRTC fast path where local-first checklist mode is enabled. Keep fallback behavior quiet and generic.
 
 ## Planned Changes
 
-1. Add `apps/mobile/lib/local-first/mobileYjsTripDocument.ts`
-   - Wrap `@nexvoy/core/local-first/yjsTripDocument`.
-   - Persist encoded Yjs updates in AsyncStorage.
-   - Expose Mobile-specific create/read/write/apply/encode helpers.
+1. Add compact P2P status badge
+   - States: connecting, connected, fallback.
+   - Generic copy only; no WebRTC/signaling/ICE terminology.
+   - Accessible `role=\"status\"` text and icon+text status.
 
-2. Add Mobile P2P update bridge
-   - Track active document senders in memory.
-   - Publish local encoded Yjs updates to active peers.
-   - Apply remote data-channel updates to the Mobile Yjs store without writing document content to logs/signaling metadata.
+2. Add Web checklist P2P connection adapter
+   - Resolve membership from current user, trip owner, and accepted trip members.
+   - Attempt connection only for accepted owner/editor.
+   - Pick a deterministic initiator from writable member IDs.
 
-3. Extend Mobile native data channel
-   - Keep TASK-023 ping/pong handshake.
-   - Parse and send TASK-024 `yjs-update` / `yjs-update-chunk` protocol messages.
-   - Reassemble chunks in `connectMobileP2PPeer()` before applying them locally.
+3. Wire checklist page
+   - Start P2P automatically in local-first checklist spike/dual-write modes.
+   - Subscribe to local document updates in both spike and dual-write modes.
+   - Render the status badge near checklist controls.
 
-4. Connect backup bootstrap/restore
-   - Mobile owner bootstrap creates an encrypted Yjs snapshot instead of a JSON marker.
-   - Mobile restore applies opaque Web/Yjs snapshot plaintext to the local Mobile Yjs store after decrypt/hash verification.
+4. Make dual-write practical for P2P validation
+   - Change dual-write `getChecklist` to read from the local writer first.
+   - Local writer already hydrates from legacy rows on first read, preserving fallback compatibility.
 
-5. Dependency and docs
-   - Add `yjs` as an explicit `nexvoy-app` dependency for Metro resolution.
-   - Update task status, walkthrough, and phase artifacts.
+5. Update docs and walkthrough
+   - Mark TASK-025 complete.
+   - Document verification limits: same-account two-tab P2P is still not supported because signaling ignores same `senderId`; use two accepted owner/editor accounts.
 
 ## Validation
 
 - `pnpm --filter @nexvoy/core test`
-- `pnpm --filter nexvoy-app typecheck`
 - `pnpm typecheck`
 - `pnpm build`
 - `pnpm build:mobile`
+- `pnpm --filter nexvoy-app lint`
 
 ## Non-goals
 
-- Product UI for connection status.
-- Background/reconnect lifecycle hardening.
-- Server-side Yjs interpretation.
-- Full Mobile checklist repository migration to document-primary writes.
+- P2P lifecycle hardening/reconnect policy (TASK-026).
+- Detailed developer diagnostics UI.
+- Schedule/plans P2P write path.
+- Mobile product UI wiring.
