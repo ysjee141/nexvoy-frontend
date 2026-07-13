@@ -88,7 +88,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-026-p2p-connection-lifecycle-hardening.md` | 완료 | Web checklist P2P 재연결/backoff, 탭 종료 정리, Mobile lifecycle hook point 구현 |
 | `TASK-027-mobile-yjs-runtime-adapter.md` | 완료 | Mobile Yjs runtime adapter, AsyncStorage persistence, P2P update apply 경로 구현 및 자동 검증 완료 |
 | `TASK-028-rotating-room-secret-hardening.md` | 완료 | server-issued signaling topic, active topic RLS, Web/Mobile adapter 전환 구현, Issue [#312](https://github.com/ysjee141/nexvoy-frontend/issues/312) |
-| `TASK-029-full-local-first-product-scope-adr.md` | 계획됨 | 전체 제품 Local-first 범위, document boundary, migration/rollback 정책 ADR |
+| `TASK-029-full-local-first-product-scope-adr.md` | 완료 | ADR-013으로 전체 제품 Local-first 범위, `TemplateDocumentV1` boundary, migration/rollback 정책 채택, Issue [#316](https://github.com/ysjee141/nexvoy-frontend/issues/316) |
 | `TASK-030-document-primary-repository-layer.md` | 계획됨 | checklist/plans/templates/members 공통 document-primary repository 계약 |
 | `TASK-031-web-full-document-primary-transition.md` | 계획됨 | Web checklist/plans/templates/collaborators document-primary 전환 |
 | `TASK-032-mobile-full-document-primary-transition.md` | 계획됨 | Mobile checklist/plans/templates/collaborators document-primary 전환 |
@@ -164,7 +164,7 @@ rotating room secret 보안 하드닝을 완료했다.
 
 ### Phase 7: Full Product Document-primary 전환
 
-- [ ] `TASK-029-full-local-first-product-scope-adr.md`: 전체 제품 Local-first 범위와 migration/rollback 정책 확정
+- [x] `TASK-029-full-local-first-product-scope-adr.md`: 전체 제품 Local-first 범위와 migration/rollback 정책 확정
 - [ ] `TASK-030-document-primary-repository-layer.md`: 모든 핵심 도메인의 공통 document-primary repository 계약 도입
 - [ ] `TASK-031-web-full-document-primary-transition.md`: Web 핵심 기능을 document-primary read/write로 전환
 - [ ] `TASK-032-mobile-full-document-primary-transition.md`: Mobile 핵심 기능을 document-primary read/write로 전환
@@ -181,9 +181,8 @@ TASK-001~028까지 완료되어 Web checklist 도메인에서 local-first read/w
 
 다음 권장 순서는 partial checklist pilot을 확장하는 방식이 아니라 전체 제품 Local-first 완료를 목표로 한다.
 
-1. `TASK-029`: 전체 제품 Local-first 범위, document boundary, legacy migration/rollback 정책을 ADR로 확정한다.
-2. `TASK-030`: checklist/plans/templates/members 공통 document-primary repository 계약을 만든다.
-3. `TASK-031`과 `TASK-032`: Web/App의 준비물, 일정, 템플릿, 동행자 초대/수락/거부를 document-primary로 전환한다.
-4. `TASK-033`과 `TASK-034`: 모든 도메인 mutation을 encrypted backup sync와 P2P fast path에 연결한다.
-5. `TASK-035`: 전체 기능이 구현된 뒤 Web/App 통합 테스트와 실기기 smoke를 수행한다.
-6. `TASK-036`: 완성된 제품 기준으로 Closed Beta 출시 준비를 완료한다.
+1. `TASK-030`: checklist/plans/templates/members 공통 document-primary repository 계약을 만든다.
+2. `TASK-031`과 `TASK-032`: Web/App의 준비물, 일정, 템플릿, 동행자 초대/수락/거부를 document-primary로 전환한다.
+3. `TASK-033`과 `TASK-034`: 모든 도메인 mutation을 encrypted backup sync와 P2P fast path에 연결한다.
+4. `TASK-035`: 전체 기능이 구현된 뒤 Web/App 통합 테스트와 실기기 smoke를 수행한다.
+5. `TASK-036`: 완성된 제품 기준으로 Closed Beta 출시 준비를 완료한다.

@@ -1,3 +1,38 @@
+# Walkthrough: TASK-029 Full Local-first Product Scope ADR
+
+## Summary
+
+TASK-029는 checklist pilot 이후의 작업 축을 전체 제품 document-primary 전환으로 확정했다. ADR-013에서
+Web/Mobile의 준비물, 일정, 템플릿, 동행자 초대/수락/거부, 권한 변경, backup restore/sync, P2P fast path를
+모두 Local-first 완료 범위로 정의했다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-029-full-local-first-product-scope-adr.md`
+- `docs/refactor/adrs/ADR-013-full-local-first-product-scope.md`
+- `docs/refactor/progress.md`
+- `docs/refactor/TECHNICAL-SPEC.md`
+- `_workspace/01_planner_analysis.md`
+
+## Key Decisions
+
+- `TripDocumentV1`은 trip-scoped 데이터의 root document로 유지한다.
+- 개인/공유/공개 템플릿은 trip collaborator 범위와 다르므로 별도 `TemplateDocumentV1` boundary로 분리한다.
+- 템플릿 적용은 Template document snapshot을 읽어 `TripDocumentV1` checklist item mutation으로 복사한다.
+- Supabase row table은 장기 dual-write 대상이 아니라 migration source와 read-only rollback fallback으로 축소한다.
+- 통합테스트와 Closed Beta는 일부 기능이 아니라 전체 핵심 기능이 document-primary 제품 경로에 올라간 뒤 진행한다.
+
+## Verification
+
+- `git diff --check` 성공
+- 문서 변경만 수행했고 코드/DB migration/API 변경은 없다.
+
+## Next
+
+- `TASK-030-document-primary-repository-layer.md`: checklist/plans/templates/members 공통 document-primary repository 계약 도입
+
+---
+
 # Walkthrough: TASK-028 Rotating Room Secret Hardening
 
 ## Summary
