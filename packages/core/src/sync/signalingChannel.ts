@@ -29,6 +29,7 @@ export type SignalingMessage =
 export const SIGNALING_BROADCAST_EVENT = 'signal'
 
 const SIGNALING_TOPIC_PREFIX = 'signaling:'
+const SIGNALING_TOPIC_HASH_PATTERN = /^[0-9a-f]{64}$/
 
 /**
  * Matches public.document_registry_hash() in
@@ -39,6 +40,10 @@ const SIGNALING_TOPIC_PREFIX = 'signaling:'
  */
 export type SignalingRoomDigestProvider = Pick<SubtleCrypto, 'digest'>
 
+/**
+ * Legacy deterministic topic used by TASK-021~TASK-027. Kept for tests and
+ * rollback compatibility; TASK-028 adapters should use server-issued topics.
+ */
 export async function deriveSignalingRoomTopic(
   documentId: string,
   provider: SignalingRoomDigestProvider,
@@ -46,6 +51,24 @@ export async function deriveSignalingRoomTopic(
   const encoded = new TextEncoder().encode(documentId)
   const hashBuffer = await provider.digest('SHA-256', encoded)
   return `${SIGNALING_TOPIC_PREFIX}${bufferToHex(hashBuffer)}`
+}
+
+export async function deriveRotatingSignalingRoomTopic(
+  input: {
+    documentId: string
+    roomSecret: string
+  },
+  provider: SignalingRoomDigestProvider,
+): Promise<string> {
+  const encoded = new TextEncoder().encode(`${input.documentId}:${input.roomSecret}`)
+  const hashBuffer = await provider.digest('SHA-256', encoded)
+  return `${SIGNALING_TOPIC_PREFIX}${bufferToHex(hashBuffer)}`
+}
+
+export function isSignalingRoomTopic(input: unknown): input is string {
+  return typeof input === 'string'
+    && input.startsWith(SIGNALING_TOPIC_PREFIX)
+    && SIGNALING_TOPIC_HASH_PATTERN.test(input.slice(SIGNALING_TOPIC_PREFIX.length))
 }
 
 export function serializeSignalingMessage(message: SignalingMessage): string {

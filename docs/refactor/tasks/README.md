@@ -86,7 +86,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-025-p2p-connection-status-ui.md` | 완료 | Web 준비물 화면 P2P 연결 자동 시도 및 사용자 대상 연결 상태 UI 구현 |
 | `TASK-026-p2p-connection-lifecycle-hardening.md` | 완료 | Web checklist P2P 재연결/backoff, 탭 종료 정리, Mobile lifecycle hook point 구현 |
 | `TASK-027-mobile-yjs-runtime-adapter.md` | 완료 | Mobile Yjs runtime adapter, AsyncStorage persistence, P2P update apply 경로 구현 및 자동 검증 완료 |
-| `TASK-028-rotating-room-secret-hardening.md` | 계획됨 | signaling topic을 rotating room secret 기반으로 전환하는 후속 보안 하드닝, Issue [#312](https://github.com/ysjee141/nexvoy-frontend/issues/312) |
+| `TASK-028-rotating-room-secret-hardening.md` | 완료 | server-issued signaling topic, active topic RLS, Web/Mobile adapter 전환 구현, Issue [#312](https://github.com/ysjee141/nexvoy-frontend/issues/312) |
 
 현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `Phase 3`의 모바일 WebRTC native feasibility와 Cloudflare ICE config 발급 경로는 provider boundary, Edge Function, 검증 보고서로 정리했다. `Phase 4`의 dual-write 및 mismatch detector와 guest auth promotion은 Web-first 범위로 구현했다. `TASK-013`에서 초대/권한 registry, invite/share RPC, Web/Mobile join fallback을 구현했고, `TASK-014`에서 notification metadata, local notification scheduler, observability event boundary를 구현했다. `TASK-015`에서 owner/editor Web foreground document key provisioning과 pending/status UX를 구현했다. `TASK-016`은 Mobile Native Key Provisioning MVP를 구현하고 accepted scope 기준 검증했다. `TASK-017`은 Mobile background task 기반 provisioning retry path를 구현하고 Android-first 검증 범위에서 PASS를 받았다. `TASK-018`은 Android Keystore/iOS Keychain 기반 non-exportable key storage hardening을 구현하고 native preview build와 SQL smoke까지 검증했다. `TASK-019`는 Mobile-first owner bootstrap 후속 문서다. `TASK-020`은 `restore.ts`의 Yjs 비의존 부분(snapshot 복호화·hash 검증)을 `backupPayloadCodec.ts`/`mobileRestore.ts`로 분리해 Mobile 전용 encrypted snapshot restore 경로(`restoreMobileEncryptedSnapshot`)를 구현하고, `TASK-019`의 owner bootstrap 성공/provisioning completion 트리거에 재시도를 연결했다. updates replay(Web/Yjs 기반 최신 콘텐츠 반영)는 이번 범위에서 제외했다. `TASK-021`은 `ADR-004`가 유보했던 시그널링 전송 계층을 `ADR-012`(Supabase Realtime Broadcast)로 결정하고, Web에서 시그널링 채널과 데이터 채널을 실제로 배선해 P2P fast path의 최초 연결을 증명했다. `TASK-022`는 일반 Web 로그인 trip이 `documents`/`document_members`에 등록되지 않던 선결 문제를 lazy bootstrap으로 해소했다. `TASK-023`은 같은 signaling 프로토콜과 room topic 파생 규칙을 Mobile까지 확장하고 native data-channel handshake/조립 지점을 추가했다. `TASK-024`는 Web-to-Web 범위에서 data channel로 Yjs update를 청킹/전송/재조립하고 IndexedDB 문서에 적용하는 fast path를 구현했다. `TASK-027`은 Mobile Yjs runtime adapter와 `react-native-quick-crypto` 기반 Metro shim을 추가해 Mobile도 같은 Yjs update format을 apply할 수 있게 했다.
 
@@ -94,8 +94,8 @@ TASK-008a-web-checklist-read-through-hydration.md
 결정하고, Web에서 시그널링 채널과 데이터 채널을 실제로 연결해 P2P fast path의 최초 연결을 증명했다
 (PR #300, 자동 검증 완료·실브라우저 수동 검증 후속). 수동 검증 중 일반 trip이 `documents`/
 `document_members`에 전혀 등록되지 않는다는 선결 문제를 발견해 `TASK-022`로 분리했다. P2P를 완전한
-기능으로 만들기 위한 나머지 작업 중 `TASK-025` 사용자 UI와 `TASK-026` 생명주기 하드닝은 완료했고,
-rotating room secret 보안 하드닝은 `TASK-028`로 분리했다.
+기능으로 만들기 위한 나머지 작업 중 `TASK-025` 사용자 UI, `TASK-026` 생명주기 하드닝, `TASK-028`
+rotating room secret 보안 하드닝을 완료했다.
 
 ## Phase별 작업 목록
 
@@ -151,12 +151,10 @@ rotating room secret 보안 하드닝은 `TASK-028`로 분리했다.
 - [x] `TASK-025-p2p-connection-status-ui.md`: 사용자 대상 연결 상태 UI/UX
 - [x] `TASK-026-p2p-connection-lifecycle-hardening.md`: 재연결/생명주기 하드닝
 - [x] `TASK-027-mobile-yjs-runtime-adapter.md`: Mobile Yjs runtime adapter로 Web/Mobile 공통 update format 적용
-- [ ] `TASK-028-rotating-room-secret-hardening.md`: signaling topic rotating room secret 하드닝
+- [x] `TASK-028-rotating-room-secret-hardening.md`: signaling topic rotating room secret 하드닝
 
 ## 권장 시작 순서
 
-TASK-001~027까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로, checklist dual-write/mismatch detector, guest auth promotion, 초대/권한 registry, notification/observability boundary, Web foreground owner-side key provisioning, Mobile native key provisioning MVP와 foreground/resume/background sync, native non-exportable key storage hardening, Mobile-first owner device key bootstrap, Mobile encrypted snapshot restore, Web/Mobile P2P signaling/data-channel wiring, Web-to-Web Yjs update exchange, P2P 연결 생명주기 하드닝, Mobile Yjs runtime adapter까지 검증을 완료했다.
+TASK-001~028까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로, checklist dual-write/mismatch detector, guest auth promotion, 초대/권한 registry, notification/observability boundary, Web foreground owner-side key provisioning, Mobile native key provisioning MVP와 foreground/resume/background sync, native non-exportable key storage hardening, Mobile-first owner device key bootstrap, Mobile encrypted snapshot restore, Web/Mobile P2P signaling/data-channel wiring, Web-to-Web Yjs update exchange, P2P 연결 생명주기 하드닝, Mobile Yjs runtime adapter, signaling rotating room topic hardening까지 검증을 완료했다.
 
-`TASK-021`은 Web-to-Web P2P 연결을 최초로 증명했고, `TASK-022`는 일반 계정 trip의 document registry 등록 갭을 해소했다. `TASK-023`은 Mobile 배선까지 확장했고, `TASK-024`는 Web-to-Web Yjs update 교환을 구현했다. `TASK-027`은 Mobile도 같은 Yjs update format을 apply하도록 runtime adapter와 P2P apply 경로를 추가했다. `TASK-025`는 Web 준비물 화면에서 P2P 연결을 자동 시도하고 상태를 표시하도록 연결했다. `TASK-026`은 Web checklist P2P 재연결/backoff와 탭 종료 정리, Mobile lifecycle hook point를 추가했다. 다음 권장 순서는
-`TASK-028`(rotating room secret 하드닝)이다. 통합
-테스트 케이스/코드는 이 구현들이 어느 정도 갖춰진 뒤 별도로 작성한다.
+`TASK-021`은 Web-to-Web P2P 연결을 최초로 증명했고, `TASK-022`는 일반 계정 trip의 document registry 등록 갭을 해소했다. `TASK-023`은 Mobile 배선까지 확장했고, `TASK-024`는 Web-to-Web Yjs update 교환을 구현했다. `TASK-027`은 Mobile도 같은 Yjs update format을 apply하도록 runtime adapter와 P2P apply 경로를 추가했다. `TASK-025`는 Web 준비물 화면에서 P2P 연결을 자동 시도하고 상태를 표시하도록 연결했다. `TASK-026`은 Web checklist P2P 재연결/backoff와 탭 종료 정리, Mobile lifecycle hook point를 추가했다. `TASK-028`은 signaling topic을 server-issued active topic으로 전환하고 Realtime RLS를 강화했다. 다음 권장 순서는 P2P late join/peer discovery 개선 또는 통합 테스트 작성이다.

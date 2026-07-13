@@ -1,3 +1,47 @@
+# Walkthrough: TASK-028 Rotating Room Secret Hardening
+
+## Summary
+
+TASK-028은 P2P signaling room topic을 deterministic `sha256(documentId)`에서 server-issued opaque topic으로 전환했다. 클라이언트는 `issue_document_signaling_room_topic` RPC로 active topic을 받은 뒤 Supabase Realtime private channel에 join하며, Realtime Authorization RLS는 active server-issued topic만 허용한다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-028-rotating-room-secret-hardening.md`
+- `implementation_plan.md`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/02b_frontend_changes.md`
+- `_workspace/02c_backend_changes.md`
+- `_workspace/03_review_result.md`
+- `_workspace/04_qa_result.md`
+
+## Key Changes
+
+- `supabase/migrations/20260714000001_task028_rotating_signaling_room_topics.sql`(신규): `document_signaling_room_topics` table, topic issuing RPC, active topic permission helpers, Realtime Authorization policy 교체.
+- `packages/core/src/sync/signalingChannel.ts`: rotating topic derivation helper와 topic format validator 추가. legacy deterministic helper는 rollback/test compatibility를 위해 유지.
+- `apps/web/lib/local-first/signalingChannel.ts`: deterministic topic derivation 대신 server-issued topic fetch 후 Realtime channel join.
+- `apps/mobile/lib/local-first/signalingChannel.ts`: Web과 동일하게 RPC-issued topic을 사용하도록 변경.
+- `docs/refactor/tasks/README.md`, `TASK-028`: TASK-028 완료 상태와 구현 결과 반영.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm typecheck` 성공
+- `pnpm build` 성공
+- `pnpm --filter nexvoy-app lint` 성공. 기존 Mobile 파일 warning 7건은 이번 변경과 무관하다.
+- `pnpm build:mobile` 성공
+
+## Rollback
+
+이번 PR을 되돌리면 TASK-025/026의 deterministic topic policy와 client derivation으로 복귀한다. 신규 topic table은 document content와 독립적이므로, rollback 시 사용 중지만으로 충분하다.
+
+## Notes
+
+- topic 원문은 RPC 응답과 Realtime join에만 사용하고 observability/UI/log에는 남기지 않는다.
+- 만료 2분 이내에는 새 topic을 발급하고 기존 unexpired topic은 자연 만료까지 유지해 old/new overlap window를 제공한다.
+- P2P late join/peer discovery 개선은 별도 후속 작업이다.
+
+---
+
 # Walkthrough: TASK-026 P2P Connection Lifecycle Hardening
 
 ## Summary

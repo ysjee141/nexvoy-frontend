@@ -1,7 +1,7 @@
 import { subtle } from 'react-native-quick-crypto'
 import {
   SIGNALING_BROADCAST_EVENT,
-  deriveSignalingRoomTopic,
+  isSignalingRoomTopic,
   parseSignalingMessage,
   type SignalingMessage,
   type SignalingRoomDigestProvider,
@@ -31,6 +31,19 @@ export interface MobileSignalingChannel {
   leave(): Promise<void>
 }
 
+interface SignalingRoomTopicRow {
+  room_topic: string
+  expires_at: string
+}
+
+type IssueSignalingRoomTopicRpc = (
+  fn: 'issue_document_signaling_room_topic',
+  args: { p_document_id: string },
+) => Promise<{
+  data: unknown
+  error: { message?: string } | null
+}>
+
 export const mobileSignalingDigestProvider: SignalingRoomDigestProvider = {
   async digest(algorithm, data) {
     const digest = await subtle.digest(algorithm as never, data as never)
@@ -46,14 +59,29 @@ export const mobileSignalingDigestProvider: SignalingRoomDigestProvider = {
 export async function joinMobileSignalingChannel(
   input: JoinMobileSignalingChannelInput,
 ): Promise<MobileSignalingChannel> {
+  const preliminaryDecision = validateSignalingJoinPolicy({
+    documentId: input.documentId,
+    userId: input.userId,
+    role: input.membership.role,
+    status: input.membership.status,
+    hasValidRoomSecretProof: true,
+  })
+
+  if (!preliminaryDecision.allowed) {
+    return {
+      decision: preliminaryDecision,
+      send: () => {},
+      leave: async () => {},
+    }
+  }
+
+  const topic = await fetchIssuedSignalingRoomTopic(input.documentId)
   const decision = validateSignalingJoinPolicy({
     documentId: input.documentId,
     userId: input.userId,
     role: input.membership.role,
     status: input.membership.status,
-    // Rotating room secret issuance is deferred by ADR-012; this mirrors the
-    // Web adapter while server-side Realtime Authorization enforces access.
-    hasValidRoomSecretProof: true,
+    hasValidRoomSecretProof: isSignalingRoomTopic(topic),
   })
 
   if (!decision.allowed) {
@@ -64,7 +92,6 @@ export async function joinMobileSignalingChannel(
     }
   }
 
-  const topic = await deriveSignalingRoomTopic(input.documentId, mobileSignalingDigestProvider)
   const channel = supabase.channel(topic, { config: { private: true } })
 
   channel.on(
@@ -104,6 +131,38 @@ export async function joinMobileSignalingChannel(
       await supabase.removeChannel(channel)
     },
   }
+}
+
+async function fetchIssuedSignalingRoomTopic(documentId: string): Promise<string> {
+  const issueTopic = supabase.rpc as unknown as IssueSignalingRoomTopicRpc
+  const { data, error } = await issueTopic('issue_document_signaling_room_topic', {
+    p_document_id: documentId,
+  })
+
+  if (error) {
+    throw new Error('signaling_topic_unavailable')
+  }
+
+  const topic = pickIssuedTopic(data)
+  if (!topic) {
+    throw new Error('invalid_signaling_topic')
+  }
+
+  return topic
+}
+
+function pickIssuedTopic(input: unknown): string | null {
+  if (!Array.isArray(input) || input.length === 0) return null
+  const [first] = input
+  if (!isSignalingRoomTopicRow(first)) return null
+  return isSignalingRoomTopic(first.room_topic) ? first.room_topic : null
+}
+
+function isSignalingRoomTopicRow(input: unknown): input is SignalingRoomTopicRow {
+  return typeof input === 'object'
+    && input !== null
+    && typeof (input as { room_topic?: unknown }).room_topic === 'string'
+    && typeof (input as { expires_at?: unknown }).expires_at === 'string'
 }
 
 function toArrayBuffer(input: ArrayBuffer | ArrayBufferView): ArrayBuffer {

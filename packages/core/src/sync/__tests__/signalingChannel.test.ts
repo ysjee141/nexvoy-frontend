@@ -1,6 +1,8 @@
 import {
   SIGNALING_BROADCAST_EVENT,
+  deriveRotatingSignalingRoomTopic,
   deriveSignalingRoomTopic,
+  isSignalingRoomTopic,
   parseSignalingMessage,
   serializeSignalingMessage,
   type SignalingMessage,
@@ -74,5 +76,22 @@ async function run(): Promise<void> {
 
   if (rnShapedTopic !== topic) {
     throw new Error('React Native-shaped digest provider must derive the same signaling room topic.')
+  }
+
+  const rotatingTopic = await deriveRotatingSignalingRoomTopic({
+    documentId,
+    roomSecret: 'server-issued-secret',
+  }, globalThis.crypto.subtle)
+
+  if (!isSignalingRoomTopic(rotatingTopic)) {
+    throw new Error('Rotating signaling room topic should use the signaling:<sha256> format.')
+  }
+
+  if (rotatingTopic === topic) {
+    throw new Error('Rotating signaling room topic must not equal the deterministic document-id topic.')
+  }
+
+  if (isSignalingRoomTopic(`signaling:${documentId}`) || isSignalingRoomTopic('not-a-topic')) {
+    throw new Error('Signaling room topic validator should reject raw or malformed topics.')
   }
 }
