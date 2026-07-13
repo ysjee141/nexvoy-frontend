@@ -26,19 +26,17 @@ import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
   getChecklistCategories,
-  getTemplateWithItems,
-  getTemplateShares,
   getProfileByEmail,
-  shareTemplate,
-  updateTemplateShareRole,
-  removeTemplateShare,
-  updateTemplate,
-  replaceTemplateItems,
-  deleteTemplate,
 } from '@nexvoy/core'
 import type { ChecklistCategory, ChecklistTemplateShareRole, ChecklistTemplateShareWithProfile } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { BottomSheet } from '@/components/ui'
+import { createMobileDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import {
+  toTemplateItemRows,
+  toTemplateShareRows,
+  toTemplateWithAccessRow,
+} from '@/lib/local-first/documentPrimaryAdapters'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const TITLE_MAX = 50
@@ -79,8 +77,9 @@ export default function EditTemplateScreen() {
     if (!id) return
     setSharesLoading(true)
     try {
-      const data = await getTemplateShares(supabase, id)
-      if (isMounted.current) setShares(data)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const template = await repositories.templates.getTemplate(id)
+      if (isMounted.current) setShares(template ? toTemplateShareRows(template) : [])
     } catch {
       if (isMounted.current) setShares([])
     } finally {
@@ -92,21 +91,23 @@ export default function EditTemplateScreen() {
     if (!id) return
     setInitialLoading(true)
     try {
-      const result = await getTemplateWithItems(supabase, id)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const result = await repositories.templates.getTemplate(id)
       if (!isMounted.current) return
       if (!result) {
         setNotFound(true)
         return
       }
-      setTitle(result.template.title)
-      setTemplateOwnerId(result.template.user_id)
-      setItems(result.items.map((it) => ({
+      const { data: { user } } = await supabase.auth.getUser()
+      const template = toTemplateWithAccessRow(result, user?.id ?? null)
+      setTitle(template.title)
+      setTemplateOwnerId(template.user_id)
+      setItems(toTemplateItemRows(result).map((it) => ({
         id: it.id,
         item_name: it.item_name,
         category: it.category || '기타',
         is_private: it.is_private,
       })))
-      const { data: { user } } = await supabase.auth.getUser()
       setCurrentUserId(user?.id ?? null)
       if (user) setCategories(await getChecklistCategories(supabase, user.id))
     } catch {
@@ -182,16 +183,17 @@ export default function EditTemplateScreen() {
     setSaving(true)
     setError(null)
     try {
-      await updateTemplate(supabase, id, { title: title.trim() })
-      await replaceTemplateItems(
-        supabase,
-        id,
-        items.map((item) => ({
-          item_name: item.item_name,
-          category: item.category,
-          is_private: item.is_private,
-        }))
-      )
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: canManageShares ? 'owner' : 'editor' })
+      await repositories.templates.updateTemplate(id, { title: title.trim() })
+      await repositories.templates.replaceItems(id, {
+        items: items.map((item, index) => ({
+          id: item.id.startsWith('template-item-') ? item.id : createEntityId('template-item'),
+          name: item.item_name,
+          categoryName: item.category,
+          isPrivate: item.is_private,
+          sortOrder: index,
+        })),
+      })
       router.back()
     } catch (e) {
       if (isMounted.current) {
@@ -220,7 +222,8 @@ export default function EditTemplateScreen() {
             setDeleting(true)
             setError(null)
             try {
-              await deleteTemplate(supabase, id)
+              const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+              await repositories.templates.deleteTemplate(id)
               router.back()
             } catch (e) {
               if (isMounted.current) {
@@ -248,22 +251,45 @@ export default function EditTemplateScreen() {
     const profile = await getProfileByEmail(supabase, email)
     if (!profile) throw new Error('해당 이메일의 사용자를 찾을 수 없어요.')
     if (profile.id === currentUserId) throw new Error('내 계정에는 공유할 수 없어요.')
-    await shareTemplate(supabase, {
-      template_id: id,
-      shared_with_user_id: profile.id,
-      role,
-      created_by: currentUserId,
+    const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+    await repositories.templates.upsertShare(id, {
+      share: {
+        id: createEntityId('template-share'),
+        templateId: id,
+        sharedWithUserId: profile.id,
+        role,
+        createdBy: currentUserId,
+        createdAt: new Date().toISOString(),
+        updatedAt: null,
+      },
     })
     await loadShares()
   }
 
   const handleUpdateShareRole = async (shareId: string, role: ChecklistTemplateShareRole) => {
-    await updateTemplateShareRole(supabase, shareId, role)
+    if (!id) return
+    const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+    const template = await repositories.templates.getTemplate(id)
+    const share = template?.shares.find((candidate) => candidate.id === shareId)
+    if (!share) return
+    await repositories.templates.upsertShare(id, {
+      share: {
+        id: shareId,
+        templateId: id,
+        sharedWithUserId: share.sharedWithUserId,
+        role,
+        createdBy: share.createdBy,
+        createdAt: share.createdAt,
+        updatedAt: new Date().toISOString(),
+      },
+    })
     await loadShares()
   }
 
   const handleRemoveShare = async (shareId: string) => {
-    await removeTemplateShare(supabase, shareId)
+    if (!id) return
+    const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+    await repositories.templates.removeShare(id, shareId)
     await loadShares()
   }
 
@@ -595,6 +621,11 @@ export default function EditTemplateScreen() {
       />
     </SafeAreaView>
   )
+}
+
+function createEntityId(prefix: string): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
 function getShareProfileLabel(share: ChecklistTemplateShareWithProfile): string {

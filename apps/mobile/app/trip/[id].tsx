@@ -42,33 +42,12 @@ import * as Clipboard from 'expo-clipboard'
 import * as WebBrowser from 'expo-web-browser'
 import { NativeMapView, NativeMarker } from '@/components/map/NativeMap'
 import {
-  getPlansWithUrls,
-  getTripsByUser,
-  getTripById,
-  getChecklistByTrip,
   getChecklistCategories,
-  getChecklistItemAssignees,
   getChecklistItemStatus,
-  getChecklistItemUserChecks,
   getTemplatesWithPreview,
-  getUserTripRole,
-  getTripMembers,
   inviteTripMember,
-  updateTripMemberRole,
-  removeTripMember,
   getOrCreateTripShareLink,
-  updateTrip,
-  createPlan,
-  updatePlan,
-  deletePlan,
-  ensureChecklist,
   createChecklistCategory,
-  createChecklistItem,
-  updateChecklistItem,
-  deleteChecklistItem,
-  applyTemplateToChecklist,
-  toggleChecklistItemForUser,
-  togglePlanVisited,
   formatDate,
   formatCurrency,
   getCurrencyFromTimezone,
@@ -101,6 +80,19 @@ import {
 } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { createMobileDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import {
+  toChecklistSnapshotRows,
+  toPlanRow,
+  toPlanRows,
+  toTripMemberRows,
+  toTripRow,
+} from '@/lib/local-first/documentPrimaryAdapters'
+import { bindMobileP2PLifecycle } from '@/lib/local-first/p2pLifecycle.native'
+import {
+  connectMobileP2PPeer,
+  type MobileP2PConnection,
+} from '@/lib/local-first/webP2PConnection'
 import { runMobileForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
 import type { MobileRestoreOutcome } from '@/lib/local-first/mobileSnapshotRestoreService'
 import {
@@ -123,6 +115,7 @@ type PlanSheetStep = 'place' | 'details'
 type TimeDisplayMode = 'local' | 'kst' | 'both'
 type ShareType = DocumentShareType
 type PlanLocalAlarmUiStatus = LocalNotificationScheduleStatus | 'unknown'
+type MobileP2PStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'unavailable'
 
 type GeneratedInvite = Pick<CreatedDocumentInvitation, 'id' | 'role' | 'inviteCode' | 'expiresAt'> & {
   inviteUrl: string
@@ -166,7 +159,7 @@ type GooglePlaceDetail = {
     lat?: number
     lng?: number
   }
-  photos?: Array<{ photo_reference?: string }>
+  photos?: { photo_reference?: string }[]
 }
 
 type GoogleAutocompleteResponse = {
@@ -688,6 +681,48 @@ const MOBILE_RESTORE_TEXT_COLOR: Record<RestoreStatusTone, string> = {
   error: colors.brand.error,
 }
 
+function createEntityId(prefix: string): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function normalizeDocumentRole(role: string | null): 'owner' | 'editor' | 'viewer' | null {
+  return role === 'owner' || role === 'editor' || role === 'viewer' ? role : null
+}
+
+function getMobileP2PStatusLabel(status: MobileP2PStatus): string {
+  if (status === 'connected') return '실시간 연결됨'
+  if (status === 'connecting') return '실시간 연결 중'
+  if (status === 'reconnecting') return '실시간 재연결 중'
+  if (status === 'unavailable') return '로컬 저장 중'
+  return '로컬 저장'
+}
+
+async function syncPlanUrls(
+  repositories: Awaited<ReturnType<typeof createMobileDocumentPrimaryRepositories>>,
+  tripId: string,
+  planId: string,
+  previousUrls: PlanUrl[],
+  nextUrls: string[],
+): Promise<void> {
+  const normalizedNextUrls = nextUrls.map((url) => url.trim()).filter(Boolean)
+  const previousByUrl = new Map(previousUrls.map((entry) => [entry.url, entry]))
+  const nextUrlSet = new Set(normalizedNextUrls)
+
+  await Promise.all(previousUrls
+    .filter((entry) => !nextUrlSet.has(entry.url))
+    .map((entry) => repositories.plans.deletePlanUrl(tripId, entry.id)))
+
+  await Promise.all(normalizedNextUrls.map((url) => {
+    const existing = previousByUrl.get(url)
+    return repositories.plans.upsertPlanUrl(tripId, {
+      id: existing?.id ?? createEntityId('plan-url'),
+      planId,
+      url,
+    })
+  }))
+}
+
 // ─── 화면 ─────────────────────────────────────────────────────────────────────
 
 export default function TripDetailScreen() {
@@ -698,6 +733,7 @@ export default function TripDetailScreen() {
   const isMounted = useRef(true)
   const keyProvisioningInFlight = useRef(false)
   const mobileRestoreStatusRef = useRef<RestoreStatusDisplay | null>(null)
+  const p2pConnectionRef = useRef<MobileP2PConnection | null>(null)
   const scrollRef = useRef<ScrollView>(null)
   const detailTopHeightRef = useRef(0)
   const scrollOffsetRef = useRef(0)
@@ -754,6 +790,7 @@ export default function TripDetailScreen() {
   // *다른 멤버*의 키 요청을 처리한 결과")와 의미가 다르므로 절대 병합하지 않는다
   // (01b_ux_design.md §2.1/§5 근거 — 슬롯을 공유하면 마지막 쓰기가 이전 정보를 덮어씀).
   const [mobileRestoreStatus, setMobileRestoreStatus] = useState<RestoreStatusDisplay | null>(null)
+  const [p2pStatus, setP2PStatus] = useState<MobileP2PStatus>('idle')
 
   useEffect(() => {
     isMounted.current = true
@@ -773,8 +810,9 @@ export default function TripDetailScreen() {
   const loadTripList = useCallback(async () => {
     if (!session?.user.id) return
     try {
-      const data = await getTripsByUser(supabase, session.user.id)
-      if (isMounted.current) setAllTrips(data)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const data = await repositories.trips.listTrips(session.user.id)
+      if (isMounted.current) setAllTrips(data.map(toTripRow))
     } catch {
       // 여행 스위처는 보조 기능이므로 상세 화면 로딩을 막지 않는다.
     }
@@ -784,8 +822,9 @@ export default function TripDetailScreen() {
     if (!id) return
     setMembersLoading(true)
     try {
-      const data = await getTripMembers(supabase, id)
-      if (isMounted.current) setMembers(data)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const data = await repositories.members.listMembers(id)
+      if (isMounted.current) setMembers(toTripMemberRows(data, id))
     } catch {
       if (isMounted.current) setMembers([])
     } finally {
@@ -802,32 +841,28 @@ export default function TripDetailScreen() {
     setLoading(true)
     setError(false)
     try {
-      const [tripData, plansData] = await Promise.all([
-        getTripById(supabase, id),
-        getPlansWithUrls(supabase, id),
-      ])
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const tripData = await repositories.trips.getTrip(id)
       if (!isMounted.current) return
       if (!tripData) {
         setError(true)
         return
       }
-      setTrip(tripData)
-      setPlans(plansData)
-      void loadMembers()
-      getUserTripRole(supabase, id)
-        .then((role) => {
-          if (isMounted.current) setUserRole(role)
-        })
-        .catch(() => {
-          if (isMounted.current) setUserRole(null)
-        })
+      setTrip(toTripRow(tripData))
+      setPlans(toPlanRows(tripData.plans, tripData.id))
+      setMembers(toTripMemberRows(tripData.members, tripData.id))
+      const currentUserId = session?.user.id ?? null
+      const role = tripData.ownerId === currentUserId
+        ? 'owner'
+        : tripData.members.find((member) => member.userId === currentUserId && member.status === 'accepted')?.role ?? null
+      setUserRole(role)
     } catch {
       // 상세는 특정 trip 이 필수 → 에러를 명시(빈 목록 흡수 X)
       if (isMounted.current) setError(true)
     } finally {
       if (isMounted.current) setLoading(false)
     }
-  }, [id, loadMembers])
+  }, [id, session?.user.id])
 
   useEffect(() => {
     loadTrip()
@@ -905,6 +940,61 @@ export default function TripDetailScreen() {
     return () => subscription.remove()
   }, [canEditContent, id, runTripKeyProvisioning])
 
+  const reconnectP2P = useCallback(async (status: MobileP2PStatus = 'connecting') => {
+    if (!id || !session?.user.id || !canEditContent) return
+    await p2pConnectionRef.current?.close().catch(() => undefined)
+    p2pConnectionRef.current = null
+    setP2PStatus(status)
+    try {
+      const connection = await connectMobileP2PPeer({
+        documentId: id,
+        userId: session.user.id,
+        membership: {
+          role: normalizeDocumentRole(userRole),
+          status: 'accepted',
+        },
+        isInitiator: userRole === 'owner',
+        onHandshakeComplete: () => {
+          if (isMounted.current) setP2PStatus('connected')
+        },
+        onUpdateApplied: () => {
+          if (isMounted.current) {
+            void loadTrip()
+            setChecklistLoaded(false)
+          }
+        },
+      })
+      p2pConnectionRef.current = connection
+    } catch {
+      if (isMounted.current) setP2PStatus('unavailable')
+    }
+  }, [canEditContent, id, loadTrip, session?.user.id, userRole])
+
+  useEffect(() => {
+    if (!id || !session?.user.id || !canEditContent) {
+      setP2PStatus('idle')
+      return undefined
+    }
+
+    void reconnectP2P('connecting')
+    const unbindLifecycle = bindMobileP2PLifecycle({
+      closeActiveConnection: async () => {
+        await p2pConnectionRef.current?.close().catch(() => undefined)
+        p2pConnectionRef.current = null
+        if (isMounted.current) setP2PStatus('idle')
+      },
+      reconnectActiveConnection: () => {
+        void reconnectP2P('reconnecting')
+      },
+    })
+
+    return () => {
+      unbindLifecycle()
+      void p2pConnectionRef.current?.close().catch(() => undefined)
+      p2pConnectionRef.current = null
+    }
+  }, [canEditContent, id, reconnectP2P, session?.user.id])
+
   useEffect(() => {
     setChecklist(null)
     setItems([])
@@ -920,26 +1010,16 @@ export default function TripDetailScreen() {
     if (!id) return
     setChecklistLoading(true)
     try {
-      const result = await getChecklistByTrip(supabase, id)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const result = await repositories.checklists.getChecklist(id)
       if (!isMounted.current) return
-      if (result) {
-        const itemIds = result.items.map((item) => item.id)
-        const [assigneesData, checksData, categoryData] = await Promise.all([
-          getChecklistItemAssignees(supabase, itemIds),
-          getChecklistItemUserChecks(supabase, itemIds),
-          session?.user.id ? getChecklistCategories(supabase, session.user.id) : Promise.resolve([]),
-        ])
-        setChecklist(result.checklist)
-        setItems(result.items)
-        setItemAssignees(assigneesData)
-        setUserChecks(checksData)
-        setChecklistCategories(categoryData)
-      } else {
-        setChecklist(null)
-        setItems([])
-        setItemAssignees([])
-        setUserChecks([])
-      }
+      const snapshot = toChecklistSnapshotRows(result, id)
+      const categoryData = session?.user.id ? await getChecklistCategories(supabase, session.user.id) : []
+      setChecklist(snapshot.checklist)
+      setItems(snapshot.items)
+      setItemAssignees(snapshot.itemAssignees)
+      setUserChecks(snapshot.userChecks)
+      setChecklistCategories(categoryData)
     } catch {
       // 빈 상태 유지
     } finally {
@@ -953,10 +1033,18 @@ export default function TripDetailScreen() {
   const ensureCurrentTripChecklist = useCallback(async () => {
     if (!id) return null
     if (checklist?.trip_id === id) return checklist
-    const currentChecklist = await ensureChecklist(supabase, id)
-    setChecklist(currentChecklist)
-    return currentChecklist
-  }, [checklist, id])
+    const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+      actorRole: normalizeDocumentRole(userRole),
+    })
+    const checklistId = createEntityId('checklist')
+    const result = await repositories.checklists.createChecklist(id, {
+      id: checklistId,
+      title: '준비물',
+    })
+    const snapshot = toChecklistSnapshotRows(await repositories.checklists.getChecklist(result.document.trip.id), id)
+    setChecklist(snapshot.checklist)
+    return snapshot.checklist
+  }, [checklist, id, userRole])
 
   // 준비물 탭 최초 진입 시 1회 lazy load
   useEffect(() => {
@@ -972,7 +1060,13 @@ export default function TripDetailScreen() {
       prev.map((p) => (p.id === plan.id ? { ...p, is_visited: next } : p))
     )
     try {
-      await togglePlanVisited(supabase, plan.id, next)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+        actorRole: normalizeDocumentRole(userRole),
+      })
+      await repositories.plans.updatePlan(id, {
+        planId: plan.id,
+        patch: { isVisited: next },
+      })
     } catch {
       if (isMounted.current) {
         setPlans((prev) =>
@@ -983,7 +1077,7 @@ export default function TripDetailScreen() {
       }
       Alert.alert('오류', '저장에 실패했어요. 다시 시도해 주세요.')
     }
-  }, [])
+  }, [id, userRole])
 
   // 체크리스트 항목 토글 (낙관적 업데이트 + 롤백)
   const participantIds = useMemo(
@@ -1041,7 +1135,15 @@ export default function TripDetailScreen() {
       )
     }
     try {
-      await toggleChecklistItemForUser(supabase, item, session.user.id, next)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+        actorRole: normalizeDocumentRole(userRole),
+      })
+      await repositories.checklists.toggleItem(id, {
+        itemId: item.id,
+        nextChecked: next,
+        currentUserId: session.user.id,
+        participantIds,
+      })
     } catch {
       if (isMounted.current) {
         setItems(previousItems)
@@ -1049,7 +1151,7 @@ export default function TripDetailScreen() {
       }
       Alert.alert('오류', '저장에 실패했어요. 다시 시도해 주세요.')
     }
-  }, [itemAssignees, items, participantIds, session?.user.id, userChecks])
+  }, [id, itemAssignees, items, participantIds, session?.user.id, userChecks, userRole])
 
   const handleSaveTrip = useCallback(
     async (input: {
@@ -1060,11 +1162,21 @@ export default function TripDetailScreen() {
       children_count: number
     }) => {
       if (!trip) return
-      const saved = await updateTrip(supabase, trip.id, input)
-      setTrip(saved)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+        actorRole: normalizeDocumentRole(userRole),
+      })
+      await repositories.trips.updateTrip(trip.id, {
+        destination: input.destination,
+        startDate: input.start_date,
+        endDate: input.end_date,
+        adultsCount: input.adults_count,
+        childrenCount: input.children_count,
+      })
+      const updated = await repositories.trips.getTrip(trip.id)
+      if (updated) setTrip(toTripRow(updated))
       setIsTripSheetOpen(false)
     },
-    [trip]
+    [trip, userRole]
   )
 
   const handleOfflineSave = useCallback(() => {
@@ -1076,13 +1188,8 @@ export default function TripDetailScreen() {
     setDeletingTrip(true)
     try {
       await cancelDocumentAlarms(id).catch(() => ({ status: 'failed' as const }))
-      const { error: deleteError } = await supabase
-        .from('trips')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', session.user.id)
-
-      if (deleteError) throw deleteError
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+      await repositories.trips.deleteTrip(id)
       setIsTripDeleteOpen(false)
       router.replace('/(tabs)')
     } catch {
@@ -1096,19 +1203,45 @@ export default function TripDetailScreen() {
     async (input: PlanSaveInput) => {
       if (!id) return
       let savedPlan: PlanWithUrls | null = null
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+        actorRole: normalizeDocumentRole(userRole),
+      })
+      const planId = editingPlan?.id ?? createEntityId('plan')
+      const planInput = {
+        title: input.title,
+        location: input.location,
+        address: input.address ?? null,
+        coordinates: input.location_lat != null && input.location_lng != null
+          ? { lat: input.location_lat, lng: input.location_lng }
+          : null,
+        googlePlaceId: input.google_place_id ?? null,
+        imageUrl: input.image_url ?? editingPlan?.image_url ?? null,
+        photoReference: input.photo_reference ?? null,
+        startDateTimeLocal: input.start_datetime_local,
+        endDateTimeLocal: input.end_datetime_local,
+        timezone: input.timezone_string || editingPlan?.timezone_string || 'Asia/Seoul',
+        alarmMinutesBefore: input.alarm_minutes_before ?? null,
+        alarmSentAt: editingPlan?.alarm_sent_at ?? null,
+        cost: input.cost,
+        memo: input.memo,
+        isCompleted: editingPlan?.is_completed ?? false,
+        isVisited: editingPlan?.is_visited ?? false,
+      }
       if (editingPlan) {
-        savedPlan = await updatePlan(supabase, editingPlan.id, {
-          ...input,
-          trip_id: id,
-          timezone_string: input.timezone_string || editingPlan.timezone_string || 'Asia/Seoul',
+        await repositories.plans.updatePlan(id, {
+          planId: editingPlan.id,
+          patch: planInput,
         })
       } else {
-        savedPlan = await createPlan(supabase, {
-          ...input,
-          trip_id: id,
-          timezone_string: input.timezone_string || 'Asia/Seoul',
+        await repositories.plans.createPlan(id, {
+          id: planId,
+          ...planInput,
         })
       }
+      await syncPlanUrls(repositories, id, planId, editingPlan?.plan_urls ?? [], input.urls)
+      const nextPlans = await repositories.plans.listPlans(id)
+      const savedPlanReadModel = nextPlans.find((plan) => plan.id === planId)
+      savedPlan = savedPlanReadModel ? toPlanRow(savedPlanReadModel, id) : null
       if (savedPlan) {
         const alarmMinutesBefore = savedPlan.alarm_minutes_before ?? 0
         let requestPermission = false
@@ -1185,12 +1318,15 @@ export default function TripDetailScreen() {
           })
       }
     },
-    [editingPlan, id, loadTrip, session?.user.id]
+    [editingPlan, id, loadTrip, session?.user.id, userRole]
   )
 
   const handleDeletePlan = useCallback(
     async (plan: PlanWithUrls) => {
-      await deletePlan(supabase, plan.id)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+        actorRole: normalizeDocumentRole(userRole),
+      })
+      await repositories.plans.deletePlan(id, plan.id)
       const alarmResult = await cancelPlanAlarm(plan.id).catch(() => ({ status: 'failed' as const }))
       setLocalAlarmStatusByPlanId((prev) => ({
         ...prev,
@@ -1200,7 +1336,7 @@ export default function TripDetailScreen() {
       setIsPlanSheetOpen(false)
       await loadTrip()
     },
-    [loadTrip]
+    [id, loadTrip, userRole]
   )
 
   const handleSaveChecklistItem = useCallback(
@@ -1234,40 +1370,57 @@ export default function TripDetailScreen() {
           : []
 
       if (editingItem) {
-        await updateChecklistItem(supabase, editingItem.id, {
-          item_name: input.item_name,
-          category: normalizedCategory,
-          is_private: input.is_private,
-          assignment_type: input.is_private ? 'specific' : input.assignment_type,
-          assigned_user_id: finalAssigneeIds[0] ?? null,
-          assignee_ids: finalAssigneeIds,
-          source_template_name: editingItem.source_template_name,
+        const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+          actorRole: normalizeDocumentRole(userRole),
+        })
+        await repositories.checklists.updateItem(id, {
+          itemId: editingItem.id,
+          patch: {
+            name: input.item_name,
+            categoryName: normalizedCategory,
+            isPrivate: input.is_private,
+            assignmentType: input.is_private ? 'specific' : input.assignment_type,
+            assignedUserId: finalAssigneeIds[0] ?? null,
+            sourceTemplateName: editingItem.source_template_name,
+          },
+          assigneeIds: finalAssigneeIds,
         })
       } else {
-        await createChecklistItem(supabase, currentChecklist.id, {
-          item_name: input.item_name,
-          category: normalizedCategory,
-          is_private: input.is_private,
-          assignment_type: input.is_private ? 'specific' : input.assignment_type,
-          assigned_user_id: finalAssigneeIds[0] ?? null,
-          assignee_ids: finalAssigneeIds,
+        const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+          actorRole: normalizeDocumentRole(userRole),
+        })
+        await repositories.checklists.createItem(id, {
+          id: createEntityId('checklist-item'),
+          checklistId: currentChecklist.id,
+          name: input.item_name,
+          categoryName: normalizedCategory,
+          legacyIsChecked: false,
+          isPrivate: input.is_private,
+          assignmentType: input.is_private ? 'specific' : input.assignment_type,
+          assignedUserId: finalAssigneeIds[0] ?? null,
+          sourceTemplateName: null,
+          assigneeIds: finalAssigneeIds,
         })
       }
       setEditingItem(null)
       setIsItemSheetOpen(false)
       await loadChecklist()
     },
-    [checklistCategories, editingItem, ensureCurrentTripChecklist, id, loadChecklist, session?.user.id]
+    [checklistCategories, editingItem, ensureCurrentTripChecklist, id, loadChecklist, session?.user.id, userRole]
   )
 
   const handleDeleteChecklistItem = useCallback(
     async (item: ChecklistItem) => {
-      await deleteChecklistItem(supabase, item.id)
+      if (!id) return
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+        actorRole: normalizeDocumentRole(userRole),
+      })
+      await repositories.checklists.deleteItem(id, item.id)
       setEditingItem(null)
       setIsItemSheetOpen(false)
       await loadChecklist()
     },
-    [loadChecklist]
+    [id, loadChecklist, userRole]
   )
 
   const handleApplyTemplate = useCallback(
@@ -1275,11 +1428,21 @@ export default function TripDetailScreen() {
       if (!id) return
       const currentChecklist = await ensureCurrentTripChecklist()
       if (!currentChecklist) return
-      await applyTemplateToChecklist(supabase, currentChecklist.id, templateId, session?.user.id)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, {
+        actorRole: normalizeDocumentRole(userRole),
+      })
+      const template = await repositories.templates.getTemplate(templateId)
+      if (!template) throw new Error('Template document was not found.')
+      await repositories.checklists.applyTemplate(
+        id,
+        currentChecklist.id,
+        templateId,
+        template.items.map(() => createEntityId('checklist-item')),
+      )
       setIsTemplateSheetOpen(false)
       await loadChecklist()
     },
-    [ensureCurrentTripChecklist, id, loadChecklist, session?.user.id]
+    [ensureCurrentTripChecklist, id, loadChecklist, userRole]
   )
 
   const totalPlanCost = useMemo(
@@ -1494,7 +1657,23 @@ export default function TripDetailScreen() {
 
   const handleUpdateMemberRole = async (memberId: string, role: 'editor' | 'viewer') => {
     try {
-      await updateTripMemberRole(supabase, memberId, role)
+      if (!id) return
+      const member = members.find((candidate) => candidate.id === memberId)
+      if (!member) return
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+      await repositories.members.upsertMember(id, {
+        member: {
+          id: member.id,
+          userId: member.user_id,
+          invitedEmail: member.invited_email || null,
+          role,
+          status: member.status,
+          nickname: member.profiles?.nickname ?? null,
+          email: member.profiles?.email ?? member.invited_email ?? null,
+          createdAt: member.created_at || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        },
+      })
       await loadMembers()
     } catch {
       Alert.alert('오류', '권한 변경에 실패했어요.')
@@ -1512,7 +1691,9 @@ export default function TripDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await removeTripMember(supabase, member.id)
+              if (!id) return
+              const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+              await repositories.members.revokeMember(id, member.id)
               await loadMembers()
             } catch {
               Alert.alert('오류', '동행자 삭제에 실패했어요.')
@@ -1653,6 +1834,18 @@ export default function TripDetailScreen() {
                       <Ionicons name="wallet-outline" size={14} color={colors.brand.ink} />
                       <Text style={styles.tripMetaText} numberOfLines={1}>
                         약 {totalPlanCost.toLocaleString()}원
+                      </Text>
+                    </View>
+                  ) : null}
+                  {canEditContent ? (
+                    <View style={styles.tripMetaItem}>
+                      <Ionicons
+                        name={p2pStatus === 'connected' ? 'radio-outline' : 'cloud-outline'}
+                        size={14}
+                        color={p2pStatus === 'connected' ? colors.brand.success : colors.brand.muted}
+                      />
+                      <Text style={styles.tripMetaText} numberOfLines={1}>
+                        {getMobileP2PStatusLabel(p2pStatus)}
                       </Text>
                     </View>
                   ) : null}
@@ -1914,7 +2107,7 @@ export default function TripDetailScreen() {
   )
 }
 
-const TIME_MODE_OPTIONS: Array<{ value: TimeDisplayMode; label: string }> = [
+const TIME_MODE_OPTIONS: { value: TimeDisplayMode; label: string }[] = [
   { value: 'local', label: '현지 시간' },
   { value: 'kst', label: '한국 시간' },
   { value: 'both', label: '동시 표기' },
@@ -3445,7 +3638,7 @@ function AssigneeFilterSheet({
 }: {
   visible: boolean
   filter: 'all' | 'me' | 'companions'
-  companions: Array<{ user_id: string; label: string }>
+  companions: { user_id: string; label: string }[]
   selectedIds: string[]
   onSelectAll: () => void
   onSelectMe: () => void
@@ -3546,11 +3739,11 @@ function ChecklistDropdownSheet({
   visible: boolean
   title: string
   value: string
-  options: Array<{
+  options: {
     value: string
     label: string
     icon: React.ComponentProps<typeof Ionicons>['name']
-  }>
+  }[]
   onSelect: (value: string) => void
   onClose: () => void
 }) {
@@ -4765,7 +4958,7 @@ function SelectTriggerField<T extends string | number>({
 }: {
   label: string
   icon: React.ComponentProps<typeof Ionicons>['name']
-  options: Array<{ value: T; label: string }>
+  options: { value: T; label: string }[]
   value: T
   onPress: () => void
 }) {
@@ -4800,7 +4993,7 @@ function OptionPickerModal<T extends string | number>({
   onChange,
 }: {
   visible: boolean
-  options: Array<{ value: T; label: string }>
+  options: { value: T; label: string }[]
   value: T
   onClose: () => void
   onChange: (value: T) => void

@@ -1,3 +1,43 @@
+# Walkthrough: TASK-032 Mobile Full Document-primary Transition
+
+## Summary
+
+TASK-032는 Mobile의 trip detail, 준비물, 일정, 템플릿, collaborator member snapshot을 document-primary repository 경로로 전환했다. Mobile AsyncStorage 기반 Trip/Template document store를 추가했고, owner/editor 화면에서는 `connectMobileP2PPeer()`를 screen lifecycle과 AppState foreground/background에 연결했다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-032-mobile-full-document-primary-transition.md`
+- GitHub Issue [#322](https://github.com/ysjee141/nexvoy-frontend/issues/322)
+- 브랜치: `feature/task-032-mobile-full-document-primary-transition-322`
+- `apps/mobile/lib/local-first/mobileDocumentStores.ts`
+- `apps/mobile/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/mobile/lib/local-first/documentPrimaryAdapters.ts`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/implementation_plan.md`
+
+## Key Changes
+
+- Mobile AsyncStorage Yjs update 저장소를 `LocalDocumentStore` contract로 감싸 Trip/Template document repository에 주입했다.
+- Trip legacy row bundle과 checklist template rows를 최초 진입 시 document로 hydrate하는 Mobile bridge를 추가했다.
+- Mobile trip detail의 trip/plans/checklist/member read path와 일정/준비물 mutations를 document-primary repository로 전환했다.
+- Mobile template list/create/edit/delete/share management를 Template document repository 경유로 전환했다.
+- collaborator role 변경/revoke 후 Trip document member snapshot을 upsert/revoke하도록 연결했다.
+- trip screen에서 Mobile P2P connection을 자동 시도하고, background cleanup/foreground reconnect 및 상태 표시를 추가했다.
+
+## Verification
+
+- `pnpm --filter nexvoy-app typecheck` 성공
+- `pnpm --filter nexvoy-app lint` 성공
+- `pnpm build:mobile` 성공
+
+## Notes
+
+- 신규 Supabase migration/API Route는 없다.
+- `pnpm build:mobile` 중 `react-native-webrtc`의 `event-target-shim` exports fallback 경고가 출력됐지만 export는 성공했다.
+- Android preview APK 설치/Logcat smoke는 이번 세션에서 실행하지 못했다. TASK-035 full integration/mobile smoke에서 이어서 검증한다.
+
+---
+
 # Walkthrough: TASK-031 Web Full Document-primary Transition
 
 ## Summary
