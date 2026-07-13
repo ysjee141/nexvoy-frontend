@@ -23,11 +23,12 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { getTemplatesWithPreview, deleteTemplate } from '@nexvoy/core'
 import type { TemplateWithPreview } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { ConfirmSheet, EmptyState } from '@/components/ui'
+import { createMobileDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import { toTemplatePreviewRow } from '@/lib/local-first/documentPrimaryAdapters'
 import { colors, fontSizes, fontWeights, radii, spacing, shadows } from '@/theme'
 
 /**
@@ -44,6 +45,7 @@ function formatRegisteredDate(createdAt: string): string {
 
 export default function TemplatesScreen() {
   const { session } = useAuth()
+  const currentUserId = session?.user.id
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const [templates, setTemplates] = useState<TemplateWithPreview[]>([])
@@ -52,17 +54,20 @@ export default function TemplatesScreen() {
   const isMounted = useRef(true)
 
   const loadTemplates = useCallback(async () => {
-    if (!session?.user) return
+    if (!currentUserId) return
     setLoading(true)
     try {
-      const data = await getTemplatesWithPreview(supabase, session.user.id)
-      if (isMounted.current) setTemplates(data)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const data = await repositories.templates.listTemplates(currentUserId)
+      if (isMounted.current) {
+        setTemplates(data.map((template) => toTemplatePreviewRow(template, currentUserId)))
+      }
     } catch {
       // 조회 실패 시 직전 목록 유지 (useFocusEffect 재진입 시 깜박임 방지)
     } finally {
       if (isMounted.current) setLoading(false)
     }
-  }, [session?.user])
+  }, [currentUserId])
 
   useFocusEffect(
     useCallback(() => {
@@ -86,7 +91,8 @@ export default function TemplatesScreen() {
   const confirmDelete = useCallback(async () => {
     if (!pendingDelete) return
     try {
-      await deleteTemplate(supabase, pendingDelete.id)
+      const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+      await repositories.templates.deleteTemplate(pendingDelete.id)
       setPendingDelete(null)
       await loadTemplates()
     } catch {

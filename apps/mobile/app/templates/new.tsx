@@ -22,10 +22,11 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { createTemplate, getChecklistCategories, replaceTemplateItems } from '@nexvoy/core'
+import { getChecklistCategories } from '@nexvoy/core'
 import type { ChecklistCategory } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { createMobileTemplateDocument } from '@/lib/local-first/documentPrimaryRepositories'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const TITLE_MAX = 50
@@ -124,19 +125,15 @@ export default function NewTemplateScreen() {
     setLoading(true)
     setError(null)
     try {
-      const template = await createTemplate(supabase, {
-        title: title.trim(),
-        user_id: session.user.id,
-      })
-      await replaceTemplateItems(
+      await createMobileTemplateDocument({
         supabase,
-        template.id,
-        items.map((item) => ({
+        title: title.trim(),
+        items: items.map((item) => ({
           item_name: item.item_name,
           category: item.category,
           is_private: item.is_private,
-        }))
-      )
+        })),
+      })
       router.back()
     } catch (e) {
       if (isMounted.current) {
