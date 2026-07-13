@@ -1,12 +1,18 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import {
+  canAttemptP2PReconnect,
+  getP2PReconnectDelayMs,
+  normalizeP2PReconnectPolicy,
+} from '@nexvoy/core/sync/p2pLifecycle'
 import type { P2PConnectionStatus } from '@/components/trips/P2PConnectionStatusBadge'
 import {
   connectWebP2PPeer,
   type WebP2PConnection,
 } from './webP2PConnection'
 import type { WebSignalingChannelMembership } from './signalingChannel'
+import { logP2PEvent } from './iceServers'
 
 export interface WebP2PChecklistMember {
   user_id?: string | null
@@ -23,6 +29,12 @@ export interface UseWebP2PChecklistConnectionInput {
 }
 
 const CONNECTION_TIMEOUT_MS = 15_000
+const RECONNECT_POLICY = normalizeP2PReconnectPolicy({
+  maxAttempts: 3,
+  initialDelayMs: 1_000,
+  maxDelayMs: 8_000,
+  multiplier: 2,
+})
 
 export function useWebP2PChecklistConnection(
   input: UseWebP2PChecklistConnectionInput,
@@ -47,56 +59,147 @@ export function useWebP2PChecklistConnection(
     let closed = false
     let connection: WebP2PConnection | null = null
     let timeoutId: ReturnType<typeof setTimeout> | null = null
+    let reconnectId: ReturnType<typeof setTimeout> | null = null
+    let reconnectPending = false
+    let reconnectAttempts = 0
 
-    setStatus('connecting')
-    timeoutId = setTimeout(() => {
-      if (!closed) setStatus('fallback')
-    }, CONNECTION_TIMEOUT_MS)
+    const clearConnectionTimeout = () => {
+      if (!timeoutId) return
+      clearTimeout(timeoutId)
+      timeoutId = null
+    }
+
+    const clearReconnectTimeout = () => {
+      if (!reconnectId) return
+      clearTimeout(reconnectId)
+      reconnectId = null
+      reconnectPending = false
+    }
+
+    const closeCurrentConnection = () => {
+      const currentConnection = connection
+      connection = null
+      void currentConnection?.close()
+    }
+
+    const startConnectionTimeout = () => {
+      clearConnectionTimeout()
+      timeoutId = setTimeout(() => {
+        if (!closed) scheduleReconnect('timeout')
+      }, CONNECTION_TIMEOUT_MS)
+    }
 
     const setConnected = () => {
       if (closed) return
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-        timeoutId = null
-      }
+      clearConnectionTimeout()
+      clearReconnectTimeout()
+      reconnectPending = false
+      reconnectAttempts = 0
       setStatus('connected')
     }
 
-    void connectWebP2PPeer({
-      documentId: plan.documentId,
-      userId: plan.currentUserId,
-      membership: plan.membership,
-      isInitiator: plan.isInitiator,
-      onHandshakeComplete: setConnected,
-      onUpdateApplied: setConnected,
-    }).then((nextConnection) => {
-      if (closed) {
-        void nextConnection.close()
+    const scheduleReconnect = (reason: string) => {
+      if (closed || reconnectPending) return
+      reconnectPending = true
+      clearConnectionTimeout()
+      closeCurrentConnection()
+      const nextAttempt = reconnectAttempts + 1
+
+      if (!canAttemptP2PReconnect(nextAttempt, RECONNECT_POLICY)) {
+        logP2PEvent({
+          name: 'p2p_reconnect_exhausted',
+          platform: 'web',
+          reason,
+          count: reconnectAttempts,
+        })
+        reconnectPending = false
+        setStatus('fallback')
         return
       }
-      connection = nextConnection
-      const peerConnection = nextConnection.peerConnection
-      peerConnection.addEventListener('connectionstatechange', () => {
-        if (closed) return
-        if (peerConnection.connectionState === 'connected') {
-          setConnected()
+
+      reconnectAttempts = nextAttempt
+      const delayMs = getP2PReconnectDelayMs(nextAttempt, RECONNECT_POLICY)
+      logP2PEvent({
+        name: 'p2p_reconnect_scheduled',
+        platform: 'web',
+        reason,
+        count: nextAttempt,
+      })
+      setStatus('connecting')
+      reconnectId = setTimeout(() => {
+        reconnectId = null
+        reconnectPending = false
+        connect()
+      }, delayMs)
+    }
+
+    const connect = () => {
+      if (closed) return
+      clearConnectionTimeout()
+      setStatus('connecting')
+      startConnectionTimeout()
+      if (reconnectAttempts > 0) {
+        logP2PEvent({
+          name: 'p2p_reconnect_attempted',
+          platform: 'web',
+          count: reconnectAttempts,
+        })
+      }
+
+      void connectWebP2PPeer({
+        documentId: plan.documentId,
+        userId: plan.currentUserId,
+        membership: plan.membership,
+        isInitiator: plan.isInitiator,
+        onHandshakeComplete: setConnected,
+        onUpdateApplied: setConnected,
+      }).then((nextConnection) => {
+        if (closed) {
+          void nextConnection.close()
+          return
         }
-        if (
-          peerConnection.connectionState === 'failed'
-          || peerConnection.connectionState === 'disconnected'
-          || peerConnection.connectionState === 'closed'
-        ) {
-          setStatus('fallback')
+        connection = nextConnection
+        const peerConnection = nextConnection.peerConnection
+        peerConnection.addEventListener('connectionstatechange', () => {
+          if (closed) return
+          if (peerConnection.connectionState === 'connected') {
+            setConnected()
+          }
+          if (
+            peerConnection.connectionState === 'failed'
+            || peerConnection.connectionState === 'disconnected'
+            || peerConnection.connectionState === 'closed'
+          ) {
+            scheduleReconnect(peerConnection.connectionState)
+          }
+        })
+      }).catch((error) => {
+        if (!closed) {
+          scheduleReconnect(error instanceof Error ? error.name : 'connect_failed')
         }
       })
-    }).catch(() => {
-      if (!closed) setStatus('fallback')
-    })
+    }
+
+    const handlePageLifecycleCleanup = () => {
+      if (closed) return
+      logP2PEvent({ name: 'p2p_lifecycle_cleanup', platform: 'web', reason: 'pagehide' })
+      closed = true
+      clearConnectionTimeout()
+      clearReconnectTimeout()
+      closeCurrentConnection()
+    }
+
+    connect()
+    window.addEventListener('pagehide', handlePageLifecycleCleanup)
+    window.addEventListener('beforeunload', handlePageLifecycleCleanup)
 
     return () => {
       closed = true
-      if (timeoutId) clearTimeout(timeoutId)
-      void connection?.close()
+      window.removeEventListener('pagehide', handlePageLifecycleCleanup)
+      window.removeEventListener('beforeunload', handlePageLifecycleCleanup)
+      clearConnectionTimeout()
+      clearReconnectTimeout()
+      closeCurrentConnection()
     }
   }, [input.currentUserId, input.documentId, input.enabled, input.ownerId, plan])
 

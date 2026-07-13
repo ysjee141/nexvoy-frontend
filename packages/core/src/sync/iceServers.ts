@@ -29,6 +29,10 @@ export type P2PObservabilityEventName =
   | 'p2p_relay_selected'
   | 'p2p_signaling_joined'
   | 'p2p_data_channel_open'
+  | 'p2p_reconnect_scheduled'
+  | 'p2p_reconnect_attempted'
+  | 'p2p_reconnect_exhausted'
+  | 'p2p_lifecycle_cleanup'
 
 export interface P2PObservabilityEvent {
   name: P2PObservabilityEventName
@@ -40,6 +44,7 @@ export interface P2PObservabilityEvent {
   reason?: string
   connectionType?: 'direct' | 'relay' | 'unknown'
   setupMs?: number
+  count?: number
   relayProtocol?: string
   relayTransport?: string
 }

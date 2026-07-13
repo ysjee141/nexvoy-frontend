@@ -56,6 +56,7 @@ export async function connectWebP2PPeer(input: ConnectWebP2PPeerInput): Promise<
   const unregisterUpdateSenders: Array<() => void> = []
   const updateReassembler = new P2PUpdateReassembler()
   let offerRetryId: ReturnType<typeof setInterval> | null = null
+  let connectionClosed = false
 
   const signaling = await joinWebSignalingChannel({
     documentId: input.documentId,
@@ -210,6 +211,8 @@ export async function connectWebP2PPeer(input: ConnectWebP2PPeerInput): Promise<
         : false
     },
     async close() {
+      if (connectionClosed) return
+      connectionClosed = true
       for (const unregister of unregisterUpdateSenders.splice(0)) {
         unregister()
       }

@@ -41,6 +41,8 @@ export class MobileP2PSignalingDeniedError extends Error {
   }
 }
 
+const OFFER_RETRY_INTERVAL_MS = 3_000
+
 /**
  * Ties the mobile signaling channel and native WebRTC provider together for
  * Web-Mobile and Mobile-Mobile connectivity. TASK-027 extends the TASK-023
@@ -55,6 +57,8 @@ export async function connectMobileP2PPeer(
   const pendingMessages: SignalingMessage[] = []
   const unregisterUpdateSenders: Array<() => void> = []
   const updateReassembler = new P2PUpdateReassembler()
+  let offerRetryId: ReturnType<typeof setInterval> | null = null
+  let connectionClosed = false
 
   const signaling = await joinMobileSignalingChannel({
     documentId: input.documentId,
@@ -65,7 +69,7 @@ export async function connectMobileP2PPeer(
         pendingMessages.push(message)
         return
       }
-      void handleSignalingMessage(peerConnection, sendSignalingMessage, input.userId, message)
+      void handleSignalingMessage(peerConnection, sendSignalingMessage, input.userId, message, clearOfferRetry)
     },
   })
 
@@ -109,7 +113,16 @@ export async function connectMobileP2PPeer(
 
       const offer = await peerConnection.createOffer()
       await peerConnection.setLocalDescription(offer)
-      signaling.send({ type: 'offer', senderId: input.userId, sdp: offer.sdp ?? '' })
+      sendCurrentOffer()
+      offerRetryId = setInterval(() => {
+        if (!peerConnection || getConnectionState(peerConnection) === 'connected') {
+          clearOfferRetry()
+          return
+        }
+        if (!peerConnection.remoteDescription) {
+          sendCurrentOffer()
+        }
+      }, OFFER_RETRY_INTERVAL_MS)
     } else {
       peerConnectionEvents.addEventListener?.('datachannel', (event) => {
         if (!event.channel) return
@@ -119,16 +132,29 @@ export async function connectMobileP2PPeer(
     }
 
     for (const message of pendingMessages.splice(0)) {
-      void handleSignalingMessage(peerConnection, sendSignalingMessage, input.userId, message)
+      void handleSignalingMessage(peerConnection, sendSignalingMessage, input.userId, message, clearOfferRetry)
     }
   } catch (error) {
     for (const unregister of unregisterUpdateSenders.splice(0)) {
       unregister()
     }
+    clearOfferRetry()
     updateReassembler.clear()
     await signaling.leave()
     await provider?.close()
     throw error
+  }
+
+  function sendCurrentOffer(): void {
+    const description = peerConnection?.localDescription
+    if (description?.type !== 'offer') return
+    signaling.send({ type: 'offer', senderId: input.userId, sdp: description.sdp ?? '' })
+  }
+
+  function clearOfferRetry(): void {
+    if (!offerRetryId) return
+    clearInterval(offerRetryId)
+    offerRetryId = null
   }
 
   function attachDataChannel(channel: RTCDataChannel): void {
@@ -170,12 +196,15 @@ export async function connectMobileP2PPeer(
         : false
     },
     async close() {
+      if (connectionClosed) return
+      connectionClosed = true
       for (const unregister of unregisterUpdateSenders.splice(0)) {
         unregister()
       }
+      clearOfferRetry()
       updateReassembler.clear()
       await signaling.leave()
-      await provider.close()
+      await provider?.close()
     },
   }
 }
@@ -185,6 +214,7 @@ async function handleSignalingMessage(
   send: (message: SignalingMessage) => void,
   userId: string,
   message: SignalingMessage,
+  onAnswer?: () => void,
 ): Promise<void> {
   if (message.senderId === userId) return
 
@@ -198,6 +228,7 @@ async function handleSignalingMessage(
 
   if (message.type === 'answer') {
     await peerConnection.setRemoteDescription({ type: 'answer', sdp: message.sdp })
+    onAnswer?.()
     return
   }
 
@@ -206,4 +237,8 @@ async function handleSignalingMessage(
     sdpMid: message.sdpMid,
     sdpMLineIndex: message.sdpMLineIndex ?? undefined,
   })
+}
+
+function getConnectionState(peerConnection: RTCPeerConnection): string | undefined {
+  return (peerConnection as unknown as { connectionState?: string }).connectionState
 }

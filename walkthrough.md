@@ -1,3 +1,50 @@
+# Walkthrough: TASK-026 P2P Connection Lifecycle Hardening
+
+## Summary
+
+TASK-026은 Web 준비물 P2P fast path의 실사용 생명주기를 보강했다. 연결 실패/끊김/timeout 시 bounded exponential backoff로 재연결을 시도하고, 최대 재시도 초과 시 기존 방식 동기화 상태로 수렴한다. 브라우저 탭 종료/새로고침 및 React cleanup에서는 signaling channel, data channel, peer connection, retry timer를 정리한다.
+
+Rotating room secret hardening은 signaling topic derivation, Supabase Realtime Authorization RLS, server-issued secret, Web/Mobile adapter migration이 함께 필요한 별도 migration이므로 TASK-028로 분리했다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-026-p2p-connection-lifecycle-hardening.md`
+- `docs/refactor/tasks/TASK-028-rotating-room-secret-hardening.md`
+- `implementation_plan.md`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/03_review_result.md`
+- `_workspace/04_qa_result.md`
+
+## Key Changes
+
+- `packages/core/src/sync/p2pLifecycle.ts`(신규): platform-independent reconnect policy helper. max attempts, initial/max delay, multiplier normalization 및 delay 계산을 제공한다.
+- `apps/web/lib/local-first/webP2PChecklistConnection.ts`: Web checklist P2P 연결에 reconnect/backoff, connection timeout 재시도, page lifecycle cleanup, reconnect observability event를 추가했다.
+- `apps/web/lib/local-first/webP2PConnection.ts`: connection `close()`를 idempotent하게 만들어 중복 cleanup에서 부작용 없이 종료되도록 했다.
+- `apps/mobile/lib/local-first/webP2PConnection.ts`: Mobile offer retry timer cleanup과 idempotent close를 보강하고, 연결 상태 조회 hook을 추가했다.
+- `apps/mobile/lib/local-first/p2pLifecycle.native.ts`(신규): AppState background 진입 시 active P2P connection cleanup, foreground 복귀 시 reconnect callback을 호출할 수 있는 lifecycle binding을 추가했다.
+- `packages/core/src/sync/iceServers.ts`, `packages/core/src/observability/events.ts`: `p2p_reconnect_scheduled`, `p2p_reconnect_attempted`, `p2p_reconnect_exhausted`, `p2p_lifecycle_cleanup` 이벤트를 추가했다.
+- `docs/refactor/tasks/README.md`: TASK-026 완료 상태와 TASK-028 후속 작업을 반영했다.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm typecheck` 성공
+- `pnpm build` 성공
+- `pnpm --filter nexvoy-app lint` 성공. 기존 Mobile 파일 warning 7건은 이번 변경과 무관하다.
+- `pnpm build:mobile` 성공
+
+## Rollback
+
+`useWebP2PChecklistConnection()`의 reconnect/lifecycle handling을 TASK-025 수준으로 되돌리고, 신규 `p2pLifecycle` helper와 Mobile lifecycle hook point를 제거하면 된다. 이번 PR은 signaling topic/RLS를 변경하지 않으므로 데이터 migration rollback은 필요 없다.
+
+## Notes
+
+- Rotating room secret은 TASK-028로 분리했다. 현재 PR은 deterministic signaling topic + Realtime Authorization RLS 모델을 유지한다.
+- Mobile lifecycle hook은 아직 화면 자동 연결에 직접 wiring하지 않았다. Mobile P2P adapter 사용 지점이 생길 때 close/reconnect callback을 연결하는 boundary다.
+- 일정 add/delete P2P는 아직 범위 밖이다.
+
+---
+
 # Walkthrough: TASK-025 P2P Connection Status UI
 
 ## Summary
