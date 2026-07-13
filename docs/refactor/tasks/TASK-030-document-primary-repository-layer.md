@@ -67,3 +67,11 @@ document-primary Repository contract를 만든다. 이 task는 이후 Web/Mobile
 - Web/Mobile이 공유할 document-primary repository contract가 확정된다.
 - 준비물/일정/템플릿/멤버 mutation을 document mutation으로 표현할 수 있다.
 - 이후 화면 전환 TASK가 repository contract만 보고 진행 가능하다.
+
+## 구현 결과
+
+- `TemplateDocumentV1` boundary와 Yjs helper를 추가했다.
+- `DocumentMutationResult`, `DocumentMutationPublisher`, `LocalDocumentStore` contract를 추가했다.
+- Trip/Plan/Checklist/Template/Member document-primary repository contract와 core factory를 추가했다.
+- 준비물/일정/템플릿/멤버 mutation을 순수 document mutation writer로 표현했다.
+- 신규 Supabase migration/query 파일은 없다. 실행해야 할 SQL 파일도 없다.

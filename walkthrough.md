@@ -1,3 +1,46 @@
+# Walkthrough: TASK-030 Document-primary Repository Layer
+
+## Summary
+
+TASK-030은 Web/Mobile 화면 전환 전에 공유할 document-primary repository layer를 `@nexvoy/core`에 추가했다.
+기존 legacy repository contract는 유지하면서, Trip/Plan/Checklist/Template/Member용 document-primary
+contract와 순수 mutation writer를 병렬로 제공한다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-030-document-primary-repository-layer.md`
+- `packages/core/src/local-first/templateDocument.ts`
+- `packages/core/src/local-first/documentMutationWriter.ts`
+- `packages/core/src/repositories/documentPrimaryRepository.ts`
+- `packages/core/src/local-first/__tests__/templateDocument.test.ts`
+- `packages/core/src/repositories/__tests__/documentPrimaryRepository.test.ts`
+- `implementation_plan.md`
+- `_workspace/01_planner_analysis.md`
+
+## Key Changes
+
+- `TemplateDocumentV1` boundary를 추가하고 Yjs update round-trip helper를 구현했다.
+- `DocumentMutationResult`, `DocumentMutationPublisher`, `LocalDocumentStore` contract를 추가해 P2P publish와 backup enqueue 경계를 repository level로 고정했다.
+- Trip document mutation writer를 추가했다: trip update/delete, plan create/update/delete/url, checklist/checklist item create/update/delete/toggle/template apply, member upsert/revoke.
+- Template document mutation writer를 추가했다: template update/delete, item replace, share upsert/remove.
+- `createDocumentPrimaryRepositoryBundle()`을 추가해 Web/Mobile adapter가 store/runtime만 주입하면 같은 repository contract를 사용할 수 있게 했다.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm --filter @nexvoy/core typecheck` 성공
+
+## SQL / Query Files
+
+이번 TASK-030에서 새 Supabase migration/query 파일은 만들지 않았다. 실행해야 할 SQL 파일은 없다.
+
+## Next
+
+- `TASK-031-web-full-document-primary-transition.md`: Web 준비물/일정/템플릿/동행자 UI를 document-primary repository로 전환
+- `TASK-032-mobile-full-document-primary-transition.md`: Mobile 동일 전환
+
+---
+
 # Walkthrough: TASK-029 Full Local-first Product Scope ADR
 
 ## Summary
