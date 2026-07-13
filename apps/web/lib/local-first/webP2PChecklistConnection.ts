@@ -28,12 +28,13 @@ export function useWebP2PChecklistConnection(
   input: UseWebP2PChecklistConnectionInput,
 ): P2PConnectionStatus {
   const [status, setStatus] = useState<P2PConnectionStatus>('idle')
+  const memberSignature = useMemo(() => createMemberSignature(input.members), [input.members])
 
   const plan = useMemo(() => createConnectionPlan(input), [
     input.currentUserId,
     input.documentId,
     input.enabled,
-    input.members,
+    memberSignature,
     input.ownerId,
   ])
 
@@ -162,6 +163,17 @@ function getWritableMemberIds(input: UseWebP2PChecklistConnectionInput): string[
   }
 
   return Array.from(ids).sort()
+}
+
+function createMemberSignature(members: WebP2PChecklistMember[]): string {
+  return members
+    .map((member) => [
+      member.user_id ?? '',
+      member.role ?? '',
+      member.status ?? '',
+    ].join(':'))
+    .sort()
+    .join('|')
 }
 
 function isDocumentRole(role: unknown): role is WebSignalingChannelMembership['role'] {
