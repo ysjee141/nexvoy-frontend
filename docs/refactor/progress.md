@@ -1,0 +1,386 @@
+# Local-First Full Product Progress
+
+작성일: 2026-07-14  
+기준 브랜치: `refactoring/local-first-architecture`  
+목표 해석: **웹/앱의 모든 핵심 기능을 Local-first document-primary 구조로 완성한 뒤 통합테스트와 Closed Beta를 진행한다.**  
+
+## 0. 목표 정정
+
+이번 refactor의 최종 목표는 "준비물 Web-to-Web P2P 검증"이 아니다. 목표는 기존 OnVoy 제품의 핵심 기능 전체를 Web/Mobile 양쪽에서 Local-first 기반으로 전환하는 것이다.
+
+대상 기능:
+
+- 준비물
+- 일정
+- 템플릿
+- 동행자 초대 / 수락 / 거부
+- 권한/멤버 역할 변경
+- Web/Mobile cross-device restore/sync
+- 동시 접속 중 WebRTC P2P fast path
+- 동시 접속하지 않은 기기간 Supabase encrypted backup 기반 sync/restore
+
+통합테스트와 Closed Beta는 일부 기능으로 진행하지 않는다. **모든 핵심 기능이 Local-first 제품 경로에 올라간 뒤** 진행한다.
+
+## 1. 현재 상태 요약
+
+현재까지 TASK-001~028을 통해 Local-first 기반 부품은 많이 구현되었다. 하지만 전체 제품 관점에서는 아직 "완료"가 아니라 **준비물 중심의 부분 구현 단계**다.
+
+| 영역 | 현재 상태 | 판정 |
+|------|----------|------|
+| TripDocumentV1 모델 | trips/plans/checklists/members/assets/tombstones 기반 있음. templates는 document boundary 확정 필요 | 기반 완료, templates 후속 |
+| legacy row -> document 변환 | trip/plans/checklists/members 변환 기반 있음 | 기반 완료 |
+| Web 준비물 | local-first/dual-write/P2P 화면 연결됨 | 부분 완료 |
+| Mobile 준비물 | Yjs runtime/apply adapter는 있으나 화면 write path는 legacy 중심 | 미완료 |
+| Web 일정 | document model에는 포함되나 화면 CRUD는 legacy Supabase 중심 | 미완료 |
+| Mobile 일정 | legacy Supabase 중심 | 미완료 |
+| 템플릿 | 기존 row 기반 기능 유지, document-primary 전환 없음 | 미완료 |
+| 초대/수락/거부 | permission registry/RPC/key provisioning 기반은 있음. product 전체가 document-primary와 결합되지는 않음 | 부분 완료 |
+| WebRTC P2P | Web 준비물 Web-to-Web 제품 경로까지 연결. Mobile은 adapter 수준 | 부분 완료 |
+| Backup/restore | schema/crypto/key provisioning/restore helper 있음. 모든 기능의 sync 경로로 통합되지 않음 | 부분 완료 |
+| 통합테스트 | legacy Web E2E와 core tests 중심. full Local-first E2E 없음 | 미완료 |
+| Closed Beta | 완성 제품 기준으로는 아직 불가 | 미완료 |
+
+정확한 현재 판정:
+
+> Local-first 전체 제품 완성도는 "foundation + Web checklist pilot" 단계다. 전체 기능 완료 후 Closed Beta라는 목표 기준에서는 아직 Phase 2에 가깝다.
+
+## 2. 아키텍처 방향 결정
+
+속도를 우선한다면 기존 Supabase row 통신 방식을 계속 dual-write로 오래 유지하는 것보다, **document-primary 전환 + legacy row 마이그레이션/호환 최소화**가 더 단순할 수 있다.
+
+권장 방향:
+
+1. `TripDocumentV1`을 제품 기능의 primary data source로 승격한다.
+2. 기존 row 데이터는 최초 진입 또는 migration job에서 document로 변환한다.
+3. 화면 CRUD는 Web/Mobile 모두 document repository를 사용한다.
+4. Supabase row 테이블은 필요한 기간 동안 read-only migration source 또는 rollback fallback으로 축소한다.
+5. 동기화는 두 계층으로 분리한다.
+   - 동시 접속: WebRTC P2P로 Yjs update 전파
+   - 비동시 접속: Supabase encrypted backup snapshot/update로 restore/sync
+6. 통합테스트는 legacy row 동작이 아니라 document-primary 제품 경로를 기준으로 작성한다.
+
+이 방향의 장점:
+
+- dual-write mismatch 관리 범위가 줄어든다.
+- Web/Mobile의 데이터 모델을 하나로 맞출 수 있다.
+- P2P와 backup sync가 같은 Yjs update format을 공유한다.
+- Closed Beta에서 "일부 기능만 Local-first"라는 혼선을 피할 수 있다.
+
+위험:
+
+- legacy Supabase row 기반 기능을 한 번에 document repository로 옮기는 작업량이 크다.
+- 기존 화면이 row shape에 깊게 의존한다.
+- migration/restore 실패 시 고객 데이터 접근에 직접 영향이 생긴다.
+
+따라서 빠르게 가되, 기능 단위로 document-primary 전환 PR을 쪼개는 방식이 필요하다.
+
+## 3. 기능별 구현 현황과 남은 작업
+
+### 3.1 준비물
+
+현재 구현:
+
+- Web checklist local-first repository
+- Web checklist dual-write repository
+- IndexedDB persistence
+- Web-to-Web P2P update 송수신
+- P2P 연결 상태 UI
+- signaling/ICE/lifecycle/topic hardening
+
+남은 작업:
+
+- Mobile checklist 화면을 document repository로 전환
+- Web checklist를 dual-write가 아니라 document-primary로 승격
+- checklist template apply 로직을 document mutation으로 전환
+- offline write queue와 backup update upload를 제품 경로에 연결
+- Web/Mobile checklist cross-device restore 검증
+- checklist E2E를 legacy DB assertion이 아니라 document/restore/P2P 기준으로 재작성
+
+완료 조건:
+
+- Web/Mobile 모두 준비물 CRUD/check/toggle/assignee/template apply가 Local-first document에 기록된다.
+- 동시 접속 기기는 P2P로 반영된다.
+- 비동시 접속 기기는 backup sync/restore로 반영된다.
+- legacy row 없이도 준비물 UX가 동작한다.
+
+### 3.2 일정
+
+현재 구현:
+
+- `TripDocumentV1`에 `plans`, `planOrder`, `planUrls` 모델 존재
+- legacy row -> document 변환 및 materialize 기반 존재
+- Web/Mobile 일정 화면은 대부분 legacy Supabase CRUD 중심
+
+남은 작업:
+
+- Plan repository를 document-primary로 구현
+- Web 일정 CRUD를 Plan repository로 전환
+- Mobile 일정 CRUD를 Plan repository로 전환
+- plan URLs, 장소 사진 reference, 방문 여부, 알림 metadata를 document mutation으로 반영
+- 일정 정렬/order conflict policy 확정
+- P2P update 적용 시 일정 화면 refresh/subscription 연결
+- backup restore 후 일정 read model materialization 검증
+
+완료 조건:
+
+- Web/Mobile 일정 추가/수정/삭제/방문체크/URL/메모/비용 변경이 Local-first document에 기록된다.
+- Web-to-Web, Web-to-Mobile, Mobile-to-Mobile에서 일정 변경이 P2P 또는 backup sync로 반영된다.
+
+### 3.3 템플릿
+
+현재 구현:
+
+- 기존 Supabase row 기반 템플릿 기능 유지
+- Local-first document와 템플릿 도메인의 결합은 미완성
+
+결정이 필요한 부분:
+
+- 템플릿을 trip document 내부 entity로 넣을지, 별도 template document로 둘지 결정해야 한다.
+- 공개 템플릿/개인 템플릿은 공유 범위가 trip document와 다르므로 별도 document boundary가 더 안전할 수 있다.
+
+권장 방향:
+
+- 개인/공개 템플릿은 `TemplateDocumentV1` 또는 별도 local-first repository로 분리한다.
+- trip checklist에 템플릿을 적용할 때는 템플릿 snapshot을 읽어 TripDocumentV1 checklist item mutation으로 복사한다.
+
+남은 작업:
+
+- Template document model/Repository 정의
+- Web template list/detail/create/edit/delete 전환
+- Mobile template list/detail/apply 전환
+- 공개 템플릿 read path와 개인 템플릿 write 권한/RLS 정리
+- 템플릿 적용 시 checklist document mutation으로 연결
+
+완료 조건:
+
+- Web/Mobile 템플릿 생성/수정/삭제/적용이 Local-first repository 경유로 동작한다.
+- 템플릿 적용 결과가 준비물 document에 반영되고 P2P/backup sync 대상이 된다.
+
+### 3.4 동행자 초대 / 수락 / 거부 / 권한
+
+현재 구현:
+
+- `document_members`
+- invitation/share RPC
+- key provisioning
+- owner/editor/viewer permission helper
+- Web/Mobile join fallback
+- signaling RLS와 viewer send 차단
+
+남은 작업:
+
+- 초대/수락/거부 결과를 TripDocumentV1 members snapshot에도 반영
+- Web/Mobile collaborator UI가 document permission registry와 document snapshot을 일관되게 읽도록 정리
+- role 변경/revoke가 local document, backup key provisioning, P2P 권한에 즉시 반영되도록 연결
+- revoked member의 local cache/key/access 정리 정책 구현
+- 초대 수락 후 Mobile restore/key provisioning 완료까지 UX 확정
+
+완료 조건:
+
+- Web/Mobile에서 초대 생성, 수락, 거부, role 변경, revoke가 동일한 document permission model로 동작한다.
+- 권한 변경 후 P2P send/backup upload/read restore 권한이 일관되게 제한된다.
+
+### 3.5 WebRTC/P2P
+
+현재 구현:
+
+- Web/Mobile signaling adapter
+- server-issued signaling topic + active topic RLS
+- ICE config 발급
+- Web/Mobile data channel handshake
+- Yjs update chunk protocol
+- Web checklist product wiring
+- Mobile runtime adapter
+
+남은 작업:
+
+- Mobile 화면에서 `connectMobileP2PPeer()` 실제 호출
+- Web/Mobile/Mobile peer lifecycle을 화면 생명주기에 연결
+- 모든 document-primary mutation이 P2P publish를 호출하도록 repository 레벨로 통합
+- late join/peer discovery 정책 구현
+- P2P status UI를 Web/Mobile 공통 UX로 정리
+- P2P 실패 시 backup sync fallback 상태를 사용자에게 정확히 표현
+
+완료 조건:
+
+- 준비물/일정/멤버/템플릿 적용 결과가 Web/Web, Web/Mobile, Mobile/Mobile에서 동시 접속 시 P2P로 반영된다.
+- peer가 없거나 연결 실패 시 local write와 backup sync가 유지된다.
+
+### 3.6 Backup / Restore / Offline Sync
+
+현재 구현:
+
+- encrypted backup schema/RLS
+- snapshot/update codec
+- Web/Mobile crypto/key provisioning 기반
+- Mobile snapshot restore helper
+- guest promotion 기반
+
+남은 작업:
+
+- 모든 document-primary mutation 후 backup update enqueue/upload 연결
+- 앱 시작/foreground/네트워크 복구 시 backup pull/restore 연결
+- Web/Mobile conflict resolution policy 검증
+- offline write 후 앱 종료, 이후 다른 기기 진입 시 데이터 도착 보장
+- restore freshness UX 구현
+- background sync와 foreground sync의 역할 분리
+
+완료 조건:
+
+- A가 오프라인/비동시 상태에서 변경 후 종료해도, upload 가능한 시점에 backup이 올라가고 B가 restore/pull로 받는다.
+- P2P 없이도 모든 핵심 기능이 eventually sync 된다.
+
+## 4. 새 작업 계획 제안
+
+기존 TASK-001~028 이후에는 "P2P 부품 추가"가 아니라 "전체 제품 document-primary 전환"으로 작업 축을 바꿔야 한다.
+
+### TASK-029: Full Local-first Product Scope ADR
+
+목적:
+
+- TripDocumentV1 하나에 모든 기능을 넣을지, TemplateDocumentV1 등 subdocument를 둘지 결정
+- legacy row migration 전략 결정
+- document-primary 전환 순서 확정
+
+산출물:
+
+- ADR
+- 전체 task map
+- migration/rollback 전략
+
+### TASK-030: Document-primary Repository Layer
+
+목적:
+
+- `TripRepository`, `PlanRepository`, `ChecklistRepository`, `TemplateRepository`, `MemberRepository`를 document-primary로 정리
+- Web/Mobile에서 공유 가능한 core repository contract 확정
+
+### TASK-031: Web Full Document-primary 전환
+
+범위:
+
+- Web 준비물 dual-write 제거 또는 feature flag 뒤 document-primary 승격
+- Web 일정 CRUD 전환
+- Web 템플릿 적용 전환
+- Web 동행자 UI read/write 정리
+
+### TASK-032: Mobile Full Document-primary 전환
+
+범위:
+
+- Mobile 준비물 CRUD 전환
+- Mobile 일정 CRUD 전환
+- Mobile 템플릿 적용 전환
+- Mobile collaborator/key provisioning UX 정리
+- Mobile P2P 화면 생명주기 연결
+
+### TASK-033: Backup Sync Productization
+
+범위:
+
+- mutation -> backup update queue
+- startup/foreground/network restore
+- offline write durability
+- cross-device eventual sync
+
+### TASK-034: P2P All-domain Wiring
+
+범위:
+
+- document mutation publish를 repository 레벨로 통합
+- Web/Web, Web/Mobile, Mobile/Mobile P2P
+- late join/peer discovery
+- status UX
+
+### TASK-035: Full Integration Test Suite
+
+범위:
+
+- 모든 핵심 기능이 완료된 뒤 작성
+- Web multi-user E2E
+- Web/Mobile native runtime smoke
+- backup restore cross-device
+- permission/key provisioning
+- P2P/fallback
+
+### TASK-036: Closed Beta Readiness
+
+범위:
+
+- 운영 migration
+- production readiness 문서 갱신
+- EAS/TestFlight/Play Internal Testing
+- monitoring/alerting
+- privacy/terms
+- beta runbook
+
+## 5. 통합테스트 전략
+
+사용자 목표에 맞춰 통합테스트는 일부 기능 선행 테스트가 아니라 **전체 기능 구현 이후** 수행한다.
+
+다만 구현 중 회귀를 막기 위한 unit/smoke test는 계속 작성한다.
+
+최종 통합테스트 범위:
+
+1. Web owner creates trip.
+2. Web owner adds plans/checklist/templates.
+3. Owner invites editor/viewer.
+4. Editor accepts on Web.
+5. Editor accepts/restores on Mobile.
+6. Web/Web simultaneous edits sync through P2P.
+7. Web/Mobile simultaneous edits sync through P2P.
+8. Mobile/Mobile simultaneous edits sync through P2P.
+9. Offline edit then app/browser close syncs through backup on next network opportunity.
+10. Role downgrade/revoke blocks write/P2P/backup upload.
+11. Template create/apply/delete works on Web/Mobile.
+12. App foreground/background and tab close do not leak P2P connections.
+13. Backup restore does not expose document content in logs/analytics/signaling.
+
+필요 인프라:
+
+- multi-user Playwright fixtures
+- local Supabase migration reset path
+- Mobile preview/development APK test runbook
+- Logcat assertions for native crash/WebRTC errors
+- test data cleanup utilities
+- observability payload snapshot checks
+
+## 6. Closed Beta 기준
+
+Closed Beta는 일부 기능 검증이 아니라 완성 제품 검증으로 진행한다.
+
+Closed Beta 진입 조건:
+
+- Web/Mobile에서 준비물, 일정, 템플릿, 동행자 초대/수락/거부가 Local-first document-primary로 동작
+- Web/Web, Web/Mobile, Mobile/Mobile 동시 편집이 P2P 또는 fallback sync로 동작
+- 비동시 접속 cross-device sync가 backup/restore로 동작
+- 권한 변경과 key provisioning이 Web/Mobile에서 일관됨
+- full integration suite 통과
+- Android preview/internal test와 iOS TestFlight smoke 통과
+- 운영 Supabase migration/RLS 검증 완료
+- monitoring/alerting/privacy/terms/beta runbook 준비
+
+현재 Closed Beta 판정:
+
+> 아직 진입 불가. foundation은 충분히 쌓였지만, 제품 전체 기능의 document-primary 전환과 Mobile product wiring, backup sync productization, full integration suite가 남아 있다.
+
+## 7. 빠른 구현을 위한 우선순위
+
+가장 빠르게 완성 제품으로 가려면 다음 순서가 적절하다.
+
+1. Full scope ADR로 document boundary와 legacy migration 전략 확정.
+2. document-primary repository를 core contract로 고정.
+3. Web 전체 기능을 document-primary로 먼저 전환.
+4. Mobile 전체 기능을 같은 repository contract로 전환.
+5. backup sync를 모든 mutation에 연결.
+6. P2P publish/apply를 repository 레벨로 일반화.
+7. full integration suite 작성.
+8. Closed Beta readiness 진행.
+
+핵심 원칙:
+
+- 더 이상 준비물만 기준으로 완료를 판단하지 않는다.
+- legacy Supabase row는 primary가 아니라 migration source/fallback으로 축소한다.
+- Web과 Mobile이 같은 document model과 repository contract를 써야 한다.
+- P2P는 모든 기능의 유일한 sync가 아니라 fast path다.
+- Closed Beta는 완성 제품 기준으로만 진행한다.
