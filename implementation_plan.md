@@ -1,57 +1,59 @@
-# TASK-026 Implementation Plan
+# TASK-028 Implementation Plan
 
 ## Scope
 
-Implement the lifecycle hardening part of TASK-026 first:
+Implement rotating signaling room topic hardening for P2P:
 
-1. Web P2P reconnect/backoff for checklist connections.
-2. Web page lifecycle cleanup for active signaling/data-channel/peer connections.
-3. Mobile P2P adapter cleanup/reconnect primitives around background/foreground lifecycle.
-4. P2P lifecycle observability events without document content, raw document id, or signaling room id.
-5. Document the rotating room secret rollout boundary. Do not switch production signaling topics to secret-based derivation in the same change unless the RLS/RPC compatibility path is complete.
+1. Add a server-issued active signaling topic table and RPC.
+2. Replace Realtime Authorization policies so P2P signaling only works on active server-issued topics.
+3. Update Web and Mobile signaling adapters to fetch the topic before joining the private Realtime channel.
+4. Keep topic/secret/document content out of logs and observability.
 
-## Rationale
+## Design
 
-Web-to-Web checklist P2P is now manually verified. The next highest-risk area is keeping that path stable under common lifecycle events. Rotating room secret changes require coordinated changes across topic derivation, Realtime Authorization RLS, server-issued secret proof, Web, and Mobile. Combining that with reconnect changes would make rollback and debugging difficult.
+The client should not derive a joinable topic from the raw document id anymore. The server issues an opaque topic per
+document and time window. The topic is stored server-side for Realtime Authorization comparison, returned only through
+an authenticated RPC, and never logged by the adapters.
 
-## Planned Changes
+Data model:
 
-### Core
+- `document_signaling_room_topics`
+  - `document_id`
+  - `room_topic`
+  - `active_from`
+  - `expires_at`
+  - `revoked_at`
+  - `created_by`
 
-- Add platform-independent retry/backoff policy helpers.
-- Extend P2P observability event names for reconnect and lifecycle cleanup.
-- Keep `packages/core` free of DOM/RN/Supabase client APIs.
+RPC:
 
-### Web
+- `issue_document_signaling_room_topic(p_document_id uuid)`
+  - accepted `document_members` can fetch a topic
+  - legacy trip owner/member compatibility is preserved while the transition still depends on legacy trip snapshots
+  - reuses an unexpired active topic; creates a new one if needed
+  - returns `{ room_topic, expires_at }`
 
-- Add bounded reconnect loop to `useWebP2PChecklistConnection`.
-- Ensure connection cleanup cancels retry timers and offer retry timers.
-- Add page lifecycle cleanup (`pagehide`/`beforeunload`) for active Web P2P connection.
-- Preserve current status UI contract: `connecting`, `connected`, `fallback`.
+Realtime Authorization:
 
-### Mobile
+- SELECT: accepted member or legacy trip member can receive only when `realtime.topic()` equals an active topic for that document.
+- INSERT: owner/editor or legacy owner/editor can send only when `realtime.topic()` equals an active topic for that document.
+- deterministic `signaling:<sha256(documentId)>` topics are no longer authorized.
 
-- Make mobile P2P connection close idempotent.
-- Add lifecycle-safe hook points around AppState transitions where current adapter users can close/reconnect without leaking channels.
-- Avoid adding screen UI in this task.
+## Rollout Boundary
 
-### Rotating Room Secret
-
-- Keep current deterministic topic plus Realtime Authorization RLS active for this PR.
-- Add design notes in TASK-026/README for the required future migration path:
-  - server-issued room secret,
-  - topic derivation `hash(documentId + secret)`,
-  - RLS validation against active secret window,
-  - overlap window for old/new topics.
+This PR updates Web and Mobile adapters in the same change as the RLS migration. Older clients using deterministic
+topics will fail P2P signaling and fall back to Supabase backup/legacy sync. That is acceptable for the refactor branch
+because P2P remains optional fast path.
 
 ## Verification
 
 - `pnpm --filter @nexvoy/core test`
 - `pnpm typecheck`
 - `pnpm build`
-- `pnpm build:mobile`
 - `pnpm --filter nexvoy-app lint`
+- `pnpm build:mobile`
 
 ## Rollback
 
-Remove the reconnect/lifecycle helpers and return to TASK-025 behavior. Since no production topic derivation change is planned in this PR, rollback does not require data migration.
+Revert this PR to restore deterministic topic derivation and the TASK-025 Realtime Authorization policies. The new
+topic table is independent of document content and can be left unused if rollback is needed.

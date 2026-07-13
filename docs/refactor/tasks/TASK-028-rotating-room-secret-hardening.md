@@ -73,3 +73,14 @@ topic을 예측 불가능하게 만든다.
 - signaling room topic이 고정된 결정적 해시가 아니라 회전하는 secret에 기반한다.
 - secret 없는 join/send가 서버 경계에서 거부된다.
 - rotation/fallback 상태가 원문 노출 없이 관측 가능하다.
+
+## 구현 결과
+
+- `document_signaling_room_topics` 테이블과 `issue_document_signaling_room_topic` RPC를 추가했다.
+- Web/Mobile signaling adapter가 deterministic `sha256(documentId)` topic 대신 server-issued opaque topic을
+  사용하도록 변경했다.
+- Realtime Authorization RLS를 active server-issued topic 기준으로 교체해 deterministic topic join/send를
+  서버 경계에서 거부한다.
+- 만료 2분 이내에는 새 topic을 발급하고 기존 unexpired topic은 자연 만료까지 유지해 old/new overlap
+  window를 제공한다.
+- topic 원문은 RPC 응답과 Realtime join에만 사용하고 observability/UI/log에는 남기지 않는다.

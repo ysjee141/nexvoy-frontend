@@ -1,6 +1,6 @@
 import {
   SIGNALING_BROADCAST_EVENT,
-  deriveSignalingRoomTopic,
+  isSignalingRoomTopic,
   parseSignalingMessage,
   type SignalingMessage,
 } from '@nexvoy/core/sync/signalingChannel'
@@ -30,6 +30,19 @@ export interface WebSignalingChannel {
   leave(): Promise<void>
 }
 
+interface SignalingRoomTopicRow {
+  room_topic: string
+  expires_at: string
+}
+
+type IssueSignalingRoomTopicRpc = (
+  fn: 'issue_document_signaling_room_topic',
+  args: { p_document_id: string },
+) => Promise<{
+  data: unknown
+  error: { message?: string } | null
+}>
+
 /**
  * Joins the per-document Supabase Realtime Broadcast private channel used for
  * P2P signaling (ADR-012). The client-side validateSignalingJoinPolicy() check
@@ -41,15 +54,35 @@ export interface WebSignalingChannel {
 export async function joinWebSignalingChannel(
   input: JoinWebSignalingChannelInput,
 ): Promise<WebSignalingChannel> {
+  const preliminaryDecision = validateSignalingJoinPolicy({
+    documentId: input.documentId,
+    userId: input.userId,
+    role: input.membership.role,
+    status: input.membership.status,
+    hasValidRoomSecretProof: true,
+  })
+
+  if (!preliminaryDecision.allowed) {
+    logP2PEvent({
+      name: 'p2p_unavailable',
+      platform: 'web',
+      reason: preliminaryDecision.reason ?? 'signaling_join_denied',
+    })
+    return {
+      decision: preliminaryDecision,
+      send: () => {},
+      leave: async () => {},
+    }
+  }
+
+  const supabase = createClient()
+  const topic = await fetchIssuedSignalingRoomTopic(supabase, input.documentId)
   const decision = validateSignalingJoinPolicy({
     documentId: input.documentId,
     userId: input.userId,
     role: input.membership.role,
     status: input.membership.status,
-    // Rotating room secret issuance is deferred to a follow-up hardening task
-    // (ADR-012); the room topic + Realtime Authorization RLS are the actual
-    // access boundary for this phase, so this guard does not gate on it yet.
-    hasValidRoomSecretProof: true,
+    hasValidRoomSecretProof: isSignalingRoomTopic(topic),
   })
 
   if (!decision.allowed) {
@@ -65,8 +98,6 @@ export async function joinWebSignalingChannel(
     }
   }
 
-  const supabase = createClient()
-  const topic = await deriveSignalingRoomTopic(input.documentId, globalThis.crypto.subtle)
   const channel = supabase.channel(topic, { config: { private: true } })
 
   channel.on(
@@ -113,4 +144,41 @@ export async function joinWebSignalingChannel(
       await supabase.removeChannel(channel)
     },
   }
+}
+
+async function fetchIssuedSignalingRoomTopic(
+  supabase: ReturnType<typeof createClient>,
+  documentId: string,
+): Promise<string> {
+  const issueTopic = supabase.rpc as unknown as IssueSignalingRoomTopicRpc
+  const { data, error } = await issueTopic('issue_document_signaling_room_topic', {
+    p_document_id: documentId,
+  })
+
+  if (error) {
+    logP2PEvent({ name: 'p2p_unavailable', platform: 'web', reason: 'signaling_topic_unavailable' })
+    throw new Error('signaling_topic_unavailable')
+  }
+
+  const topic = pickIssuedTopic(data)
+  if (!topic) {
+    logP2PEvent({ name: 'p2p_unavailable', platform: 'web', reason: 'invalid_signaling_topic' })
+    throw new Error('invalid_signaling_topic')
+  }
+
+  return topic
+}
+
+function pickIssuedTopic(input: unknown): string | null {
+  if (!Array.isArray(input) || input.length === 0) return null
+  const [first] = input
+  if (!isSignalingRoomTopicRow(first)) return null
+  return isSignalingRoomTopic(first.room_topic) ? first.room_topic : null
+}
+
+function isSignalingRoomTopicRow(input: unknown): input is SignalingRoomTopicRow {
+  return typeof input === 'object'
+    && input !== null
+    && typeof (input as { room_topic?: unknown }).room_topic === 'string'
+    && typeof (input as { expires_at?: unknown }).expires_at === 'string'
 }
