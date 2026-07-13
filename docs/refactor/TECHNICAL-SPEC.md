@@ -5,6 +5,7 @@
 OnVoy의 데이터 통신 구조를 Supabase 원본 DB 중심에서 Local-first 원본 저장소 중심으로 전환한다. 클라이언트는 로컬 저장소와 CRDT(Yjs)를 우선 사용하고, P2P(WebRTC)로 실시간 협업을 수행한다. Supabase는 사용자 인증, 권한 registry, 백업, 복구, 초대/공유 bootstrap, 첨부 파일 저장을 담당한다.
 
 본 문서는 실제 구현을 위한 기술 명세다. 최종 아키텍처 결정은 `docs/refactor/adrs/ADR-001-local-first-data-engine.md`를 따른다.
+전체 제품 범위와 document boundary, legacy migration/rollback 정책은 `docs/refactor/adrs/ADR-013-full-local-first-product-scope.md`를 따른다.
 
 ## 2. 범위
 
@@ -156,6 +157,9 @@ export interface ChecklistRepository {
 ## 7. Trip Document Model
 
 저장 단위는 Trip 단위 단일 Yjs 문서다. `ADR-005` 결정에 따라 초기 구현은 Trip 하나를 하나의 CRDT document로 저장한다. 기존 row id를 내부 id로 유지한다.
+`ADR-013` 결정에 따라 trip-scoped 데이터는 `TripDocumentV1`에 두고, 개인/공유/공개 템플릿은 별도
+`TemplateDocumentV1` boundary로 분리한다. 템플릿을 준비물에 적용할 때는 Template document snapshot을
+읽어 Trip document의 checklist item mutation으로 복사한다.
 
 ```ts
 export interface TripDocumentV1 {
@@ -261,6 +265,15 @@ Yjs 내부 표현:
 ### Collaboration
 
 `trip_members`, `trip_shares`, `trip_invitation_links`는 document 내부에도 snapshot을 보관하지만, 최종 권한 검증과 초대 수락은 Supabase registry를 source of authority로 둔다.
+
+### Template
+
+`checklist_templates`, `checklist_template_items`, `checklist_template_shares`는 `ADR-013`에 따라
+`TemplateDocumentV1`로 migration한다. Template document는 Trip document와 다른 owner/share/public
+visibility boundary를 가진다.
+
+Trip document에는 template 적용 결과로 생성된 checklist item과 출처 metadata만 저장한다. Template document
+본문을 Trip document에서 live reference로 유지하지 않는다.
 
 ## 9. Supabase 백업 스키마
 
@@ -601,7 +614,8 @@ interface TombstoneNode {
 목표:
 
 - Local-first repository를 기본값으로 전환
-- Supabase row는 fallback/read-only
+- Supabase row는 migration source와 fallback/read-only 경로로 축소
+- 신규 write는 document repository로 전환
 - backup/update log를 안정화
 
 ### Phase 5: Legacy Reduction
@@ -611,6 +625,15 @@ interface TombstoneNode {
 - 신규 기능은 document model만 사용
 - legacy row sync 제거 후보 식별
 - 통계/search index 별도 구축
+
+### Phase 6: Full Product Cutover
+
+목표:
+
+- Web/Mobile 준비물, 일정, 템플릿, 동행자/권한 UI를 document-primary 경로로 전환
+- 모든 document-primary mutation을 encrypted backup sync와 P2P fast path에 연결
+- legacy row는 장기 dual-write 대상이 아니라 read-only migration source/rollback fallback으로 유지
+- 전체 기능 통합테스트 통과 후 Closed Beta 준비
 
 ## 17. Data Compatibility Requirements
 
@@ -755,16 +778,16 @@ E2E:
 | 초대 방식과 권한 authority를 어떻게 둘 것인가? | `docs/refactor/adrs/ADR-008-invitation-and-permission-registry.md` | 채택됨: 권장안 |
 | 푸시 알림과 로컬 알림을 어떻게 분리할 것인가? | `docs/refactor/adrs/ADR-009-notification-strategy.md` | 채택됨: Option B |
 | 초기 운영 인프라와 비용 제어 기준은 무엇인가? | `docs/refactor/adrs/ADR-010-operating-cost-and-infrastructure.md` | 후속 검토 |
+| 전체 제품 Local-first scope와 document boundary, legacy migration/rollback 정책은 무엇인가? | `docs/refactor/adrs/ADR-013-full-local-first-product-scope.md` | 채택됨: Full product document-primary |
 
 ## 24. Immediate Next Tasks
 
-1. `ADR-010` 비용/인프라 후속 검토
-2. 체크리스트 스파이크 범위 확정
-3. repository interface 초안 작성
-4. row/document 변환기 초안 작성
-5. encrypted backup schema 및 `document_keys` migration 초안 작성
-6. Web IndexedDB persistence PoC
-7. Mobile WebRTC/Yjs native build feasibility PoC
-8. guest document promotion PoC
-9. invitation/permission registry PoC
-10. notification metadata + local notification PoC
+TASK-001~029의 결정과 foundation 구현 이후 다음 작업은 full product document-primary 전환이다.
+
+1. `TASK-030-document-primary-repository-layer.md`
+2. `TASK-031-web-full-document-primary-transition.md`
+3. `TASK-032-mobile-full-document-primary-transition.md`
+4. `TASK-033-backup-sync-productization.md`
+5. `TASK-034-p2p-all-domain-wiring.md`
+6. `TASK-035-full-integration-test-suite.md`
+7. `TASK-036-closed-beta-readiness.md`

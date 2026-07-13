@@ -27,7 +27,7 @@
 
 | 영역 | 현재 상태 | 판정 |
 |------|----------|------|
-| TripDocumentV1 모델 | trips/plans/checklists/members/assets/tombstones 기반 있음. templates는 document boundary 확정 필요 | 기반 완료, templates 후속 |
+| TripDocumentV1 모델 | trips/plans/checklists/members/assets/tombstones 기반 있음. templates는 ADR-013에 따라 별도 `TemplateDocumentV1` boundary | 기반 완료, templates 후속 |
 | legacy row -> document 변환 | trip/plans/checklists/members 변환 기반 있음 | 기반 완료 |
 | Web 준비물 | local-first/dual-write/P2P 화면 연결됨 | 부분 완료 |
 | Mobile 준비물 | Yjs runtime/apply adapter는 있으나 화면 write path는 legacy 중심 | 미완료 |
@@ -133,14 +133,9 @@
 - 기존 Supabase row 기반 템플릿 기능 유지
 - Local-first document와 템플릿 도메인의 결합은 미완성
 
-결정이 필요한 부분:
+결정:
 
-- 템플릿을 trip document 내부 entity로 넣을지, 별도 template document로 둘지 결정해야 한다.
-- 공개 템플릿/개인 템플릿은 공유 범위가 trip document와 다르므로 별도 document boundary가 더 안전할 수 있다.
-
-권장 방향:
-
-- 개인/공개 템플릿은 `TemplateDocumentV1` 또는 별도 local-first repository로 분리한다.
+- 개인/공개/공유 템플릿은 ADR-013에 따라 별도 `TemplateDocumentV1` boundary로 분리한다.
 - trip checklist에 템플릿을 적용할 때는 템플릿 snapshot을 읽어 TripDocumentV1 checklist item mutation으로 복사한다.
 
 남은 작업:
@@ -238,13 +233,13 @@
 
 목적:
 
-- TripDocumentV1 하나에 모든 기능을 넣을지, TemplateDocumentV1 등 subdocument를 둘지 결정
-- legacy row migration 전략 결정
-- document-primary 전환 순서 확정
+- TripDocumentV1은 trip-scoped 데이터 root로 유지하고, 템플릿은 `TemplateDocumentV1`로 분리한다고 결정
+- legacy row는 migration source/read-only fallback으로 축소한다고 결정
+- TASK-030~036 document-primary 전환 순서 확정
 
 산출물:
 
-- ADR
+- `docs/refactor/adrs/ADR-013-full-local-first-product-scope.md`
 - 전체 task map
 - migration/rollback 전략
 
