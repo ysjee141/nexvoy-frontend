@@ -58,7 +58,19 @@ export function createDualWriteChecklistRepository(
   options: CreateDualWriteChecklistRepositoryOptions,
 ): ChecklistRepository {
   return {
-    getChecklist: (tripId) => options.legacy.getChecklist(tripId),
+    getChecklist: async (tripId) => {
+      try {
+        return await options.local.getChecklist(tripId)
+      } catch {
+        await reportMismatch(options, {
+          domain: 'checklist',
+          operation: 'getChecklist',
+          tripId,
+          reasonCodes: ['local_read_failed'],
+        })
+        return options.legacy.getChecklist(tripId)
+      }
+    },
     createItem: async (checklistId, input) => {
       const result = await options.legacy.createItem(checklistId, input)
       await applyLocalAndDetect(options, {

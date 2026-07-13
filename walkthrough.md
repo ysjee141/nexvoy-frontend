@@ -1,3 +1,49 @@
+# Walkthrough: TASK-025 P2P Connection Status UI
+
+## Summary
+
+TASK-025는 Web 준비물 화면에서 P2P fast path를 자동으로 시도하고, 사용자에게 연결 상태를 기술 용어 없이 표시하도록 배선했다. `NEXT_PUBLIC_LOCAL_FIRST_CHECKLIST_SPIKE=1` 또는 `NEXT_PUBLIC_LOCAL_FIRST_CHECKLIST_DUAL_WRITE=1` 모드에서 accepted owner/editor 계정은 준비물 화면 진입 시 P2P 연결을 시도한다. 실패하거나 대상이 아니면 기존 방식으로 동기화 중이라는 generic 상태로 수렴한다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-025-p2p-connection-status-ui.md`
+- `implementation_plan.md`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/01b_ux_design.md`
+- `_workspace/02a_ui_components.md`
+- `_workspace/02b_frontend_changes.md`
+- `_workspace/03_review_result.md`
+- `_workspace/04_qa_result.md`
+
+## Key Changes
+
+- `apps/web/components/trips/P2PConnectionStatusBadge.tsx`(신규): 연결 중/연결됨/fallback 상태를 compact badge로 표시. `role="status"`/`aria-live="polite"` 적용.
+- `apps/web/lib/local-first/webP2PChecklistConnection.ts`(신규): 준비물 화면 전용 P2P connection hook. owner/editor accepted 사용자만 연결 대상이며 writable member id 정렬로 initiator를 결정한다.
+- `apps/web/app/trips/checklist/ChecklistClient.tsx`: local-first checklist spike/dual-write 모드에서 P2P 연결을 자동 시도하고, IndexedDB document update subscription을 dual-write에도 적용한다.
+- `packages/core/src/repositories/dualWriteChecklistRepository.ts`: dual-write `getChecklist()`를 local document 우선으로 변경하고, 실패 시 mismatch report 후 legacy read로 fallback한다. 이 변경으로 P2P로 받은 Yjs update가 준비물 화면 read path에 반영된다.
+- `docs/refactor/tasks/README.md`: TASK-025 완료 상태와 다음 권장 순서를 TASK-026으로 갱신.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm typecheck` 성공
+- `pnpm build` 성공. 최초 실행은 hook type narrowing 오류로 실패했고 타입 가드 수정 후 통과.
+- `pnpm build:mobile` 성공
+- `pnpm --filter nexvoy-app lint` 성공. 기존 warning 7건은 이번 변경과 무관한 기존 Mobile 파일 경고.
+
+## Rollback
+
+준비물 화면의 `useWebP2PChecklistConnection()` 호출과 `P2PConnectionStatusBadge` 렌더링을 제거하면 UI/자동 연결 시도는 사라진다. P2P core/data-channel 구현과 Mobile TASK-027 adapter는 영향받지 않는다. dual-write read path 변경을 되돌리면 dual-write 화면은 다시 legacy read 기준으로 돌아가며, P2P remote update 실시간 화면 반영은 제한된다.
+
+## Notes
+
+- 같은 Supabase userId로 두 브라우저를 열면 현재 signaling 구현이 동일 `senderId` 메시지를 무시하므로 Web-to-Web P2P 연결 검증이 어렵다. 실검증은 서로 다른 accepted owner/editor 계정 2개로 수행해야 한다.
+- viewer는 signaling answer를 보낼 수 없으므로 이번 자동 연결 대상에서 제외했다.
+- reconnect/background/tab-close hardening은 TASK-026 범위다.
+- 일정 add/delete P2P는 아직 범위 밖이다.
+
+---
+
 # Walkthrough: TASK-027 Mobile Yjs Runtime Adapter
 
 ## Summary
