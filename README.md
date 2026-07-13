@@ -1,8 +1,8 @@
-# ✈️ OnVoy (nexvoy-frontend)
+# ✈️ 온여정 (OnVoy)
 
 **OnVoy**는 복잡한 여행 계획을 한눈에 정리하고, 현지 시간과 체크리스트를 스마트하게 관리할 수 있도록 돕는 프리미엄 여행 플래너 웹 앱입니다.
 
-![OnVoy UI Mockup](https://via.placeholder.com/800x400.png?text=OnVoy+Smart+Travel+Planner) *<!-- 실제 이미지가 있다면 교체 가능 -->*
+![온여정 UI Mockup](https://via.placeholder.com/800x400.png?text=OnVoy+Smart+Travel+Planner) *<!-- 실제 이미지가 있다면 교체 가능 -->*
 
 ## 🤖 AI 어시스턴트를 위한 가이드 (For AI Assistants)
 
