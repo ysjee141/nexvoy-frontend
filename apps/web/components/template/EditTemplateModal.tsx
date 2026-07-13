@@ -20,6 +20,7 @@ import {
     updateTemplateShareRole,
 } from '@nexvoy/core'
 import type { ChecklistCategory, ChecklistTemplateShareWithProfile } from '@nexvoy/types'
+import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
 
 interface EditTemplateModalProps {
     isOpen: boolean
@@ -53,25 +54,17 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
         
         setFetching(true)
         try {
-            const { data, error } = await supabase
-                .from('checklist_templates')
-                .select(`
-                    id, 
-                    user_id,
-                    title, 
-                    checklist_template_items (id, item_name, category, is_private)
-                `)
-                .eq('id', templateId)
-                .single()
+            const repositories = await createWebDocumentPrimaryRepositories(supabase)
+            const data = await repositories.templates.getTemplate(templateId)
 
             if (data) {
-                setOwnerId(data.user_id)
+                setOwnerId(data.ownerId)
                 setTitle(data.title)
-                const mappedItems = (data.checklist_template_items || []).map((item: any) => ({
+                const mappedItems = data.items.map((item) => ({
                     id: item.id,
-                    item_name: item.item_name,
-                    category: item.category || '기타',
-                    is_private: item.is_private || false,
+                    item_name: item.name,
+                    category: item.categoryName || '기타',
+                    is_private: item.isPrivate || false,
                     isNew: false
                 }))
                 setItems(mappedItems)
@@ -82,13 +75,20 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
                 if (session?.user.id) {
                     const [categoryData, shareData] = await Promise.all([
                         getChecklistCategories(supabase, session.user.id),
-                        getTemplateShares(supabase, templateId),
+                        Promise.resolve(data.shares.map((share) => ({
+                            id: share.id,
+                            template_id: share.templateId,
+                            shared_with_user_id: share.sharedWithUserId,
+                            role: share.role,
+                            created_by: share.createdBy,
+                            created_at: share.createdAt,
+                            profiles: null,
+                        } satisfies ChecklistTemplateShareWithProfile))),
                     ])
                     setCategories(categoryData)
                     setShares(shareData)
                 }
-            } else if (error) {
-                console.error("Fetch template error:", error)
+            } else {
                 alert('템플릿 정보를 불러오는 데 실패했어요.')
                 onClose()
             }
@@ -120,8 +120,8 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
 
         setLoading(true)
         try {
-            const { error } = await supabase.from('checklist_templates').delete().eq('id', templateId)
-            if (error) throw error
+            const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+            await repositories.templates.deleteTemplate(templateId)
             
             if (onSuccess) onSuccess()
             onClose()
@@ -154,49 +154,19 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
         setLoading(true)
 
         try {
-            // 1. 타이틀 업데이트
-            const { error: titleError } = await supabase
-                .from('checklist_templates')
-                .update({ title: title.trim() })
-                .eq('id', templateId)
-
-            if (titleError) throw titleError
-
-            // 2. 삭제된 항목 처리
-            // UI에서 제거된 항목들 중 원래 DB에 있던 것들 찾기
-            const currentItemIds = items.map(i => i.id)
-            const itemsToDelete = originalItemIds.filter(id => !currentItemIds.includes(id))
-            
-            if (itemsToDelete.length > 0) {
-                await supabase.from('checklist_template_items').delete().in('id', itemsToDelete)
-            }
-
-            // 3. Upsert / Insert
-            const existingItems = validItems.filter(i => !i.isNew)
-            const newItems = validItems.filter(i => i.isNew)
-
-            if (existingItems.length > 0) {
-                await supabase.from('checklist_template_items').upsert(
-                    existingItems.map(i => ({
-                        id: i.id,
-                        template_id: templateId,
-                        item_name: i.item_name.trim(),
-                        category: i.category,
-                        is_private: i.is_private
-                    }))
-                )
-            }
-
-            if (newItems.length > 0) {
-                await supabase.from('checklist_template_items').insert(
-                    newItems.map(i => ({
-                        template_id: templateId,
-                        item_name: i.item_name.trim(),
-                        category: i.category,
-                        is_private: i.is_private
-                    }))
-                )
-            }
+            const repositories = await createWebDocumentPrimaryRepositories(supabase, {
+                actorRole: canManageShares ? 'owner' : 'editor',
+            })
+            await repositories.templates.updateTemplate(templateId, { title: title.trim() })
+            await repositories.templates.replaceItems(templateId, {
+                items: validItems.map((item, index) => ({
+                    id: item.isNew ? createLocalTemplateItemId() : item.id,
+                    name: item.item_name.trim(),
+                    categoryName: item.category,
+                    isPrivate: item.is_private,
+                    sortOrder: index,
+                })),
+            })
 
             if (onSuccess) onSuccess()
             onClose()
@@ -432,4 +402,9 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
             </div>
         </div>
     )
+}
+
+function createLocalTemplateItemId(): string {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+    return `template-item-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }

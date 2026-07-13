@@ -20,6 +20,9 @@ import { DownloadService } from '@/services/DownloadService'
 import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
 import { Download, CloudDownload, CloudCheck, Loader2 } from 'lucide-react'
 import TripDetailSkeleton from './TripDetailSkeleton'
+import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import type { PlanTimelineItemReadModel } from '@nexvoy/core/local-first/materialize'
+import type { CreatePlanMutationInput } from '@nexvoy/core/local-first/documentMutationWriter'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const options = [
@@ -185,8 +188,9 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             if (bundle?.trip) setTrip(bundle.trip)
             return
         }
-        const { data } = await supabase.from('trips').select('*').eq('id', tripId).single()
-        if (data) setTrip(data)
+        const repositories = await createWebDocumentPrimaryRepositories(supabase)
+        const data = await repositories.trips.getTrip(tripId)
+        if (data) setTrip(toLegacyTripRow(data))
     }, [tripId, supabase, isOffline])
 
     const fetchPlans = useCallback(async () => {
@@ -207,36 +211,10 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 return
             }
 
-            const { data: planRows, error: plansError } = await supabase
-                .from('plans')
-                .select('*')
-                .eq('trip_id', tripId)
-                .order('start_datetime_local', { ascending: true })
-            if (plansError) throw plansError
-
-            const planIds = (planRows || []).map((plan: any) => plan.id)
-            let urlsByPlan = new Map<string, any[]>()
-            if (planIds.length > 0) {
-                const { data: urlRows, error: urlsError } = await supabase
-                    .from('plan_urls')
-                    .select('*')
-                    .in('plan_id', planIds)
-                if (urlsError) {
-                    console.warn('Plan URL fetch failed; rendering plans without attached URLs', urlsError)
-                } else {
-                    ;(urlRows || []).forEach((url: any) => {
-                        urlsByPlan.set(url.plan_id, [
-                            ...(urlsByPlan.get(url.plan_id) || []),
-                            url,
-                        ])
-                    })
-                }
-            }
-
-            const data = (planRows || []).map((plan: any) => ({
-                ...plan,
-                plan_urls: urlsByPlan.get(plan.id) || [],
-            }))
+            const repositories = await createWebDocumentPrimaryRepositories(supabase)
+            const data = (await repositories.plans.listPlans(tripId)).map((plan) =>
+                toLegacyPlanRow(tripId, plan),
+            )
 
             if (data) {
                 setPlans(data)
@@ -254,7 +232,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         } finally {
             setIsLoading(false)
         }
-    }, [tripId, supabase, isOnline, plans.length])
+    }, [tripId, supabase, isOnline])
 
     const fetchUserRole = useCallback(async () => {
         if (!tripId) return
@@ -272,6 +250,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
 
 
     const handleDeletePlan = async (planId: string) => {
+        if (!tripId) return
         if (!confirm('이 일정을 삭제하시겠습니까? (연결된 정보도 함께 삭제됩니다)')) return
 
         // Storage cleanup은 best-effort: 실패해도 plan DELETE는 계속 진행
@@ -283,12 +262,13 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             }
         }
 
-        const { error } = await supabase.from('plans').delete().eq('id', planId)
-        if (error) {
-            alert('삭제에 실패했습니다.')
-        } else {
+        try {
+            const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+            await repositories.plans.deletePlan(tripId, planId)
             setActiveDropdown(null)
-            fetchPlans() // 목록 리프레시
+            fetchPlans()
+        } catch {
+            alert('삭제에 실패했습니다.')
         }
     }
 
@@ -300,15 +280,20 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         setSelectedPlanForDetail((cur: any) => (
             cur && cur.id === planId ? { ...cur, image_url: newImageUrl } : cur
         ))
-    }, [])
+        if (tripId && (userRole === 'owner' || userRole === 'editor')) {
+            createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+                .then((repositories) => repositories.plans.updatePlan(tripId, {
+                    planId,
+                    patch: { imageUrl: newImageUrl },
+                }))
+                .catch((err) => console.warn('[TripClient] imageUrl document update failed', err))
+        }
+    }, [supabase, tripId])
 
     const handleEditPlan = async (plan: any) => {
-        // 편집을 위해, 해당 Plan에 연결된 url들도 같이 가져옵니다
-        const { data: urlsData } = await supabase.from('plan_urls').select('url').eq('plan_id', plan.id)
-
         setEditingPlan({
             ...plan,
-            plan_urls: urlsData || []
+            plan_urls: plan.plan_urls || []
         })
         setActiveDropdown(null)
         setIsModalOpen(true) // Edit 모드로 모달 열기
@@ -324,17 +309,47 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
     }
 
     const handleToggleVisit = async (planId: string, isVisited: boolean) => {
+        if (!tripId) return
         // 낙관적 UI 업데이트
         setPlans(prev => prev.map(p => p.id === planId ? { ...p, is_visited: isVisited } : p))
         // 디테일 모달이 열려 있으면 선택된 plan도 업데이트
         setSelectedPlanForDetail((prev: any) => prev && prev.id === planId ? { ...prev, is_visited: isVisited } : prev)
-        const { error } = await supabase.from('plans').update({ is_visited: isVisited }).eq('id', planId)
-        if (error) {
+        try {
+            const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+            await repositories.plans.updatePlan(tripId, {
+                planId,
+                patch: { isVisited },
+            })
+        } catch {
             // 실패 시 롤백
             setPlans(prev => prev.map(p => p.id === planId ? { ...p, is_visited: !isVisited } : p))
             setSelectedPlanForDetail((prev: any) => prev && prev.id === planId ? { ...prev, is_visited: !isVisited } : prev)
         }
     }
+
+    const handleSavePlan = useCallback(async ({ plan, editPlanId }: {
+        plan: any
+        editPlanId?: string
+    }): Promise<string> => {
+        if (!tripId) throw new Error('여행 정보를 찾을 수 없어요.')
+        if (userRole !== 'owner' && userRole !== 'editor') {
+            throw new Error('일정을 수정할 권한이 없습니다.')
+        }
+        const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+        const planId = editPlanId ?? createLocalPlanId()
+        const input = toDocumentPlanInput(planId, plan)
+
+        if (editPlanId) {
+            await repositories.plans.updatePlan(tripId, {
+                planId,
+                patch: input,
+            })
+        } else {
+            await repositories.plans.createPlan(tripId, input)
+        }
+
+        return planId
+    }, [supabase, tripId, userRole])
 
     const handlePlanDetail = (plan: any) => {
         setSelectedPlanForDetail(plan)
@@ -548,6 +563,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     tripStartDate={trip?.start_date}
                     tripEndDate={trip?.end_date}
                     onPlanImageUpdated={handlePlanImageRecovered}
+                    onSavePlan={handleSavePlan}
                 />
             )}
             {tripId && (
@@ -596,4 +612,109 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             )}
         </div>
     )
+}
+
+function toLegacyTripRow(trip: {
+    id: string
+    ownerId: string
+    destination: string
+    startDate: string
+    endDate: string
+    adultsCount: number
+    childrenCount: number
+    coverImageRef: string | null
+    bgColor: string | null
+}) {
+    return {
+        id: trip.id,
+        user_id: trip.ownerId,
+        destination: trip.destination,
+        start_date: trip.startDate,
+        end_date: trip.endDate,
+        adults_count: trip.adultsCount,
+        children_count: trip.childrenCount,
+        cover_image_ref: trip.coverImageRef,
+        bg_color: trip.bgColor,
+    }
+}
+
+function toLegacyPlanRow(tripId: string, plan: PlanTimelineItemReadModel) {
+    return {
+        id: plan.id,
+        trip_id: tripId,
+        title: plan.title,
+        location: plan.location,
+        address: plan.address,
+        location_lat: plan.coordinates?.lat ?? 0,
+        location_lng: plan.coordinates?.lng ?? 0,
+        google_place_id: plan.googlePlaceId,
+        image_url: plan.imageUrl,
+        photo_reference: plan.photoReference,
+        start_datetime_local: plan.startDateTimeLocal,
+        end_datetime_local: plan.endDateTimeLocal,
+        timezone_string: plan.timezone,
+        alarm_minutes_before: plan.alarmMinutesBefore,
+        alarm_sent_at: plan.alarmSentAt,
+        cost: plan.cost,
+        memo: plan.memo,
+        is_completed: plan.isCompleted,
+        is_visited: plan.isVisited,
+        plan_urls: plan.urls.map((url) => ({
+            id: url.id,
+            plan_id: url.planId,
+            url: url.url,
+            created_at: url.createdAt,
+        })),
+    }
+}
+
+function toDocumentPlanInput(planId: string, plan: {
+    title: string
+    location: string | null
+    address: string | null
+    location_lat?: number | null
+    location_lng?: number | null
+    google_place_id?: string | null
+    image_url?: string | null
+    photo_reference?: string | null
+    start_datetime_local: string
+    end_datetime_local: string
+    timezone_string?: string | null
+    alarm_minutes_before?: number | null
+    alarm_sent_at?: string | null
+    cost?: number | null
+    memo?: string | null
+    is_completed?: boolean | null
+    is_visited?: boolean | null
+}): CreatePlanMutationInput {
+    const now = new Date().toISOString()
+    const lat = plan.location_lat ?? null
+    const lng = plan.location_lng ?? null
+
+    return {
+        id: planId,
+        title: plan.title,
+        location: plan.location,
+        address: plan.address,
+        coordinates: lat === null || lng === null ? null : { lat, lng },
+        googlePlaceId: plan.google_place_id ?? null,
+        imageUrl: plan.image_url ?? null,
+        photoReference: plan.photo_reference ?? null,
+        startDateTimeLocal: plan.start_datetime_local,
+        endDateTimeLocal: plan.end_datetime_local,
+        timezone: plan.timezone_string ?? 'Asia/Seoul',
+        alarmMinutesBefore: plan.alarm_minutes_before ?? null,
+        alarmSentAt: plan.alarm_sent_at ?? null,
+        cost: plan.cost ?? 0,
+        memo: plan.memo ?? null,
+        isCompleted: plan.is_completed ?? false,
+        isVisited: plan.is_visited ?? false,
+        createdAt: now,
+        updatedAt: now,
+    }
+}
+
+function createLocalPlanId(): string {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+    return `plan-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }

@@ -43,6 +43,10 @@ interface NewPlanModalProps {
      * 부모가 plans 리스트의 해당 항목 image_url을 패치할 때 사용.
      */
     onPlanImageUpdated?: (planId: string, imageUrl: string) => void
+    onSavePlan?: (input: {
+        plan: PlanInsert
+        editPlanId?: string
+    }) => Promise<string>
 }
 
 // ── 핵심 타입 정의 ──
@@ -69,6 +73,7 @@ export default function NewPlanModal({
     tripEndDate = '',
     editData,
     onPlanImageUpdated,
+    onSavePlan,
 }: NewPlanModalProps) {
     const supabase = createClient()
     const [step, setStep] = useState(1) // 1: 장소검색, 2: 상세입력
@@ -320,7 +325,12 @@ export default function NewPlanModal({
             }
 
             let savedPlanId: string | null = null
-            if (editData?.id) {
+            if (onSavePlan) {
+                savedPlanId = await onSavePlan({
+                    plan: planData,
+                    editPlanId: editData?.id,
+                })
+            } else if (editData?.id) {
                 const result = await supabase
                     .from('plans')
                     .update(planData)

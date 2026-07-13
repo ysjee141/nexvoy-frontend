@@ -1,3 +1,47 @@
+# Walkthrough: TASK-031 Web Full Document-primary Transition
+
+## Summary
+
+TASK-031은 Web의 일정, 준비물, 템플릿, 동행자/권한 UI를 document-primary repository 경로로 전환했다.
+legacy Supabase row는 최초 hydrate/read-only fallback과 registry authority 작업에만 남겼다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-031-web-full-document-primary-transition.md`
+- `apps/web/lib/local-first/webDocumentStores.ts`
+- `apps/web/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/web/lib/local-first/documentPrimaryChecklistRepository.ts`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/02b_frontend_changes.md`
+- `_workspace/03_review_result.md`
+- `_workspace/04_qa_result.md`
+
+## Key Changes
+
+- Web IndexedDB Yjs update 저장소를 `LocalDocumentStore` contract로 감싸 Trip/Template document repository에 주입했다.
+- Trip legacy row bundle과 checklist template row/share/item을 최초 진입 시 document로 hydrate하는 bridge를 추가했다.
+- 일정 목록/생성/수정/삭제/방문 상태/이미지 URL 복구를 Plan repository mutation으로 연결했다.
+- 준비물 CRUD/toggle/template apply를 document-primary checklist repository 경유로 연결했다.
+- 템플릿 목록/생성/수정/삭제/적용을 Template document repository로 전환했다.
+- 동행자 registry 조회/role 변경/revoke 후 Trip document member snapshot을 upsert/revoke하도록 연결했다.
+- mutation actor role을 호출부에서 주입해 viewer write 차단 정책이 유지되도록 했다.
+
+## Verification
+
+- `pnpm --filter nexvoy-web exec tsc --noEmit` 성공
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm typecheck` 성공
+- `pnpm build` 성공
+- `pnpm build:mobile` 성공
+
+## Notes
+
+- 신규 Supabase migration/API Route는 없다.
+- Mobile 화면 전환은 TASK-032 범위로 유지했다.
+- Template share registry write는 기존 Supabase helper를 유지한다. document share snapshot productization은 후속 정리 대상이다.
+
+---
+
 # Walkthrough: TASK-030 Document-primary Repository Layer
 
 ## Summary
