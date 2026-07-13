@@ -41,6 +41,8 @@ export class WebP2PSignalingDeniedError extends Error {
   }
 }
 
+const OFFER_RETRY_INTERVAL_MS = 3_000
+
 /**
  * Ties the signaling channel (ADR-012) and the WebRTC peer connection
  * factory together for Web-to-Web P2P connections. TASK-024 extends the
@@ -53,6 +55,7 @@ export async function connectWebP2PPeer(input: ConnectWebP2PPeerInput): Promise<
   const pendingMessages: SignalingMessage[] = []
   const unregisterUpdateSenders: Array<() => void> = []
   const updateReassembler = new P2PUpdateReassembler()
+  let offerRetryId: ReturnType<typeof setInterval> | null = null
 
   const signaling = await joinWebSignalingChannel({
     documentId: input.documentId,
@@ -97,7 +100,16 @@ export async function connectWebP2PPeer(input: ConnectWebP2PPeerInput): Promise<
 
       const offer = await peerConnection.createOffer()
       await peerConnection.setLocalDescription(offer)
-      signaling.send({ type: 'offer', senderId: input.userId, sdp: offer.sdp ?? '' })
+      sendCurrentOffer()
+      offerRetryId = setInterval(() => {
+        if (!peerConnection || peerConnection.connectionState === 'connected') {
+          clearOfferRetry()
+          return
+        }
+        if (!peerConnection.remoteDescription) {
+          sendCurrentOffer()
+        }
+      }, OFFER_RETRY_INTERVAL_MS)
     } else {
       peerConnection.addEventListener('datachannel', (event) => {
         dataChannel = event.channel
@@ -112,10 +124,23 @@ export async function connectWebP2PPeer(input: ConnectWebP2PPeerInput): Promise<
     for (const unregister of unregisterUpdateSenders.splice(0)) {
       unregister()
     }
+    clearOfferRetry()
     updateReassembler.clear()
     await signaling.leave()
     await provider?.close()
     throw error
+  }
+
+  function sendCurrentOffer(): void {
+    const description = peerConnection?.localDescription
+    if (description?.type !== 'offer') return
+    signaling.send({ type: 'offer', senderId: input.userId, sdp: description.sdp ?? '' })
+  }
+
+  function clearOfferRetry(): void {
+    if (!offerRetryId) return
+    clearInterval(offerRetryId)
+    offerRetryId = null
   }
 
   function attachDataChannel(channel: RTCDataChannel): void {
@@ -162,6 +187,7 @@ export async function connectWebP2PPeer(input: ConnectWebP2PPeerInput): Promise<
 
     if (message.type === 'answer') {
       await targetPeerConnection.setRemoteDescription({ type: 'answer', sdp: message.sdp })
+      clearOfferRetry()
       return
     }
 
@@ -187,6 +213,7 @@ export async function connectWebP2PPeer(input: ConnectWebP2PPeerInput): Promise<
       for (const unregister of unregisterUpdateSenders.splice(0)) {
         unregister()
       }
+      clearOfferRetry()
       updateReassembler.clear()
       await signaling.leave()
       await provider?.close()
