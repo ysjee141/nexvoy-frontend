@@ -8,7 +8,13 @@ import {
 import { serializeEncryptedBackupPayload } from '@nexvoy/core/sync/backupPayloadCodec'
 import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import { TRIP_DOCUMENT_SCHEMA_VERSION } from '@nexvoy/core/local-first/documentModel'
+import { createEmptyTripDocumentV1 } from '@nexvoy/core/local-first/tripDocument'
 import { bootstrapMobileDeviceDocumentKey } from './keyProvisioningService'
+import {
+  createMobileYjsTripDocument,
+  encodeMobileTripDocumentUpdate,
+  saveMobileTripDocumentUpdate,
+} from './mobileYjsTripDocument'
 
 // Document key version must match the value in keyProvisioningService.ts
 const DOCUMENT_KEY_VERSION = 1
@@ -21,20 +27,24 @@ export function getMobileBackupCryptoProvider(): BackupCryptoProvider {
 }
 
 /**
- * Creates a minimal initial snapshot payload for mobile bootstrap.
- *
- * Mobile does not use the Yjs document pipeline (Yjs/lib0 requires
- * isomorphic-webcrypto which is not available in the React Native bundle).
- * Instead, we produce a minimal JSON marker that can later be superseded by
- * a proper Yjs-encoded snapshot when the mobile app adopts full backup sync.
+ * Creates a minimal initial Yjs snapshot payload for mobile bootstrap.
+ * The values are intentionally sparse until the normal document hydration
+ * path supplies full trip content, but the encoded format is already the same
+ * canonical Yjs update used by Web.
  */
-function createInitialMobileSnapshotPayload(documentId: string): Uint8Array {
-  const marker = JSON.stringify({
-    schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
-    documentId,
-    source: 'mobile_bootstrap',
+function createInitialMobileSnapshotPayload(documentId: string, userId: string): Uint8Array {
+  const createdAt = new Date(0).toISOString()
+  const document = createEmptyTripDocumentV1({
+    id: documentId,
+    ownerId: userId,
+    destination: '',
+    startDate: '',
+    endDate: '',
+    adultsCount: 1,
+    childrenCount: 0,
+    createdAt,
   })
-  return new TextEncoder().encode(marker)
+  return encodeMobileTripDocumentUpdate(createMobileYjsTripDocument(document))
 }
 
 /**
@@ -46,9 +56,8 @@ function createInitialMobileSnapshotPayload(documentId: string): Uint8Array {
  * 2. Snapshot exists, caller owns it, and no document_keys row exists for
  *    anyone yet: a previous bootstrap attempt was interrupted after the
  *    snapshot was written but before the device key was persisted. Safe to
- *    regenerate, since the mobile snapshot payload is a disposable
- *    placeholder marker (see `createInitialMobileSnapshotPayload`), not real
- *    document content.
+ *    regenerate because no wrapped key exists anywhere, so no other client
+ *    can decrypt the stranded snapshot.
  * 3. Snapshot exists and either the caller doesn't own it or a document_keys
  *    row already exists elsewhere: another device or web must provision;
  *    throws 'owner_device_key_unavailable' so the caller can surface
@@ -141,7 +150,7 @@ async function bootstrapOwnerDocument({
   userId: string
 }): Promise<void> {
   const cryptoProvider = getMobileBackupCryptoProvider()
-  const snapshotPayload = createInitialMobileSnapshotPayload(documentId)
+  const snapshotPayload = createInitialMobileSnapshotPayload(documentId, userId)
 
   const dek = await generateDocumentEncryptionKey(cryptoProvider)
   const encryptedPayload = await encryptBackupPayload(cryptoProvider, {
@@ -167,6 +176,7 @@ async function bootstrapOwnerDocument({
     encrypted: true,
   })
   await backupRepository.upsertOwnerMember({ documentId, userId })
+  await saveMobileTripDocumentUpdate({ documentId }, snapshotPayload)
 
   // Store the DEK wrapped with this device's non-exportable RSA public key.
   await bootstrapMobileDeviceDocumentKey({ supabase, documentId, documentKey: dek })

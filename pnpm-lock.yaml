@@ -140,6 +140,9 @@ importers:
       react-native-webrtc:
         specifier: 124.0.6
         version: 124.0.6(react-native@0.81.5(@babel/core@7.29.0)(@react-native-community/cli@20.2.0(typescript@5.9.3))(@react-native/metro-config@0.81.5(@babel/core@7.29.0))(@types/react@19.1.17)(react@19.1.0))
+      yjs:
+        specifier: ^13.6.31
+        version: 13.6.31
     devDependencies:
       '@react-native-community/cli':
         specifier: 20.2.0

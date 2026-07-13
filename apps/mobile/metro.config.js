@@ -26,6 +26,14 @@ config.resolver.unstable_enableSymlinks = true
 // 5) React Native release bundle은 tsconfig paths를 자동 해석하지 않으므로 "@/..." alias를 직접 매핑
 const defaultResolveRequest = config.resolver.resolveRequest
 config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === 'isomorphic-webcrypto/src/react-native') {
+    return context.resolveRequest(
+      context,
+      path.join(projectRoot, 'lib/local-first/yjsWebcryptoShim.js'),
+      platform
+    )
+  }
+
   if (moduleName.startsWith('@/')) {
     return context.resolveRequest(
       context,

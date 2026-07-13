@@ -1,38 +1,37 @@
-# TASK-024 Implementation Plan
+# TASK-027 Implementation Plan
 
 ## Scope
 
-Implement P2P Yjs update exchange for Web-to-Web sessions only. Mobile remains at TASK-023 signaling/data-channel handshake capability because RN cannot currently apply Yjs/lib0 updates in-bundle.
+Introduce a Mobile Yjs runtime adapter so Web and Mobile use the same Yjs update format for local storage, encrypted restore, and P2P data-channel exchange. Keep RN/Expo APIs inside `apps/mobile/lib/local-first`; do not add platform dependencies to `packages/core`.
 
 ## Planned Changes
 
-1. Add `@nexvoy/core/sync/p2pUpdateProtocol`
-   - Message envelope for Yjs update transfer.
-   - Chunk splitting/reassembly utilities.
-   - Tests for single update, chunked update, invalid payload rejection.
+1. Add `apps/mobile/lib/local-first/mobileYjsTripDocument.ts`
+   - Wrap `@nexvoy/core/local-first/yjsTripDocument`.
+   - Persist encoded Yjs updates in AsyncStorage.
+   - Expose Mobile-specific create/read/write/apply/encode helpers.
 
-2. Extend WebRTC data channel wiring
-   - Keep existing ping/pong handshake.
-   - Parse update protocol messages on the same channel.
-   - Expose a safe `sendUpdate(documentId, update)` API from `connectWebP2PPeer()`.
+2. Add Mobile P2P update bridge
+   - Track active document senders in memory.
+   - Publish local encoded Yjs updates to active peers.
+   - Apply remote data-channel updates to the Mobile Yjs store without writing document content to logs/signaling metadata.
 
-3. Add Web local-first P2P bridge
-   - Track active document connections in memory.
-   - Publish local encoded Yjs updates after local mutation.
-   - Apply remote updates to IndexedDB without echoing them back to the same channel.
+3. Extend Mobile native data channel
+   - Keep TASK-023 ping/pong handshake.
+   - Parse and send TASK-024 `yjs-update` / `yjs-update-chunk` protocol messages.
+   - Reassemble chunks in `connectMobileP2PPeer()` before applying them locally.
 
-4. Wire checklist writer
-   - After local checklist mutation, publish the encoded Yjs update to active P2P peers.
-   - Remote P2P update application updates IndexedDB and triggers existing local document broadcast.
+4. Connect backup bootstrap/restore
+   - Mobile owner bootstrap creates an encrypted Yjs snapshot instead of a JSON marker.
+   - Mobile restore applies opaque Web/Yjs snapshot plaintext to the local Mobile Yjs store after decrypt/hash verification.
 
-5. Update docs and walkthrough
-   - Mark TASK-024 complete.
-   - Explicitly document Web-only implementation and Mobile follow-up.
+5. Dependency and docs
+   - Add `yjs` as an explicit `nexvoy-app` dependency for Metro resolution.
+   - Update task status, walkthrough, and phase artifacts.
 
 ## Validation
 
 - `pnpm --filter @nexvoy/core test`
-- `pnpm --filter @nexvoy/core typecheck`
 - `pnpm --filter nexvoy-app typecheck`
 - `pnpm typecheck`
 - `pnpm build`
@@ -41,6 +40,6 @@ Implement P2P Yjs update exchange for Web-to-Web sessions only. Mobile remains a
 ## Non-goals
 
 - Product UI for connection status.
-- Retry queue for disconnected P2P updates.
-- Mobile Yjs update parsing/applying.
-- Awareness/presence synchronization.
+- Background/reconnect lifecycle hardening.
+- Server-side Yjs interpretation.
+- Full Mobile checklist repository migration to document-primary writes.

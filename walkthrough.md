@@ -1,3 +1,46 @@
+# Walkthrough: TASK-027 Mobile Yjs Runtime Adapter
+
+## Summary
+
+TASK-024에서 Web-to-Web으로만 교환하던 Yjs update fast path를 Mobile platform boundary까지 확장했다. Mobile은 별도 JSON/patch format을 만들지 않고 `@nexvoy/core/local-first/yjsTripDocument`의 canonical Yjs update helper를 `apps/mobile/lib/local-first/mobileYjsTripDocument.ts` 안에서만 감싼다. RN/Expo 의존성은 Mobile adapter에만 두고, `packages/core`에는 platform API를 추가하지 않았다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-027-mobile-yjs-runtime-adapter.md`
+- `implementation_plan.md`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/02b_frontend_changes.md`
+
+## Key Changes
+
+- `apps/mobile/lib/local-first/mobileYjsTripDocument.ts`(신규): Mobile Yjs runtime adapter. Web helper와 같은 create/read/write/apply/encode 계약을 제공하고 encoded Yjs update를 AsyncStorage에 저장/로드한다.
+- `apps/mobile/lib/local-first/p2pUpdateBridge.ts`(신규): document별 active sender registry와 remote update apply bridge. P2P 실패는 optional fast path 특성대로 backup/restore fallback을 깨지 않는다.
+- `apps/mobile/lib/local-first/webRtcProvider.native.ts`: 기존 ping/pong handshake 위에 TASK-024 `yjs-update`/`yjs-update-chunk` protocol parse/send를 추가했다.
+- `apps/mobile/lib/local-first/webP2PConnection.ts`: `P2PUpdateReassembler`로 data channel update를 재조립한 뒤 Mobile Yjs store에 apply한다. sender unregister와 reassembler cleanup을 error/close 경로에 모두 배치했다.
+- `apps/mobile/lib/local-first/documentBootstrapService.ts`: Mobile owner bootstrap snapshot plaintext를 JSON marker에서 Yjs encoded update로 변경하고, bootstrap 직후 local Yjs store에도 저장한다.
+- `apps/mobile/lib/local-first/mobileSnapshotRestoreService.ts`: decrypt/hash 검증을 통과한 opaque snapshot plaintext를 Mobile Yjs store에 apply한다. raw error는 기존 generic restore failure 경로로만 매핑된다.
+- `apps/mobile/package.json`: Metro dependency graph가 transitive workspace dependency에 기대지 않도록 `yjs`를 Mobile app dependency로 명시했다.
+- `apps/mobile/metro.config.js`, `apps/mobile/lib/local-first/yjsWebcryptoShim.js`: `lib0`의 RN webcrypto import(`isomorphic-webcrypto/src/react-native`)를 기존 `react-native-quick-crypto` 기반 shim으로 해석해 native build dependency를 추가하지 않고 Metro export를 통과시켰다.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm --filter nexvoy-app typecheck` 성공
+- `pnpm typecheck` 성공
+- `pnpm build` 성공
+- `pnpm build:mobile` 성공. 최초 실행은 `lib0`가 `isomorphic-webcrypto/src/react-native`를 찾지 못해 실패했고, Metro exact alias + quick-crypto shim 추가 후 Web/iOS/Android export가 모두 통과했다.
+
+## Rollback
+
+`connectMobileP2PPeer()`의 update wiring과 `p2pUpdateBridge.ts` registration을 제거하면 Mobile은 TASK-023 수준의 signaling/data-channel handshake로 되돌아간다. `mobileYjsTripDocument.ts` persistence는 앱 내부 AsyncStorage key만 사용하므로 서버 데이터 정리는 필요 없다. Web-to-Web TASK-024 경로는 영향받지 않는다.
+
+## Notes
+
+- 실제 Web-Mobile/Mobile-Mobile data-channel 교환과 Android dev client Logcat 검증은 실기기/에뮬레이터가 필요하다. 이번 세션의 자동 검증은 Metro export build와 TypeScript/build 검증으로 수행했다.
+- Mobile checklist 화면의 기존 Supabase row write path를 document-primary Yjs writer로 전환하는 작업은 이번 범위가 아니다. 이번 task는 runtime adapter, restore, P2P apply/publish boundary를 마련한다.
+
+---
+
 # Walkthrough: TASK-020 Mobile Encrypted Snapshot Restore
 
 ## Summary

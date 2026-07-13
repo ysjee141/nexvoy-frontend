@@ -3,6 +3,11 @@ import { RTCPeerConnection } from 'react-native-webrtc'
 import type RTCDataChannel from 'react-native-webrtc/lib/typescript/RTCDataChannel'
 import type { P2PObservabilityEvent } from '@nexvoy/core/sync/iceServers'
 import {
+  createP2PUpdateMessages,
+  parseP2PUpdateProtocolMessage,
+  type P2PUpdateProtocolMessage,
+} from '@nexvoy/core/sync/p2pUpdateProtocol'
+import {
   REACT_NATIVE_WEBRTC_FEASIBILITY,
   type MobileWebRtcProvider,
   type MobileWebRtcProviderDiagnostics,
@@ -16,6 +21,7 @@ export interface MobileWebRtcDataChannelHandshakeResult {
 export interface WireMobileHandshakeDataChannelOptions {
   onEvent?: (event: P2PObservabilityEvent) => void
   onHandshakeComplete?: (result: MobileWebRtcDataChannelHandshakeResult) => void
+  onUpdateMessage?: (message: P2PUpdateProtocolMessage) => void
 }
 
 function createDiagnostics(
@@ -45,9 +51,9 @@ export function createMobileHandshakeDataChannel(
 }
 
 /**
- * Wires a minimal ping/pong round trip used to prove the RN data channel is
- * open end-to-end. Payload is fixed to { type, ts }; no document content or
- * CRDT updates are sent in TASK-023.
+ * Wires the ping/pong proof plus TASK-024/TASK-027 Yjs update protocol
+ * messages. Payloads are JSON envelopes only; document content is never sent
+ * through signaling metadata or observability.
  */
 export function wireMobileHandshakeDataChannel(
   dataChannel: RTCDataChannel,
@@ -67,7 +73,11 @@ export function wireMobileHandshakeDataChannel(
 
   eventTarget.addEventListener?.('message', (event) => {
     const parsed = parseHandshakePayload(event.data)
-    if (!parsed) return
+    if (!parsed) {
+      const updateMessage = parseDataChannelUpdateMessage(event.data)
+      if (updateMessage) options.onUpdateMessage?.(updateMessage)
+      return
+    }
 
     if (parsed.type === 'ping') {
       dataChannel.send(JSON.stringify({ type: 'pong', ts: parsed.ts }))
@@ -76,6 +86,27 @@ export function wireMobileHandshakeDataChannel(
 
     options.onHandshakeComplete?.({ rttMs: Date.now() - parsed.ts })
   })
+}
+
+export function sendP2PUpdateOverMobileDataChannel(input: {
+  dataChannel: RTCDataChannel
+  documentId: string
+  update: Uint8Array
+}): boolean {
+  if (dataChannelReadyState(input.dataChannel) !== 'open') return false
+
+  try {
+    const messages = createP2PUpdateMessages({
+      documentId: input.documentId,
+      update: input.update,
+    })
+    for (const message of messages) {
+      input.dataChannel.send(JSON.stringify(message))
+    }
+    return true
+  } catch {
+    return false
+  }
 }
 
 export function createMobileWebRtcProvider(
@@ -143,6 +174,19 @@ function parseHandshakePayload(raw: unknown): { type: 'ping' | 'pong'; ts: numbe
     return null
   }
   return null
+}
+
+function parseDataChannelUpdateMessage(raw: unknown): P2PUpdateProtocolMessage | null {
+  if (typeof raw !== 'string') return null
+  try {
+    return parseP2PUpdateProtocolMessage(JSON.parse(raw) as unknown)
+  } catch {
+    return null
+  }
+}
+
+function dataChannelReadyState(dataChannel: RTCDataChannel): string | null {
+  return (dataChannel as unknown as { readyState?: string }).readyState ?? null
 }
 
 function getDiagnosticsPlatform(): P2PObservabilityEvent['platform'] {
