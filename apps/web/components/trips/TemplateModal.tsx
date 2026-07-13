@@ -6,17 +6,19 @@ import { X, Copy, Loader2 } from 'lucide-react'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/lib/supabase/client'
-import { applyTemplateToChecklist, getTemplatesWithPreview } from '@nexvoy/core'
+import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
 
 interface TemplateModalProps {
     isOpen: boolean
     onClose: () => void
     checklistId: string
+    tripId: string
+    currentUserRole: 'owner' | 'editor' | 'viewer' | null
     currentUser: any
     onSuccess: (newItems: any[]) => void
 }
 
-export default function TemplateModal({ isOpen, onClose, checklistId, currentUser, onSuccess }: TemplateModalProps) {
+export default function TemplateModal({ isOpen, onClose, checklistId, tripId, currentUserRole, currentUser, onSuccess }: TemplateModalProps) {
     const supabase = createClient()
     const [templates, setTemplates] = useState<any[]>([])
     const [loading, setLoading] = useState(false)
@@ -31,7 +33,17 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
             setLoading(true)
 
             if (currentUser?.id) {
-                setTemplates(await getTemplatesWithPreview(supabase, currentUser.id))
+                const repositories = await createWebDocumentPrimaryRepositories(supabase)
+                const summaries = await repositories.templates.listTemplates(currentUser.id)
+                setTemplates(summaries.map((template) => ({
+                    id: template.id,
+                    title: template.title,
+                    access: template.ownerId === currentUser.id
+                        ? 'owner'
+                        : template.visibility === 'public'
+                            ? 'default'
+                            : 'viewer',
+                })))
             }
             setLoading(false)
         }
@@ -44,7 +56,32 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
         setLoadingTemplateId(templateId)
 
         try {
-            const insertedItems = await applyTemplateToChecklist(supabase, checklistId, templateId, currentUser?.id)
+            const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: currentUserRole })
+            const template = await repositories.templates.getTemplate(templateId)
+            if (!template) throw new Error('Template document was not found.')
+            const result = await repositories.checklists.applyTemplate(
+                tripId,
+                checklistId,
+                templateId,
+                template.items.map(() => createLocalChecklistItemId()),
+            )
+            const insertedItems = result.changedEntities
+                .filter((entity) => entity.entityType === 'checklistItem')
+                .map((entity) => result.document.checklistItems[entity.entityId])
+                .filter(Boolean)
+                .map((item) => ({
+                    id: item.id,
+                    checklist_id: item.checklistId,
+                    item_name: item.name,
+                    category: item.categoryName,
+                    is_checked: item.legacyIsChecked,
+                    is_private: item.isPrivate,
+                    assignment_type: item.assignmentType,
+                    assigned_user_id: item.assignedUserId,
+                    source_template_name: item.sourceTemplateName,
+                    created_at: item.createdAt,
+                    updated_at: item.updatedAt,
+                }))
             if (insertedItems.length === 0) {
                 alert('완전해요! 해당 템플릿의 모든 항목이 이미 체크리스트에 들어있어요.')
                 return
@@ -142,4 +179,9 @@ export default function TemplateModal({ isOpen, onClose, checklistId, currentUse
             </div>
         </div>
     )
+}
+
+function createLocalChecklistItemId(): string {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+    return `checklist-item-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }

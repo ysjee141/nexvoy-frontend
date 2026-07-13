@@ -265,6 +265,10 @@
 - Web 템플릿 적용 전환
 - Web 동행자 UI read/write 정리
 
+상태:
+
+- 완료. PR #321에서 Web의 일정/준비물/템플릿/동행자 경로를 document-primary repository로 전환했다.
+
 ### TASK-032: Mobile Full Document-primary 전환
 
 범위:
@@ -274,6 +278,11 @@
 - Mobile 템플릿 적용 전환
 - Mobile collaborator/key provisioning UX 정리
 - Mobile P2P 화면 생명주기 연결
+
+상태:
+
+- 완료. Issue #322에서 Mobile AsyncStorage 기반 Trip/Template document store, Mobile repository factory, trip detail/template 화면 document-primary 전환, Mobile P2P screen lifecycle/status 연결을 구현했다.
+- 검증: `pnpm --filter nexvoy-app typecheck`, `pnpm --filter nexvoy-app lint`, `pnpm build:mobile` 통과.
 
 ### TASK-033: Backup Sync Productization
 

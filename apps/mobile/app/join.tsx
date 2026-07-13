@@ -101,7 +101,6 @@ export default function JoinScreen() {
     } else {
       setMessage('초대 코드를 입력해 주세요.')
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, code])
 
   const handleCodeSubmit = () => {
