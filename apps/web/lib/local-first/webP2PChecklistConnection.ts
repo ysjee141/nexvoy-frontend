@@ -53,17 +53,22 @@ export function useWebP2PChecklistConnection(
       if (!closed) setStatus('fallback')
     }, CONNECTION_TIMEOUT_MS)
 
+    const setConnected = () => {
+      if (closed) return
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+        timeoutId = null
+      }
+      setStatus('connected')
+    }
+
     void connectWebP2PPeer({
       documentId: plan.documentId,
       userId: plan.currentUserId,
       membership: plan.membership,
       isInitiator: plan.isInitiator,
-      onHandshakeComplete: () => {
-        if (!closed) setStatus('connected')
-      },
-      onUpdateApplied: () => {
-        if (!closed) setStatus('connected')
-      },
+      onHandshakeComplete: setConnected,
+      onUpdateApplied: setConnected,
     }).then((nextConnection) => {
       if (closed) {
         void nextConnection.close()
@@ -74,7 +79,7 @@ export function useWebP2PChecklistConnection(
       peerConnection.addEventListener('connectionstatechange', () => {
         if (closed) return
         if (peerConnection.connectionState === 'connected') {
-          setStatus('connected')
+          setConnected()
         }
         if (
           peerConnection.connectionState === 'failed'
