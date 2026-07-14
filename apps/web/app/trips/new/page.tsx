@@ -8,6 +8,7 @@ import { css } from 'styled-system/css'
 import { Plus, ArrowLeft, ChevronLeft, Minus } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { CacheUtil } from '@/lib/cache'
+import { createWebTripDocument } from '@/lib/local-first/documentPrimaryRepositories'
 
 const libraries: ("places")[] = ["places"]
 
@@ -76,26 +77,22 @@ export default function NewTripPage() {
             return
         }
 
-        const { data: trip, error } = await supabase
-            .from('trips')
-            .insert({
-                user_id: user.id,
+        try {
+            const tripId = await createWebTripDocument({
+                supabase,
                 destination,
-                start_date: startDate,
-                end_date: endDate,
-                adults_count: adults,
-                children_count: childrenCount,
+                startDate,
+                endDate,
+                adultsCount: adults,
+                childrenCount,
             })
-            .select()
-            .single()
 
-        setLoading(false)
-
-        if (error) {
-            setErrorMsg(error.message)
-        } else if (trip) {
             analytics.logTripCreate(destination)
-            router.push(`/trips/detail?id=${trip.id}`)
+            router.push(`/trips/detail?id=${tripId}`)
+        } catch (error) {
+            setErrorMsg(error instanceof Error ? error.message : '여행 생성에 실패했습니다.')
+        } finally {
+            setLoading(false)
         }
     }
 

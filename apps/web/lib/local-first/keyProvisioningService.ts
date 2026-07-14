@@ -17,6 +17,7 @@ import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepo
 import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import { TRIP_DOCUMENT_SCHEMA_VERSION, type TripDocumentV1 } from '@nexvoy/core/local-first/documentModel'
 import { createYjsTripDocument, encodeTripDocumentUpdate } from '@nexvoy/core/local-first/yjsTripDocument'
+import type { BackupDocumentType } from '@nexvoy/core/sync/backupTypes'
 import { analytics } from '@/services/AnalyticsService'
 import { deleteWebDeviceKeyMaterial, loadWebDeviceKeyMaterial, saveWebDeviceKeyMaterial } from './indexedDbStore'
 import {
@@ -52,6 +53,15 @@ export interface EnsureWebOwnerDocumentKeyInput {
   supabase: SupabaseClient
   document: TripDocumentV1
   ownerId: string
+}
+
+export interface EnsureWebOwnerDocumentKeyForSnapshotInput {
+  supabase: SupabaseClient
+  documentId: string
+  ownerId: string
+  documentType: BackupDocumentType
+  schemaVersion: number
+  snapshotPayload: Uint8Array
 }
 
 export interface EnsureWebDocumentKeyReadinessInput {
@@ -156,45 +166,58 @@ export async function bootstrapWebDeviceDocumentKey(
 export async function ensureWebOwnerDocumentKey(
   input: EnsureWebOwnerDocumentKeyInput,
 ): Promise<void> {
+  const snapshotPayload = encodeTripDocumentUpdate(createYjsTripDocument(input.document))
+  return ensureWebOwnerDocumentKeyForSnapshot({
+    supabase: input.supabase,
+    documentId: input.document.trip.id,
+    ownerId: input.ownerId,
+    documentType: 'trip',
+    schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
+    snapshotPayload,
+  })
+}
+
+export async function ensureWebOwnerDocumentKeyForSnapshot(
+  input: EnsureWebOwnerDocumentKeyForSnapshotInput,
+): Promise<void> {
   const repository = createSupabaseBackupRepository(input.supabase)
   const { deviceId } = await ensureWebDeviceKeyMaterial(input.supabase)
   const activeKey = await repository.getMyActiveDocumentKey({
-    documentId: input.document.trip.id,
+    documentId: input.documentId,
     deviceId,
     keyVersion: KEY_MATERIAL_VERSION,
   })
   if (activeKey?.wrappingAlg === 'RSA-OAEP-256') return
 
-  const hasRemoteBackupPayload = await documentHasRemoteBackupPayload(input.supabase, input.document.trip.id)
-  if (hasRemoteBackupPayload && await documentHasAnyActiveKey(input.supabase, input.document.trip.id)) {
+  const hasRemoteBackupPayload = await documentHasRemoteBackupPayload(input.supabase, input.documentId)
+  if (hasRemoteBackupPayload && await documentHasAnyActiveKey(input.supabase, input.documentId)) {
     throw new Error('owner_device_key_unavailable')
   }
 
   const provider = getWebBackupCryptoProvider()
-  const snapshotPayload = encodeTripDocumentUpdate(createYjsTripDocument(input.document))
   const documentKey = await generateDocumentEncryptionKey(provider)
   const encryptedPayload = await encryptBackupPayload(provider, {
-    plaintext: snapshotPayload,
+    plaintext: input.snapshotPayload,
     key: documentKey,
     keyVersion: KEY_MATERIAL_VERSION,
   })
 
   await repository.upsertSnapshot({
-    documentId: input.document.trip.id,
+    documentId: input.documentId,
     ownerId: input.ownerId,
-    type: 'trip',
-    schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
+    type: input.documentType,
+    schemaVersion: input.schemaVersion,
     snapshot: serializeEncryptedBackupPayload(encryptedPayload),
-    snapshotHash: await sha256Hex(snapshotPayload),
+    snapshotHash: await sha256Hex(input.snapshotPayload),
     encrypted: true,
   })
   await repository.upsertOwnerMember({
-    documentId: input.document.trip.id,
+    documentId: input.documentId,
     userId: input.ownerId,
   })
   await bootstrapWebDeviceDocumentKey({
     supabase: input.supabase,
-    documentId: input.document.trip.id,
+    documentId: input.documentId,
     documentKey,
   })
 }

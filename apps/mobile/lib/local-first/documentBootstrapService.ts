@@ -9,6 +9,7 @@ import { serializeEncryptedBackupPayload } from '@nexvoy/core/sync/backupPayload
 import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import { TRIP_DOCUMENT_SCHEMA_VERSION } from '@nexvoy/core/local-first/documentModel'
 import { createEmptyTripDocumentV1 } from '@nexvoy/core/local-first/tripDocument'
+import type { BackupDocumentType } from '@nexvoy/core/sync/backupTypes'
 import { bootstrapMobileDeviceDocumentKey } from './keyProvisioningService'
 import {
   createMobileYjsTripDocument,
@@ -18,6 +19,14 @@ import {
 
 // Document key version must match the value in keyProvisioningService.ts
 const DOCUMENT_KEY_VERSION = 1
+
+export interface EnsureMobileOwnerDocumentKeyForSnapshotInput {
+  supabase: SupabaseClient
+  documentId: string
+  documentType: BackupDocumentType
+  schemaVersion: number
+  snapshotPayload: Uint8Array
+}
 
 export function getMobileBackupCryptoProvider(): BackupCryptoProvider {
   return {
@@ -106,7 +115,54 @@ export async function ensureMobileOwnerDocumentKey({
     // fall through to (re)bootstrap from scratch.
   }
 
-  await bootstrapOwnerDocument({ supabase, backupRepository, documentId, userId: user.id })
+  await bootstrapOwnerDocument({
+    supabase,
+    backupRepository,
+    documentId,
+    userId: user.id,
+    documentType: 'trip',
+    schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
+    snapshotPayload: createInitialMobileSnapshotPayload(documentId, user.id),
+  })
+}
+
+export async function ensureMobileOwnerDocumentKeyForSnapshot({
+  supabase,
+  documentId,
+  documentType,
+  schemaVersion,
+  snapshotPayload,
+}: EnsureMobileOwnerDocumentKeyForSnapshotInput): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('인증 정보가 없습니다.')
+
+  const backupRepository = createSupabaseBackupRepository(supabase)
+  const activeKey = await backupRepository.getMyActiveDocumentKey({
+    documentId,
+    keyVersion: DOCUMENT_KEY_VERSION,
+  })
+  if (activeKey?.wrappingAlg === 'RSA-OAEP-256') return
+
+  const hasSnapshot = await backupRepository.hasSnapshot(documentId)
+  if (hasSnapshot) {
+    const isOwner = await isCurrentUserDocumentOwner(supabase, documentId)
+    const anyKeyExists = isOwner && (await documentHasAnyKey(supabase, documentId))
+    if (!isOwner || anyKeyExists) {
+      throw new Error('owner_device_key_unavailable')
+    }
+  }
+
+  await bootstrapOwnerDocument({
+    supabase,
+    backupRepository,
+    documentId,
+    userId: user.id,
+    documentType,
+    schemaVersion,
+    snapshotPayload,
+  })
 }
 
 async function isCurrentUserDocumentOwner(
@@ -143,14 +199,19 @@ async function bootstrapOwnerDocument({
   backupRepository,
   documentId,
   userId,
+  documentType,
+  schemaVersion,
+  snapshotPayload,
 }: {
   supabase: SupabaseClient
   backupRepository: ReturnType<typeof createSupabaseBackupRepository>
   documentId: string
   userId: string
+  documentType: BackupDocumentType
+  schemaVersion: number
+  snapshotPayload: Uint8Array
 }): Promise<void> {
   const cryptoProvider = getMobileBackupCryptoProvider()
-  const snapshotPayload = createInitialMobileSnapshotPayload(documentId, userId)
 
   const dek = await generateDocumentEncryptionKey(cryptoProvider)
   const encryptedPayload = await encryptBackupPayload(cryptoProvider, {
@@ -169,14 +230,16 @@ async function bootstrapOwnerDocument({
   await backupRepository.upsertSnapshot({
     documentId,
     ownerId: userId,
-    type: 'trip',
-    schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
+    type: documentType,
+    schemaVersion,
     snapshot: encryptedSnapshot,
     snapshotHash,
     encrypted: true,
   })
   await backupRepository.upsertOwnerMember({ documentId, userId })
-  await saveMobileTripDocumentUpdate({ documentId }, snapshotPayload)
+  if (documentType === 'trip') {
+    await saveMobileTripDocumentUpdate({ documentId }, snapshotPayload)
+  }
 
   // Store the DEK wrapped with this device's non-exportable RSA public key.
   await bootstrapMobileDeviceDocumentKey({ supabase, documentId, documentKey: dek })

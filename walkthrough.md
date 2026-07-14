@@ -1,3 +1,54 @@
+# Walkthrough: TASK-039 New Document Bootstrap
+
+## Summary
+
+TASK-039는 신규 여행과 신규 템플릿 생성 경로를 document-primary bootstrap으로 전환했다. 생성 화면은 더 이상
+legacy row insert를 primary write로 사용하지 않고, local document 저장과 encrypted initial snapshot,
+owner `document_members`, current device `document_keys` bootstrap을 생성 완료 조건으로 사용한다.
+
+현재 상세/목록 화면 중 일부가 아직 `trips` row read model에 의존하므로, 신규 여행 생성 시에는 같은 id로
+최소 `trips` row를 비권위 read model로 upsert한다. 이 row는 TASK-040 product path cutover에서 제거할
+호환 계층이며, 실제 생성 기준은 document snapshot/key다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-039-new-document-bootstrap.md`
+- GitHub Issue [#337](https://github.com/ysjee141/nexvoy-frontend/issues/337)
+- 브랜치: `feature/task-039-new-document-bootstrap`
+- `apps/web/app/trips/new/page.tsx`
+- `apps/mobile/app/trip/new.tsx`
+- `apps/web/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/mobile/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/web/lib/local-first/keyProvisioningService.ts`
+- `apps/mobile/lib/local-first/documentBootstrapService.ts`
+
+## Key Changes
+
+- Web 신규 여행 생성이 `createWebTripDocument()`를 통해 `TripDocumentV1` local document를 만들고,
+  같은 Yjs initial update를 encrypted snapshot으로 bootstrap한다.
+- Mobile 신규 여행 생성이 `createMobileTripDocument()`를 통해 동일한 document-primary contract를 사용한다.
+- Web/Mobile 템플릿 생성 helper가 local 저장만 하던 상태에서 encrypted snapshot, owner member, current device key
+  bootstrap까지 수행하도록 보강했다.
+- Web owner key bootstrap을 trip 전용 document 입력에서 generic snapshot payload 입력도 받을 수 있게 확장했다.
+- Mobile owner key bootstrap도 실제 snapshot payload를 받아 trip/template initial snapshot을 같은 경로로 암호화한다.
+- 기존 화면 호환을 위해 신규 trip에 한해 `trips` row를 비권위 read model로 upsert한다.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm -C packages/core typecheck` | PASS |
+| `pnpm -C apps/mobile typecheck` | PASS |
+| `pnpm -C apps/web exec tsc --noEmit` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS, 기존 `react-native-webrtc`/`event-target-shim` export warning만 발생 |
+
+## Follow-up
+
+- TASK-040에서 여행/일정/준비물/템플릿 제품 경로의 legacy hydrate/fallback과 `trips` row read model 의존을 제거한다.
+- TASK-041에서 신규 document backup freshness와 비용 최소화 trigger 정책을 정리한다.
+
 # Walkthrough: TASK-037 Web Document-Primary Key Bootstrap and Photo Storage
 
 ## Summary

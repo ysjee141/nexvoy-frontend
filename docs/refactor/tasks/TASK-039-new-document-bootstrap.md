@@ -1,5 +1,8 @@
 # TASK-039: New Document Bootstrap
 
+- 상태: 완료
+- GitHub Issue: #337
+
 ## 목적
 
 신규 여행과 템플릿을 처음부터 document-primary 기준으로 생성한다. 생성 시점에 local document, encrypted initial
@@ -36,11 +39,11 @@ snapshot, owner membership, current device document key를 함께 준비해 `key
 
 ## 구현 단계
 
-1. 신규 `TripDocumentV1` 생성 helper를 owner/device bootstrap과 묶는다.
-2. Web 신규 여행 생성이 legacy `trips` write를 primary로 사용하지 않도록 전환한다.
-3. Mobile 신규 여행 생성도 같은 bootstrap contract를 사용한다.
-4. 신규 `TemplateDocumentV1` 생성 경로를 동일한 기준으로 전환한다.
-5. 생성 직후 local read, backup restore, 다른 기기 restore smoke를 검증한다.
+1. 신규 `TripDocumentV1` 생성 helper를 owner/device bootstrap과 묶는다. ✅
+2. Web 신규 여행 생성이 legacy `trips` write를 primary로 사용하지 않도록 전환한다. ✅
+3. Mobile 신규 여행 생성도 같은 bootstrap contract를 사용한다. ✅
+4. 신규 `TemplateDocumentV1` 생성 경로를 동일한 기준으로 전환한다. ✅
+5. 생성 직후 local read, backup restore, 다른 기기 restore smoke를 검증한다. ✅
 
 ## 데이터 호환성 고려사항
 

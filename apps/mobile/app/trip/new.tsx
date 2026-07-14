@@ -8,7 +8,7 @@
  * toDateString() 으로 YYYY-MM-DD 문자열을 만든다. `toISOString()` 은 UTC 변환으로
  * TZ 왜곡 위험이 있어 금지 — 로컬 연/월/일을 직접 조합한다.
  *
- * createTrip 호출로 여행을 생성하고 상세 화면으로 이동한다. 화면은 폼 UI/검증/상태만 담당.
+ * document-primary bootstrap으로 여행을 생성하고 상세 화면으로 이동한다. 화면은 폼 UI/검증/상태만 담당.
  */
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -27,9 +27,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { createTrip } from '@nexvoy/core'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { createMobileTripDocument } from '@/lib/local-first/documentPrimaryRepositories'
 import { colors, fontSizes, fontWeights, radii, shadows, spacing } from '@/theme'
 
 const DESTINATION_MAX = 50
@@ -140,15 +140,15 @@ export default function NewTripScreen() {
     setLoading(true)
     setError(null)
     try {
-      const trip = await createTrip(supabase, {
-        user_id: session.user.id,
+      const tripId = await createMobileTripDocument({
+        supabase,
         destination: destination.trim(),
-        start_date: toDateString(startDate),
-        end_date: toDateString(endDate),
-        adults_count: adultsCount,
-        children_count: childrenCount,
+        startDate: toDateString(startDate),
+        endDate: toDateString(endDate),
+        adultsCount,
+        childrenCount,
       })
-      router.replace({ pathname: '/trip/[id]', params: { id: trip.id } })
+      router.replace({ pathname: '/trip/[id]', params: { id: tripId } })
     } catch (e) {
       if (isMounted.current) {
         setError(
