@@ -43,6 +43,7 @@ export async function flushWebBackupQueue(input: {
   const clientId = getOrCreateWebDeviceId()
   const queue = await loadWebQueue(input.documentId, clientId)
   if (queue.pending.length === 0) return
+  if (!(await hasActiveSession(input.supabase))) return
 
   const documentKey = await getCurrentWebDocumentKey({
     supabase: input.supabase,
@@ -79,6 +80,15 @@ export async function flushWebBackupQueue(input: {
     const failed = markBackupUploadFailed(uploading, reason)
     await saveWebQueue(failed)
     emitBackupFailure(reason, failed.pending.length)
+  }
+}
+
+async function hasActiveSession(supabase: SupabaseClient): Promise<boolean> {
+  try {
+    const { data } = await supabase.auth.getSession()
+    return Boolean(data.session?.access_token)
+  } catch {
+    return false
   }
 }
 

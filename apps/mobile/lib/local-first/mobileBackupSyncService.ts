@@ -47,6 +47,7 @@ export async function flushMobileBackupQueue(input: {
   const clientId = await getOrCreateMobileDeviceId()
   const queue = await loadMobileQueue(input.documentId, clientId)
   if (queue.pending.length === 0) return
+  if (!(await hasActiveSession(input.supabase))) return
 
   const documentKey = await getCurrentMobileDocumentKey({
     supabase: input.supabase,
@@ -83,6 +84,15 @@ export async function flushMobileBackupQueue(input: {
     const failed = markBackupUploadFailed(uploading, reason)
     await saveMobileQueue(failed)
     await emitBackupFailure(reason, failed.pending.length)
+  }
+}
+
+async function hasActiveSession(supabase: SupabaseClient): Promise<boolean> {
+  try {
+    const { data } = await supabase.auth.getSession()
+    return Boolean(data.session?.access_token)
+  } catch {
+    return false
   }
 }
 

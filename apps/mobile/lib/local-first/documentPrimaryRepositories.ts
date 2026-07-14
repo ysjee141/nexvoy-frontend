@@ -4,10 +4,12 @@ import {
   createDocumentPrimaryRepositoryBundle,
   createEmptyTemplateDocumentV1,
   getLegacyTripRowBundle,
+  shouldBootstrapDocumentRegistry,
   type DocumentMutationResult,
   type TemplateDocumentV1,
   type TripDocumentV1,
 } from '@nexvoy/core'
+import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import type { EntityId } from '@nexvoy/core/local-first/documentModel'
 import type { DocumentPrimaryRepositoryBundle } from '@nexvoy/core/repositories/documentPrimaryRepository'
 import { publishLocalMobileTripDocumentUpdate } from './p2pUpdateBridge'
@@ -24,7 +26,8 @@ export async function createMobileDocumentPrimaryRepositories(
   } = {},
 ): Promise<DocumentPrimaryRepositoryBundle> {
   const { data } = await supabase.auth.getUser()
-  const userId = data.user?.id ?? 'anonymous-mobile-user'
+  const authUserId = data.user?.id ?? null
+  const userId = authUserId ?? 'anonymous-mobile-user'
   const actor = {
     userId,
     role: options.actorRole ?? 'viewer',
@@ -55,17 +58,49 @@ export async function createMobileDocumentPrimaryRepositories(
               update: result.update,
             })
             if (actor.role === 'owner' || actor.role === 'editor') {
-              void enqueueMobileBackupUpdate({
-                supabase,
-                documentId: result.documentId,
-                update: result.update,
-              }).catch(() => undefined)
+              void (async () => {
+                await ensureMobileDocumentRegistryBootstrapped(supabase, authUserId, result.document as TripDocumentV1)
+                await enqueueMobileBackupUpdate({
+                  supabase,
+                  documentId: result.documentId,
+                  update: result.update,
+                })
+              })().catch(() => undefined)
             }
           }
         },
       },
     },
   })
+}
+
+const mobileDocumentRegistryBootstrapAttempted = new Set<string>()
+
+async function ensureMobileDocumentRegistryBootstrapped(
+  supabase: SupabaseClient,
+  authUserId: string | null,
+  document: TripDocumentV1,
+): Promise<void> {
+  if (!authUserId) return
+  if (!shouldBootstrapDocumentRegistry({
+    authUserId,
+    tripOwnerId: document.trip.ownerId,
+  })) {
+    return
+  }
+
+  const key = `${authUserId}:${document.trip.id}`
+  if (mobileDocumentRegistryBootstrapAttempted.has(key)) return
+  mobileDocumentRegistryBootstrapAttempted.add(key)
+
+  try {
+    await createSupabaseBackupRepository(supabase).ensureDocumentBootstrapped({
+      documentId: document.trip.id,
+      ownerId: authUserId,
+    })
+  } catch {
+    mobileDocumentRegistryBootstrapAttempted.delete(key)
+  }
 }
 
 export async function createMobileTemplateDocument(input: {
