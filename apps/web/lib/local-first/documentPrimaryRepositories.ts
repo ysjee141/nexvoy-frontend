@@ -4,10 +4,12 @@ import {
   createDocumentPrimaryRepositoryBundle,
   createEmptyTemplateDocumentV1,
   getLegacyTripRowBundle,
+  shouldBootstrapDocumentRegistry,
   type DocumentMutationResult,
   type TemplateDocumentV1,
   type TripDocumentV1,
 } from '@nexvoy/core'
+import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import type { EntityId } from '@nexvoy/core/local-first/documentModel'
 import type { DocumentPrimaryRepositoryBundle } from '@nexvoy/core/repositories/documentPrimaryRepository'
 import { publishLocalTripDocumentUpdate } from './p2pUpdateBridge'
@@ -55,17 +57,49 @@ export async function createWebDocumentPrimaryRepositories(
               update: result.update,
             })
             if (actor.role === 'owner' || actor.role === 'editor') {
-              void enqueueWebBackupUpdate({
-                supabase,
-                documentId: result.documentId,
-                update: result.update,
-              }).catch(() => undefined)
+              void (async () => {
+                await ensureWebDocumentRegistryBootstrapped(supabase, ownerContext, result.document as TripDocumentV1)
+                await enqueueWebBackupUpdate({
+                  supabase,
+                  documentId: result.documentId,
+                  update: result.update,
+                })
+              })().catch(() => undefined)
             }
           }
         },
       },
     },
   })
+}
+
+const webDocumentRegistryBootstrapAttempted = new Set<string>()
+
+async function ensureWebDocumentRegistryBootstrapped(
+  supabase: SupabaseClient,
+  ownerContext: Awaited<ReturnType<typeof resolveWebOwnerContext>>,
+  document: TripDocumentV1,
+): Promise<void> {
+  if (!ownerContext.authUserId) return
+  if (!shouldBootstrapDocumentRegistry({
+    authUserId: ownerContext.authUserId,
+    tripOwnerId: document.trip.ownerId,
+  })) {
+    return
+  }
+
+  const key = `${ownerContext.authUserId}:${document.trip.id}`
+  if (webDocumentRegistryBootstrapAttempted.has(key)) return
+  webDocumentRegistryBootstrapAttempted.add(key)
+
+  try {
+    await createSupabaseBackupRepository(supabase).ensureDocumentBootstrapped({
+      documentId: document.trip.id,
+      ownerId: ownerContext.authUserId,
+    })
+  } catch {
+    webDocumentRegistryBootstrapAttempted.delete(key)
+  }
 }
 
 export async function createWebTemplateDocument(input: {
