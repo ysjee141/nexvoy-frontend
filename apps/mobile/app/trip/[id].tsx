@@ -53,6 +53,11 @@ import {
   getCurrencyFromTimezone,
 } from '@nexvoy/core'
 import {
+  canAttemptP2PReconnect,
+  getP2PReconnectDelayMs,
+  normalizeP2PReconnectPolicy,
+} from '@nexvoy/core/sync/p2pLifecycle'
+import {
   createInvitationRepository,
   type CreatedDocumentInvitation,
   type DocumentInvitationRole,
@@ -96,6 +101,7 @@ import {
 import { flushMobileBackupQueue } from '@/lib/local-first/mobileBackupSyncService'
 import { runMobileForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
 import type { MobileRestoreOutcome } from '@/lib/local-first/mobileSnapshotRestoreService'
+import { logLocalFirstEvent } from '@/lib/observability'
 import {
   cancelDocumentAlarms,
   cancelPlanAlarm,
@@ -117,6 +123,14 @@ type TimeDisplayMode = 'local' | 'kst' | 'both'
 type ShareType = DocumentShareType
 type PlanLocalAlarmUiStatus = LocalNotificationScheduleStatus | 'unknown'
 type MobileP2PStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'unavailable'
+
+const MOBILE_P2P_CONNECTION_TIMEOUT_MS = 15_000
+const MOBILE_P2P_RECONNECT_POLICY = normalizeP2PReconnectPolicy({
+  maxAttempts: 3,
+  initialDelayMs: 1_000,
+  maxDelayMs: 8_000,
+  multiplier: 2,
+})
 
 type GeneratedInvite = Pick<CreatedDocumentInvitation, 'id' | 'role' | 'inviteCode' | 'expiresAt'> & {
   inviteUrl: string
@@ -699,6 +713,29 @@ function getMobileP2PStatusLabel(status: MobileP2PStatus): string {
   return '로컬 저장'
 }
 
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms)
+  })
+}
+
+function attachMobileP2PConnectionStateListener(
+  connection: MobileP2PConnection,
+  onDisconnected: (reason: string) => void,
+): void {
+  const peerConnection = connection.peerConnection as unknown as {
+    addEventListener?: (eventName: 'connectionstatechange', listener: () => void) => void
+    connectionState?: string
+  }
+
+  peerConnection.addEventListener?.('connectionstatechange', () => {
+    const state = peerConnection.connectionState
+    if (state === 'failed' || state === 'disconnected' || state === 'closed') {
+      onDisconnected(state)
+    }
+  })
+}
+
 async function syncPlanUrls(
   repositories: Awaited<ReturnType<typeof createMobileDocumentPrimaryRepositories>>,
   tripId: string,
@@ -735,6 +772,7 @@ export default function TripDetailScreen() {
   const keyProvisioningInFlight = useRef(false)
   const mobileRestoreStatusRef = useRef<RestoreStatusDisplay | null>(null)
   const p2pConnectionRef = useRef<MobileP2PConnection | null>(null)
+  const p2pConnectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrollRef = useRef<ScrollView>(null)
   const detailTopHeightRef = useRef(0)
   const scrollOffsetRef = useRef(0)
@@ -943,35 +981,90 @@ export default function TripDetailScreen() {
     return () => subscription.remove()
   }, [canEditContent, id, runTripKeyProvisioning])
 
+  const clearP2PConnectionTimeout = useCallback(() => {
+    if (!p2pConnectionTimeoutRef.current) return
+    clearTimeout(p2pConnectionTimeoutRef.current)
+    p2pConnectionTimeoutRef.current = null
+  }, [])
+
   const reconnectP2P = useCallback(async (status: MobileP2PStatus = 'connecting') => {
     if (!id || !session?.user.id || !canEditContent) return
-    await p2pConnectionRef.current?.close().catch(() => undefined)
+    clearP2PConnectionTimeout()
+    const previousConnection = p2pConnectionRef.current
     p2pConnectionRef.current = null
+    await previousConnection?.close().catch(() => undefined)
     setP2PStatus(status)
-    try {
-      const connection = await connectMobileP2PPeer({
-        documentId: id,
-        userId: session.user.id,
-        membership: {
-          role: normalizeDocumentRole(userRole),
-          status: 'accepted',
-        },
-        isInitiator: userRole === 'owner',
-        onHandshakeComplete: () => {
-          if (isMounted.current) setP2PStatus('connected')
-        },
-        onUpdateApplied: () => {
-          if (isMounted.current) {
-            void loadTrip()
-            setChecklistLoaded(false)
-          }
-        },
-      })
-      p2pConnectionRef.current = connection
-    } catch {
-      if (isMounted.current) setP2PStatus('unavailable')
+
+    for (let attempt = 1; canAttemptP2PReconnect(attempt, MOBILE_P2P_RECONNECT_POLICY); attempt += 1) {
+      if (!isMounted.current) return
+      if (attempt > 1) {
+        const delayMs = getP2PReconnectDelayMs(attempt, MOBILE_P2P_RECONNECT_POLICY)
+        await logLocalFirstEvent('p2p_reconnect_scheduled', {
+          document_type: 'trip',
+          reason: 'connect_failed',
+          count: attempt,
+        })
+        setP2PStatus('reconnecting')
+        await delay(delayMs)
+        await logLocalFirstEvent('p2p_reconnect_attempted', {
+          document_type: 'trip',
+          count: attempt,
+        })
+      }
+
+      try {
+        let handshakeCompleted = false
+        const connection = await connectMobileP2PPeer({
+          documentId: id,
+          userId: session.user.id,
+          membership: {
+            role: normalizeDocumentRole(userRole),
+            status: 'accepted',
+          },
+          isInitiator: userRole === 'owner',
+          onHandshakeComplete: () => {
+            handshakeCompleted = true
+            clearP2PConnectionTimeout()
+            if (isMounted.current) setP2PStatus('connected')
+          },
+          onUpdateApplied: () => {
+            if (isMounted.current) {
+              void loadTrip()
+              setChecklistLoaded(false)
+            }
+          },
+        })
+        p2pConnectionRef.current = connection
+        attachMobileP2PConnectionStateListener(connection, (reason) => {
+          if (!isMounted.current) return
+          if (p2pConnectionRef.current !== connection) return
+          void logLocalFirstEvent('p2p_connection_failed', {
+            document_type: 'trip',
+            reason,
+          })
+          void reconnectP2P('reconnecting')
+        })
+        p2pConnectionTimeoutRef.current = setTimeout(() => {
+          if (handshakeCompleted || !isMounted.current) return
+          void logLocalFirstEvent('p2p_reconnect_scheduled', {
+            document_type: 'trip',
+            reason: 'timeout',
+          })
+          void reconnectP2P('reconnecting')
+        }, MOBILE_P2P_CONNECTION_TIMEOUT_MS)
+        return
+      } catch {
+        await p2pConnectionRef.current?.close().catch(() => undefined)
+        p2pConnectionRef.current = null
+      }
     }
-  }, [canEditContent, id, loadTrip, session?.user.id, userRole])
+
+    await logLocalFirstEvent('p2p_reconnect_exhausted', {
+      document_type: 'trip',
+      reason: 'connect_failed',
+    })
+    if (isMounted.current) setP2PStatus('unavailable')
+  }, [canEditContent, clearP2PConnectionTimeout, id, loadTrip, session?.user.id, userRole])
 
   useEffect(() => {
     if (!id || !session?.user.id || !canEditContent) {
@@ -982,8 +1075,10 @@ export default function TripDetailScreen() {
     void reconnectP2P('connecting')
     const unbindLifecycle = bindMobileP2PLifecycle({
       closeActiveConnection: async () => {
-        await p2pConnectionRef.current?.close().catch(() => undefined)
+        clearP2PConnectionTimeout()
+        const connection = p2pConnectionRef.current
         p2pConnectionRef.current = null
+        await connection?.close().catch(() => undefined)
         if (isMounted.current) setP2PStatus('idle')
       },
       reconnectActiveConnection: () => {
@@ -993,10 +1088,12 @@ export default function TripDetailScreen() {
 
     return () => {
       unbindLifecycle()
-      void p2pConnectionRef.current?.close().catch(() => undefined)
+      clearP2PConnectionTimeout()
+      const connection = p2pConnectionRef.current
       p2pConnectionRef.current = null
+      void connection?.close().catch(() => undefined)
     }
-  }, [canEditContent, id, reconnectP2P, session?.user.id])
+  }, [canEditContent, clearP2PConnectionTimeout, id, reconnectP2P, session?.user.id])
 
   useEffect(() => {
     setChecklist(null)

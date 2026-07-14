@@ -16,8 +16,7 @@ import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
 import { createWebRepositories } from '@/lib/local-first/repositoryFactory'
 import { subscribeToTripDocumentUpdates } from '@/lib/local-first/indexedDbStore'
-import P2PConnectionStatusBadge from '@/components/trips/P2PConnectionStatusBadge'
-import { useWebP2PChecklistConnection } from '@/lib/local-first/webP2PChecklistConnection'
+import P2PConnectionStatusBadge, { type P2PConnectionStatus } from '@/components/trips/P2PConnectionStatusBadge'
 
 const getMemberDisplayName = (p: any, isMe: boolean = false) => {
     if (!p) return isMe ? '나' : '동행자'
@@ -371,7 +370,17 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
     );
 }
 
-export default function ChecklistPage({ isActive = true, tripId: propsTripId, isOffline = false }: { isActive?: boolean; tripId?: string; isOffline?: boolean }) {
+export default function ChecklistPage({
+    isActive = true,
+    tripId: propsTripId,
+    isOffline = false,
+    p2pStatus = 'idle',
+}: {
+    isActive?: boolean
+    tripId?: string
+    isOffline?: boolean
+    p2pStatus?: P2PConnectionStatus
+}) {
     const searchParams = useSearchParams()
     const tripId = propsTripId || searchParams.get('id')
     const supabase = useMemo(() => createClient(), [])
@@ -410,14 +419,6 @@ export default function ChecklistPage({ isActive = true, tripId: propsTripId, is
     const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
 
     const [showTemplateModal, setShowTemplateModal] = useState(false)
-    const p2pStatus = useWebP2PChecklistConnection({
-        enabled: Boolean(isActive && !isOffline && isOnline && isLocalFirstChecklistMode),
-        documentId: tripId,
-        currentUserId: currentUser?.id ?? null,
-        ownerId: tripOwner?.id ?? null,
-        members,
-    })
-
     const handleAddItem = () => {
         setIsAdding(!isAdding)
     }

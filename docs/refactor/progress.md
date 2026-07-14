@@ -309,6 +309,13 @@
 - late join/peer discovery
 - status UX
 
+상태:
+
+- 완료. Issue #326에서 Web P2P connection을 Trip document-level lifecycle로 승격하고, Mobile reconnect/backoff/timeout/status 처리를 보강했다.
+- Web 일정 탭도 remote P2P update apply 후 IndexedDB broadcast를 통해 read model을 refresh한다.
+- 검증: `pnpm --filter @nexvoy/core test`, `pnpm typecheck`, `pnpm --filter nexvoy-web build`, `pnpm --filter nexvoy-app lint`, `pnpm build:mobile` 통과.
+- 후속 보강: Web/Mobile/Mobile 실기기 다중 피어 smoke와 late join E2E 자동화는 TASK-035에서 진행한다.
+
 ### TASK-035: Full Integration Test Suite
 
 범위:

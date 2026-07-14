@@ -12,7 +12,7 @@ export interface P2PConnectionStatusBadgeProps {
 const STATUS_COPY: Record<Exclude<P2PConnectionStatus, 'idle'>, string> = {
   connecting: '빠른 동기화 연결 중',
   connected: '빠른 동기화 중',
-  fallback: '기존 방식으로 동기화 중',
+  fallback: '백업 동기화 중',
 }
 
 export default function P2PConnectionStatusBadge({

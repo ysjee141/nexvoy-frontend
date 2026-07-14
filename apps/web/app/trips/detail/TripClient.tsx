@@ -22,6 +22,7 @@ import { Download, CloudDownload, CloudCheck, Loader2 } from 'lucide-react'
 import TripDetailSkeleton from './TripDetailSkeleton'
 import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
 import { flushWebBackupQueue } from '@/lib/local-first/backupSyncService'
+import { subscribeToTripDocumentUpdates } from '@/lib/local-first/indexedDbStore'
 import type { PlanTimelineItemReadModel } from '@nexvoy/core/local-first/materialize'
 import type { CreatePlanMutationInput } from '@nexvoy/core/local-first/documentMutationWriter'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
@@ -248,6 +249,14 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             fetchUserRole()
         }
     }, [isActive, fetchTrip, fetchPlans, fetchUserRole])
+
+    useEffect(() => {
+        if (!tripId || isOffline) return undefined
+        return subscribeToTripDocumentUpdates(tripId, () => {
+            void fetchTrip()
+            void fetchPlans()
+        })
+    }, [fetchPlans, fetchTrip, isOffline, tripId])
 
     useEffect(() => {
         if (!tripId || isOffline || !isOnline || (userRole !== 'owner' && userRole !== 'editor')) return
