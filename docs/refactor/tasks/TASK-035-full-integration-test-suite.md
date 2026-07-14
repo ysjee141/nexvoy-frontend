@@ -39,13 +39,23 @@
 
 ## 구현 단계
 
-1. owner/editor/viewer multi-user fixtures를 만든다.
-2. local Supabase reset/migration path를 고정한다.
-3. Web full product E2E를 작성한다.
-4. Web/Web P2P E2E를 작성한다.
-5. backup restore cross-device E2E를 작성한다.
-6. Mobile runtime smoke runbook 또는 자동화 가능한 범위를 작성한다.
-7. observability payload에 raw document/secret/key material이 없는지 검증한다.
+1. owner/editor/viewer multi-user fixtures를 만든다. ✅
+2. local Supabase reset/migration path를 고정한다. ✅
+3. Web full product E2E를 작성한다. ✅
+4. Web/Web P2P E2E를 작성한다. Runbook으로 고정
+5. backup restore cross-device E2E를 작성한다. Runbook으로 고정
+6. Mobile runtime smoke runbook 또는 자동화 가능한 범위를 작성한다. ✅
+7. observability payload에 raw document/secret/key material이 없는지 검증한다. ✅
+
+## 구현 결과
+
+| 항목 | 결과 |
+| --- | --- |
+| Web multi-user fixture | owner/editor/viewer 계정과 사용자별 authenticated context 생성 |
+| DB 안전장치 | 로컬 Supabase URL만 service role seed/cleanup 허용, 테스트 유저는 `*.onvoy.local`만 허용 |
+| Web 자동 E2E | document-primary 모드에서 권한 UI와 checklist local document reload 검증 |
+| Observability 자동 E2E | raw document id, trip id, email, secret, snapshot, key payload 거부 검증 |
+| Mobile/P2P/backup | `docs/qa/local-first-integration-runbook.md`에 실기기 smoke 절차 기록 |
 
 ## 데이터 호환성 고려사항
 

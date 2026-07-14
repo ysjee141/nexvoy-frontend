@@ -1,14 +1,21 @@
-import { test as base, type BrowserContext } from '@playwright/test';
+import { test as base, type Browser, type BrowserContext } from '@playwright/test';
 import { createBrowserClient } from '@supabase/ssr';
 import { createTestUser, type TestUser } from '../helpers/supabase';
 import { installGoogleMapsMock } from '../helpers/google-maps-mock';
 
 const TEST_USER_EMAIL = process.env.E2E_TEST_USER_EMAIL ?? 'e2e-test@onvoy.local';
 const TEST_USER_PASSWORD = process.env.E2E_TEST_USER_PASSWORD ?? 'E2eTestPassword1!';
+const MULTI_USER_PASSWORD = process.env.E2E_MULTI_USER_PASSWORD ?? 'E2eTestPassword1!';
 
 export type AuthFixtures = {
   authenticatedContext: BrowserContext;
   testUser: TestUser;
+  multiUsers: {
+    owner: TestUser;
+    editor: TestUser;
+    viewer: TestUser;
+  };
+  createAuthenticatedContextFor: (user: TestUser) => Promise<BrowserContext>;
 };
 
 /**
@@ -55,6 +62,16 @@ async function injectSession(context: BrowserContext, user: TestUser) {
   );
 }
 
+export async function createAuthenticatedContext(
+  browser: Browser,
+  user: TestUser,
+): Promise<BrowserContext> {
+  const context = await browser.newContext();
+  await injectSession(context, user);
+  await installGoogleMapsMock(context);
+  return context;
+}
+
 export const test = base.extend<AuthFixtures>({
   testUser: async ({}, use) => {
     const user = await createTestUser(TEST_USER_EMAIL, TEST_USER_PASSWORD);
@@ -65,13 +82,27 @@ export const test = base.extend<AuthFixtures>({
   },
 
   authenticatedContext: async ({ browser, testUser }, use) => {
-    const context = await browser.newContext();
-    await injectSession(context, testUser);
-    // Google Maps JS API를 결정적 스텁으로 대체 → 실제 외부 호출/쿼터/비결정성 제거.
-    // 컨텍스트 레벨에 설치해 이 컨텍스트의 모든 page에 일괄 적용한다.
-    await installGoogleMapsMock(context);
+    const context = await createAuthenticatedContext(browser, testUser);
     await use(context);
     await context.close();
+  },
+
+  multiUsers: async ({}, use) => {
+    const runId = process.env.TEST_WORKER_INDEX ?? '0';
+    const owner = await createTestUser(`e2e-owner-${runId}@onvoy.local`, MULTI_USER_PASSWORD);
+    const editor = await createTestUser(`e2e-editor-${runId}@onvoy.local`, MULTI_USER_PASSWORD);
+    const viewer = await createTestUser(`e2e-viewer-${runId}@onvoy.local`, MULTI_USER_PASSWORD);
+    await use({ owner, editor, viewer });
+  },
+
+  createAuthenticatedContextFor: async ({ browser }, use) => {
+    const contexts: BrowserContext[] = [];
+    await use(async (user) => {
+      const context = await createAuthenticatedContext(browser, user);
+      contexts.push(context);
+      return context;
+    });
+    await Promise.all(contexts.map((context) => context.close()));
   },
 });
 
