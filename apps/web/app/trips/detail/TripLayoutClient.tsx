@@ -15,6 +15,10 @@ import ChecklistClient from '../checklist/ChecklistClient'
 const RouteMapView = dynamic(() => import('@/components/trips/RouteMapView'), { ssr: false })
 import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/lib/cache'
+import { collaboration } from '@/lib/collaboration'
+import { useNetworkStore } from '@/stores/useNetworkStore'
+import P2PConnectionStatusBadge from '@/components/trips/P2PConnectionStatusBadge'
+import { useWebP2PDocumentConnection } from '@/lib/local-first/webP2PDocumentConnection'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -28,9 +32,19 @@ export default function TripLayoutClient() {
     const supabase = createClient()
 
     const [trip, setTrip] = useState<any>(null)
+    const [currentUser, setCurrentUser] = useState<any>(null)
+    const [members, setMembers] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'plans' | 'checklist' | 'map'>(initialTab)
     const { setMobileTitle } = useUIStore()
+    const { isOnline } = useNetworkStore()
+    const p2pStatus = useWebP2PDocumentConnection({
+        enabled: Boolean(id && currentUser?.id && trip?.user_id && isOnline),
+        documentId: id,
+        currentUserId: currentUser?.id ?? null,
+        ownerId: trip?.user_id ?? null,
+        members,
+    })
 
     useEffect(() => {
         const urlTab = searchParams.get('tab')
@@ -76,6 +90,7 @@ export default function TripLayoutClient() {
                     router.push('/login')
                     return
                 }
+                setCurrentUser(currentUser)
                 
                 // 3. 서버에서 최신 데이터 가져오기
                 const { data, error } = await supabase
@@ -90,6 +105,8 @@ export default function TripLayoutClient() {
                     router.replace('/404')
                 } else {
                     setTrip(data)
+                    const { data: memberRows } = await collaboration.getMembers(id)
+                    setMembers(memberRows ?? [])
                 }
             } catch (err) {
                 console.error('Failed to fetch trip:', err)
@@ -222,6 +239,14 @@ export default function TripLayoutClient() {
                         <MapPin size={18} strokeWidth={activeTab === 'map' ? 2.5 : 2} /> 지도
                     </button>
                 </div>
+                <div className={css({
+                    ml: 'auto',
+                    display: { base: 'none', sm: 'flex' },
+                    alignItems: 'center',
+                    pr: '4px',
+                })}>
+                    <P2PConnectionStatusBadge status={p2pStatus} />
+                </div>
             </div>
 
             {/* 하위 컨텐츠 전환 영역 (언마운트 하지 않고 display none으로 유지하여 상태 보존 및 즉각 전환) */}
@@ -230,7 +255,7 @@ export default function TripLayoutClient() {
                     <TripClient isActive={activeTab === 'plans'} />
                 </div>
                 <div style={{ display: activeTab === 'checklist' ? 'block' : 'none' }}>
-                    <ChecklistClient isActive={activeTab === 'checklist'} />
+                    <ChecklistClient isActive={activeTab === 'checklist'} p2pStatus={p2pStatus} />
                 </div>
                 <div style={{ display: activeTab === 'map' ? 'block' : 'none' }}>
                     <RouteMapView

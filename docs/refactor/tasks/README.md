@@ -95,7 +95,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-031-web-full-document-primary-transition.md` | 완료 | Web checklist/plans/templates/collaborators document-primary 전환, PR #321 |
 | `TASK-032-mobile-full-document-primary-transition.md` | 완료 | Mobile checklist/plans/templates/collaborators document-primary 전환, Issue #322 |
 | `TASK-033-backup-sync-productization.md` | 완료 | Web/Mobile document-primary mutation encrypted backup update queue/upload 제품화, Issue #324, PR #325 |
-| `TASK-034-p2p-all-domain-wiring.md` | 계획됨 | 모든 도메인 P2P update 전파와 late join/peer discovery 하드닝 |
+| `TASK-034-p2p-all-domain-wiring.md` | 완료 | Trip document-level P2P lifecycle 승격, Web/Mobile reconnect/status 하드닝, Issue #326, PR #327 |
 | `TASK-035-full-integration-test-suite.md` | 계획됨 | Web/App 전체 기능 통합 테스트 및 실기기 smoke 검증 |
 | `TASK-036-closed-beta-readiness.md` | 계획됨 | 완성 제품 기준 Closed Beta 출시 준비 |
 
@@ -171,7 +171,7 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-031-web-full-document-primary-transition.md`: Web 핵심 기능을 document-primary read/write로 전환
 - [x] `TASK-032-mobile-full-document-primary-transition.md`: Mobile 핵심 기능을 document-primary read/write로 전환
 - [x] `TASK-033-backup-sync-productization.md`: encrypted backup/update sync를 모든 도메인 mutation에 연결
-- [ ] `TASK-034-p2p-all-domain-wiring.md`: P2P update 전파를 모든 도메인으로 확장하고 late join을 하드닝
+- [x] `TASK-034-p2p-all-domain-wiring.md`: P2P update 전파를 모든 도메인으로 확장하고 late join을 하드닝
 - [ ] `TASK-035-full-integration-test-suite.md`: 전체 제품 통합 테스트와 실기기 smoke 검증
 - [ ] `TASK-036-closed-beta-readiness.md`: 완성 제품 기준 Closed Beta 출시 준비
 

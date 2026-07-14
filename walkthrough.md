@@ -1,3 +1,46 @@
+# Walkthrough: TASK-034 P2P All-domain Wiring
+
+## Summary
+
+TASK-034는 P2P fast path를 체크리스트 화면 전용 연결에서 Trip document 전체 lifecycle 연결로 승격했다. Web은 Trip detail 상위에서 한 번만 P2P connection을 유지하고, Mobile은 reconnect/backoff/timeout 처리를 보강했다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-034-p2p-all-domain-wiring.md`
+- GitHub Issue [#326](https://github.com/ysjee141/nexvoy-frontend/issues/326)
+- PR [#327](https://github.com/ysjee141/nexvoy-frontend/pull/327)
+- 브랜치: `feature/task-034-p2p-all-domain-wiring-326`
+- `apps/web/lib/local-first/webP2PDocumentConnection.ts`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/implementation_plan.md`
+
+## Key Changes
+
+- Web P2P hook을 document-level `useWebP2PDocumentConnection()`으로 일반화했다.
+- 기존 `useWebP2PChecklistConnection()`은 compatibility re-export로 유지했다.
+- `TripLayoutClient`에서 일정/준비물/지도 탭 전체에 걸쳐 P2P connection을 유지한다.
+- `ChecklistClient`는 자체 P2P 연결을 만들지 않고 상위 status를 표시한다.
+- `TripClient`는 remote P2P update apply 후 IndexedDB broadcast로 일정 read model을 refresh한다.
+- Mobile Trip screen에 reconnect backoff, handshake timeout, connection state failure handling을 추가했다.
+- P2P fallback 문구를 backup sync 기준으로 정리했다.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm typecheck` 성공
+- `pnpm --filter nexvoy-web build` 성공
+- `pnpm --filter nexvoy-app lint` 성공
+- `pnpm build:mobile` 성공
+
+## Notes
+
+- 신규 Supabase migration/API Route는 없다.
+- P2P payload는 기존 Yjs update protocol을 유지한다.
+- late join에서 놓친 update는 TASK-033 encrypted backup sync fallback이 담당한다.
+- `pnpm build:mobile` 중 `react-native-webrtc`의 `event-target-shim` exports fallback 경고가 출력됐지만 export는 성공했다.
+
+---
+
 # Walkthrough: TASK-033 Backup Sync Productization
 
 ## Summary
