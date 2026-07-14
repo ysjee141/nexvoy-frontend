@@ -39,9 +39,6 @@ export async function createWebDocumentPrimaryRepositories(
     hydrateDocument: async (tripId) => {
       const restored = await restoreWebTripDocumentFromBackup({ supabase, documentId: tripId })
       if (restored.document) return restored.document
-      if (restored.status === 'key_unavailable' || restored.status === 'failed') {
-        return null
-      }
 
       const bundle = await getLegacyTripRowBundle(supabase, tripId, ownerContext.authUserId)
       return bundle ? convertLegacyTripRowsToDocument(bundle).document : null
