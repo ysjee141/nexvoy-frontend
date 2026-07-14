@@ -1,3 +1,45 @@
+# Walkthrough: TASK-036 Closed Beta Readiness
+
+## Summary
+
+TASK-036은 Local-first document-primary 제품을 Closed Beta로 공개하기 위한 운영 기준선을 문서화했다. 기능 코드는 변경하지 않았고, production readiness, secret inventory, deployment/rollback, tester 운영 runbook을 Expo/EAS와 Local-first sync/P2P/backup 구조에 맞춰 정리했다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-036-closed-beta-readiness.md`
+- GitHub Issue [#330](https://github.com/ysjee141/nexvoy-frontend/issues/330)
+- PR [#331](https://github.com/ysjee141/nexvoy-frontend/pull/331)
+- 브랜치: `feature/task-036-closed-beta-readiness-330`
+- `docs/production-readiness.md`
+- `docs/runbooks/secret-inventory.md`
+- `docs/runbooks/deployment-rollback.md`
+- `docs/runbooks/closed-beta-runbook.md`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/implementation_plan.md`
+
+## Key Changes
+
+- `docs/production-readiness.md`: 기존 Capacitor/구버전 readiness를 Closed Beta go/no-go gate 중심으로 갱신했다.
+- `docs/runbooks/secret-inventory.md`: Web, server/API, Mobile/EAS, Supabase Edge Function secret을 값 없이 inventory로 정리했다.
+- `docs/runbooks/deployment-rollback.md`: Vercel, EAS, Supabase, Local-first kill switch rollback matrix를 추가했다.
+- `docs/runbooks/closed-beta-runbook.md`: tester onboarding, daily smoke, feedback triage, privacy/data request, beta exit criteria를 정의했다.
+
+## Verification
+
+문서-only 변경이지만 release readiness 문서가 build/test 명령과 앱 설정을 참조하므로 아래 검증을 실행했다.
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm typecheck` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS |
+
+## Follow-up
+
+- 실제 Closed Beta 시작 전 Supabase 운영 migration list, RLS/RPC smoke, Android Internal Testing, iOS TestFlight, monitoring alert test 결과를 readiness 문서의 evidence로 남긴다.
+- `/api/invite`, `/api/feedback`, `/api/places/photo/store` rate limiting은 별도 hardening task로 분리한다.
+
 # Walkthrough: TASK-035 Full Integration Test Suite
 
 ## Summary

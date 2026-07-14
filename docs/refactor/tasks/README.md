@@ -97,7 +97,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-033-backup-sync-productization.md` | 완료 | Web/Mobile document-primary mutation encrypted backup update queue/upload 제품화, Issue #324, PR #325 |
 | `TASK-034-p2p-all-domain-wiring.md` | 완료 | Trip document-level P2P lifecycle 승격, Web/Mobile reconnect/status 하드닝, Issue #326, PR #327 |
 | `TASK-035-full-integration-test-suite.md` | 완료 | Web document-primary 권한/reload E2E, observability safety E2E, Mobile/P2P/backup smoke runbook, Issue #328, PR #329 |
-| `TASK-036-closed-beta-readiness.md` | 계획됨 | 완성 제품 기준 Closed Beta 출시 준비 |
+| `TASK-036-closed-beta-readiness.md` | 완료 | Closed Beta go/no-go gate, secret inventory, deployment rollback, tester 운영 runbook, Issue #330, PR #331 |
 
 현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `Phase 3`의 모바일 WebRTC native feasibility와 Cloudflare ICE config 발급 경로는 provider boundary, Edge Function, 검증 보고서로 정리했다. `Phase 4`의 dual-write 및 mismatch detector와 guest auth promotion은 Web-first 범위로 구현했다. `TASK-013`에서 초대/권한 registry, invite/share RPC, Web/Mobile join fallback을 구현했고, `TASK-014`에서 notification metadata, local notification scheduler, observability event boundary를 구현했다. `TASK-015`에서 owner/editor Web foreground document key provisioning과 pending/status UX를 구현했다. `TASK-016`은 Mobile Native Key Provisioning MVP를 구현하고 accepted scope 기준 검증했다. `TASK-017`은 Mobile background task 기반 provisioning retry path를 구현하고 Android-first 검증 범위에서 PASS를 받았다. `TASK-018`은 Android Keystore/iOS Keychain 기반 non-exportable key storage hardening을 구현하고 native preview build와 SQL smoke까지 검증했다. `TASK-019`는 Mobile-first owner bootstrap 후속 문서다. `TASK-020`은 `restore.ts`의 Yjs 비의존 부분(snapshot 복호화·hash 검증)을 `backupPayloadCodec.ts`/`mobileRestore.ts`로 분리해 Mobile 전용 encrypted snapshot restore 경로(`restoreMobileEncryptedSnapshot`)를 구현하고, `TASK-019`의 owner bootstrap 성공/provisioning completion 트리거에 재시도를 연결했다. updates replay(Web/Yjs 기반 최신 콘텐츠 반영)는 이번 범위에서 제외했다. `TASK-021`은 `ADR-004`가 유보했던 시그널링 전송 계층을 `ADR-012`(Supabase Realtime Broadcast)로 결정하고, Web에서 시그널링 채널과 데이터 채널을 실제로 배선해 P2P fast path의 최초 연결을 증명했다. `TASK-022`는 일반 Web 로그인 trip이 `documents`/`document_members`에 등록되지 않던 선결 문제를 lazy bootstrap으로 해소했다. `TASK-023`은 같은 signaling 프로토콜과 room topic 파생 규칙을 Mobile까지 확장하고 native data-channel handshake/조립 지점을 추가했다. `TASK-024`는 Web-to-Web 범위에서 data channel로 Yjs update를 청킹/전송/재조립하고 IndexedDB 문서에 적용하는 fast path를 구현했다. `TASK-027`은 Mobile Yjs runtime adapter와 `react-native-quick-crypto` 기반 Metro shim을 추가해 Mobile도 같은 Yjs update format을 apply할 수 있게 했다. `TASK-029`부터는 checklist pilot을 넘어 Web/App 전체 제품 기능을 document-primary로 전환하고, 그 이후 통합 테스트와 Closed Beta 준비를 진행한다.
 
@@ -173,7 +173,7 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-033-backup-sync-productization.md`: encrypted backup/update sync를 모든 도메인 mutation에 연결
 - [x] `TASK-034-p2p-all-domain-wiring.md`: P2P update 전파를 모든 도메인으로 확장하고 late join을 하드닝
 - [x] `TASK-035-full-integration-test-suite.md`: 전체 제품 통합 테스트와 실기기 smoke 검증
-- [ ] `TASK-036-closed-beta-readiness.md`: 완성 제품 기준 Closed Beta 출시 준비
+- [x] `TASK-036-closed-beta-readiness.md`: 완성 제품 기준 Closed Beta 출시 준비
 
 ## 권장 시작 순서
 
