@@ -15,6 +15,7 @@ import {
   createMobileTemplateDocumentStore,
   createMobileTripDocumentStore,
 } from './mobileDocumentStores'
+import { enqueueMobileBackupUpdate } from './mobileBackupSyncService'
 
 export async function createMobileDocumentPrimaryRepositories(
   supabase: SupabaseClient,
@@ -53,6 +54,13 @@ export async function createMobileDocumentPrimaryRepositories(
               documentId: result.documentId,
               update: result.update,
             })
+            if (actor.role === 'owner' || actor.role === 'editor') {
+              void enqueueMobileBackupUpdate({
+                supabase,
+                documentId: result.documentId,
+                update: result.update,
+              }).catch(() => undefined)
+            }
           }
         },
       },

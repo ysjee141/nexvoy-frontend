@@ -16,6 +16,7 @@ import {
   createWebTemplateDocumentStore,
   createWebTripDocumentStore,
 } from './webDocumentStores'
+import { enqueueWebBackupUpdate } from './backupSyncService'
 
 export async function createWebDocumentPrimaryRepositories(
   supabase: SupabaseClient,
@@ -53,6 +54,13 @@ export async function createWebDocumentPrimaryRepositories(
               documentId: result.documentId,
               update: result.update,
             })
+            if (actor.role === 'owner' || actor.role === 'editor') {
+              void enqueueWebBackupUpdate({
+                supabase,
+                documentId: result.documentId,
+                update: result.update,
+              }).catch(() => undefined)
+            }
           }
         },
       },

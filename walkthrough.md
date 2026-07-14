@@ -1,3 +1,48 @@
+# Walkthrough: TASK-033 Backup Sync Productization
+
+## Summary
+
+TASK-033은 Web/Mobile document-primary mutation 결과를 Supabase encrypted backup update 경로에 연결했다. P2P가 없거나 앱/브라우저가 종료되어도 owner/editor 변경분은 로컬 pending queue에 남고, 다음 foreground/startup에서 document key가 준비되면 암호화된 update로 업로드된다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-033-backup-sync-productization.md`
+- GitHub Issue [#324](https://github.com/ysjee141/nexvoy-frontend/issues/324)
+- PR [#325](https://github.com/ysjee141/nexvoy-frontend/pull/325)
+- 브랜치: `feature/task-033-backup-sync-productization-324`
+- `packages/core/src/sync/backupQueue.ts`
+- `apps/web/lib/local-first/backupSyncService.ts`
+- `apps/mobile/lib/local-first/mobileBackupSyncService.ts`
+- `apps/mobile/lib/local-first/mobileBackupQueueStore.ts`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/implementation_plan.md`
+
+## Key Changes
+
+- core에 pending backup update 암호화 helper와 safe failure reason mapping을 추가했다.
+- Web IndexedDB에 `backupQueues` store를 추가하고 Trip mutation 후 pending update를 durable하게 저장한다.
+- Mobile AsyncStorage backup queue를 추가하고 Trip mutation 후 pending update를 durable하게 저장한다.
+- Web/Mobile document-primary publisher에서 owner/editor 변경만 backup enqueue 대상으로 연결했다.
+- Web visibility 복귀, Mobile foreground/provisioning 경로에서 pending queue flush를 실행한다.
+- 실패 관측은 `local_first_backup_failed`에 generic reason code와 pending count만 남긴다.
+
+## Verification
+
+- `pnpm --filter @nexvoy/core test` 성공
+- `pnpm --filter @nexvoy/core typecheck` 성공
+- `pnpm --filter nexvoy-app typecheck` 성공
+- `pnpm --filter nexvoy-web build` 성공
+- `pnpm typecheck` 성공
+- `pnpm build:mobile` 성공
+
+## Notes
+
+- 신규 Supabase migration/API Route는 없다.
+- 이번 slice는 durable encrypted update upload/retry 제품 경로에 집중했다. full snapshot compaction worker와 remote pull/replay UX는 후속 통합 검증에서 이어서 보강한다.
+- `pnpm build:mobile` 중 `react-native-webrtc`의 `event-target-shim` exports fallback 경고가 출력됐지만 export는 성공했다.
+
+---
+
 # Walkthrough: TASK-032 Mobile Full Document-primary Transition
 
 ## Summary
