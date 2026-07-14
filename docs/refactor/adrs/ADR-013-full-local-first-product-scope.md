@@ -1,6 +1,6 @@
 # ADR-013: Full Local-first Product Scope
 
-- 상태: 채택됨
+- 상태: 채택됨, Closed Beta 데이터 기준선은 ADR-014로 수정됨
 - 결정일: 2026-07-14
 - 결정자: ysjee141
 - 관련 문서:
@@ -11,8 +11,13 @@
   - `docs/refactor/adrs/ADR-008-invitation-and-permission-registry.md`
   - `docs/refactor/adrs/ADR-011-invitation-key-provisioning-strategy.md`
   - `docs/refactor/tasks/TASK-029-full-local-first-product-scope-adr.md`
+  - `docs/refactor/adrs/ADR-014-closed-beta-baseline-reset.md`
 
 ---
+
+> 2026-07-15 업데이트: ADR-013의 "기존 row 데이터는 손실 없이 migration 된다" 완료 조건은 Closed Beta gate에서
+> 제외한다. Closed Beta는 ADR-014에 따라 신규 document-primary 데이터만 제품 경로로 사용하고, 기존 데이터 migration은
+> 별도 후속 tool 작업으로 분리한다.
 
 ## 문제 정의
 
@@ -173,6 +178,9 @@ restore read, P2P write propagation, invitation accept, role change, revoke는 S
 
 기존 Supabase row table은 document-primary 전환 이후 primary sync 경로가 아니다.
 
+ADR-014 이후 Closed Beta 기준에서는 아래 전환 정책을 **자동 제품 경로로 적용하지 않는다**. 기존 row 데이터는
+Closed Beta 화면에서 무시하며, 명시적 migration tool의 source로만 남긴다.
+
 전환 정책:
 
 1. 기존 row 데이터는 최초 진입 또는 migration job에서 document로 변환한다.
@@ -231,7 +239,8 @@ Full Local-first product 완료는 다음 조건을 모두 만족해야 한다.
 - 동시 접속 peer는 P2P로 같은 Yjs update를 주고받는다.
 - 비동시 기기는 Supabase backup pull/restore로 eventually sync 된다.
 - viewer/revoked member는 UI edit, backup upload, P2P write propagation에서 차단된다.
-- 기존 row 데이터는 손실 없이 Trip/Template document로 migration 된다.
+- 신규 Closed Beta 데이터는 처음부터 Trip/Template document로 생성된다. 기존 row 데이터의 손실 없는 migration은
+  Closed Beta gate가 아니라 후속 migration tool 완료 조건이다.
 - 통합테스트는 legacy row assertion이 아니라 document-primary/P2P/backup restore 기준으로 통과한다.
 
 ---

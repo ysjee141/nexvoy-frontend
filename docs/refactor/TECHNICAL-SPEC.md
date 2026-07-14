@@ -277,7 +277,7 @@ Trip document에는 template 적용 결과로 생성된 checklist item과 출처
 
 ## 9. Supabase 백업 스키마
 
-기존 row 테이블은 즉시 제거하지 않는다. 새 backup/registry 테이블을 추가한다.
+기존 row 테이블은 즉시 제거하지 않는다. 다만 ADR-014 이후 Closed Beta 제품 경로에서는 기존 row 데이터를 자동 hydrate/fallback하지 않는다. 새 backup/registry 테이블은 신규 document-primary 데이터의 primary sync/restore 경로다.
 
 ```sql
 create table public.documents (
