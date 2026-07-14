@@ -2,11 +2,19 @@
 
 작성일: 2026-07-14  
 기준 브랜치: `refactoring/local-first-architecture`  
-목표 해석: **웹/앱의 모든 핵심 기능을 Local-first document-primary 구조로 완성한 뒤 통합테스트와 Closed Beta를 진행한다.**  
+목표 해석: **웹/앱의 모든 핵심 기능을 신규 Local-first document-primary 데이터 기준으로 완성한 뒤 통합테스트와 Closed Beta를 진행한다.**  
 
 ## 0. 목표 정정
 
-이번 refactor의 최종 목표는 "준비물 Web-to-Web P2P 검증"이 아니다. 목표는 기존 OnVoy 제품의 핵심 기능 전체를 Web/Mobile 양쪽에서 Local-first 기반으로 전환하는 것이다.
+이번 refactor의 최종 목표는 "준비물 Web-to-Web P2P 검증"이 아니다. 목표는 OnVoy 핵심 기능 전체를 Web/Mobile 양쪽에서 Local-first 기반으로 전환하는 것이다.
+
+2026-07-15 전략 변경:
+
+- 기존 Supabase row 데이터는 Closed Beta 제품 경로에서 무시한다.
+- 신규 여행/템플릿만 document-primary 데이터로 간주한다.
+- 기존 데이터에 대한 사용 불가 메시지는 제공하지 않는다.
+- 기존 데이터 변환은 Closed Beta 필수 조건이 아니라 별도 migration tool 작업으로 분리한다.
+- 기준 ADR: `docs/refactor/adrs/ADR-014-closed-beta-baseline-reset.md`
 
 대상 기능:
 
@@ -15,7 +23,7 @@
 - 템플릿
 - 동행자 초대 / 수락 / 거부
 - 권한/멤버 역할 변경
-- Web/Mobile cross-device restore/sync
+- Web/Mobile cross-device restore/sync for new document-primary data
 - 동시 접속 중 WebRTC P2P fast path
 - 동시 접속하지 않은 기기간 Supabase encrypted backup 기반 sync/restore
 
@@ -23,12 +31,12 @@
 
 ## 1. 현재 상태 요약
 
-현재까지 TASK-001~028을 통해 Local-first 기반 부품은 많이 구현되었다. 하지만 전체 제품 관점에서는 아직 "완료"가 아니라 **준비물 중심의 부분 구현 단계**다.
+현재까지 TASK-001~037을 통해 Local-first 기반 부품과 full document-primary 전환 시도가 구현되었다. 하지만 기존 데이터 보존 전제 때문에 전환기 edge case가 커졌고, Closed Beta 기준선은 ADR-014에 따라 신규 document-primary 데이터로 재설정한다.
 
 | 영역 | 현재 상태 | 판정 |
 |------|----------|------|
 | TripDocumentV1 모델 | trips/plans/checklists/members/assets/tombstones 기반 있음. templates는 ADR-013에 따라 별도 `TemplateDocumentV1` boundary | 기반 완료, templates 후속 |
-| legacy row -> document 변환 | trip/plans/checklists/members 변환 기반 있음 | 기반 완료 |
+| legacy row -> document 변환 | trip/plans/checklists/members 변환 기반 있음 | Closed Beta 필수 경로에서 제외, TASK-042로 이관 |
 | Web 준비물 | local-first/dual-write/P2P 화면 연결됨 | 부분 완료 |
 | Mobile 준비물 | Yjs runtime/apply adapter는 있으나 화면 write path는 legacy 중심 | 미완료 |
 | Web 일정 | document model에는 포함되나 화면 CRUD는 legacy Supabase 중심 | 미완료 |
@@ -38,22 +46,22 @@
 | WebRTC P2P | Web 준비물 Web-to-Web 제품 경로까지 연결. Mobile은 adapter 수준 | 부분 완료 |
 | Backup/restore | schema/crypto/key provisioning/restore helper 있음. 모든 기능의 sync 경로로 통합되지 않음 | 부분 완료 |
 | 통합테스트 | legacy Web E2E와 core tests 중심. full Local-first E2E 없음 | 미완료 |
-| Closed Beta | 완성 제품 기준으로는 아직 불가 | 미완료 |
+| Closed Beta | 신규 document-primary 기준선 안정화 전까지 불가 | 미완료 |
 
 정확한 현재 판정:
 
-> Local-first 전체 제품 완성도는 "foundation + Web checklist pilot" 단계다. 전체 기능 완료 후 Closed Beta라는 목표 기준에서는 아직 Phase 2에 가깝다.
+> Local-first 전체 제품 완성도는 "foundation + document-primary cutover 재정렬" 단계다. 이제 핵심 과제는 legacy 호환이 아니라 신규 데이터 기준의 생성/동기화/복구 안정화다.
 
 ## 2. 아키텍처 방향 결정
 
-속도를 우선한다면 기존 Supabase row 통신 방식을 계속 dual-write로 오래 유지하는 것보다, **document-primary 전환 + legacy row 마이그레이션/호환 최소화**가 더 단순할 수 있다.
+속도를 우선한다면 기존 Supabase row 통신 방식과 자동 migration/hydrate를 계속 유지하는 것보다, **신규 document-primary 기준선 + legacy migration tool 후속 분리**가 더 단순하다.
 
 권장 방향:
 
 1. `TripDocumentV1`을 제품 기능의 primary data source로 승격한다.
-2. 기존 row 데이터는 최초 진입 또는 migration job에서 document로 변환한다.
+2. 신규 여행/템플릿은 생성 즉시 local document + encrypted snapshot + owner key를 bootstrap한다.
 3. 화면 CRUD는 Web/Mobile 모두 document repository를 사용한다.
-4. Supabase row 테이블은 필요한 기간 동안 read-only migration source 또는 rollback fallback으로 축소한다.
+4. Supabase row 테이블은 Closed Beta 제품 경로에서 제외하고 후속 migration source로만 유지한다.
 5. 동기화는 두 계층으로 분리한다.
    - 동시 접속: WebRTC P2P로 Yjs update 전파
    - 비동시 접속: Supabase encrypted backup snapshot/update로 restore/sync
@@ -68,9 +76,9 @@
 
 위험:
 
-- legacy Supabase row 기반 기능을 한 번에 document repository로 옮기는 작업량이 크다.
+- legacy Supabase row 기반 기능을 제품 경로에서 제거하며 신규 document bootstrap을 엄격히 보장해야 한다.
 - 기존 화면이 row shape에 깊게 의존한다.
-- migration/restore 실패 시 고객 데이터 접근에 직접 영향이 생긴다.
+- 기존 데이터는 migration tool 전까지 제품 경로에서 보이지 않는다.
 
 따라서 빠르게 가되, 기능 단위로 document-primary 전환 PR을 쪼개는 방식이 필요하다.
 
