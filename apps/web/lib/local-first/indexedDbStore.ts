@@ -161,6 +161,18 @@ export async function saveWebDeviceKeyMaterial(
   db.close()
 }
 
+export async function deleteWebDeviceKeyMaterial(deviceId: string): Promise<void> {
+  if (!canUseIndexedDb()) return
+  const db = await openDatabase()
+  await runTransaction(
+    db,
+    KEY_MATERIAL_STORE,
+    'readwrite',
+    (store) => store.delete(deviceId),
+  )
+  db.close()
+}
+
 export async function loadBackupQueueState(queueId: string): Promise<unknown | null> {
   if (!canUseIndexedDb()) return null
   const db = await openDatabase()

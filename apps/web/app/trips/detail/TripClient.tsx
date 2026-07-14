@@ -317,7 +317,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 }))
                 .catch((err) => console.warn('[TripClient] imageUrl document update failed', err))
         }
-    }, [supabase, tripId])
+    }, [supabase, tripId, userRole])
 
     const handleEditPlan = async (plan: any) => {
         setEditingPlan({

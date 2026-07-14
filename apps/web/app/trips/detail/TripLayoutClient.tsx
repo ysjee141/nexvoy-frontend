@@ -19,6 +19,7 @@ import { collaboration } from '@/lib/collaboration'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import P2PConnectionStatusBadge from '@/components/trips/P2PConnectionStatusBadge'
 import { useWebP2PDocumentConnection } from '@/lib/local-first/webP2PDocumentConnection'
+import { ensureWebDocumentKeyReadiness } from '@/lib/local-first/keyProvisioningService'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -116,6 +117,39 @@ export default function TripLayoutClient() {
         }
         fetchTrip()
     }, [id, supabase, router])
+
+    useEffect(() => {
+        if (!id || !currentUser?.id || !trip?.user_id || !isOnline) return undefined
+
+        const role = resolveDocumentKeyReadinessRole({
+            currentUserId: currentUser.id,
+            ownerId: trip.user_id,
+            members,
+        })
+        let disposed = false
+        const run = () => {
+            void ensureWebDocumentKeyReadiness({
+                supabase,
+                documentId: id,
+                role,
+            }).catch((error) => {
+                const reason = error instanceof Error ? error.message : 'unknown'
+                console.warn('[document key readiness failed]', reason)
+            })
+        }
+
+        run()
+        if (role !== 'owner') return () => { disposed = true }
+
+        const intervalId = window.setInterval(() => {
+            if (!disposed) run()
+        }, 10_000)
+
+        return () => {
+            disposed = true
+            window.clearInterval(intervalId)
+        }
+    }, [currentUser?.id, id, isOnline, members, supabase, trip?.user_id])
 
     if (loading) {
         return <div className={css({ w: '100%', py: '40px', textAlign: 'center', color: '#888' })}>여행 정보를 불러오는 중...</div>
@@ -267,4 +301,16 @@ export default function TripLayoutClient() {
             </div>
         </div>
     )
+}
+
+function resolveDocumentKeyReadinessRole(input: {
+    currentUserId: string
+    ownerId: string
+    members: Array<{ user_id?: string | null; role?: string | null; status?: string | null }>
+}): 'owner' | 'editor' | 'viewer' | null {
+    if (input.currentUserId === input.ownerId) return 'owner'
+    const member = input.members.find((candidate) => candidate.user_id === input.currentUserId)
+    if (!member || member.status !== 'accepted') return null
+    if (member.role === 'owner' || member.role === 'editor' || member.role === 'viewer') return member.role
+    return null
 }

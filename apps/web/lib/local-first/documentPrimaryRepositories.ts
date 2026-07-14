@@ -19,6 +19,7 @@ import {
   createWebTripDocumentStore,
 } from './webDocumentStores'
 import { enqueueWebBackupUpdate } from './backupSyncService'
+import { ensureWebOwnerDocumentKey } from './keyProvisioningService'
 
 export async function createWebDocumentPrimaryRepositories(
   supabase: SupabaseClient,
@@ -59,12 +60,15 @@ export async function createWebDocumentPrimaryRepositories(
             if (actor.role === 'owner' || actor.role === 'editor') {
               void (async () => {
                 await ensureWebDocumentRegistryBootstrapped(supabase, ownerContext, result.document as TripDocumentV1)
+                await ensureWebDocumentKeyForMutation(supabase, ownerContext, result.document as TripDocumentV1)
                 await enqueueWebBackupUpdate({
                   supabase,
                   documentId: result.documentId,
                   update: result.update,
                 })
-              })().catch(() => undefined)
+              })().catch((error) => {
+                console.warn('[document-primary backup publish failed]', getSafeBackupPublishFailureReason(error))
+              })
             }
           }
         },
@@ -100,6 +104,31 @@ async function ensureWebDocumentRegistryBootstrapped(
   } catch {
     webDocumentRegistryBootstrapAttempted.delete(key)
   }
+}
+
+async function ensureWebDocumentKeyForMutation(
+  supabase: SupabaseClient,
+  ownerContext: Awaited<ReturnType<typeof resolveWebOwnerContext>>,
+  document: TripDocumentV1,
+): Promise<void> {
+  if (!ownerContext.authUserId) return
+  if (!shouldBootstrapDocumentRegistry({
+    authUserId: ownerContext.authUserId,
+    tripOwnerId: document.trip.ownerId,
+  })) {
+    return
+  }
+
+  await ensureWebOwnerDocumentKey({
+    supabase,
+    document,
+    ownerId: ownerContext.authUserId,
+  })
+}
+
+function getSafeBackupPublishFailureReason(error: unknown): string {
+  if (error instanceof Error) return error.message
+  return 'unknown'
 }
 
 export async function createWebTemplateDocument(input: {
