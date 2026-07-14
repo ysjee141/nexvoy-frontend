@@ -1,3 +1,63 @@
+# Walkthrough: TASK-037 Web Document-Primary Key Bootstrap and Photo Storage
+
+## Summary
+
+TASK-037은 Web document-primary 일정 생성 후 실제 backup sync가 `key_unavailable`로 실패하고,
+place photo 저장 API가 `plans` row 부재로 `Plan not found` 404를 반환하던 통합 갭을 보완했다.
+Web owner device key bootstrap을 mutation 경로에 연결하고, document-primary photo store 요청은
+Storage 업로드 후 Yjs document callback으로 `imageUrl`을 반영하도록 분기했다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-037-web-document-primary-key-bootstrap-and-photo-storage.md`
+- GitHub Issue [#334](https://github.com/ysjee141/nexvoy-frontend/issues/334)
+- 브랜치: `feature/task-037-web-document-primary-key-bootstrap-and-photo-storage-334`
+- `apps/web/lib/local-first/keyProvisioningService.ts`
+- `apps/web/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/web/app/trips/detail/TripLayoutClient.tsx`
+- `apps/web/app/api/places/photo/store/route.ts`
+- `apps/web/services/PlacePhotoService.ts`
+- `apps/web/components/trips/NewPlanModal.tsx`
+- `apps/web/app/trips/detail/TripClient.tsx`
+- `supabase/migrations/20260715000001_task037_legacy_member_key_provisioning_list.sql`
+
+## Key Changes
+
+- `ensureWebOwnerDocumentKey()`를 추가해 첫 owner mutation에서 encrypted snapshot과 현재 Web device용
+  RSA-wrapped `document_keys` row를 보장한다.
+- Web document-primary publisher가 backup enqueue 전에 registry와 owner key bootstrap을 순서대로 수행한다.
+- trip 화면 진입 시 editor/viewer device가 key provisioning request를 자동 생성하고, owner는 열린 화면에서
+  pending request를 주기적으로 처리한다.
+- legacy `trip_members` 기반 accepted 멤버의 pending key request도 owner provisioning 목록에 보이도록 RPC를 보강했다.
+- 현재 device의 active key row가 있지만 IndexedDB private key로 unwrap할 수 없는 경우 stale device key로 간주하고,
+  해당 device key material을 revoke/recreate한 뒤 provisioning request를 다시 생성한다.
+- `flushWebBackupQueue()`도 같은 stale key 복구 helper를 사용해 unwrap 실패가 unhandled rejection으로 터지지 않게 했다.
+- `/api/places/photo/store`에 `documentPrimary` 요청 분기를 추가해 `plans` row가 없는 plan도 Storage upload를
+  완료하고 URL을 반환한다.
+- `NewPlanModal`의 document-primary 저장 경로가 photo store 요청에 `documentPrimary: true`를 전달한다.
+- photo upload 성공 후 기존 callback이 document-primary plan `imageUrl` mutation을 수행하도록 의존성을 보정했다.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm --filter nexvoy-web exec tsc --noEmit` | PASS |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm --filter nexvoy-app run typecheck` | PASS |
+| `pnpm run typecheck` | PASS |
+| `pnpm run build` | PASS |
+| `pnpm run build:mobile` | PASS |
+
+## Deployment Note
+
+- 운영 Supabase에는 `supabase/migrations/20260715000001_task037_legacy_member_key_provisioning_list.sql` 적용이 필요하다.
+  이 migration이 없으면 legacy `trip_members` 사용자들의 key provisioning request가 owner 처리 목록에 나타나지 않을 수 있다.
+
+## Follow-up
+
+- `RouteMapView`에는 별도 legacy `plans` row 의존이 남아 있다. 지도 탭의 document-primary 완전 전환은 후속
+  hardening으로 분리 가능하다.
+
 # Walkthrough: Fix Document Key RPC Legacy Permission
 
 ## Summary

@@ -7,6 +7,7 @@ interface StoreRequestBody {
     tripId?: string
     placeId?: string
     photoReference?: string | null
+    documentPrimary?: boolean
 }
 
 const PHOTO_MAX_WIDTH = 800
@@ -76,6 +77,7 @@ export async function POST(request: NextRequest) {
         }
 
         const { planId, tripId, placeId } = body
+        const isDocumentPrimary = body.documentPrimary === true
         // photoReference는 optional. 누락 시 placeId 기반 fallback으로 조회.
         let photoReference: string | null | undefined = body.photoReference
         if (!planId || !tripId || !placeId) {
@@ -97,23 +99,25 @@ export async function POST(request: NextRequest) {
         }
 
         // 3) 멤버십 검증
-        //    plan이 존재하며 동일 trip_id에 속하고, 현재 사용자가 owner/editor 권한을 가진다.
-        //    RLS만 의존하지 않고 service 레이어에서 명시 검증.
-        const { data: planRow, error: planLookupError } = await supabase
-            .from('plans')
-            .select('id, trip_id')
-            .eq('id', planId)
-            .maybeSingle()
+        //    Legacy row plan은 plans row로 trip 소속을 확인한다.
+        //    Document-primary plan은 plans row가 없을 수 있으므로 trip-level owner/editor 권한만 확인한다.
+        if (!isDocumentPrimary) {
+            const { data: planRow, error: planLookupError } = await supabase
+                .from('plans')
+                .select('id, trip_id')
+                .eq('id', planId)
+                .maybeSingle()
 
-        if (planLookupError) {
-            console.error('[places/photo/store] plan lookup failed:', planLookupError.message)
-            return NextResponse.json({ error: 'Plan lookup failed' }, { status: 500 })
-        }
-        if (!planRow) {
-            return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
-        }
-        if (planRow.trip_id !== tripId) {
-            return NextResponse.json({ error: 'Trip mismatch' }, { status: 400 })
+            if (planLookupError) {
+                console.error('[places/photo/store] plan lookup failed:', planLookupError.message)
+                return NextResponse.json({ error: 'Plan lookup failed' }, { status: 500 })
+            }
+            if (!planRow) {
+                return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
+            }
+            if (planRow.trip_id !== tripId) {
+                return NextResponse.json({ error: 'Trip mismatch' }, { status: 400 })
+            }
         }
 
         // 소유자 또는 멤버(편집자) 권한 검증.
@@ -217,16 +221,18 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Public URL generation failed' }, { status: 500 })
         }
 
-        // 8) plans UPDATE { image_url, photo_reference }
-        //    RLS 정책에 의해 권한이 있는 경우만 통과.
-        const { error: updateError } = await supabase
-            .from('plans')
-            .update({ image_url: publicUrl, photo_reference: photoReference })
-            .eq('id', planId)
+        // 8) Legacy row plans UPDATE { image_url, photo_reference }.
+        //    Document-primary callers update the Yjs document from the returned URL.
+        if (!isDocumentPrimary) {
+            const { error: updateError } = await supabase
+                .from('plans')
+                .update({ image_url: publicUrl, photo_reference: photoReference })
+                .eq('id', planId)
 
-        if (updateError) {
-            console.error('[places/photo/store] plans UPDATE failed:', updateError.message)
-            return NextResponse.json({ error: 'Plan update failed' }, { status: 500 })
+            if (updateError) {
+                console.error('[places/photo/store] plans UPDATE failed:', updateError.message)
+                return NextResponse.json({ error: 'Plan update failed' }, { status: 500 })
+            }
         }
 
         return NextResponse.json({ imageUrl: publicUrl }, { status: 200 })

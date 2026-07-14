@@ -13,7 +13,7 @@ import {
 import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import { analytics } from '@/services/AnalyticsService'
 import { loadBackupQueueState, saveBackupQueueState } from './indexedDbStore'
-import { getCurrentWebDocumentKey, getOrCreateWebDeviceId } from './keyProvisioningService'
+import { getCurrentWebDocumentKeyOrRecoverStaleDeviceKey, getOrCreateWebDeviceId } from './keyProvisioningService'
 import { getWebBackupCryptoProvider } from './webCryptoProvider'
 
 const DOCUMENT_KEY_VERSION = 1
@@ -45,7 +45,7 @@ export async function flushWebBackupQueue(input: {
   if (queue.pending.length === 0) return
   if (!(await hasActiveSession(input.supabase))) return
 
-  const documentKey = await getCurrentWebDocumentKey({
+  const documentKey = await getCurrentWebDocumentKeyOrRecoverStaleDeviceKey({
     supabase: input.supabase,
     documentId: input.documentId,
     deviceId: clientId,
