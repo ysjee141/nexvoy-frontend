@@ -3,6 +3,7 @@ import {
   createBackupQueueState,
   enqueueBackupUpdate,
   encryptPendingBackupUpdate,
+  markBackupUploadDeferred,
   markBackupUploadFailed,
   markBackupUploadStarted,
   markBackupUploadSucceeded,
@@ -17,6 +18,15 @@ import { getCurrentWebDocumentKeyOrRecoverStaleDeviceKey, getOrCreateWebDeviceId
 import { getWebBackupCryptoProvider } from './webCryptoProvider'
 
 const DOCUMENT_KEY_VERSION = 1
+const BACKUP_QUEUE_EVENT = 'onvoy:web-backup-queue'
+
+export interface WebBackupQueueSnapshot {
+  status: BackupQueueState['status']
+  pendingCount: number
+  lastError: string | null
+  lastUploadedSeq: number
+  updatedAt: string
+}
 
 export async function enqueueWebBackupUpdate(input: {
   supabase: SupabaseClient
@@ -51,9 +61,12 @@ export async function flushWebBackupQueue(input: {
     deviceId: clientId,
   })
   if (!documentKey) {
-    const failed = markBackupUploadFailed(queue, 'key_unavailable')
-    await saveWebQueue(failed)
-    emitBackupFailure('key_unavailable', failed.pending.length)
+    const shouldEmitFailure = queue.lastError !== 'key_unavailable'
+    const waiting = markBackupUploadDeferred(queue, 'key_unavailable')
+    await saveWebQueue(waiting)
+    if (shouldEmitFailure) {
+      emitBackupFailure('key_unavailable', waiting.pending.length)
+    }
     return
   }
 
@@ -83,6 +96,27 @@ export async function flushWebBackupQueue(input: {
   }
 }
 
+export async function getWebBackupQueueSnapshot(documentId: string): Promise<WebBackupQueueSnapshot> {
+  const clientId = getOrCreateWebDeviceId()
+  const queue = await loadWebQueue(documentId, clientId)
+  return toWebBackupQueueSnapshot(queue)
+}
+
+export function subscribeToWebBackupQueue(
+  documentId: string,
+  onChange: () => void,
+): () => void {
+  if (typeof window === 'undefined') return () => undefined
+
+  const handleEvent = (event: Event) => {
+    const detail = (event as CustomEvent<{ documentId: string }>).detail
+    if (detail?.documentId === documentId) onChange()
+  }
+
+  window.addEventListener(BACKUP_QUEUE_EVENT, handleEvent)
+  return () => window.removeEventListener(BACKUP_QUEUE_EVENT, handleEvent)
+}
+
 async function hasActiveSession(supabase: SupabaseClient): Promise<boolean> {
   try {
     const { data } = await supabase.auth.getSession()
@@ -100,6 +134,7 @@ async function loadWebQueue(documentId: string, clientId: string): Promise<Backu
 
 async function saveWebQueue(state: BackupQueueState): Promise<void> {
   await saveBackupQueueState(getQueueId(state.documentId, state.clientId), serializeBackupQueueState(state))
+  notifyBackupQueueChanged(state.documentId)
 }
 
 function getQueueId(documentId: string, clientId: string): string {
@@ -120,13 +155,32 @@ function parseBackupQueueState(input: unknown): BackupQueueState | null {
   if (!input || typeof input !== 'object') return null
   const state = input as BackupQueueState & { pending?: Array<PendingBackupUpdate & { updateBlob: string }> }
   if (!Array.isArray(state.pending)) return null
+  const status = state.status === 'failed' && state.lastError === 'key_unavailable'
+    ? 'pending'
+    : state.status
   return {
     ...state,
+    status,
     pending: state.pending.map((update) => ({
       ...update,
       updateBlob: decodeBase64(String(update.updateBlob)),
     })),
   }
+}
+
+function toWebBackupQueueSnapshot(state: BackupQueueState): WebBackupQueueSnapshot {
+  return {
+    status: state.status,
+    pendingCount: state.pending.length,
+    lastError: state.lastError,
+    lastUploadedSeq: state.lastUploadedSeq,
+    updatedAt: state.updatedAt,
+  }
+}
+
+function notifyBackupQueueChanged(documentId: string): void {
+  if (typeof window === 'undefined') return
+  window.dispatchEvent(new CustomEvent(BACKUP_QUEUE_EVENT, { detail: { documentId } }))
 }
 
 function emitBackupFailure(reasonCode: string, pendingCount: number): void {
