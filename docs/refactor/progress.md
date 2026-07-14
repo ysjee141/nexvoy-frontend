@@ -293,6 +293,13 @@
 - offline write durability
 - cross-device eventual sync
 
+상태:
+
+- 완료. Issue #324에서 Web IndexedDB/Mobile AsyncStorage pending backup queue를 추가하고, Web/Mobile document-primary mutation publisher를 encrypted backup update enqueue/upload 경로에 연결했다.
+- Web visibility 복귀와 Mobile foreground/provisioning 경로에서 pending queue flush를 실행한다.
+- 검증: `pnpm --filter @nexvoy/core test`, `pnpm --filter @nexvoy/core typecheck`, `pnpm --filter nexvoy-app typecheck`, `pnpm --filter nexvoy-web build`, `pnpm typecheck`, `pnpm build:mobile` 통과.
+- 후속 보강: full snapshot compaction worker와 remote pull/replay UX는 TASK-034/035의 cross-device 통합 검증에서 이어서 다룬다.
+
 ### TASK-034: P2P All-domain Wiring
 
 범위:

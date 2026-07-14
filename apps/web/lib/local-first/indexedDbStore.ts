@@ -1,7 +1,8 @@
 const DATABASE_NAME = 'onvoy-local-first-spike'
-const DATABASE_VERSION = 2
+const DATABASE_VERSION = 3
 const TRIP_DOCUMENT_STORE = 'tripDocuments'
 const KEY_MATERIAL_STORE = 'webDeviceKeyMaterials'
+const BACKUP_QUEUE_STORE = 'backupQueues'
 const BROADCAST_CHANNEL_NAME = 'onvoy-local-first-checklist-spike'
 
 export interface StoredTripDocumentUpdate {
@@ -23,6 +24,12 @@ export interface StoredWebDeviceKeyMaterial {
   materialVersion: number
   publicKeyJwk: Record<string, unknown>
   privateKeyJwk: Record<string, unknown>
+  updatedAt: string
+}
+
+export interface StoredBackupQueueState {
+  id: string
+  state: unknown
   updatedAt: string
 }
 
@@ -154,6 +161,36 @@ export async function saveWebDeviceKeyMaterial(
   db.close()
 }
 
+export async function loadBackupQueueState(queueId: string): Promise<unknown | null> {
+  if (!canUseIndexedDb()) return null
+  const db = await openDatabase()
+  const row = await runTransaction<StoredBackupQueueState | undefined>(
+    db,
+    BACKUP_QUEUE_STORE,
+    'readonly',
+    (store) => store.get(queueId),
+  )
+  db.close()
+
+  return row?.state ?? null
+}
+
+export async function saveBackupQueueState(queueId: string, state: unknown): Promise<void> {
+  if (!canUseIndexedDb()) return
+  const db = await openDatabase()
+  await runTransaction(
+    db,
+    BACKUP_QUEUE_STORE,
+    'readwrite',
+    (store) => store.put({
+      id: queueId,
+      state,
+      updatedAt: new Date().toISOString(),
+    } satisfies StoredBackupQueueState),
+  )
+  db.close()
+}
+
 export function subscribeToTripDocumentUpdates(
   documentId: string,
   onUpdate: () => void,
@@ -224,6 +261,9 @@ function openDatabase(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(KEY_MATERIAL_STORE)) {
         db.createObjectStore(KEY_MATERIAL_STORE, { keyPath: 'id' })
+      }
+      if (!db.objectStoreNames.contains(BACKUP_QUEUE_STORE)) {
+        db.createObjectStore(BACKUP_QUEUE_STORE, { keyPath: 'id' })
       }
     }
     request.onsuccess = () => resolve(request.result)

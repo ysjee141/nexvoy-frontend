@@ -93,6 +93,7 @@ import {
   connectMobileP2PPeer,
   type MobileP2PConnection,
 } from '@/lib/local-first/webP2PConnection'
+import { flushMobileBackupQueue } from '@/lib/local-first/mobileBackupSyncService'
 import { runMobileForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
 import type { MobileRestoreOutcome } from '@/lib/local-first/mobileSnapshotRestoreService'
 import {
@@ -927,6 +928,7 @@ export default function TripDetailScreen() {
   useEffect(() => {
     if (canEditContent && id) {
       void runTripKeyProvisioning('auto')
+      void flushMobileBackupQueue({ supabase, documentId: id })
     }
   }, [canEditContent, id, runTripKeyProvisioning])
 
@@ -935,6 +937,7 @@ export default function TripDetailScreen() {
     const subscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
         void runTripKeyProvisioning('auto')
+        void flushMobileBackupQueue({ supabase, documentId: id })
       }
     })
     return () => subscription.remove()

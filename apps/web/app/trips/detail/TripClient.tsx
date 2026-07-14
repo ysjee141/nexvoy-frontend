@@ -21,6 +21,7 @@ import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
 import { Download, CloudDownload, CloudCheck, Loader2 } from 'lucide-react'
 import TripDetailSkeleton from './TripDetailSkeleton'
 import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import { flushWebBackupQueue } from '@/lib/local-first/backupSyncService'
 import type { PlanTimelineItemReadModel } from '@nexvoy/core/local-first/materialize'
 import type { CreatePlanMutationInput } from '@nexvoy/core/local-first/documentMutationWriter'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
@@ -247,6 +248,25 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             fetchUserRole()
         }
     }, [isActive, fetchTrip, fetchPlans, fetchUserRole])
+
+    useEffect(() => {
+        if (!tripId || isOffline || !isOnline || (userRole !== 'owner' && userRole !== 'editor')) return
+
+        const flushPendingBackup = () => {
+            void flushWebBackupQueue({ supabase, documentId: tripId }).catch(() => undefined)
+        }
+
+        flushPendingBackup()
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') flushPendingBackup()
+        }
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+        }
+    }, [tripId, isOffline, isOnline, supabase, userRole])
 
 
     const handleDeletePlan = async (planId: string) => {
