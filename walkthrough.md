@@ -1,3 +1,50 @@
+# Walkthrough: TASK-035 Full Integration Test Suite
+
+## Summary
+
+TASK-035는 Closed Beta 전 Local-first 제품 경로를 검증하기 위한 자동 테스트와 실기기 smoke runbook을 추가했다. 자동화는 deterministic한 Web document-primary 권한/reload와 observability payload safety에 집중했고, Web/Mobile/Mobile P2P 및 backup restore는 기기/network timing 의존성을 고려해 runbook 검증으로 고정했다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-035-full-integration-test-suite.md`
+- GitHub Issue [#328](https://github.com/ysjee141/nexvoy-frontend/issues/328)
+- PR [#329](https://github.com/ysjee141/nexvoy-frontend/pull/329)
+- 브랜치: `feature/task-035-full-integration-test-suite-328`
+- `apps/web/e2e/local-first-product.spec.ts`
+- `apps/web/e2e/observability-safety.spec.ts`
+- `docs/qa/local-first-integration-runbook.md`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/implementation_plan.md`
+- `_workspace/02b_frontend_changes.md`
+- `_workspace/03_review_result.md`
+- `_workspace/04_qa_result.md`
+
+## Key Changes
+
+- `apps/web/e2e/fixtures/auth.ts`: owner/editor/viewer multi-user fixture와 사용자별 authenticated context factory 추가.
+- `apps/web/e2e/helpers/supabase.ts`: 로컬 Supabase URL guard와 `*.onvoy.local` 테스트 유저 guard 추가.
+- `apps/web/e2e/helpers/seed.ts`: local service role guard, accepted trip member seed, trip role lookup helper 추가.
+- `apps/web/e2e/local-first-product.spec.ts`: document-primary mode에서 owner/editor/viewer 권한 UI와 checklist local document reload 검증.
+- `apps/web/e2e/observability-safety.spec.ts`: Local-first 관측 이벤트가 raw document/identity/secret/key material을 거부하는지 검증.
+- `docs/qa/local-first-integration-runbook.md`: Web/Web, Web/Mobile, Mobile/Mobile P2P, backup restore, offline reconnect smoke 절차 추가.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm --filter nexvoy-web exec tsc --noEmit` | PASS |
+| `pnpm typecheck` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS |
+| `pnpm --filter nexvoy-web test:e2e -- observability-safety.spec.ts` | PASS |
+| `pnpm --filter nexvoy-web test:e2e -- local-first-product.spec.ts` | BLOCKED: `.env.test.local`이 remote Supabase host를 가리켜 local guard가 실행 중단 |
+
+## Follow-up
+
+- `local-first-product.spec.ts`는 로컬 Supabase(`localhost` 또는 `127.0.0.1`)로 `.env.test.local`을 맞춘 뒤 실행한다.
+- Web/Mobile 및 Mobile/Mobile P2P, backup restore, offline reconnect는 `docs/qa/local-first-integration-runbook.md` 결과 표에 기록한다.
+
 # Walkthrough: TASK-034 P2P All-domain Wiring
 
 ## Summary

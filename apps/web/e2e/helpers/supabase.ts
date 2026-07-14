@@ -20,6 +20,19 @@ function getEnv(key: string): string {
   return val;
 }
 
+export function assertLocalSupabaseUrl(url: string): void {
+  const hostname = new URL(url).hostname;
+  if (hostname !== '127.0.0.1' && hostname !== 'localhost') {
+    throw new Error(`E2E는 로컬 Supabase에서만 실행할 수 있습니다: ${hostname}`);
+  }
+}
+
+function assertTestUserEmail(email: string): void {
+  if (!email.endsWith('@onvoy.local')) {
+    throw new Error(`E2E 테스트 유저는 *.onvoy.local 도메인만 사용할 수 있습니다: ${email}`);
+  }
+}
+
 export interface TestUser {
   id: string;
   email: string;
@@ -35,6 +48,8 @@ export async function createTestUser(email: string, password: string): Promise<T
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
   const anonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
   const serviceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+  assertLocalSupabaseUrl(url);
+  assertTestUserEmail(email);
 
   // 1. 유저 생성 또는 비밀번호 업데이트 (admin REST API)
   const createRes = await fetch(`${url}/auth/v1/admin/users`, {
@@ -103,6 +118,8 @@ export async function createTestUser(email: string, password: string): Promise<T
 export async function deleteTestUser(email: string): Promise<void> {
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
   const serviceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+  assertLocalSupabaseUrl(url);
+  assertTestUserEmail(email);
 
   const listRes = await fetch(`${url}/auth/v1/admin/users?per_page=1000`, {
     headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` },

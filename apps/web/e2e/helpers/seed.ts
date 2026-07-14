@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { assertLocalSupabaseUrl } from './supabase';
 
 /**
  * E2E 시드/정리/검증 헬퍼.
@@ -25,6 +26,7 @@ function getServiceClient(): SupabaseClient {
 
   const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
   const serviceKey = getEnv('SUPABASE_SERVICE_ROLE_KEY');
+  assertLocalSupabaseUrl(url);
 
   cachedClient = createClient(url, serviceKey, {
     auth: {
@@ -90,6 +92,68 @@ export async function seedTrip(
   }
 
   return data as SeededTrip;
+}
+
+export interface SeededTripMember {
+  id: string;
+  trip_id: string;
+  user_id: string;
+  role: 'editor' | 'viewer';
+  status: 'accepted';
+}
+
+export async function seedTripMember(
+  tripId: string,
+  userId: string,
+  email: string,
+  role: 'editor' | 'viewer'
+): Promise<SeededTripMember> {
+  const client = getServiceClient();
+
+  const { data, error } = await client
+    .from('trip_members')
+    .upsert({
+      trip_id: tripId,
+      user_id: userId,
+      invited_email: email,
+      role,
+      status: 'accepted',
+    }, { onConflict: 'trip_id,user_id' })
+    .select('id, trip_id, user_id, role, status')
+    .single();
+
+  if (error || !data) {
+    throw new Error(`seedTripMember 실패: ${error?.message ?? '데이터 없음'}`);
+  }
+
+  return data as SeededTripMember;
+}
+
+export async function getTripMemberRole(
+  tripId: string,
+  userId: string
+): Promise<'owner' | 'editor' | 'viewer' | null> {
+  const client = getServiceClient();
+
+  const { data: trip, error: tripError } = await client
+    .from('trips')
+    .select('user_id')
+    .eq('id', tripId)
+    .maybeSingle();
+
+  if (tripError) throw new Error(`getTripMemberRole trip 조회 실패: ${tripError.message}`);
+  if (trip?.user_id === userId) return 'owner';
+
+  const { data, error } = await client
+    .from('trip_members')
+    .select('role')
+    .eq('trip_id', tripId)
+    .eq('user_id', userId)
+    .eq('status', 'accepted')
+    .maybeSingle();
+
+  if (error) throw new Error(`getTripMemberRole member 조회 실패: ${error.message}`);
+  return (data?.role as 'editor' | 'viewer' | undefined) ?? null;
 }
 
 /**

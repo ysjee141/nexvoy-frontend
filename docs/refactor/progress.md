@@ -320,12 +320,11 @@
 
 범위:
 
-- 모든 핵심 기능이 완료된 뒤 작성
-- Web multi-user E2E
-- Web/Mobile native runtime smoke
-- backup restore cross-device
-- permission/key provisioning
-- P2P/fallback
+- Web document-primary 권한/reload E2E 작성 완료
+- observability payload safety E2E 작성 완료
+- 로컬 Supabase URL 및 `*.onvoy.local` 테스트 유저 guard 추가
+- Web/Web, Web/Mobile, Mobile/Mobile P2P와 backup restore는 `docs/qa/local-first-integration-runbook.md`로 smoke 절차 고정
+- Issue #328
 
 ### TASK-036: Closed Beta Readiness
 
