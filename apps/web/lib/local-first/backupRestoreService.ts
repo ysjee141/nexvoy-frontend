@@ -27,8 +27,8 @@ export async function restoreWebTripDocumentFromBackup(input: {
   }
 
   const repository = createSupabaseBackupRepository(input.supabase)
-  const hasSnapshot = await repository.hasSnapshot(input.documentId)
-  if (!hasSnapshot) {
+  const snapshot = await repository.getLatestSnapshot(input.documentId)
+  if (!snapshot) {
     return { status: 'missing', document: null }
   }
 
