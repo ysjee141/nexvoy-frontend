@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
   convertLegacyTripRowsToDocument,
+  createEmptyTripDocumentV1,
   createDocumentPrimaryRepositoryBundle,
   createEmptyTemplateDocumentV1,
   getLegacyTripRowBundle,
@@ -10,7 +11,13 @@ import {
   type TripDocumentV1,
 } from '@nexvoy/core'
 import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
-import type { EntityId } from '@nexvoy/core/local-first/documentModel'
+import { TRIP_DOCUMENT_SCHEMA_VERSION, type EntityId } from '@nexvoy/core/local-first/documentModel'
+import { createYjsTripDocument, encodeTripDocumentUpdate } from '@nexvoy/core/local-first/yjsTripDocument'
+import {
+  TEMPLATE_DOCUMENT_SCHEMA_VERSION,
+  createYjsTemplateDocument,
+  encodeTemplateDocumentUpdate,
+} from '@nexvoy/core/local-first/templateDocument'
 import type { DocumentPrimaryRepositoryBundle } from '@nexvoy/core/repositories/documentPrimaryRepository'
 import { publishLocalMobileTripDocumentUpdate } from './p2pUpdateBridge'
 import {
@@ -18,6 +25,7 @@ import {
   createMobileTripDocumentStore,
 } from './mobileDocumentStores'
 import { enqueueMobileBackupUpdate } from './mobileBackupSyncService'
+import { ensureMobileOwnerDocumentKeyForSnapshot } from './documentBootstrapService'
 
 export async function createMobileDocumentPrimaryRepositories(
   supabase: SupabaseClient,
@@ -103,6 +111,54 @@ async function ensureMobileDocumentRegistryBootstrapped(
   }
 }
 
+export async function createMobileTripDocument(input: {
+  supabase: SupabaseClient
+  destination: string
+  startDate: string
+  endDate: string
+  adultsCount: number
+  childrenCount: number
+}): Promise<string> {
+  const { data } = await input.supabase.auth.getUser()
+  const userId = data.user?.id
+  if (!userId) throw new Error('인증 정보가 없습니다.')
+
+  const tripStore = createMobileTripDocumentStore()
+  const now = new Date().toISOString()
+  const tripId = createEntityId('trip')
+  const document = createEmptyTripDocumentV1({
+    id: tripId,
+    ownerId: userId,
+    destination: input.destination,
+    startDate: input.startDate,
+    endDate: input.endDate,
+    adultsCount: input.adultsCount,
+    childrenCount: input.childrenCount,
+    createdAt: now,
+  })
+  const update = encodeTripDocumentUpdate(createYjsTripDocument(document))
+
+  await tripStore.putDocument(tripId, document, update)
+  await ensureMobileOwnerDocumentKeyForSnapshot({
+    supabase: input.supabase,
+    documentId: tripId,
+    documentType: 'trip',
+    schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
+    snapshotPayload: update,
+  })
+  await upsertTripReadModel(input.supabase, {
+    tripId,
+    ownerId: userId,
+    destination: input.destination,
+    startDate: input.startDate,
+    endDate: input.endDate,
+    adultsCount: input.adultsCount,
+    childrenCount: input.childrenCount,
+  })
+
+  return tripId
+}
+
 export async function createMobileTemplateDocument(input: {
   supabase: SupabaseClient
   title: string
@@ -113,12 +169,15 @@ export async function createMobileTemplateDocument(input: {
   }>
 }): Promise<string> {
   const { data } = await input.supabase.auth.getUser()
+  const userId = data.user?.id
+  if (!userId) throw new Error('인증 정보가 없습니다.')
+
   const templateStore = createMobileTemplateDocumentStore()
   const now = new Date().toISOString()
   const templateId = createEntityId('template')
   const document = createEmptyTemplateDocumentV1({
     id: templateId,
-    ownerId: data.user?.id ?? null,
+    ownerId: userId,
     title: input.title,
     visibility: 'private',
     createdAt: now,
@@ -138,7 +197,16 @@ export async function createMobileTemplateDocument(input: {
     }
   })
 
-  await templateStore.putDocument(templateId, document)
+  const update = encodeTemplateDocumentUpdate(createYjsTemplateDocument(document))
+  await templateStore.putDocument(templateId, document, update)
+  await ensureMobileOwnerDocumentKeyForSnapshot({
+    supabase: input.supabase,
+    documentId: templateId,
+    documentType: 'template',
+    schemaVersion: TEMPLATE_DOCUMENT_SCHEMA_VERSION,
+    snapshotPayload: update,
+  })
+
   return templateId
 }
 
@@ -244,4 +312,30 @@ export type MobileDocumentPrimaryMutationResult =
 function createEntityId(prefix: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+async function upsertTripReadModel(
+  supabase: SupabaseClient,
+  input: {
+    tripId: string
+    ownerId: string
+    destination: string
+    startDate: string
+    endDate: string
+    adultsCount: number
+    childrenCount: number
+  },
+): Promise<void> {
+  const { error } = await supabase
+    .from('trips')
+    .upsert({
+      id: input.tripId,
+      user_id: input.ownerId,
+      destination: input.destination,
+      start_date: input.startDate,
+      end_date: input.endDate,
+      adults_count: input.adultsCount,
+      children_count: input.childrenCount,
+    })
+  if (error) throw error
 }
