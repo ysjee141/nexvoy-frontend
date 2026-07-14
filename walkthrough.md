@@ -1,3 +1,37 @@
+# Walkthrough: Fix Document Key RPC Legacy Permission
+
+## Summary
+
+일정 생성 후 document-primary backup flush가 `get_my_active_document_key` RPC를 호출할 때 legacy trip이 아직 `document_members`에 bootstrap되지 않아 `권한이 없습니다.`가 발생하던 문제를 보강했다. 전환기 동안 legacy `trips`/`trip_members` 권한을 document permission helper가 인정하도록 migration을 추가하고, Web/Mobile document-primary mutation 경로에서 owner registry bootstrap을 backup enqueue 전에 시도한다.
+
+## Artifacts
+
+- GitHub Issue [#332](https://github.com/ysjee141/nexvoy-frontend/issues/332)
+- PR [#333](https://github.com/ysjee141/nexvoy-frontend/pull/333)
+- 브랜치: `fix/document-key-rpc-legacy-member-permission`
+- `supabase/migrations/20260714000002_document_permission_legacy_trip_compat.sql`
+- `apps/web/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/web/lib/local-first/backupSyncService.ts`
+- `apps/mobile/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/mobile/lib/local-first/mobileBackupSyncService.ts`
+
+## Key Changes
+
+- `check_is_document_owner/member/editor`가 legacy `trips`/`trip_members`를 fallback으로 인정하도록 migration을 추가했다.
+- Web/Mobile document-primary publisher가 owner mutation 후 backup enqueue 전에 `documents`/`document_members` bootstrap을 시도한다.
+- Web/Mobile backup flush가 active auth session이 없으면 RPC를 호출하지 않고 pending queue를 유지하도록 guard를 추가했다.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm --filter nexvoy-web exec tsc --noEmit` | PASS |
+| `pnpm --filter nexvoy-app typecheck` | PASS |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm typecheck` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS |
+
 # Walkthrough: TASK-036 Closed Beta Readiness
 
 ## Summary
