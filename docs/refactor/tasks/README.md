@@ -48,6 +48,8 @@ TASK-008a-web-checklist-read-through-hydration.md
 
 ## 실행 원칙
 
+- Local-first refactor 작업의 기준 브랜치와 PR base는 항상 `refactoring/local-first-architecture`로 둔다.
+- 새 task를 시작하기 전 `git checkout refactoring/local-first-architecture && git pull origin refactoring/local-first-architecture`로 기준 브랜치를 최신화한다.
 - 각 task는 가능한 한 하나의 PR로 끝낼 수 있는 크기를 유지한다.
 - UI는 Supabase, Yjs, WebRTC를 직접 호출하지 않고 Repository 또는 platform adapter를 통해 접근한다.
 - `packages/core`에는 IndexedDB, SQLite, WebRTC, Next.js, Expo/RN API를 넣지 않는다.
