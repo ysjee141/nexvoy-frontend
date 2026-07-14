@@ -38,14 +38,24 @@
 
 ## 구현 단계
 
-1. production readiness 문서를 Expo RN/EAS 기준으로 갱신한다.
-2. 운영 Supabase migration list와 RLS smoke 결과를 기록한다.
-3. Vercel env/preview/production 배포 checklist를 확정한다.
-4. Android internal testing build와 iOS TestFlight checklist를 작성한다.
-5. Sentry/GA/Discord/Supabase/Vercel alerting을 점검한다.
-6. 개인정보처리방침/이용약관/스토어 privacy label을 준비한다.
-7. Closed Beta tester 초대/피드백/incident 대응 runbook을 작성한다.
-8. P2P/backup/document-primary kill switch와 rollback 절차를 검증한다.
+1. production readiness 문서를 Expo RN/EAS 기준으로 갱신한다. ✅
+2. 운영 Supabase migration list와 RLS smoke 결과 기록 위치를 확정한다. ✅
+3. Vercel env/preview/production 배포 checklist를 확정한다. ✅
+4. Android internal testing build와 iOS TestFlight checklist를 작성한다. ✅
+5. Sentry/GA/Discord/Supabase/Vercel alerting 점검표를 작성한다. ✅
+6. 개인정보처리방침/이용약관/스토어 privacy label 준비 항목을 정리한다. ✅
+7. Closed Beta tester 초대/피드백/incident 대응 runbook을 작성한다. ✅
+8. P2P/backup/document-primary kill switch와 rollback 절차를 문서화한다. ✅
+
+## 구현 결과
+
+| 항목 | 결과 |
+| --- | --- |
+| Production readiness | `docs/production-readiness.md`를 Closed Beta go/no-go gate 기준으로 갱신 |
+| Secret inventory | `docs/runbooks/secret-inventory.md`에 Web/Mobile/Supabase secret 위치와 rotation trigger 정리 |
+| Rollback | `docs/runbooks/deployment-rollback.md`에 Vercel/EAS/Supabase/Local-first rollback matrix 작성 |
+| Beta 운영 | `docs/runbooks/closed-beta-runbook.md`에 tester onboarding, daily smoke, feedback triage, incident/data request 절차 작성 |
+| Issue | [#330](https://github.com/ysjee141/nexvoy-frontend/issues/330) |
 
 ## 데이터 호환성 고려사항
 
@@ -55,11 +65,11 @@
 
 ## 검증 방법
 
-- full integration suite PASS.
-- Android internal test install/pass.
-- iOS TestFlight smoke pass.
-- production Supabase RLS/RPC smoke pass.
-- monitoring alert test pass.
+- full integration suite PASS 또는 미실행 사유 기록.
+- Android internal test install/pass 결과 기록.
+- iOS TestFlight smoke pass 결과 기록.
+- production Supabase RLS/RPC smoke 결과 기록.
+- monitoring alert test 결과 기록.
 - privacy/terms URL 공개 확인.
 
 ## 롤백 방법

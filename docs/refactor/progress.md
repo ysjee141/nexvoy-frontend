@@ -330,12 +330,12 @@
 
 범위:
 
-- 운영 migration
-- production readiness 문서 갱신
-- EAS/TestFlight/Play Internal Testing
-- monitoring/alerting
-- privacy/terms
-- beta runbook
+- `docs/production-readiness.md` Closed Beta go/no-go gate 갱신
+- `docs/runbooks/secret-inventory.md` 추가
+- `docs/runbooks/deployment-rollback.md` 추가
+- `docs/runbooks/closed-beta-runbook.md` 추가
+- Expo/EAS, Vercel, Supabase, monitoring, legal/store, Local-first rollback 기준 정리
+- Issue #330
 
 ## 5. 통합테스트 전략
 
