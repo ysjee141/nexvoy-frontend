@@ -245,6 +245,7 @@ export async function getCurrentWebDocumentKeyOrRecoverStaleDeviceKey(input: {
   supabase: SupabaseClient
   documentId: string
   deviceId: string
+  provider?: RsaOaepWrappingProvider
 }): Promise<DocumentEncryptionKey | null> {
   try {
     return await getCurrentWebDocumentKey(input)
@@ -294,9 +295,10 @@ export async function runWebForegroundKeyProvisioning(
     skipped: 0,
   }
   const documentKey = input.documentKey ?? (input.documentId
-    ? await getCurrentWebDocumentKey({
+    ? await getCurrentWebDocumentKeyOrRecoverStaleDeviceKey({
       supabase: input.supabase,
       documentId: input.documentId,
+      deviceId: getOrCreateWebDeviceId(),
       provider,
     })
     : null)
