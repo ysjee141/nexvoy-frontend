@@ -3,6 +3,7 @@ import {
   createBackupQueueState,
   createRestorePlan,
   enqueueBackupUpdate,
+  markBackupUploadDeferred,
   markBackupUploadFailed,
   markBackupUploadStarted,
   markBackupUploadSucceeded,
@@ -38,6 +39,11 @@ if (uploading.status !== 'uploading' || uploading.pending[0]?.attempts !== 1) {
 const failed = markBackupUploadFailed(uploading, 'network unavailable', '2026-06-30T00:00:03.000Z')
 if (failed.status !== 'failed' || failed.pending[0]?.lastError !== 'network unavailable') {
   throw new Error('Upload failure should keep pending updates with error state.')
+}
+
+const deferred = markBackupUploadDeferred(queued, 'key_unavailable', '2026-06-30T00:00:03.500Z')
+if (deferred.status !== 'pending' || deferred.pending[0]?.attempts !== 0 || deferred.lastError !== 'key_unavailable') {
+  throw new Error('Deferred upload should keep pending updates retryable without incrementing attempts.')
 }
 
 const retried = markBackupUploadStarted(failed, '2026-06-30T00:00:04.000Z')

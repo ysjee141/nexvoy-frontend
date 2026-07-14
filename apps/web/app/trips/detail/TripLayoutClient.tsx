@@ -18,8 +18,16 @@ import { CacheUtil } from '@/lib/cache'
 import { collaboration } from '@/lib/collaboration'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import P2PConnectionStatusBadge from '@/components/trips/P2PConnectionStatusBadge'
+import type { P2PConnectionStatus } from '@/components/trips/P2PConnectionStatusBadge'
 import { useWebP2PDocumentConnection } from '@/lib/local-first/webP2PDocumentConnection'
 import { ensureWebDocumentKeyReadiness } from '@/lib/local-first/keyProvisioningService'
+import {
+    flushWebBackupQueue,
+    getWebBackupQueueSnapshot,
+    subscribeToWebBackupQueue,
+    type WebBackupQueueSnapshot,
+} from '@/lib/local-first/backupSyncService'
+import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -35,6 +43,7 @@ export default function TripLayoutClient() {
     const [trip, setTrip] = useState<any>(null)
     const [currentUser, setCurrentUser] = useState<any>(null)
     const [members, setMembers] = useState<any[]>([])
+    const [backupQueue, setBackupQueue] = useState<WebBackupQueueSnapshot | null>(null)
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'plans' | 'checklist' | 'map'>(initialTab)
     const { setMobileTitle } = useUIStore()
@@ -46,6 +55,7 @@ export default function TripLayoutClient() {
         ownerId: trip?.user_id ?? null,
         members,
     })
+    const syncStatus = resolveVisibleSyncStatus(p2pStatus, backupQueue)
 
     useEffect(() => {
         const urlTab = searchParams.get('tab')
@@ -128,11 +138,18 @@ export default function TripLayoutClient() {
         })
         let disposed = false
         const run = () => {
-            void ensureWebDocumentKeyReadiness({
-                supabase,
-                documentId: id,
-                role,
-            }).catch((error) => {
+            void (async () => {
+                await ensureWebDocumentKeyReadiness({
+                    supabase,
+                    documentId: id,
+                    role,
+                })
+                if (role === 'owner' || role === 'editor') {
+                    await flushWebBackupQueue({ supabase, documentId: id })
+                }
+                const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: role })
+                await repositories.trips.getTrip(id)
+            })().catch((error) => {
                 const reason = error instanceof Error ? error.message : 'unknown'
                 console.warn('[document key readiness failed]', reason)
             })
@@ -150,6 +167,32 @@ export default function TripLayoutClient() {
             window.clearInterval(intervalId)
         }
     }, [currentUser?.id, id, isOnline, members, supabase, trip?.user_id])
+
+    useEffect(() => {
+        if (!id || !currentUser?.id || !isOnline) {
+            setBackupQueue(null)
+            return undefined
+        }
+
+        let disposed = false
+        const load = () => {
+            void getWebBackupQueueSnapshot(id).then((snapshot) => {
+                if (!disposed) setBackupQueue(snapshot)
+            }).catch(() => {
+                if (!disposed) setBackupQueue(null)
+            })
+        }
+
+        load()
+        const unsubscribe = subscribeToWebBackupQueue(id, load)
+        const intervalId = window.setInterval(load, 5_000)
+
+        return () => {
+            disposed = true
+            unsubscribe()
+            window.clearInterval(intervalId)
+        }
+    }, [currentUser?.id, id, isOnline])
 
     if (loading) {
         return <div className={css({ w: '100%', py: '40px', textAlign: 'center', color: '#888' })}>여행 정보를 불러오는 중...</div>
@@ -279,7 +322,7 @@ export default function TripLayoutClient() {
                     alignItems: 'center',
                     pr: '4px',
                 })}>
-                    <P2PConnectionStatusBadge status={p2pStatus} />
+                    <P2PConnectionStatusBadge status={syncStatus} />
                 </div>
             </div>
 
@@ -301,6 +344,21 @@ export default function TripLayoutClient() {
             </div>
         </div>
     )
+}
+
+function resolveVisibleSyncStatus(
+    p2pStatus: P2PConnectionStatus,
+    backupQueue: WebBackupQueueSnapshot | null,
+): P2PConnectionStatus {
+    if (p2pStatus === 'connected' || p2pStatus === 'connecting') return p2pStatus
+    if (!backupQueue || backupQueue.pendingCount === 0) {
+        return backupQueue?.status === 'synced' ? 'backup_synced' : p2pStatus
+    }
+
+    if (backupQueue.lastError === 'key_unavailable') return 'backup_waiting_for_key'
+    if (backupQueue.status === 'failed') return 'backup_failed'
+    if (backupQueue.status === 'pending' || backupQueue.status === 'uploading') return 'backup_pending'
+    return p2pStatus
 }
 
 function resolveDocumentKeyReadinessRole(input: {

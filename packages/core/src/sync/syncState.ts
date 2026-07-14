@@ -111,6 +111,23 @@ export function markBackupUploadFailed(
   }
 }
 
+export function markBackupUploadDeferred(
+  state: BackupQueueState,
+  errorMessage: string,
+  now = new Date().toISOString(),
+): BackupQueueState {
+  return {
+    ...state,
+    status: 'pending',
+    pending: state.pending.map((update) => ({
+      ...update,
+      lastError: errorMessage,
+    })),
+    lastError: errorMessage,
+    updatedAt: now,
+  }
+}
+
 export function markSnapshotCreated(
   state: BackupQueueState,
   snapshotAt = new Date().toISOString(),

@@ -4,8 +4,10 @@
 
 TASK-037은 Web document-primary 일정 생성 후 실제 backup sync가 `key_unavailable`로 실패하고,
 place photo 저장 API가 `plans` row 부재로 `Plan not found` 404를 반환하던 통합 갭을 보완했다.
-Web owner device key bootstrap을 mutation 경로에 연결하고, document-primary photo store 요청은
-Storage 업로드 후 Yjs document callback으로 `imageUrl`을 반영하도록 분기했다.
+후속 재검토에서 P2P fallback, encrypted backup upload, fresh Web restore가 하나의 제품 flow로 닫히지
+않았음이 확인되어 Web sync stabilization까지 범위를 확장했다. 이제 Web은 IndexedDB에 문서가 없을 때
+Supabase encrypted backup restore를 legacy row hydrate보다 먼저 시도하고, key가 아직 없으면 stale row로
+덮어쓰지 않고 key provisioning 대기 상태로 남긴다.
 
 ## Artifacts
 
@@ -13,13 +15,17 @@ Storage 업로드 후 Yjs document callback으로 `imageUrl`을 반영하도록 
 - GitHub Issue [#334](https://github.com/ysjee141/nexvoy-frontend/issues/334)
 - 브랜치: `feature/task-037-web-document-primary-key-bootstrap-and-photo-storage-334`
 - `apps/web/lib/local-first/keyProvisioningService.ts`
+- `apps/web/lib/local-first/backupRestoreService.ts`
+- `apps/web/lib/local-first/backupSyncService.ts`
 - `apps/web/lib/local-first/documentPrimaryRepositories.ts`
 - `apps/web/app/trips/detail/TripLayoutClient.tsx`
+- `apps/web/components/trips/P2PConnectionStatusBadge.tsx`
 - `apps/web/app/api/places/photo/store/route.ts`
 - `apps/web/services/PlacePhotoService.ts`
 - `apps/web/components/trips/NewPlanModal.tsx`
 - `apps/web/app/trips/detail/TripClient.tsx`
 - `supabase/migrations/20260715000001_task037_legacy_member_key_provisioning_list.sql`
+- `supabase/migrations/20260715000002_task037_document_members_upsert_conflict_target.sql`
 
 ## Key Changes
 
@@ -32,6 +38,11 @@ Storage 업로드 후 Yjs document callback으로 `imageUrl`을 반영하도록 
 - 현재 device의 active key row가 있지만 IndexedDB private key로 unwrap할 수 없는 경우 stale device key로 간주하고,
   해당 device key material을 revoke/recreate한 뒤 provisioning request를 다시 생성한다.
 - `flushWebBackupQueue()`도 같은 stale key 복구 helper를 사용해 unwrap 실패가 unhandled rejection으로 터지지 않게 했다.
+- Web document-primary hydrate가 IndexedDB miss 시 encrypted backup snapshot/update restore를 먼저 수행한다.
+- backup이 존재하지만 현재 device key가 없거나 restore가 실패하면 legacy row hydrate로 stale data를 저장하지 않는다.
+- `key_unavailable` queue는 `failed`로 고착하지 않고 retryable `pending` 상태로 유지한다.
+- trip 화면 진입 후 key readiness/backup flush/read-through restore를 이어서 수행해 key provisioning 완료 후 복구가 화면에 반영되도록 했다.
+- 상태 배지는 P2P fallback을 “백업 동기화 중”으로 오인시키지 않고, backup key 대기/동기화/실패/완료를 구분한다.
 - `/api/places/photo/store`에 `documentPrimary` 요청 분기를 추가해 `plans` row가 없는 plan도 Storage upload를
   완료하고 URL을 반환한다.
 - `NewPlanModal`의 document-primary 저장 경로가 photo store 요청에 `documentPrimary: true`를 전달한다.
@@ -52,6 +63,10 @@ Storage 업로드 후 Yjs document callback으로 `imageUrl`을 반영하도록 
 
 - 운영 Supabase에는 `supabase/migrations/20260715000001_task037_legacy_member_key_provisioning_list.sql` 적용이 필요하다.
   이 migration이 없으면 legacy `trip_members` 사용자들의 key provisioning request가 owner 처리 목록에 나타나지 않을 수 있다.
+- `supabase/migrations/20260715000002_task037_document_members_upsert_conflict_target.sql`도 함께 적용해야
+  `document_members` PostgREST upsert가 `on_conflict=document_id,user_id`로 동작한다.
+- 완전히 새 기기가 기존 document key를 가진 어떤 owner/editor 기기와도 만나지 못하면 E2EE 모델상 즉시 복구할 수 없다.
+  이 경우 UI는 backup key 대기 상태를 표시하고, key provisioning이 완료되는 즉시 restore/flush를 재시도한다.
 
 ## Follow-up
 
