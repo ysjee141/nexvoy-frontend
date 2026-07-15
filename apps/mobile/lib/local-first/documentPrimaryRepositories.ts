@@ -126,7 +126,6 @@ async function ensureMobileDocumentRegistryBootstrapped(
   try {
     await createSupabaseBackupRepository(supabase).ensureDocumentBootstrapped({
       documentId: document.trip.id,
-      ownerId: authUserId,
     })
   } catch {
     mobileDocumentRegistryBootstrapAttempted.delete(key)

@@ -13,8 +13,6 @@ import { createRestorePlan } from '../sync/syncState'
 
 export interface UpsertBackupDocumentInput {
   documentId: string
-  ownerId: string
-  type: BackupDocumentType
   schemaVersion: number
   snapshot: Uint8Array
   snapshotHash: string
@@ -40,11 +38,9 @@ export interface SupabaseBackupRepository {
   upsertSnapshot(input: UpsertBackupDocumentInput): Promise<void>
   ensureDocumentBootstrapped(input: {
     documentId: string
-    ownerId: string
     type?: BackupDocumentType
     schemaVersion?: number
   }): Promise<void>
-  upsertOwnerMember(input: { documentId: string; userId: string }): Promise<void>
   upsertDocumentKey(input: {
     documentId: string
     userId: string
@@ -105,46 +101,25 @@ export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBack
     upsertSnapshot: async (input) => {
       const { error } = await sb
         .from('documents')
-        .upsert({
-          id: input.documentId,
-          owner_id: input.ownerId,
-          type: input.type,
+        .update({
           schema_version: input.schemaVersion,
           snapshot: input.snapshot,
           snapshot_hash: input.snapshotHash,
           encrypted: input.encrypted ?? true,
           updated_at: new Date().toISOString(),
         })
+        .eq('id', input.documentId)
+        .select('id')
+        .single()
 
       if (error) throw error
     },
     ensureDocumentBootstrapped: async (input) => {
-      const { error } = await sb
-        .from('documents')
-        .upsert({
-          id: input.documentId,
-          owner_id: input.ownerId,
-          type: input.type ?? 'trip',
-          schema_version: input.schemaVersion ?? 1,
-        }, { onConflict: 'id', ignoreDuplicates: true })
-
-      if (error) throw error
-
-      await createSupabaseBackupRepository(sb).upsertOwnerMember({
-        documentId: input.documentId,
-        userId: input.ownerId,
+      const { error } = await sb.rpc('bootstrap_owner_document', {
+        p_document_id: input.documentId,
+        p_type: input.type ?? 'trip',
+        p_schema_version: input.schemaVersion ?? 1,
       })
-    },
-    upsertOwnerMember: async (input) => {
-      const { error } = await sb
-        .from('document_members')
-        .upsert({
-          document_id: input.documentId,
-          user_id: input.userId,
-          role: 'owner',
-          status: 'accepted',
-          updated_at: new Date().toISOString(),
-        }, { onConflict: 'document_id,user_id' })
 
       if (error) throw error
     },

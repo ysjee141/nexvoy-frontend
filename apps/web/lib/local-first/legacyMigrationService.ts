@@ -171,7 +171,6 @@ export async function migrateLegacyDocument(
     await ensureWebOwnerDocumentKeyForSnapshot({
       supabase,
       documentId: input.id,
-      ownerId: ownerContext.authUserId,
       documentType: 'trip',
       schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
       snapshotPayload: update,
@@ -207,7 +206,6 @@ export async function migrateLegacyDocument(
   await ensureWebOwnerDocumentKeyForSnapshot({
     supabase,
     documentId: input.id,
-    ownerId: ownerContext.authUserId,
     documentType: 'template',
     schemaVersion: TEMPLATE_DOCUMENT_SCHEMA_VERSION,
     snapshotPayload: update,

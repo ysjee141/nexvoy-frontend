@@ -7,7 +7,8 @@ TASK-043은 Closed Beta 테스트 중 확인된 Web trip entry 회귀를 수정�
 `TripDocumentV1` read model을 우선 사용하도록 정리했다. 신규 Web 여행 생성 시 owner member snapshot을
 문서에 포함해 협업/초대 UI가 owner 권한을 안정적으로 판정하도록 보강했다. 추가로 신규 document snapshot/key
 bootstrap이 owner member 생성 전에 `get_my_active_document_key`를 호출해 `권한이 없습니다.`로 실패하던 순서를
-수정했다.
+수정했다. 후속 권한 감사에서는 원격 DB migration 누락과 client-side registry upsert가 함께 문제를 만들고 있음을
+확인해, document authority 초기화를 `auth.uid()` 기반 원자 RPC로 단일화했다.
 
 ## Artifacts
 
@@ -34,6 +35,12 @@ bootstrap이 owner member 생성 전에 `get_my_active_document_key`를 호출�
 - 로컬 IndexedDB에는 여행이 있지만 Supabase `documents`/`document_members` registry가 비어 있는 중간 상태에서도, owner가 초대 생성 전에 원격 snapshot/key/read-model을 재부트스트랩하도록 보강했다.
 - 신규 Web/Mobile document-primary trip 생성 및 초대 전 원격 부트스트랩에서 legacy `trips.upsert()` dual-write를 제거했다. 원격 기준은 `documents` encrypted snapshot과 `document_members` registry로 단일화한다.
 - Web trip detail 진입 시 owner 세션은 key readiness/backup flush 전에 로컬 문서의 원격 registry/snapshot/key bootstrap을 먼저 시도한다.
+- `bootstrap_owner_document()` RPC가 `documents`와 owner `document_members`를 한 transaction에서 생성하며 client 입력 owner id를 받지 않는다.
+- snapshot 저장은 기존 `documents` row의 owner RLS UPDATE만 사용하고 document INSERT/upsert를 수행하지 않는다.
+- Web guest promotion과 Mobile 초기 snapshot도 동일한 registry bootstrap 순서를 사용한다.
+- document owner/member/editor 판정에서 legacy `trips`/`trip_members` fallback을 제거했다.
+- `documents` 직접 INSERT와 `document_members` 직접 쓰기 정책을 제거해 document authority 변경은 검증 RPC로만 수행한다.
+- 원격 Supabase에 누락되어 있던 TASK-037 member conflict index와 TASK-043 document authority migration을 적용했다.
 - NewPlanModal이 장소 미선택 상태에서 조용히 return하지 않고 오류 메시지를 표시한다.
 - NewPlanModal form에 `noValidate`를 적용하고 방문 날짜/시간/체류 시간 검증을 React 경로에서 명시 처리한다.
 - 일정 저장 후 mutation 결과 document에서 저장된 plan을 즉시 materialize해 화면 state에 반영한다.
@@ -44,17 +51,22 @@ bootstrap이 owner member 생성 전에 `get_my_active_document_key`를 호출�
 | 명령 | 결과 |
 | --- | --- |
 | `pnpm --filter @nexvoy/core test` | PASS |
-| `pnpm -C packages/core typecheck` | PASS |
+| `pnpm typecheck` | PASS |
 | `pnpm -C apps/web exec tsc --noEmit` | PASS |
 | `pnpm build` | PASS |
 | `pnpm build:mobile` | PASS, 기존 `react-native-webrtc`/`event-target-shim` export warning만 발생 |
+| `supabase db lint --local --level error` | PASS |
+| Local RLS/RPC SQL integration | PASS: owner bootstrap/update 허용, 타 사용자 bootstrap 및 직접 INSERT 차단 |
 
 ## Notes
 
 - 이미 Supabase `documents`에 존재하는 과거 snapshot은 document-primary 데이터로 간주되어 목록에 표시될 수 있다.
   이번 수정은 legacy row-only 여행이 제품 목록에 섞이는 경로를 제거한 것이다.
-- `pnpm typecheck`는 출력상 TypeScript 오류는 없지만 workspace filter 실행이 `tsc` shim으로 빠져 exit code 1을 반환했다.
-  개별 core/web 검증과 mobile build는 통과했다.
+- 오류 기간에 encrypted snapshot 없이 특정 브라우저 IndexedDB에만 저장된 여행은 새 로그인/기기에서 자동 복원할 수 없다.
+  원본 브라우저의 local document가 남아 있다면 owner detail bootstrap으로 원격 복구할 수 있다.
+- 원격 DB에서 `20260712` 이후 migration이 누락되어 있었고, TASK-021/025/028 signaling migration은 관리 스키마
+  `realtime.messages`가 `supabase_realtime_admin` 소유라 일반 migration 계정으로 적용되지 않는다. 이 세 migration은
+  완료 처리하지 않았으며 P2P private channel 권한 배포 방식을 별도 인프라 작업으로 해결해야 한다.
 
 # Walkthrough: TASK-042 Legacy Migration Tool
 

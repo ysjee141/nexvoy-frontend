@@ -92,7 +92,6 @@ export async function ensureMobileOwnerDocumentKey({
   const backupRepository = createSupabaseBackupRepository(supabase)
   await backupRepository.ensureDocumentBootstrapped({
     documentId,
-    ownerId: user.id,
     type: 'trip',
     schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
   })
@@ -147,7 +146,6 @@ export async function ensureMobileOwnerDocumentKeyForSnapshot({
   const backupRepository = createSupabaseBackupRepository(supabase)
   await backupRepository.ensureDocumentBootstrapped({
     documentId,
-    ownerId: user.id,
     type: documentType,
     schemaVersion,
   })
@@ -235,21 +233,18 @@ async function bootstrapOwnerDocument({
   const encryptedSnapshot = serializeEncryptedBackupPayload(encryptedPayload)
   const snapshotHash = await sha256Hex(snapshotPayload)
 
-  // upsertSnapshot MUST precede upsertOwnerMember: the "Insert documents as
-  // owner" RLS policy only requires owner_id = auth.uid(), but the
-  // "Insert document_members" policy requires check_is_document_owner(), which
-  // in turn requires documents.owner_id to already be set. Writing the
-  // documents row first establishes ownership for the member insert.
+  await backupRepository.ensureDocumentBootstrapped({
+    documentId,
+    type: documentType,
+    schemaVersion,
+  })
   await backupRepository.upsertSnapshot({
     documentId,
-    ownerId: userId,
-    type: documentType,
     schemaVersion,
     snapshot: encryptedSnapshot,
     snapshotHash,
     encrypted: true,
   })
-  await backupRepository.upsertOwnerMember({ documentId, userId })
   if (documentType === 'trip') {
     await saveMobileTripDocumentUpdate({ documentId }, snapshotPayload)
   }
