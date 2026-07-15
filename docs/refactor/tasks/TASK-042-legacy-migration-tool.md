@@ -60,3 +60,20 @@ Closed Beta 기준선에서는 기존 데이터를 무시하지만, 향후 필�
 ## 완료 조건
 
 - 기존 데이터를 수동 선택 방식으로 안전하게 document-primary로 전환할 수 있다.
+
+## 구현 결과
+
+- GitHub Issue: [#343](https://github.com/ysjee141/nexvoy-frontend/issues/343)
+- Web dev route: `/dev/legacy-migration`
+- Runbook: `docs/runbooks/legacy-document-migration.md`
+
+이번 도구는 서버 service-role script가 아니라 로그인된 Web 세션에서 실행한다. `document_keys` bootstrap은 현재
+브라우저 디바이스의 RSA key material을 사용해야 fresh restore가 가능하므로, 브라우저 실행 방식이 더 안전하다.
+
+구현된 동작:
+
+- current user 소유 legacy trips/templates 중 `documents` row가 없는 후보를 scan한다.
+- 선택 항목에 대해 dry-run 변환 report와 validation message를 보여준다.
+- trip row bundle은 `TripDocumentV1`, template row bundle은 `TemplateDocumentV1`로 변환한다.
+- migration 실행 시 local IndexedDB document update와 Supabase encrypted snapshot/member/key를 함께 만든다.
+- migration 직후 backup restore smoke를 수행하고 restore status를 결과에 표시한다.

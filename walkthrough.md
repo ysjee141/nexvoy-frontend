@@ -1,3 +1,45 @@
+# Walkthrough: TASK-042 Legacy Migration Tool
+
+## Summary
+
+TASK-042는 Closed Beta 제품 경로에서 제외한 기존 Supabase row 데이터를, 향후 필요 시 사용자가 명시적으로 선택해
+document-primary snapshot으로 전환할 수 있는 Web dev migration tool을 추가했다. 자동 migration/hydrate는
+되살리지 않고, 로그인된 Web 세션의 현재 device key material로 encrypted snapshot, owner member, document key를
+함께 bootstrap한다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-042-legacy-migration-tool.md`
+- GitHub Issue [#343](https://github.com/ysjee141/nexvoy-frontend/issues/343)
+- 브랜치: `feature/task-042-legacy-migration-tool`
+- `packages/core/src/local-first/migrations.ts`
+- `apps/web/lib/local-first/legacyMigrationService.ts`
+- `apps/web/app/dev/legacy-migration/page.tsx`
+- `docs/runbooks/legacy-document-migration.md`
+
+## Key Changes
+
+- `LegacyTemplateRowBundle`과 `convertLegacyTemplateRowsToDocument()`를 추가해 legacy template rows를
+  `TemplateDocumentV1`로 변환한다.
+- `/dev/legacy-migration`에서 current user 소유 row-only trip/template 후보를 scan한다.
+- dry-run report가 변환 entity count와 validation message를 표시한다.
+- migration 실행 시 local IndexedDB document update와 Supabase encrypted snapshot/member/key를 함께 생성한다.
+- migration 직후 backup restore smoke를 수행해 current Web device key로 복구 가능한지 확인한다.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm -C packages/core typecheck` | PASS |
+| `pnpm -C apps/web exec tsc --noEmit` | PASS |
+| `pnpm build` | PASS |
+
+## Follow-up
+
+- Mobile에서 마이그레이션된 snapshot restore smoke는 실제 기기/시뮬레이터 계정으로 수동 확인한다.
+- 이 도구는 public/default template migration을 다루지 않는다. 필요하면 별도 정책 결정 후 확장한다.
+
 # Walkthrough: TASK-041 Backup Freshness and Cost Control
 
 ## Summary

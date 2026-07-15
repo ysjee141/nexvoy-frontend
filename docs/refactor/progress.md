@@ -36,7 +36,7 @@
 | 영역 | 현재 상태 | 판정 |
 |------|----------|------|
 | TripDocumentV1 모델 | trips/plans/checklists/members/assets/tombstones 기반 있음. templates는 ADR-013에 따라 별도 `TemplateDocumentV1` boundary | 기반 완료, templates 후속 |
-| legacy row -> document 변환 | trip/plans/checklists/members 변환 기반 있음 | Closed Beta 필수 경로에서 제외, TASK-042로 이관 |
+| legacy row -> document 변환 | trip/plans/checklists/members와 template 변환 기반 있음. `/dev/legacy-migration` 수동 도구로 snapshot/key bootstrap 가능 | Closed Beta 필수 경로에서는 제외, 후속 수동 복구 경로 확보 |
 | Web 준비물 | local-first/dual-write/P2P 화면 연결됨 | 부분 완료 |
 | Mobile 준비물 | Yjs runtime/apply adapter는 있으나 화면 write path는 legacy 중심 | 미완료 |
 | Web 일정 | document model에는 포함되나 화면 CRUD는 legacy Supabase 중심 | 미완료 |

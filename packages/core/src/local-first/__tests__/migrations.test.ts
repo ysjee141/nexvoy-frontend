@@ -1,5 +1,10 @@
 import type { TripDocumentV1 } from '../documentModel'
-import { convertLegacyTripRowsToDocument, type LegacyTripRowBundle } from '../migrations'
+import {
+  convertLegacyTemplateRowsToDocument,
+  convertLegacyTripRowsToDocument,
+  type LegacyTemplateRowBundle,
+  type LegacyTripRowBundle,
+} from '../migrations'
 
 const legacyBundle = {
   exportedAt: '2026-06-29T00:00:00.000Z',
@@ -214,4 +219,80 @@ if (!migrationResult.legacyRowMap.some((row) => row.pathInDocument === 'checklis
 
 if (!migrationResult.validationMessages.some((message) => message.code === 'orphan_checklist_item')) {
   throw new Error('Orphan checklist item should produce a validation warning.')
+}
+
+const legacyTemplateBundle = {
+  exportedAt: '2026-06-29T00:00:00.000Z',
+  template: {
+    id: 'template-1',
+    user_id: 'user-1',
+    title: 'Beach pack',
+    created_at: '2026-06-01T00:00:00.000Z',
+    updated_at: '2026-06-02T00:00:00.000Z',
+  },
+  items: [
+    {
+      id: 'template-item-2',
+      template_id: 'template-1',
+      item_name: 'Sunscreen',
+      category: 'Toiletries',
+      is_private: false,
+      created_at: '2026-06-02T00:00:00.000Z',
+    },
+    {
+      id: 'template-item-1',
+      template_id: 'template-1',
+      item_name: 'Passport',
+      category: 'Documents',
+      is_private: null,
+      sort_order: 0,
+      created_at: '2026-06-01T00:00:00.000Z',
+      updated_at: null,
+    },
+    {
+      id: 'template-item-orphan',
+      template_id: 'other-template',
+      item_name: 'Skipped',
+      category: null,
+      is_private: false,
+      created_at: '2026-06-01T00:00:00.000Z',
+    },
+  ],
+  shares: [
+    {
+      id: 'template-share-1',
+      template_id: 'template-1',
+      shared_with_user_id: 'user-2',
+      role: 'admin',
+      created_by: 'user-1',
+      created_at: '2026-06-03T00:00:00.000Z',
+    },
+  ],
+} satisfies LegacyTemplateRowBundle
+
+const templateMigrationResult = convertLegacyTemplateRowsToDocument(legacyTemplateBundle)
+const templateDocument = templateMigrationResult.document
+
+if (templateDocument.template.id !== legacyTemplateBundle.template.id) {
+  throw new Error('Template id should be preserved as document id.')
+}
+
+if (templateDocument.template.visibility !== 'private') {
+  throw new Error('User-owned legacy template should become a private template document.')
+}
+
+if (templateDocument.items['template-item-orphan']) {
+  throw new Error('Cross-template item should be skipped.')
+}
+
+if (templateDocument.items['template-item-2']?.sortOrder !== 1) {
+  throw new Error('Template item fallback sort order should preserve sorted legacy order.')
+}
+
+if (templateDocument.shares['template-share-1']?.role !== 'viewer') {
+  throw new Error('Unknown template share role should normalize to viewer.')
+}
+
+if (!templateMigrationResult.validationMessages.some((message) => message.code === 'cross_template_row_skipped')) {
+  throw new Error('Cross-template row should produce a validation warning.')
 }

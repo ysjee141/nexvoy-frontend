@@ -16,6 +16,12 @@ import {
   getLegacyRowDocumentPath,
 } from './documentModel'
 import { createEmptyTripDocumentV1 } from './tripDocument'
+import {
+  createEmptyTemplateDocumentV1,
+  type TemplateDocumentV1,
+  type TemplateItemNode,
+  type TemplateShareNode,
+} from './templateDocument'
 
 export type MigrationValidationSeverity = 'warning' | 'error'
 
@@ -45,6 +51,19 @@ export interface LegacyTripRowBundle {
 
 export interface TripDocumentMigrationResult {
   document: TripDocumentV1
+  legacyRowMap: LegacyRowDocumentPath[]
+  validationMessages: MigrationValidationMessage[]
+}
+
+export interface LegacyTemplateRowBundle {
+  template: LegacyTemplateRow
+  items?: LegacyTemplateItemRow[]
+  shares?: LegacyTemplateShareRow[]
+  exportedAt?: string
+}
+
+export interface TemplateDocumentMigrationResult {
+  document: TemplateDocumentV1
   legacyRowMap: LegacyRowDocumentPath[]
   validationMessages: MigrationValidationMessage[]
 }
@@ -189,6 +208,35 @@ export interface LegacyAssetRow {
   created_at: string
 }
 
+export interface LegacyTemplateRow {
+  id: string
+  user_id: string | null
+  title: string
+  created_at: string
+  updated_at?: string | null
+}
+
+export interface LegacyTemplateItemRow {
+  id: string
+  template_id: string
+  item_name: string
+  category: string | null
+  is_private: boolean | null
+  sort_order?: number | null
+  created_at: string
+  updated_at?: string | null
+}
+
+export interface LegacyTemplateShareRow {
+  id: string
+  template_id: string
+  shared_with_user_id: string
+  role: string
+  created_by: string | null
+  created_at: string
+  updated_at?: string | null
+}
+
 export function convertLegacyTripRowsToDocument(
   bundle: LegacyTripRowBundle,
 ): TripDocumentMigrationResult {
@@ -326,6 +374,51 @@ export function convertLegacyTripRowsToDocument(
   for (const asset of bundle.assets ?? []) {
     document.assets[asset.id] = toAssetRefNode(asset)
     legacyRowMap.push(getLegacyRowDocumentPath('assets', asset.id))
+  }
+
+  return {
+    document,
+    legacyRowMap,
+    validationMessages,
+  }
+}
+
+export function convertLegacyTemplateRowsToDocument(
+  bundle: LegacyTemplateRowBundle,
+): TemplateDocumentMigrationResult {
+  const validationMessages: MigrationValidationMessage[] = []
+  const legacyRowMap: LegacyRowDocumentPath[] = []
+  const document = createEmptyTemplateDocumentV1({
+    id: bundle.template.id,
+    ownerId: bundle.template.user_id,
+    title: bundle.template.title,
+    visibility: bundle.template.user_id ? 'private' : 'public',
+    createdAt: bundle.template.created_at,
+    updatedAt: bundle.template.updated_at ?? bundle.template.created_at,
+    createdFromLegacyAt: bundle.exportedAt,
+  })
+
+  legacyRowMap.push(getLegacyRowDocumentPath('checklist_templates', bundle.template.id))
+
+  const sortedItems = [...(bundle.items ?? [])].sort(compareTemplateItemsForLegacyOrder)
+  let migratedItemIndex = 0
+  sortedItems.forEach((item) => {
+    if (!isTemplateScopedRow(item, bundle.template.id, 'checklist_template_items', validationMessages)) {
+      return
+    }
+
+    document.items[item.id] = toTemplateItemNode(item, migratedItemIndex)
+    migratedItemIndex += 1
+    legacyRowMap.push(getLegacyRowDocumentPath('checklist_template_items', item.id))
+  })
+
+  for (const share of bundle.shares ?? []) {
+    if (!isTemplateScopedRow(share, bundle.template.id, 'checklist_template_shares', validationMessages)) {
+      continue
+    }
+
+    document.shares[share.id] = toTemplateShareNode(share, validationMessages)
+    legacyRowMap.push(getLegacyRowDocumentPath('checklist_template_shares', share.id))
   }
 
   return {
@@ -500,6 +593,46 @@ function comparePlansForDocumentOrder(a: PlanNode, b: PlanNode): number {
   )
 }
 
+function compareTemplateItemsForLegacyOrder(
+  a: LegacyTemplateItemRow,
+  b: LegacyTemplateItemRow,
+): number {
+  return (
+    (a.sort_order ?? Number.MAX_SAFE_INTEGER) - (b.sort_order ?? Number.MAX_SAFE_INTEGER) ||
+    (a.category ?? '').localeCompare(b.category ?? '') ||
+    a.created_at.localeCompare(b.created_at) ||
+    a.id.localeCompare(b.id)
+  )
+}
+
+function toTemplateItemNode(row: LegacyTemplateItemRow, fallbackSortOrder: number): TemplateItemNode {
+  return {
+    id: row.id,
+    templateId: row.template_id,
+    name: row.item_name,
+    categoryName: row.category ?? '',
+    isPrivate: row.is_private ?? false,
+    sortOrder: row.sort_order ?? fallbackSortOrder,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at ?? row.created_at,
+  }
+}
+
+function toTemplateShareNode(
+  row: LegacyTemplateShareRow,
+  validationMessages: MigrationValidationMessage[],
+): TemplateShareNode {
+  return {
+    id: row.id,
+    templateId: row.template_id,
+    sharedWithUserId: row.shared_with_user_id,
+    role: normalizeTemplateShareRole(row.role, row.id, validationMessages),
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at ?? null,
+  }
+}
+
 export function compareChecklistItemsForLegacyOrder(
   a: ChecklistItemNode,
   b: ChecklistItemNode,
@@ -604,6 +737,23 @@ function normalizeInvitationRole(
   return 'viewer'
 }
 
+function normalizeTemplateShareRole(
+  role: string,
+  rowId: string,
+  validationMessages: MigrationValidationMessage[],
+): TemplateShareNode['role'] {
+  if (role === 'viewer' || role === 'editor') return role
+
+  pushValidation(validationMessages, {
+    code: 'unknown_template_share_role_normalized',
+    message: `Template share ${rowId} had unknown role ${role} and was normalized to viewer.`,
+    rowId,
+    tableName: 'checklist_template_shares',
+  })
+
+  return 'viewer'
+}
+
 function validateLegacyChecklistState(
   item: ChecklistItemNode,
   validationMessages: MigrationValidationMessage[],
@@ -649,6 +799,24 @@ function isTripScopedRow(
   pushValidation(validationMessages, {
     code: 'cross_trip_row_skipped',
     message: `${tableName}.${row.id} belongs to trip ${row.trip_id}, not ${tripId}.`,
+    rowId: row.id,
+    tableName,
+  })
+
+  return false
+}
+
+function isTemplateScopedRow(
+  row: { id: string; template_id: string },
+  templateId: EntityId,
+  tableName: string,
+  validationMessages: MigrationValidationMessage[],
+): boolean {
+  if (row.template_id === templateId) return true
+
+  pushValidation(validationMessages, {
+    code: 'cross_template_row_skipped',
+    message: `${tableName}.${row.id} belongs to template ${row.template_id}, not ${templateId}.`,
     rowId: row.id,
     tableName,
   })
