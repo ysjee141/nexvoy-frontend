@@ -23,7 +23,10 @@ import TripDetailSkeleton from './TripDetailSkeleton'
 import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
 import { flushWebBackupQueue } from '@/lib/local-first/backupSyncService'
 import { subscribeToTripDocumentUpdates } from '@/lib/local-first/indexedDbStore'
-import type { PlanTimelineItemReadModel } from '@nexvoy/core/local-first/materialize'
+import {
+    planTimelineItemToWebPlanRow,
+    tripDetailToWebTripRow,
+} from '@/lib/local-first/tripReadModelAdapters'
 import type { CreatePlanMutationInput } from '@nexvoy/core/local-first/documentMutationWriter'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -192,7 +195,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         }
         const repositories = await createWebDocumentPrimaryRepositories(supabase)
         const data = await repositories.trips.getTrip(tripId)
-        if (data) setTrip(toLegacyTripRow(data))
+        if (data) setTrip(tripDetailToWebTripRow(data))
     }, [tripId, supabase, isOffline])
 
     const fetchPlans = useCallback(async () => {
@@ -215,7 +218,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
 
             const repositories = await createWebDocumentPrimaryRepositories(supabase)
             const data = (await repositories.plans.listPlans(tripId)).map((plan) =>
-                toLegacyPlanRow(tripId, plan),
+                planTimelineItemToWebPlanRow(tripId, plan),
             )
 
             if (data) {
@@ -238,9 +241,30 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
 
     const fetchUserRole = useCallback(async () => {
         if (!tripId) return
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+            setUserRole(null)
+            return
+        }
+
+        const repositories = await createWebDocumentPrimaryRepositories(supabase)
+        const documentTrip = await repositories.trips.getTrip(tripId)
+        if (documentTrip?.ownerId === user.id) {
+            setUserRole('owner')
+            return
+        }
+
+        const documentMember = documentTrip?.members.find((member) =>
+            member.userId === user.id && member.status === 'accepted',
+        )
+        if (documentMember) {
+            setUserRole(documentMember.role)
+            return
+        }
+
         const { data } = await collaboration.getUserRole(tripId)
         setUserRole(data as any)
-    }, [tripId])
+    }, [tripId, supabase])
 
     useEffect(() => {
         if (isActive) {
@@ -641,60 +665,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             )}
         </div>
     )
-}
-
-function toLegacyTripRow(trip: {
-    id: string
-    ownerId: string
-    destination: string
-    startDate: string
-    endDate: string
-    adultsCount: number
-    childrenCount: number
-    coverImageRef: string | null
-    bgColor: string | null
-}) {
-    return {
-        id: trip.id,
-        user_id: trip.ownerId,
-        destination: trip.destination,
-        start_date: trip.startDate,
-        end_date: trip.endDate,
-        adults_count: trip.adultsCount,
-        children_count: trip.childrenCount,
-        cover_image_ref: trip.coverImageRef,
-        bg_color: trip.bgColor,
-    }
-}
-
-function toLegacyPlanRow(tripId: string, plan: PlanTimelineItemReadModel) {
-    return {
-        id: plan.id,
-        trip_id: tripId,
-        title: plan.title,
-        location: plan.location,
-        address: plan.address,
-        location_lat: plan.coordinates?.lat ?? 0,
-        location_lng: plan.coordinates?.lng ?? 0,
-        google_place_id: plan.googlePlaceId,
-        image_url: plan.imageUrl,
-        photo_reference: plan.photoReference,
-        start_datetime_local: plan.startDateTimeLocal,
-        end_datetime_local: plan.endDateTimeLocal,
-        timezone_string: plan.timezone,
-        alarm_minutes_before: plan.alarmMinutesBefore,
-        alarm_sent_at: plan.alarmSentAt,
-        cost: plan.cost,
-        memo: plan.memo,
-        is_completed: plan.isCompleted,
-        is_visited: plan.isVisited,
-        plan_urls: plan.urls.map((url) => ({
-            id: url.id,
-            plan_id: url.planId,
-            url: url.url,
-            created_at: url.createdAt,
-        })),
-    }
 }
 
 function toDocumentPlanInput(planId: string, plan: {

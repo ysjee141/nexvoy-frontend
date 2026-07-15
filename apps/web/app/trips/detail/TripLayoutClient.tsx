@@ -28,6 +28,7 @@ import {
     type WebBackupQueueSnapshot,
 } from '@/lib/local-first/backupSyncService'
 import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import { tripDetailToWebMemberRows, tripDetailToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -103,21 +104,20 @@ export default function TripLayoutClient() {
                 }
                 setCurrentUser(currentUser)
                 
-                // 3. 서버에서 최신 데이터 가져오기
-                const { data, error } = await supabase
-                    .from('trips')
-                    .select('*')
-                    .eq('id', id)
-                    .single()
+                const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: 'viewer' })
+                const documentTrip = await repositories.trips.getTrip(id)
 
-                if (error) throw error
-
-                if (!data) {
+                if (!documentTrip) {
                     router.replace('/404')
                 } else {
-                    setTrip(data)
-                    const { data: memberRows } = await collaboration.getMembers(id)
-                    setMembers(memberRows ?? [])
+                    setTrip(tripDetailToWebTripRow(documentTrip))
+                    const documentMembers = tripDetailToWebMemberRows(documentTrip)
+                    if (documentMembers.length > 0) {
+                        setMembers(documentMembers)
+                    } else {
+                        const { data: memberRows } = await collaboration.getMembers(id)
+                        setMembers(memberRows ?? [])
+                    }
                 }
             } catch (err) {
                 console.error('Failed to fetch trip:', err)

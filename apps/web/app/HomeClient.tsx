@@ -11,6 +11,8 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CacheUtil } from '@/lib/cache'
 import { promotePendingGuestDocuments } from '@/lib/local-first/guestPromotionService'
+import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import { tripSummaryToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
 import {
   Map, CheckSquare, Globe, Wallet,
   Link2, ChevronDown, ChevronUp, ArrowRight,
@@ -296,76 +298,10 @@ export default function HomeClient() {
         }
         setShowNicknamePrompt(!profile?.nickname)
 
-        // 1. 내가 멤버로 참여(수락)한 여행 ID들 가져오기
-        const { data: memberTripData, error: memberTripError } = await supabase
-            .from('trip_members')
-            .select('trip_id')
-            .eq('user_id', networkUser.id)
-            .eq('status', 'accepted')
-        if (memberTripError) throw memberTripError
-
-        const memberTripIds = memberTripData?.map((m: any) => m.trip_id) || []
-
-        // 2. 내가 소유하거나 멤버인 여행 전체 가져오기
-        let query = supabase
-            .from('trips')
-            .select('*')
-
-        if (memberTripIds.length > 0) {
-            query = query.or(`user_id.eq.${networkUser.id},id.in.(${memberTripIds.join(',')})`)
-        } else {
-            query = query.eq('user_id', networkUser.id)
-        }
-
-        const { data: trips, error: tripsError } = await query.order('start_date', { ascending: true })
-        if (tripsError) throw tripsError
-        const tripRows = trips || []
-        const tripIds = tripRows.map((trip: any) => trip.id)
-        let checklistsByTrip = new globalThis.Map<string, any[]>()
-        let itemsByChecklist = new globalThis.Map<string, any[]>()
-
-        if (tripIds.length > 0) {
-            const { data: checklistRows, error: checklistsError } = await supabase
-                .from('checklists')
-                .select('id, trip_id')
-                .in('trip_id', tripIds)
-            if (checklistsError) {
-                console.warn('Checklist progress fetch failed; rendering trips without progress', checklistsError)
-            }
-
-            ;(checklistRows || []).forEach((checklist: any) => {
-                checklistsByTrip.set(checklist.trip_id, [
-                    ...(checklistsByTrip.get(checklist.trip_id) || []),
-                    { ...checklist, checklist_items: [] },
-                ])
-            })
-
-            const checklistIds = (checklistRows || []).map((checklist: any) => checklist.id)
-            if (checklistIds.length > 0) {
-                const { data: itemRows, error: itemsError } = await supabase
-                    .from('checklist_items')
-                    .select('id, checklist_id, is_checked')
-                    .in('checklist_id', checklistIds)
-                if (itemsError) {
-                    console.warn('Checklist item progress fetch failed; rendering trips without item progress', itemsError)
-                }
-
-                ;(itemRows || []).forEach((item: any) => {
-                    itemsByChecklist.set(item.checklist_id, [
-                        ...(itemsByChecklist.get(item.checklist_id) || []),
-                        item,
-                    ])
-                })
-            }
-        }
-
-        const allTrips = tripRows.map((trip: any) => ({
-            ...trip,
-            checklists: (checklistsByTrip.get(trip.id) || []).map((checklist: any) => ({
-                ...checklist,
-                checklist_items: itemsByChecklist.get(checklist.id) || [],
-            })),
-        }))
+        const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: 'viewer' })
+        const allTrips = (await repositories.trips.listTrips(networkUser.id))
+            .map(tripSummaryToWebTripRow)
+            .sort((a, b) => a.start_date.localeCompare(b.start_date))
         processTrips(allTrips)
     } catch (e) {
         console.warn('Network sync failed, keeping local/cached state', e)
