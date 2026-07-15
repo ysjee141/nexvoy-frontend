@@ -23,6 +23,7 @@ import TripDetailSkeleton from './TripDetailSkeleton'
 import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
 import { flushWebBackupQueue } from '@/lib/local-first/backupSyncService'
 import { subscribeToTripDocumentUpdates } from '@/lib/local-first/indexedDbStore'
+import { materializePlanTimeline } from '@nexvoy/core/local-first/materialize'
 import {
     planTimelineItemToWebPlanRow,
     tripDetailToWebTripRow,
@@ -391,15 +392,22 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
         const planId = editPlanId ?? createLocalPlanId()
         const input = toDocumentPlanInput(planId, plan)
-
-        if (editPlanId) {
-            await repositories.plans.updatePlan(tripId, {
+        const result = editPlanId
+            ? await repositories.plans.updatePlan(tripId, {
                 planId,
                 patch: input,
             })
-        } else {
-            await repositories.plans.createPlan(tripId, input)
+            : await repositories.plans.createPlan(tripId, input)
+
+        const savedPlan = materializePlanTimeline(result.document)
+            .find((candidate) => candidate.id === planId)
+        if (!savedPlan) {
+            throw new Error('일정 저장 결과를 문서에서 확인할 수 없습니다.')
         }
+        const savedRow = planTimelineItemToWebPlanRow(tripId, savedPlan)
+        setPlans((prev) => editPlanId
+            ? prev.map((candidate) => candidate.id === planId ? savedRow : candidate)
+            : [...prev, savedRow])
 
         return planId
     }, [supabase, tripId, userRole])
