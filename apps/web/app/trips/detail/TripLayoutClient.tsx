@@ -27,7 +27,10 @@ import {
     subscribeToWebBackupQueue,
     type WebBackupQueueSnapshot,
 } from '@/lib/local-first/backupSyncService'
-import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import {
+    createWebDocumentPrimaryRepositories,
+    ensureWebTripDocumentRemoteBootstrap,
+} from '@/lib/local-first/documentPrimaryRepositories'
 import { tripDetailToWebMemberRows, tripDetailToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
 
 export default function TripLayoutClient() {
@@ -139,6 +142,12 @@ export default function TripLayoutClient() {
         let disposed = false
         const run = () => {
             void (async () => {
+                if (role === 'owner') {
+                    await ensureWebTripDocumentRemoteBootstrap({
+                        supabase,
+                        tripId: id,
+                    })
+                }
                 await ensureWebDocumentKeyReadiness({
                     supabase,
                     documentId: id,
