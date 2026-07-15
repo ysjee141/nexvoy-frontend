@@ -226,14 +226,21 @@ export type LegacyTripRowTable =
   | 'trip_invitation_links'
   | 'assets'
 
+export type LegacyTemplateRowTable =
+  | 'checklist_templates'
+  | 'checklist_template_items'
+  | 'checklist_template_shares'
+
+export type LegacyRowTable = LegacyTripRowTable | LegacyTemplateRowTable
+
 export interface LegacyRowDocumentPath {
-  tableName: LegacyTripRowTable
+  tableName: LegacyRowTable
   rowId: EntityId
   pathInDocument: string
 }
 
 export function getLegacyRowDocumentPath(
-  tableName: LegacyTripRowTable,
+  tableName: LegacyRowTable,
   rowId: EntityId,
 ): LegacyRowDocumentPath {
   const collectionPath = getLegacyRowDocumentCollectionPath(tableName)
@@ -245,7 +252,7 @@ export function getLegacyRowDocumentPath(
   }
 }
 
-export function getLegacyRowDocumentCollectionPath(tableName: LegacyTripRowTable): string {
+export function getLegacyRowDocumentCollectionPath(tableName: LegacyRowTable): string {
   switch (tableName) {
     case 'trips':
       return 'trip'
@@ -271,5 +278,11 @@ export function getLegacyRowDocumentCollectionPath(tableName: LegacyTripRowTable
       return 'invitationLinks'
     case 'assets':
       return 'assets'
+    case 'checklist_templates':
+      return 'template'
+    case 'checklist_template_items':
+      return 'items'
+    case 'checklist_template_shares':
+      return 'shares'
   }
 }

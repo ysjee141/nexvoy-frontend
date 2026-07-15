@@ -104,7 +104,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-039-new-document-bootstrap.md` | 완료 | 신규 여행/템플릿 생성 시 local document + encrypted snapshot + owner key bootstrap, Issue #337 |
 | `TASK-040-document-primary-product-path-cutover.md` | 완료 | 여행/일정/준비물/템플릿 제품 경로에서 legacy hydrate/fallback 제거, Issue #339 |
 | `TASK-041-backup-freshness-and-cost-control.md` | 완료 | local-first freshness, metadata 기반 backup pull/upload, Supabase 비용 최소화, Issue #341 |
-| `TASK-042-legacy-migration-tool.md` | 예정 | 기존 row 데이터를 명시적으로 document-primary로 전환하는 후속 도구 |
+| `TASK-042-legacy-migration-tool.md` | 완료 | 기존 row 데이터를 명시적으로 document-primary로 전환하는 Web dev migration tool, Issue #343 |
 
 현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `TASK-038`부터는 ADR-014에 따라 Closed Beta 기준선을 기존 row 자동 migration에서 신규 document-primary 데이터로 재설정한다. 기존 row 데이터는 제품 경로에서 자동 hydrate하지 않고, `TASK-042`의 명시적 migration tool source로만 남긴다.
 
