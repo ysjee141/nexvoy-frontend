@@ -25,6 +25,7 @@ pending 요청을 자동 처리한다. invitee는 active key 확인뿐 아니라
 - Web restore 성공 시 복호화한 document를 현재 사용자 IndexedDB namespace에 저장한다.
 - Mobile join도 key 완료 후 encrypted snapshot restore 성공을 상세 이동 조건으로 사용한다.
 - 홈 pending 수락과 local document 없는 상세 진입은 accepted document join 준비 화면으로 이동한다.
+- 이메일 초대 API의 실패·비정상 응답을 검증해 `undefined.id` 대신 서버의 실제 오류를 표시한다.
 
 ## Verification
 
