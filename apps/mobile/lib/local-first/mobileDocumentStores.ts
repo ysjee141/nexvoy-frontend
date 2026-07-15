@@ -28,9 +28,14 @@ const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 
 export function createMobileTripDocumentStore(options: {
   hydrateDocument?: (documentId: EntityId) => Promise<TripDocumentV1 | null>
+  listRemoteDocumentIds?: () => Promise<EntityId[]>
 } = {}): LocalDocumentStore<TripDocumentV1> {
   return {
-    listDocumentIds: async () => listDocumentIds(TRIP_UPDATE_PREFIX),
+    listDocumentIds: async () => {
+      const localIds = await listDocumentIds(TRIP_UPDATE_PREFIX)
+      const remoteIds = await options.listRemoteDocumentIds?.() ?? []
+      return Array.from(new Set([...localIds, ...remoteIds]))
+    },
     getDocument: async (documentId) => {
       const update = await loadDocumentUpdate(TRIP_UPDATE_PREFIX, documentId)
       if (!update) {
@@ -56,13 +61,13 @@ export function createMobileTripDocumentStore(options: {
 
 export function createMobileTemplateDocumentStore(options: {
   hydrateDocument?: (documentId: EntityId) => Promise<TemplateDocumentV1 | null>
-  listLegacyDocumentIds?: () => Promise<EntityId[]>
+  listRemoteDocumentIds?: () => Promise<EntityId[]>
 } = {}): LocalDocumentStore<TemplateDocumentV1> {
   return {
     listDocumentIds: async () => {
       const localIds = await listDocumentIds(TEMPLATE_UPDATE_PREFIX)
-      const legacyIds = await options.listLegacyDocumentIds?.() ?? []
-      return Array.from(new Set([...localIds, ...legacyIds]))
+      const remoteIds = await options.listRemoteDocumentIds?.() ?? []
+      return Array.from(new Set([...localIds, ...remoteIds]))
     },
     getDocument: async (documentId) => {
       const update = await loadDocumentUpdate(TEMPLATE_UPDATE_PREFIX, documentId)

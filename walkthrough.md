@@ -1,3 +1,52 @@
+# Walkthrough: TASK-040 Document-Primary Product Path Cutover
+
+## Summary
+
+TASK-040은 Web/Mobile document-primary repository의 제품 read path에서 legacy row hydrate/fallback을 제거했다.
+이제 repository 목록은 local document id와 Supabase `documents` metadata id를 기준으로 구성하고, local document가
+없을 때는 encrypted backup restore만 시도한다. 기존 row-only 여행/템플릿은 document repository 목록/상세로
+자동 hydrate되지 않는다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-040-document-primary-product-path-cutover.md`
+- GitHub Issue [#339](https://github.com/ysjee141/nexvoy-frontend/issues/339)
+- 브랜치: `feature/task-040-document-primary-product-path-cutover`
+- `packages/core/src/sync/restore.ts`
+- `apps/web/lib/local-first/backupRestoreService.ts`
+- `apps/web/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/web/lib/local-first/webDocumentStores.ts`
+- `apps/mobile/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/mobile/lib/local-first/mobileDocumentStores.ts`
+
+## Key Changes
+
+- Web/Mobile document-primary repositories에서 `getLegacyTripRowBundle` 기반 trip hydrate를 제거했다.
+- Web/Mobile template repository에서 `checklist_templates`/`checklist_template_items` 기반 hydrate/list를 제거했다.
+- local document list에 Supabase `documents` metadata id를 병합해 다른 기기에서 생성된 신규 document-primary 문서를
+  목록 후보로 볼 수 있게 했다.
+- Web backup restore service에 `TemplateDocumentV1` restore를 추가했다.
+- core `restore.ts`에 template Yjs backup replay helper를 추가했다.
+- Mobile은 template snapshot을 복호화한 뒤 `TemplateDocumentV1`로 materialize하는 restore path를 추가했다.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm -C packages/core typecheck` | PASS |
+| `pnpm -C apps/web exec tsc --noEmit` | PASS |
+| `pnpm -C apps/mobile typecheck` | PASS |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS, 기존 `react-native-webrtc`/`event-target-shim` export warning만 발생 |
+
+## Follow-up
+
+- TASK-041에서 backup update enqueue/freshness 정책을 정리한다. 특히 template mutation update backup은 이번 범위에서
+  생성 snapshot restore까지만 닫았고, 후속 freshness/update 정책에서 보강한다.
+- TASK-039의 신규 trip `trips` read model upsert는 일부 화면 호환용으로 남아 있다. 완전한 row read model 의존
+  제거는 별도 UI/layout 정리와 함께 다룬다.
+
 # Walkthrough: TASK-039 New Document Bootstrap
 
 ## Summary
