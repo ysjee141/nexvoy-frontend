@@ -102,7 +102,14 @@ export const PlacePhotoService = {
  * 협업 및 초대 서비스
  */
 export const CollaborationService = {
-  createInvite: async (data: { email: string; tripTitle: string; tripId: string }) => {
+  createInvite: async (data: {
+    email: string
+    tripTitle: string
+    tripId: string
+    inviteUrl: string
+    inviteCode: string
+    role: 'editor' | 'viewer'
+  }) => {
     const response = await apiService.post(`/api/invite/`, data);
     return response.data;
   }

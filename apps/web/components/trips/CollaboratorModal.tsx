@@ -144,21 +144,34 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('로그인이 필요합니다.')
 
-            const { error: memberError } = await collaboration.inviteMember(tripId, email.trim(), inviteRole)
-            if (memberError) {
-                setError(memberError.message || '멤버 추가 중 오류가 발생했습니다.')
-                return
-            }
+            const repo = createInvitationRepository(supabase)
+            const invitation = await repo.createDocumentInvitationLink({
+                documentId: tripId,
+                role: inviteRole,
+                maxUses: 1,
+            })
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
+            const inviteUrl = `${appUrl}/join?token=${encodeURIComponent(invitation.token)}`
+
+            setGeneratedInvite({
+                id: invitation.id,
+                inviteUrl,
+                inviteCode: invitation.inviteCode,
+                role: invitation.role,
+                expiresAt: invitation.expiresAt,
+            })
 
             await CollaborationService.createInvite({
                 tripId,
                 email: email.trim(),
-                tripTitle
+                tripTitle,
+                inviteUrl,
+                inviteCode: invitation.inviteCode,
+                role: invitation.role,
             })
 
             setSuccess(`${email}님을 ${ROLE_LABELS[inviteRole]}(으)로 초대했습니다!`)
             setEmail('')
-            fetchCollaborators()
         } catch (err: any) {
             setError(err.message || '초대 중 오류가 발생했습니다.')
         } finally {
