@@ -8,6 +8,7 @@ import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useRouter } from 'next/navigation'
 import { analytics } from '@/services/AnalyticsService'
+import { createWebTripDocument } from '@/lib/local-first/documentPrimaryRepositories'
 
 const libraries: ("places")[] = ["places"]
 
@@ -86,6 +87,16 @@ export default function NewTripModal({ isOpen, onClose, onSuccess }: NewTripModa
             return
         }
 
+        if (!startDate) {
+            setError('시작일을 선택해주세요.')
+            return
+        }
+
+        if (!endDate) {
+            setError('종료일을 선택해주세요.')
+            return
+        }
+
         if (new Date(startDate) > new Date(endDate)) {
             setError('종료일이 시작일보다 빠를 수 없습니다.')
             return
@@ -101,27 +112,19 @@ export default function NewTripModal({ isOpen, onClose, onSuccess }: NewTripModa
                 return
             }
 
-            const { data: trip, error: insertError } = await supabase
-                .from('trips')
-                .insert({
-                    user_id: user.id,
-                    destination,
-                    start_date: startDate,
-                    end_date: endDate,
-                    adults_count: adults,
-                    children_count: childrenCount,
-                })
-                .select()
-                .single()
+            const tripId = await createWebTripDocument({
+                supabase,
+                destination,
+                startDate,
+                endDate,
+                adultsCount: adults,
+                childrenCount,
+            })
 
-            if (insertError) throw insertError
-
-            if (trip) {
-                analytics.logTripCreate(destination)
-                if (onSuccess) onSuccess()
-                onClose()
-                router.push(`/trips/detail?id=${trip.id}`)
-            }
+            analytics.logTripCreate(destination)
+            if (onSuccess) onSuccess()
+            onClose()
+            router.push(`/trips/detail?id=${tripId}`)
         } catch (err: any) {
             setError(err.message || '여행을 생성하는 중 오류가 발생했습니다.')
         } finally {
@@ -169,7 +172,7 @@ export default function NewTripModal({ isOpen, onClose, onSuccess }: NewTripModa
                 </div>
 
                 <div className={css({ p: { base: '20px', sm: '32px' }, flex: 1 })}>
-                    <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '28px' })}>
+                    <form noValidate onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '28px' })}>
                         
                         <div className={css({ textAlign: 'center', mb: '4px' })}>
                             <div className={css({ w: '60px', h: '60px', bg: 'brand.primary/10', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 16px' })}>
