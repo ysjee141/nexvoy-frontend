@@ -154,16 +154,18 @@ async function uploadInitialBackupSnapshot(
   const wrappedKey = await wrapDocumentEncryptionKey(provider, dek, kek, 1)
   const repository = createSupabaseBackupRepository(supabase)
 
+  await repository.ensureDocumentBootstrapped({
+    documentId: document.trip.id,
+    type: 'trip',
+    schemaVersion: document.schemaVersion,
+  })
   await repository.upsertSnapshot({
     documentId: document.trip.id,
-    ownerId: authUserId,
-    type: 'trip',
     schemaVersion: document.schemaVersion,
     snapshot: encryptedSnapshot,
     snapshotHash: await sha256Hex(snapshotUpdate),
     encrypted: true,
   })
-  await repository.upsertOwnerMember({ documentId: document.trip.id, userId: authUserId })
   await repository.upsertDocumentKey({
     documentId: document.trip.id,
     userId: authUserId,

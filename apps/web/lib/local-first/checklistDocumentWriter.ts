@@ -171,7 +171,6 @@ async function ensureDocumentRegistryBootstrapped(
   try {
     await createSupabaseBackupRepository(supabase).ensureDocumentBootstrapped({
       documentId: tripDocument.trip.id,
-      ownerId: ownerContext.authUserId,
     })
   } catch {
     // Registry bootstrap must not affect the legacy row based checklist flow.

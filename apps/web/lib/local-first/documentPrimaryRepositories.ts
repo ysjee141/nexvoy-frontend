@@ -122,7 +122,6 @@ async function ensureWebDocumentRegistryBootstrapped(
   try {
     await createSupabaseBackupRepository(supabase).ensureDocumentBootstrapped({
       documentId: document.trip.id,
-      ownerId: ownerContext.authUserId,
     })
   } catch {
     webDocumentRegistryBootstrapAttempted.delete(key)
@@ -145,7 +144,6 @@ async function ensureWebDocumentKeyForMutation(
   await ensureWebOwnerDocumentKey({
     supabase,
     document,
-    ownerId: ownerContext.authUserId,
   })
 }
 
@@ -196,7 +194,6 @@ export async function createWebTripDocument(input: {
   await ensureWebOwnerDocumentKeyForSnapshot({
     supabase: input.supabase,
     documentId: tripId,
-    ownerId: ownerContext.authUserId,
     documentType: 'trip',
     schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
     snapshotPayload: update,
@@ -221,7 +218,6 @@ export async function ensureWebTripDocumentRemoteBootstrap(input: {
   await ensureWebOwnerDocumentKeyForSnapshot({
     supabase: input.supabase,
     documentId: input.tripId,
-    ownerId: ownerContext.authUserId,
     documentType: 'trip',
     schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
     snapshotPayload: update,
@@ -270,7 +266,6 @@ export async function createWebTemplateDocument(input: {
   await ensureWebOwnerDocumentKeyForSnapshot({
     supabase: input.supabase,
     documentId: templateId,
-    ownerId: ownerContext.authUserId,
     documentType: 'template',
     schemaVersion: TEMPLATE_DOCUMENT_SCHEMA_VERSION,
     snapshotPayload: update,

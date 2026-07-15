@@ -52,13 +52,11 @@ export interface BootstrapWebDeviceDocumentKeyInput {
 export interface EnsureWebOwnerDocumentKeyInput {
   supabase: SupabaseClient
   document: TripDocumentV1
-  ownerId: string
 }
 
 export interface EnsureWebOwnerDocumentKeyForSnapshotInput {
   supabase: SupabaseClient
   documentId: string
-  ownerId: string
   documentType: BackupDocumentType
   schemaVersion: number
   snapshotPayload: Uint8Array
@@ -170,7 +168,6 @@ export async function ensureWebOwnerDocumentKey(
   return ensureWebOwnerDocumentKeyForSnapshot({
     supabase: input.supabase,
     documentId: input.document.trip.id,
-    ownerId: input.ownerId,
     documentType: 'trip',
     schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
     snapshotPayload,
@@ -183,7 +180,6 @@ export async function ensureWebOwnerDocumentKeyForSnapshot(
   const repository = createSupabaseBackupRepository(input.supabase)
   await repository.ensureDocumentBootstrapped({
     documentId: input.documentId,
-    ownerId: input.ownerId,
     type: input.documentType,
     schemaVersion: input.schemaVersion,
   })
@@ -211,8 +207,6 @@ export async function ensureWebOwnerDocumentKeyForSnapshot(
 
   await repository.upsertSnapshot({
     documentId: input.documentId,
-    ownerId: input.ownerId,
-    type: input.documentType,
     schemaVersion: input.schemaVersion,
     snapshot: serializeEncryptedBackupPayload(encryptedPayload),
     snapshotHash: await sha256Hex(input.snapshotPayload),
