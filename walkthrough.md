@@ -1,3 +1,50 @@
+# Walkthrough: TASK-044 Targeted Document Invitation Authority
+
+## Summary
+
+TASK-044는 이메일, 홈 pending UI, 링크, 코드 초대를 `document_invitation_links`와
+`document_members` authority로 통합했다. targeted 초대는 대상 이메일 계정만 수락할 수 있고,
+메일 API는 인증된 서버 세션과 document editor 권한으로 invitation을 생성한다.
+
+## Artifacts
+
+- GitHub Issue [#348](https://github.com/ysjee141/nexvoy-frontend/issues/348)
+- Pull Request [#349](https://github.com/ysjee141/nexvoy-frontend/pull/349)
+- 브랜치: `feature/task-044-targeted-document-invitation-authority-348`
+- `supabase/migrations/20260716000003_task044_targeted_document_invitations.sql`
+- `packages/core/src/supabase/invitationRepository.ts`
+- `apps/web/app/api/invite/route.ts`
+- `apps/web/components/trips/InvitationBanner.tsx`
+- `apps/web/components/trips/CollaboratorModal.tsx`
+
+## Key Changes
+
+- targeted invitation의 정규화 이메일, 유형, 여행 표시 metadata를 registry에 저장한다.
+- 현재 계정의 pending 목록, 수락, 거절, document collaborator 목록 RPC를 추가했다.
+- token/code 수락 시 JWT email과 target email 일치를 강제한다.
+- 기존 generic invitation과 share token 경로는 유지한다.
+- 메일 API가 임의 URL/code를 받지 않고 서버에서 생성한 `/join` URL만 발송한다.
+- 메일 실패 시 생성한 invitation을 회수한다.
+- 홈 배너와 협업자 모달의 legacy `trip_members` 의존을 제거했다.
+- accepted registry member를 local `TripDocumentV1.members` snapshot에 반영한다.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm --filter @nexvoy/core exec tsx src/supabase/__tests__/invitationRepository.test.ts` | PASS |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm typecheck` | PASS |
+| `pnpm build` | PASS |
+| `pnpm lint:mobile` | PASS |
+| `pnpm build:mobile` | PASS, 기존 WebRTC export warning만 발생 |
+
+## Deployment Note
+
+- migration은 DEV `ivgkqzwosbjukonlpfdw`에 먼저 적용하고 다중 사용자 초대 검증을 수행한다.
+- PROD `runbcaegpefqnljsswhv`에는 사용자 승인 후 별도로 적용한다.
+- 참여 후 wrapped document key 자동 전달과 준비 화면은 TASK-045 범위다.
+
 # Walkthrough: TASK-043 Document-Primary Trip Entry Fix
 
 ## Summary

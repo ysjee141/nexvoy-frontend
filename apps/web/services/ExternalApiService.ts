@@ -104,10 +104,10 @@ export const PlacePhotoService = {
 export const CollaborationService = {
   createInvite: async (data: {
     email: string
-    tripTitle: string
-    tripId: string
-    inviteUrl: string
-    inviteCode: string
+    destination: string
+    documentId: string
+    startDate?: string | null
+    endDate?: string | null
     role: 'editor' | 'viewer'
   }) => {
     const response = await apiService.post(`/api/invite/`, data);
