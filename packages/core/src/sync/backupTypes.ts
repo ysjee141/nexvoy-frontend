@@ -84,6 +84,13 @@ export interface BackupUpdateRecord {
   createdAt: string
 }
 
+export interface DocumentFreshnessRecord {
+  documentId: string
+  type: BackupDocumentType
+  snapshotUpdatedAt: string | null
+  latestUpdateCreatedAt: string | null
+}
+
 export interface BackupSnapshotPolicy {
   maxPendingUpdates: number
   maxPendingBytes: number

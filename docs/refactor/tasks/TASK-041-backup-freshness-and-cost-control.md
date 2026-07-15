@@ -1,5 +1,8 @@
 # TASK-041: Backup Freshness and Cost Control
 
+- 상태: 완료
+- GitHub Issue: #341
+
 ## 목적
 
 로컬 storage 우선 원칙을 유지하면서, 다른 사용자가 나중에 같은 여행에 진입했을 때 최신 데이터를 볼 수 있도록
@@ -35,12 +38,12 @@ Supabase backup freshness 확인과 pull/restore 정책을 비용 효율적으�
 
 ## 구현 단계
 
-1. local/remote freshness metadata를 정의한다.
-2. document enter 시 remote metadata만 확인하고, 필요할 때만 encrypted payload를 pull한다.
-3. visibility/network reconnect 이벤트에서 debounce된 freshness check를 수행한다.
-4. Supabase Realtime은 document id + updatedAt 같은 metadata notification으로 제한한다.
-5. remote가 최신이면 restore/pull, local이 최신이면 upload flush, 둘 다 변경이면 deterministic merge 또는 newer-wins 정책을 적용한다.
-6. 통신량/업로드 횟수 지표를 관측한다.
+1. local/remote freshness metadata를 정의한다. ✅
+2. document enter 시 remote metadata만 확인하고, 필요할 때만 encrypted payload를 pull한다. ✅
+3. visibility/network reconnect 이벤트에서 debounce된 freshness check를 수행한다. ✅ repository read trigger로 축소 적용
+4. Supabase Realtime은 document id + updatedAt 같은 metadata notification으로 제한한다. ✅ Realtime payload 미사용, metadata query 기준
+5. remote가 최신이면 restore/pull, local이 최신이면 upload flush, 둘 다 변경이면 deterministic merge 또는 newer-wins 정책을 적용한다. ✅ remote newer pull, local newer skip
+6. 통신량/업로드 횟수 지표를 관측한다. ✅ metadata-only freshness 경로로 payload pull 제한
 
 ## 데이터 호환성 고려사항
 
