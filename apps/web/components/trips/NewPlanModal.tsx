@@ -285,7 +285,10 @@ export default function NewPlanModal({
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!selectedPlace) return
+        if (!selectedPlace) {
+            setError('장소를 선택하거나 직접 입력해 주세요.')
+            return
+        }
 
         setLoading(true)
         setError('')

@@ -24,6 +24,8 @@ TASK-043은 Closed Beta 테스트 중 확인된 Web trip entry 회귀를 수정�
 - Trip detail layout이 `repositories.trips.getTrip()` 결과를 기준으로 trip header와 member rows를 구성한다.
 - TripClient role 조회가 document owner/member snapshot을 우선 사용하고 legacy role query는 fallback으로만 사용한다.
 - Web 신규 trip document에 owner member snapshot을 추가해 owner read model이 비어 있지 않게 했다.
+- NewPlanModal이 장소 미선택 상태에서 조용히 return하지 않고 오류 메시지를 표시한다.
+- 일정 저장 후 mutation 결과 document에서 저장된 plan을 즉시 materialize해 화면 state에 반영한다.
 
 ## Verification
 
