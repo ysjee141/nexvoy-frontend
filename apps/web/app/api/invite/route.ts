@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, tripTitle, tripId } = await req.json()
+        const { email, tripTitle, inviteUrl, inviteCode, role } = await req.json()
 
-        if (!email || !tripTitle) {
+        if (!email || !tripTitle || !inviteUrl || !inviteCode) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
         }
 
@@ -12,6 +12,11 @@ export async function POST(req: NextRequest) {
         if (!apiKey) {
             return NextResponse.json({ error: 'Resend API Key is not configured' }, { status: 500 })
         }
+
+        const safeTripTitle = escapeHtml(String(tripTitle))
+        const safeInviteUrl = escapeHtml(String(inviteUrl))
+        const safeInviteCode = escapeHtml(String(inviteCode))
+        const roleLabel = role === 'viewer' ? '조회 전용' : '편집 가능'
 
         // 라이브러리 대신 표준 fetch API를 사용하여 Resend REST API 호출
         const response = await fetch('https://api.resend.com/emails', {
@@ -28,14 +33,16 @@ export async function POST(req: NextRequest) {
                     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
                         <h2 style="color: #3B82F6;">온여정 초대장 ✈️</h2>
                         <p>안녕하세요, 여행자님! 🌏</p>
-                        <p><strong>${tripTitle}</strong> 여정을 함께 채워갈 소중한 동행자로 초대받으셨어요.</p>
+                        <p><strong>${safeTripTitle}</strong> 여정을 함께 채워갈 소중한 동행자로 초대받으셨어요.</p>
+                        <p>초대 권한: <strong>${roleLabel}</strong></p>
                         <p>아래 링크를 통해 초대 내용을 확인하고 수락해 주시겠어요?</p>
                         <div style="margin: 30px 0;">
-                            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.nexvoy.xyz'}" 
+                            <a href="${safeInviteUrl}" 
                                style="background-color: #111; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
                                 초대 확인하기
                             </a>
                         </div>
+                        <p style="color: #666; font-size: 14px;">링크가 열리지 않으면 온여정의 초대 코드 입력 화면에서 <strong>${safeInviteCode}</strong>를 입력해 주세요.</p>
                         <p style="color: #666; font-size: 14px;">이 메일은 설레는 여정의 시작, 온여정에서 보냈어요.</p>
                     </div>
                 `,
@@ -64,4 +71,13 @@ export async function POST(req: NextRequest) {
         console.error('Invite API Error:', err)
         return NextResponse.json({ error: err.message }, { status: 500 })
     }
+}
+
+function escapeHtml(value: string): string {
+    return value
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;')
 }
