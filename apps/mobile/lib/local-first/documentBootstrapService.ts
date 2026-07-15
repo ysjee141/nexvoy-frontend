@@ -90,6 +90,12 @@ export async function ensureMobileOwnerDocumentKey({
   if (!user) return // Unauthenticated — skip silently
 
   const backupRepository = createSupabaseBackupRepository(supabase)
+  await backupRepository.ensureDocumentBootstrapped({
+    documentId,
+    ownerId: user.id,
+    type: 'trip',
+    schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
+  })
 
   // Check if this device already has a device-scoped RSA key — no-op if so.
   const activeKey = await backupRepository.getMyActiveDocumentKey({
@@ -139,6 +145,13 @@ export async function ensureMobileOwnerDocumentKeyForSnapshot({
   if (!user) throw new Error('인증 정보가 없습니다.')
 
   const backupRepository = createSupabaseBackupRepository(supabase)
+  await backupRepository.ensureDocumentBootstrapped({
+    documentId,
+    ownerId: user.id,
+    type: documentType,
+    schemaVersion,
+  })
+
   const activeKey = await backupRepository.getMyActiveDocumentKey({
     documentId,
     keyVersion: DOCUMENT_KEY_VERSION,

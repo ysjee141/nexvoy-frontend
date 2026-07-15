@@ -38,7 +38,12 @@ export interface SupabaseBackupRepository {
   hasDocumentKey(input: { documentId: string; userId: string; deviceId?: string | null; keyVersion?: number }): Promise<boolean>
   getMyActiveDocumentKey(input: { documentId: string; deviceId?: string | null; keyVersion?: number }): Promise<ActiveDocumentKeyRecord | null>
   upsertSnapshot(input: UpsertBackupDocumentInput): Promise<void>
-  ensureDocumentBootstrapped(input: { documentId: string; ownerId: string }): Promise<void>
+  ensureDocumentBootstrapped(input: {
+    documentId: string
+    ownerId: string
+    type?: BackupDocumentType
+    schemaVersion?: number
+  }): Promise<void>
   upsertOwnerMember(input: { documentId: string; userId: string }): Promise<void>
   upsertDocumentKey(input: {
     documentId: string
@@ -61,6 +66,7 @@ export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBack
         .from('documents')
         .select('id')
         .eq('id', documentId)
+        .not('snapshot', 'is', null)
         .maybeSingle()
       if (error) throw error
       return Boolean(data)
@@ -118,8 +124,8 @@ export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBack
         .upsert({
           id: input.documentId,
           owner_id: input.ownerId,
-          type: 'trip',
-          schema_version: 1,
+          type: input.type ?? 'trip',
+          schema_version: input.schemaVersion ?? 1,
         }, { onConflict: 'id', ignoreDuplicates: true })
 
       if (error) throw error
