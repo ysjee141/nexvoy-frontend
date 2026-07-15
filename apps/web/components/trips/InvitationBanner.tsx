@@ -37,10 +37,14 @@ export default function InvitationBanner() {
         setError(null)
         try {
             const repository = createInvitationRepository(createClient())
-            if (action === 'accept') await repository.acceptMyDocumentInvitation(id)
-            else await repository.declineMyDocumentInvitation(id)
+            if (action === 'accept') {
+                const result = await repository.acceptMyDocumentInvitation(id)
+                router.push(`/join?acceptedDocumentId=${encodeURIComponent(result.documentId)}`)
+            } else {
+                await repository.declineMyDocumentInvitation(id)
+            }
             setInvitations((current) => current.filter((invitation) => invitation.id !== id))
-            router.refresh()
+            if (action === 'decline') router.refresh()
         } catch {
             setError(action === 'accept' ? '초대를 수락하지 못했습니다.' : '초대를 거절하지 못했습니다.')
         } finally {

@@ -229,10 +229,19 @@ export async function ensureWebDocumentKeyReadiness(
     documentId: input.documentId,
     deviceId,
   })
+  const canProvisionOthers = input.role === 'owner' || input.role === 'editor'
+  if (documentKey && canProvisionOthers) {
+    return runWebForegroundKeyProvisioning({
+      supabase: input.supabase,
+      documentId: input.documentId,
+      documentKey,
+      limit: 25,
+    })
+  }
   if (documentKey) return null
 
-  if (input.role === 'owner') {
-    return runWebForegroundKeyProvisioning({
+  if (canProvisionOthers) {
+    await runWebForegroundKeyProvisioning({
       supabase: input.supabase,
       documentId: input.documentId,
       limit: 25,
@@ -245,7 +254,8 @@ export async function ensureWebDocumentKeyReadiness(
     deviceId,
     keyVersion: KEY_MATERIAL_VERSION,
   })
-  if (status.status === 'completed' || !status.retryable) return null
+  if (status.hasActiveKey) return null
+  if (status.status === 'pending' || status.status === 'processing') return null
 
   await repository.requestDocumentKeyProvisioning({
     documentId: input.documentId,

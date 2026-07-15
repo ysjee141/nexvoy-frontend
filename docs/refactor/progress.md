@@ -19,6 +19,14 @@
 - targeted token/code 수락은 로그인 계정 이메일이 일치할 때만 허용한다.
 - wrapped key 자동 전달과 참여 준비 UX는 계획대로 `TASK-045`에서 완료한다.
 
+2026-07-16 TASK-045 구현 완료:
+
+- key를 보유한 Web owner/editor가 pending provisioning request를 foreground와 visibility trigger에서 자동 처리한다.
+- Web join을 Panda CSS 상태 화면으로 교체하고 membership 완료와 데이터 준비 상태를 분리했다.
+- Web/Mobile 모두 active key 확인 후 encrypted snapshot restore와 local 저장이 성공해야 상세로 이동한다.
+- 홈 pending 수락과 local document 없는 상세 재진입도 join 준비 화면으로 수렴한다.
+- TASK-044 migration이 적용된 DEV에서 Web-Web/Web-Mobile 다중 사용자 수동 검증이 남아 있다.
+
 ## 0. 목표 정정
 
 이번 refactor의 최종 목표는 "준비물 Web-to-Web P2P 검증"이 아니다. 목표는 OnVoy 핵심 기능 전체를 Web/Mobile 양쪽에서 Local-first 기반으로 전환하는 것이다.

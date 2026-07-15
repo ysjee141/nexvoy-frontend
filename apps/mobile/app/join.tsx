@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -30,6 +30,7 @@ import {
   ensureMobileDeviceKeyMaterial,
   loadOrRequestMobileProvisioningStatus,
 } from '@/lib/local-first/keyProvisioningService'
+import { restoreMobileEncryptedSnapshot } from '@/lib/local-first/mobileSnapshotRestoreService'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 type JoinInput = { token?: string; inviteCode?: string }
@@ -73,6 +74,7 @@ export default function JoinScreen() {
   const [acceptedDocumentId, setAcceptedDocumentId] = useState<string | null>(null)
   const [provisioningStatus, setProvisioningStatus] = useState<DocumentKeyProvisioningStatusRecord | null>(null)
   const [statusChecking, setStatusChecking] = useState(false)
+  const readinessInFlight = useRef(false)
 
   const resolveInvitation = async (input: JoinInput) => {
     setLoading(true)
@@ -137,7 +139,18 @@ export default function JoinScreen() {
           setProvisioningRequired(true)
           return
         }
-        router.replace({ pathname: '/trip/[id]', params: { id: result.result.documentId } })
+        const restore = await restoreMobileEncryptedSnapshot({
+          supabase,
+          documentId: result.result.documentId,
+        })
+        if (restore.status === 'restored') {
+          router.replace({ pathname: '/trip/[id]', params: { id: result.result.documentId } })
+          return
+        }
+        setAcceptedDocumentId(result.result.documentId)
+        setProvisioningStatus(status)
+        setProvisioningRequired(true)
+        setMessage('참여는 완료됐습니다. 최신 여정 데이터를 준비하고 있어요.')
         return
       }
       router.replace({ pathname: '/trip/[id]', params: { id: result.tripId ?? summary.tripId } })
@@ -150,8 +163,9 @@ export default function JoinScreen() {
 
   const handleProvisioningRetry = async () => {
     const documentId = acceptedDocumentId ?? (summary?.source === 'document' ? summary.tripId : null)
-    if (!documentId || statusChecking) return
+    if (!documentId || readinessInFlight.current) return
 
+    readinessInFlight.current = true
     setStatusChecking(true)
     setMessage(null)
     try {
@@ -165,14 +179,31 @@ export default function JoinScreen() {
       setProvisioningStatus(status)
       setProvisioningRequired(!status.hasActiveKey && status.status !== 'completed')
       if (status.hasActiveKey || status.status === 'completed') {
-        router.replace({ pathname: '/trip/[id]', params: { id: documentId } })
+        const restore = await restoreMobileEncryptedSnapshot({ supabase, documentId })
+        if (restore.status === 'restored') {
+          router.replace({ pathname: '/trip/[id]', params: { id: documentId } })
+          return
+        }
+        setProvisioningRequired(true)
+        setMessage('참여는 완료됐습니다. 최신 여정 데이터를 준비하고 있어요.')
       }
     } catch {
       setMessage('여정 데이터 준비 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.')
     } finally {
+      readinessInFlight.current = false
       setStatusChecking(false)
     }
   }
+
+  useEffect(() => {
+    if (!provisioningRequired || !acceptedDocumentId) return undefined
+    const interval = setInterval(() => {
+      void handleProvisioningRetry()
+    }, 5000)
+    return () => clearInterval(interval)
+  // The retry handler intentionally reads the latest screen state on each render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [acceptedDocumentId, provisioningRequired])
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
