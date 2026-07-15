@@ -45,6 +45,7 @@ export async function createWebDocumentPrimaryRepositories(
       const restored = await restoreWebTripDocumentFromBackup({ supabase, documentId: tripId })
       return restored.document
     },
+    refreshDocument: (tripId, localDocument) => refreshWebTripDocumentIfRemoteNewer(supabase, tripId, localDocument),
     listRemoteDocumentIds: () => listRemoteDocumentIds(supabase, 'trip'),
   })
   const templateStore = createWebTemplateDocumentStore(ownerContext, {
@@ -52,6 +53,7 @@ export async function createWebDocumentPrimaryRepositories(
       const restored = await restoreWebTemplateDocumentFromBackup({ supabase, documentId: templateId })
       return restored.document
     },
+    refreshDocument: (templateId, localDocument) => refreshWebTemplateDocumentIfRemoteNewer(supabase, templateId, localDocument),
     listRemoteDocumentIds: () => listRemoteDocumentIds(supabase, 'template'),
   })
 
@@ -80,6 +82,17 @@ export async function createWebDocumentPrimaryRepositories(
                 console.warn('[document-primary backup publish failed]', getSafeBackupPublishFailureReason(error))
               })
             }
+            return
+          }
+
+          if (result.documentType === 'template' && (actor.role === 'owner' || actor.role === 'editor')) {
+            void enqueueWebBackupUpdate({
+              supabase,
+              documentId: result.documentId,
+              update: result.update,
+            }).catch((error) => {
+              console.warn('[document-primary backup publish failed]', getSafeBackupPublishFailureReason(error))
+            })
           }
         },
       },
@@ -251,6 +264,46 @@ async function listRemoteDocumentIds(
     .order('updated_at', { ascending: false })
   if (error) throw error
   return (data ?? []).map((row) => row.id)
+}
+
+async function refreshWebTripDocumentIfRemoteNewer(
+  supabase: SupabaseClient,
+  documentId: EntityId,
+  localDocument: TripDocumentV1,
+): Promise<TripDocumentV1 | null> {
+  if (!(await isRemoteDocumentNewer(supabase, documentId, localDocument.trip.updatedAt))) return null
+  const restored = await restoreWebTripDocumentFromBackup({ supabase, documentId })
+  return restored.document
+}
+
+async function refreshWebTemplateDocumentIfRemoteNewer(
+  supabase: SupabaseClient,
+  documentId: EntityId,
+  localDocument: TemplateDocumentV1,
+): Promise<TemplateDocumentV1 | null> {
+  if (!(await isRemoteDocumentNewer(supabase, documentId, localDocument.template.updatedAt))) return null
+  const restored = await restoreWebTemplateDocumentFromBackup({ supabase, documentId })
+  return restored.document
+}
+
+async function isRemoteDocumentNewer(
+  supabase: SupabaseClient,
+  documentId: EntityId,
+  localUpdatedAt: string,
+): Promise<boolean> {
+  const freshness = await createSupabaseBackupRepository(supabase).getDocumentFreshness(documentId)
+  if (!freshness) return false
+  const remoteUpdatedAt = maxIsoDateTime(freshness.snapshotUpdatedAt, freshness.latestUpdateCreatedAt)
+  if (!remoteUpdatedAt) return false
+  return remoteUpdatedAt.localeCompare(localUpdatedAt) > 0
+}
+
+function maxIsoDateTime(...values: Array<string | null>): string | null {
+  return values.reduce<string | null>((latest, value) => {
+    if (!value) return latest
+    if (!latest || value.localeCompare(latest) > 0) return value
+    return latest
+  }, null)
 }
 
 export type WebDocumentPrimaryMutationResult =

@@ -1,3 +1,51 @@
+# Walkthrough: TASK-041 Backup Freshness and Cost Control
+
+## Summary
+
+TASK-041은 local-first 제품 경로가 local document를 우선 사용하되, Supabase backup metadata가 더 최신일 때만
+encrypted payload를 pull/restore하도록 정리했다. repository read/document enter 성격의 호출에서
+`documents.updated_at`과 최신 `document_updates.created_at`만 먼저 확인하고, remote가 local `updatedAt`보다
+최신일 때에만 trip/template backup restore를 수행한다.
+
+## Artifacts
+
+- `docs/refactor/tasks/TASK-041-backup-freshness-and-cost-control.md`
+- GitHub Issue [#341](https://github.com/ysjee141/nexvoy-frontend/issues/341)
+- 브랜치: `feature/task-041-backup-freshness-cost-control`
+- `packages/core/src/sync/backupTypes.ts`
+- `packages/core/src/supabase/backupRepository.ts`
+- `apps/web/lib/local-first/webDocumentStores.ts`
+- `apps/mobile/lib/local-first/mobileDocumentStores.ts`
+- `apps/web/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/mobile/lib/local-first/documentPrimaryRepositories.ts`
+
+## Key Changes
+
+- `DocumentFreshnessRecord`와 `getDocumentFreshness()`를 추가해 snapshot/update blob 없이 metadata만 조회한다.
+- Web/Mobile document store에 `refreshDocument` hook을 추가했다.
+- local document가 이미 있을 때도 remote metadata가 더 최신이면 backup restore를 수행한다.
+- remote가 최신이 아니면 encrypted snapshot/update payload를 다운로드하지 않는다.
+- Web/Mobile template mutation도 backup update queue에 enqueue되도록 연결했다.
+- Realtime payload는 도입하지 않고, metadata query 기반으로 통신량을 제한했다.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm -C packages/core typecheck` | PASS |
+| `pnpm -C apps/web exec tsc --noEmit` | PASS |
+| `pnpm -C apps/mobile typecheck` | PASS |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS, 기존 `react-native-webrtc`/`event-target-shim` export warning만 발생 |
+
+## Follow-up
+
+- full conflict-free merge 정책은 이번 범위에서 제외했다. 현재는 remote metadata가 더 최신이면 restore/replay하고,
+  local이 최신이면 pull을 skip한다.
+- Realtime metadata notification은 이번 PR에서 추가하지 않았다. 비용 최소화를 위해 document enter/list read trigger를
+  먼저 기준선으로 둔다.
+
 # Walkthrough: TASK-040 Document-Primary Product Path Cutover
 
 ## Summary

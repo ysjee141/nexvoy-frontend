@@ -57,10 +57,12 @@ export async function createMobileDocumentPrimaryRepositories(
     hydrateDocument: async (tripId) => {
       return restoreMobileTripDocumentFromBackup(supabase, tripId)
     },
+    refreshDocument: (tripId, localDocument) => refreshMobileTripDocumentIfRemoteNewer(supabase, tripId, localDocument),
     listRemoteDocumentIds: () => listRemoteDocumentIds(supabase, 'trip'),
   })
   const templateStore = createMobileTemplateDocumentStore({
     hydrateDocument: (templateId) => restoreMobileTemplateDocumentFromBackup(supabase, templateId),
+    refreshDocument: (templateId, localDocument) => refreshMobileTemplateDocumentIfRemoteNewer(supabase, templateId, localDocument),
     listRemoteDocumentIds: () => listRemoteDocumentIds(supabase, 'template'),
   })
 
@@ -86,6 +88,15 @@ export async function createMobileDocumentPrimaryRepositories(
                 })
               })().catch(() => undefined)
             }
+            return
+          }
+
+          if (result.documentType === 'template' && (actor.role === 'owner' || actor.role === 'editor')) {
+            void enqueueMobileBackupUpdate({
+              supabase,
+              documentId: result.documentId,
+              update: result.update,
+            }).catch(() => undefined)
           }
         },
       },
@@ -232,6 +243,44 @@ async function listRemoteDocumentIds(
     .order('updated_at', { ascending: false })
   if (error) throw error
   return (data ?? []).map((row) => row.id)
+}
+
+async function refreshMobileTripDocumentIfRemoteNewer(
+  supabase: SupabaseClient,
+  documentId: EntityId,
+  localDocument: TripDocumentV1,
+): Promise<TripDocumentV1 | null> {
+  if (!(await isRemoteDocumentNewer(supabase, documentId, localDocument.trip.updatedAt))) return null
+  return restoreMobileTripDocumentFromBackup(supabase, documentId)
+}
+
+async function refreshMobileTemplateDocumentIfRemoteNewer(
+  supabase: SupabaseClient,
+  documentId: EntityId,
+  localDocument: TemplateDocumentV1,
+): Promise<TemplateDocumentV1 | null> {
+  if (!(await isRemoteDocumentNewer(supabase, documentId, localDocument.template.updatedAt))) return null
+  return restoreMobileTemplateDocumentFromBackup(supabase, documentId)
+}
+
+async function isRemoteDocumentNewer(
+  supabase: SupabaseClient,
+  documentId: EntityId,
+  localUpdatedAt: string,
+): Promise<boolean> {
+  const freshness = await createSupabaseBackupRepository(supabase).getDocumentFreshness(documentId)
+  if (!freshness) return false
+  const remoteUpdatedAt = maxIsoDateTime(freshness.snapshotUpdatedAt, freshness.latestUpdateCreatedAt)
+  if (!remoteUpdatedAt) return false
+  return remoteUpdatedAt.localeCompare(localUpdatedAt) > 0
+}
+
+function maxIsoDateTime(...values: Array<string | null>): string | null {
+  return values.reduce<string | null>((latest, value) => {
+    if (!value) return latest
+    if (!latest || value.localeCompare(latest) > 0) return value
+    return latest
+  }, null)
 }
 
 async function restoreMobileTripDocumentFromBackup(

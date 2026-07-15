@@ -33,6 +33,7 @@ export function createWebTripDocumentStore(
   ownerContext: WebOwnerContext,
   options: {
     hydrateDocument?: (documentId: EntityId) => Promise<TripDocumentV1 | null>
+    refreshDocument?: (documentId: EntityId, localDocument: TripDocumentV1) => Promise<TripDocumentV1 | null>
     listRemoteDocumentIds?: () => Promise<EntityId[]>
   } = {},
 ): LocalDocumentStore<TripDocumentV1> {
@@ -59,7 +60,12 @@ export function createWebTripDocumentStore(
 
       const doc = createYjsTripDocument()
       applyTripDocumentUpdate(doc, update)
-      return readTripDocumentFromYjs(doc)
+      const localDocument = readTripDocumentFromYjs(doc)
+      if (!localDocument) return null
+      const refreshed = await options.refreshDocument?.(documentId, localDocument)
+      if (!refreshed) return localDocument
+      await putTripDocument(ownerContext.namespace, documentId, refreshed)
+      return refreshed
     },
     putDocument: async (documentId, document, update) => {
       if (update) {
@@ -75,6 +81,7 @@ export function createWebTemplateDocumentStore(
   ownerContext: WebOwnerContext,
   options: {
     hydrateDocument?: (documentId: EntityId) => Promise<TemplateDocumentV1 | null>
+    refreshDocument?: (documentId: EntityId, localDocument: TemplateDocumentV1) => Promise<TemplateDocumentV1 | null>
     listRemoteDocumentIds?: () => Promise<EntityId[]>
   } = {},
 ): LocalDocumentStore<TemplateDocumentV1> {
@@ -99,7 +106,12 @@ export function createWebTemplateDocumentStore(
 
       const doc = createYjsTemplateDocument()
       applyTemplateDocumentUpdate(doc, update)
-      return readTemplateDocumentFromYjs(doc)
+      const localDocument = readTemplateDocumentFromYjs(doc)
+      if (!localDocument) return null
+      const refreshed = await options.refreshDocument?.(documentId, localDocument)
+      if (!refreshed) return localDocument
+      await putTemplateDocument(namespace, documentId, refreshed)
+      return refreshed
     },
     putDocument: async (documentId, document, update) => {
       if (update) {

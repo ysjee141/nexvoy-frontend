@@ -7,6 +7,7 @@ import type {
   PendingBackupUpdate,
   RestorePlan,
   DocumentKeyMetadata,
+  DocumentFreshnessRecord,
 } from '../sync/backupTypes'
 import { createRestorePlan } from '../sync/syncState'
 
@@ -48,6 +49,7 @@ export interface SupabaseBackupRepository {
   }): Promise<void>
   uploadUpdate(update: PendingBackupUpdate): Promise<void>
   getLatestSnapshot(documentId: string): Promise<BackupSnapshotRecord | null>
+  getDocumentFreshness(documentId: string): Promise<DocumentFreshnessRecord | null>
   listUpdates(input: ListBackupUpdatesInput): Promise<BackupUpdateRecord[]>
   restore(documentId: string): Promise<RestorePlan>
 }
@@ -183,6 +185,37 @@ export function createSupabaseBackupRepository(sb: SupabaseClient): SupabaseBack
         snapshotHash: data.snapshot_hash,
         encrypted: data.encrypted,
         updatedAt: data.updated_at,
+      }
+    },
+    getDocumentFreshness: async (documentId) => {
+      const [documentResult, latestUpdateResult] = await Promise.all([
+        sb
+          .from('documents')
+          .select('id, type, updated_at')
+          .eq('id', documentId)
+          .maybeSingle(),
+        sb
+          .from('document_updates')
+          .select('created_at')
+          .eq('document_id', documentId)
+          .order('created_at', { ascending: false })
+          .limit(1),
+      ])
+
+      if (documentResult.error) throw documentResult.error
+      if (latestUpdateResult.error) throw latestUpdateResult.error
+      if (!documentResult.data) return null
+
+      const documentType = documentResult.data.type
+      if (documentType !== 'trip' && documentType !== 'template') {
+        throw new Error('Unsupported backup document type.')
+      }
+
+      return {
+        documentId: documentResult.data.id,
+        type: documentType,
+        snapshotUpdatedAt: documentResult.data.updated_at,
+        latestUpdateCreatedAt: latestUpdateResult.data?.[0]?.created_at ?? null,
       }
     },
     listUpdates: async (input) => {

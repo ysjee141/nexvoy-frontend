@@ -28,6 +28,7 @@ const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz012
 
 export function createMobileTripDocumentStore(options: {
   hydrateDocument?: (documentId: EntityId) => Promise<TripDocumentV1 | null>
+  refreshDocument?: (documentId: EntityId, localDocument: TripDocumentV1) => Promise<TripDocumentV1 | null>
   listRemoteDocumentIds?: () => Promise<EntityId[]>
 } = {}): LocalDocumentStore<TripDocumentV1> {
   return {
@@ -47,7 +48,12 @@ export function createMobileTripDocumentStore(options: {
 
       const doc = createYjsTripDocument()
       applyTripDocumentUpdate(doc, update)
-      return readTripDocumentFromYjs(doc)
+      const localDocument = readTripDocumentFromYjs(doc)
+      if (!localDocument) return null
+      const refreshed = await options.refreshDocument?.(documentId, localDocument)
+      if (!refreshed) return localDocument
+      await putTripDocument(documentId, refreshed)
+      return refreshed
     },
     putDocument: async (documentId, document, update) => {
       if (update) {
@@ -61,6 +67,7 @@ export function createMobileTripDocumentStore(options: {
 
 export function createMobileTemplateDocumentStore(options: {
   hydrateDocument?: (documentId: EntityId) => Promise<TemplateDocumentV1 | null>
+  refreshDocument?: (documentId: EntityId, localDocument: TemplateDocumentV1) => Promise<TemplateDocumentV1 | null>
   listRemoteDocumentIds?: () => Promise<EntityId[]>
 } = {}): LocalDocumentStore<TemplateDocumentV1> {
   return {
@@ -80,7 +87,12 @@ export function createMobileTemplateDocumentStore(options: {
 
       const doc = createYjsTemplateDocument()
       applyTemplateDocumentUpdate(doc, update)
-      return readTemplateDocumentFromYjs(doc)
+      const localDocument = readTemplateDocumentFromYjs(doc)
+      if (!localDocument) return null
+      const refreshed = await options.refreshDocument?.(documentId, localDocument)
+      if (!refreshed) return localDocument
+      await putTemplateDocument(documentId, refreshed)
+      return refreshed
     },
     putDocument: async (documentId, document, update) => {
       if (update) {
