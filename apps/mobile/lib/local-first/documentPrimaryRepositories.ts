@@ -168,15 +168,6 @@ export async function createMobileTripDocument(input: {
     schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
     snapshotPayload: update,
   })
-  await upsertTripReadModel(input.supabase, {
-    tripId,
-    ownerId: userId,
-    destination: input.destination,
-    startDate: input.startDate,
-    endDate: input.endDate,
-    adultsCount: input.adultsCount,
-    childrenCount: input.childrenCount,
-  })
 
   return tripId
 }
@@ -332,32 +323,6 @@ export type MobileDocumentPrimaryMutationResult =
 function createEntityId(prefix: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
-}
-
-async function upsertTripReadModel(
-  supabase: SupabaseClient,
-  input: {
-    tripId: string
-    ownerId: string
-    destination: string
-    startDate: string
-    endDate: string
-    adultsCount: number
-    childrenCount: number
-  },
-): Promise<void> {
-  const { error } = await supabase
-    .from('trips')
-    .upsert({
-      id: input.tripId,
-      user_id: input.ownerId,
-      destination: input.destination,
-      start_date: input.startDate,
-      end_date: input.endDate,
-      adults_count: input.adultsCount,
-      children_count: input.childrenCount,
-    })
-  if (error) throw error
 }
 
 async function sha256Hex(bytes: Uint8Array): Promise<string> {
