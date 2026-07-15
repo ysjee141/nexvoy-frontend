@@ -7,13 +7,16 @@ import { WifiOff, MapPin, AlertCircle } from 'lucide-react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useNetworkStore } from '@/stores/useNetworkStore'
-import { collaboration } from '@/lib/collaboration'
 import { getCurrencyFromTimezone } from '@nexvoy/core'
 import { ExchangeService } from '@/services/ExternalApiService'
 import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
 import RouteMapInfoModal from '@/components/trips/RouteMapInfoModal'
 import PlanDetailModal from '@/components/trips/PlanDetailModal'
 import NewPlanModal from '@/components/trips/NewPlanModal'
+import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import { materializePlanTimeline } from '@nexvoy/core/local-first/materialize'
+import { planTimelineItemToWebPlanRow } from '@/lib/local-first/tripReadModelAdapters'
+import type { CreatePlanMutationInput } from '@nexvoy/core/local-first/documentMutationWriter'
 
 const GOOGLE_MAPS_LIBRARIES: ('places')[] = ['places']
 
@@ -194,23 +197,19 @@ export default function RouteMapView({
         let cancelled = false
 
         const fetchData = async () => {
-            const [plansResult, roleResult] = await Promise.all([
-                supabase
-                    .from('plans')
-                    .select('*')
-                    .eq('trip_id', tripId)
-                    .order('start_datetime_local', { ascending: true }),
-                collaboration.getUserRole(tripId),
+            const repositories = await createWebDocumentPrimaryRepositories(supabase)
+            const [planRows, role] = await Promise.all([
+                repositories.plans.listPlans(tripId),
+                getDocumentPrimaryUserRole(supabase, tripId),
             ])
 
             if (cancelled) return
 
-            if (plansResult.data) {
-                setPlans(plansResult.data.map((p: any) => ({ ...p, is_visited: p.is_visited ?? false })) as Plan[])
-            }
-            if (roleResult.data) {
-                setUserRole(roleResult.data as 'owner' | 'editor' | 'viewer')
-            }
+            setPlans(planRows.map((plan) => ({
+                ...planTimelineItemToWebPlanRow(tripId, plan),
+                is_visited: plan.isVisited,
+            })) as Plan[])
+            setUserRole(role)
             setDataLoaded(true)
         }
 
@@ -342,14 +341,22 @@ export default function RouteMapView({
             setPlans((prev) => prev.map((p) => (p.id === planId ? { ...p, is_visited: isVisited } : p)))
             setSelectedPlan((prev) => (prev && prev.id === planId ? { ...prev, is_visited: isVisited } : prev))
 
-            const { error } = await supabase.from('plans').update({ is_visited: isVisited }).eq('id', planId)
-            if (error) {
+            try {
+                if (!tripId || (userRole !== 'owner' && userRole !== 'editor')) {
+                    throw new Error('일정을 수정할 권한이 없습니다.')
+                }
+                const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+                await repositories.plans.updatePlan(tripId, {
+                    planId,
+                    patch: { isVisited },
+                })
+            } catch {
                 // Rollback
                 setPlans((prev) => prev.map((p) => (p.id === planId ? { ...p, is_visited: !isVisited } : p)))
                 setSelectedPlan((prev) => (prev && prev.id === planId ? { ...prev, is_visited: !isVisited } : prev))
             }
         },
-        [supabase]
+        [supabase, tripId, userRole]
     )
 
     const handleDetail = useCallback(
@@ -364,26 +371,57 @@ export default function RouteMapView({
 
     const handleEditPlan = useCallback(
         async (plan: any) => {
-            const { data: urlsData } = await supabase.from('plan_urls').select('url').eq('plan_id', plan.id)
-            setEditingPlan({ ...plan, plan_urls: urlsData || [] })
+            setEditingPlan({ ...plan, plan_urls: plan.plan_urls || [] })
             setDetailPlan(null)
             setIsEditModalOpen(true)
         },
-        [supabase]
+        []
     )
 
     // plans 재패칭 (수정/삭제 후)
     const refetchPlans = useCallback(async () => {
         if (!tripId) return
-        const { data } = await supabase
-            .from('plans')
-            .select('*')
-            .eq('trip_id', tripId)
-            .order('start_datetime_local', { ascending: true })
-        if (data) {
-            setPlans(data.map((p: any) => ({ ...p, is_visited: p.is_visited ?? false })) as Plan[])
-        }
+        const repositories = await createWebDocumentPrimaryRepositories(supabase)
+        const data = await repositories.plans.listPlans(tripId)
+        setPlans(data.map((plan) => ({
+            ...planTimelineItemToWebPlanRow(tripId, plan),
+            is_visited: plan.isVisited,
+        })) as Plan[])
     }, [tripId, supabase])
+
+    const handleSavePlan = useCallback(async ({ plan, editPlanId }: {
+        plan: any
+        editPlanId?: string
+    }): Promise<string> => {
+        if (!tripId) throw new Error('여행 정보를 찾을 수 없어요.')
+        if (userRole !== 'owner' && userRole !== 'editor') {
+            throw new Error('일정을 수정할 권한이 없습니다.')
+        }
+        const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+        const planId = editPlanId ?? createLocalPlanId()
+        const input = toDocumentPlanInput(planId, plan)
+        const result = editPlanId
+            ? await repositories.plans.updatePlan(tripId, {
+                planId,
+                patch: input,
+            })
+            : await repositories.plans.createPlan(tripId, input)
+
+        const savedPlan = materializePlanTimeline(result.document)
+            .find((candidate) => candidate.id === planId)
+        if (!savedPlan) {
+            throw new Error('일정 저장 결과를 문서에서 확인할 수 없습니다.')
+        }
+        const savedRow = {
+            ...planTimelineItemToWebPlanRow(tripId, savedPlan),
+            is_visited: savedPlan.isVisited,
+        } as Plan
+        setPlans((prev) => editPlanId
+            ? prev.map((candidate) => candidate.id === planId ? savedRow : candidate)
+            : [...prev, savedRow])
+
+        return planId
+    }, [supabase, tripId, userRole])
 
     const handleDeletePlan = useCallback(
         async (planId: string) => {
@@ -396,13 +434,19 @@ export default function RouteMapView({
                     console.warn('[RouteMapView] cleanupPlanPhotos failed (ignored)', cleanupErr)
                 }
             }
-            const { error } = await supabase.from('plans').delete().eq('id', planId)
-            if (!error) {
+            try {
+                if (!tripId || (userRole !== 'owner' && userRole !== 'editor')) {
+                    throw new Error('일정을 삭제할 권한이 없습니다.')
+                }
+                const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+                await repositories.plans.deletePlan(tripId, planId)
                 setPlans(prev => prev.filter(p => p.id !== planId))
                 setDetailPlan(null)
+            } catch {
+                // keep existing map state
             }
         },
-        [supabase, tripId]
+        [supabase, tripId, userRole]
     )
 
     /** 백그라운드/on-demand 업로드 성공 시 plans 동기화 */
@@ -624,6 +668,7 @@ export default function RouteMapView({
                     tripStartDate={tripStartDate}
                     tripEndDate={tripEndDate}
                     onPlanImageUpdated={handlePlanImageRecovered}
+                    onSavePlan={handleSavePlan}
                 />
             )}
 
@@ -690,4 +735,72 @@ export default function RouteMapView({
             )}
         </div>
     )
+}
+
+async function getDocumentPrimaryUserRole(
+    supabase: ReturnType<typeof createClient>,
+    tripId: string,
+): Promise<'owner' | 'editor' | 'viewer' | null> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const repositories = await createWebDocumentPrimaryRepositories(supabase)
+    const documentTrip = await repositories.trips.getTrip(tripId)
+    if (documentTrip?.ownerId === user.id) return 'owner'
+
+    const documentMember = documentTrip?.members.find((member) =>
+        member.userId === user.id && member.status === 'accepted',
+    )
+    return documentMember?.role ?? null
+}
+
+function toDocumentPlanInput(planId: string, plan: {
+    title: string
+    location: string | null
+    address: string | null
+    location_lat?: number | null
+    location_lng?: number | null
+    google_place_id?: string | null
+    image_url?: string | null
+    photo_reference?: string | null
+    start_datetime_local: string
+    end_datetime_local: string
+    timezone_string?: string | null
+    alarm_minutes_before?: number | null
+    alarm_sent_at?: string | null
+    cost?: number | null
+    memo?: string | null
+    is_completed?: boolean | null
+    is_visited?: boolean | null
+}): CreatePlanMutationInput {
+    const now = new Date().toISOString()
+    const lat = plan.location_lat ?? null
+    const lng = plan.location_lng ?? null
+
+    return {
+        id: planId,
+        title: plan.title,
+        location: plan.location,
+        address: plan.address,
+        coordinates: lat === null || lng === null ? null : { lat, lng },
+        googlePlaceId: plan.google_place_id ?? null,
+        imageUrl: plan.image_url ?? null,
+        photoReference: plan.photo_reference ?? null,
+        startDateTimeLocal: plan.start_datetime_local,
+        endDateTimeLocal: plan.end_datetime_local,
+        timezone: plan.timezone_string ?? 'Asia/Seoul',
+        alarmMinutesBefore: plan.alarm_minutes_before ?? null,
+        alarmSentAt: plan.alarm_sent_at ?? null,
+        cost: plan.cost ?? 0,
+        memo: plan.memo ?? null,
+        isCompleted: plan.is_completed ?? false,
+        isVisited: plan.is_visited ?? false,
+        createdAt: now,
+        updatedAt: now,
+    }
+}
+
+function createLocalPlanId(): string {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
+    return `plan-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
