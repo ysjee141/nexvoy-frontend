@@ -110,10 +110,50 @@ export const CollaborationService = {
     endDate?: string | null
     role: 'editor' | 'viewer'
   }) => {
-    const response = await apiService.post(`/api/invite/`, data);
+    const response = await apiService.post<InviteResponse | InviteErrorResponse>(`/api/invite/`, data);
+    if (response.status < 200 || response.status >= 300) {
+      throw new Error(getInviteErrorMessage(response.data));
+    }
+    if (!isInviteResponse(response.data)) {
+      throw new Error(getInviteErrorMessage(response.data));
+    }
     return response.data;
   }
 };
+
+interface InviteResponse {
+  invitation: {
+    id: string
+    inviteCode: string
+    role: 'editor' | 'viewer'
+    expiresAt: string | null
+  }
+  inviteUrl: string
+}
+
+interface InviteErrorResponse {
+  error?: string
+}
+
+function isInviteResponse(value: unknown): value is InviteResponse {
+  if (!value || typeof value !== 'object' || !('invitation' in value)) return false
+  const response = value as Record<string, unknown>
+  const invitation = response.invitation
+  if (!invitation || typeof invitation !== 'object') return false
+  const invitationRecord = invitation as Record<string, unknown>
+  return Boolean(
+    typeof invitationRecord.id === 'string'
+    && typeof invitationRecord.inviteCode === 'string'
+    && (invitationRecord.role === 'editor' || invitationRecord.role === 'viewer')
+    && typeof response.inviteUrl === 'string',
+  )
+}
+
+function getInviteErrorMessage(value: unknown): string {
+  return value !== null && typeof value === 'object' && 'error' in value && typeof value.error === 'string'
+    ? value.error
+    : '초대 서버 응답을 확인할 수 없습니다.'
+}
 
 /**
  * 메타데이터(OG-Preview) 서비스
