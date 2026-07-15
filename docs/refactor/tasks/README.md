@@ -105,6 +105,8 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-040-document-primary-product-path-cutover.md` | 완료 | 여행/일정/준비물/템플릿 제품 경로에서 legacy hydrate/fallback 제거, Issue #339 |
 | `TASK-041-backup-freshness-and-cost-control.md` | 완료 | local-first freshness, metadata 기반 backup pull/upload, Supabase 비용 최소화, Issue #341 |
 | `TASK-042-legacy-migration-tool.md` | 완료 | 기존 row 데이터를 명시적으로 document-primary로 전환하는 Web dev migration tool, Issue #343 |
+| `TASK-044-targeted-document-invitation-authority.md` | 예정 | 이메일 대상 초대 authority, pending 초대, 안전한 메일 발송, document member registry 통합 |
+| `TASK-045-invitation-join-and-key-delivery-productization.md` | 예정 | Web/Mobile join UX, 자동 key provisioning, restore 및 multi-user E2E 완성 |
 
 현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `TASK-038`부터는 ADR-014에 따라 Closed Beta 기준선을 기존 row 자동 migration에서 신규 document-primary 데이터로 재설정한다. 기존 row 데이터는 제품 경로에서 자동 hydrate하지 않고, `TASK-042`의 명시적 migration tool source로만 남긴다.
 
@@ -181,6 +183,11 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-034-p2p-all-domain-wiring.md`: P2P update 전파를 모든 도메인으로 확장하고 late join을 하드닝
 - [x] `TASK-035-full-integration-test-suite.md`: 전체 제품 통합 테스트와 실기기 smoke 검증
 - [x] `TASK-036-closed-beta-readiness.md`: 완성 제품 기준 Closed Beta 출시 준비
+
+### Phase 8: Invitation Closed Beta Blocker
+
+- [ ] `TASK-044-targeted-document-invitation-authority.md`: 이메일·pending UI·링크·코드 초대를 document authority로 통합
+- [ ] `TASK-045-invitation-join-and-key-delivery-productization.md`: 참여 UX, 자동 key 전달, restore 및 다중 사용자 E2E 완성
 
 ## 권장 시작 순서
 

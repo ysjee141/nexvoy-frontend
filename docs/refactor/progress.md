@@ -4,6 +4,13 @@
 기준 브랜치: `refactoring/local-first-architecture`  
 목표 해석: **웹/앱의 모든 핵심 기능을 신규 Local-first document-primary 데이터 기준으로 완성한 뒤 통합테스트와 Closed Beta를 진행한다.**  
 
+2026-07-16 초대 흐름 재점검:
+
+- 이메일 초대와 기존 로그인 후 Accept UI가 서로 다른 registry를 사용하고 있음을 확인했다.
+- 초대 수락 membership은 성공하지만 owner/editor key delivery가 자동 실행되지 않아 restore가 pending에 머문다.
+- `TASK-044`에서 targeted invitation authority를 통합하고 `TASK-045`에서 join UX와 key delivery를 제품화한다.
+- 두 task의 Web/Mobile 다중 사용자 검증 완료 전 Closed Beta 초대 기능은 준비되지 않은 것으로 판정한다.
+
 ## 0. 목표 정정
 
 이번 refactor의 최종 목표는 "준비물 Web-to-Web P2P 검증"이 아니다. 목표는 OnVoy 핵심 기능 전체를 Web/Mobile 양쪽에서 Local-first 기반으로 전환하는 것이다.

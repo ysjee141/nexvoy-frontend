@@ -15,4 +15,6 @@ Local-first refactor 작업은 항상 `refactoring/local-first-architecture`를 
 
 - `docs/refactor/progress.md`
 - `docs/refactor/tasks/README.md`
+- `docs/refactor/tasks/TASK-044-targeted-document-invitation-authority.md`
+- `docs/refactor/tasks/TASK-045-invitation-join-and-key-delivery-productization.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
