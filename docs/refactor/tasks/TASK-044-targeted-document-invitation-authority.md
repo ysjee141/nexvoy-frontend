@@ -1,6 +1,6 @@
 # TASK-044: Targeted Document Invitation Authority
 
-- 상태: 예정
+- 상태: 완료
 
 ## 목적
 
@@ -84,4 +84,3 @@
 - 이메일, pending UI, 링크, 코드 초대가 하나의 document authority로 동작한다.
 - targeted invitation은 대상 계정만 수락할 수 있다.
 - accepted member가 협업자 목록, local document member snapshot, P2P peer 구성에 일관되게 반영된다.
-

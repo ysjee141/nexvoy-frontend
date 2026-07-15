@@ -5,9 +5,8 @@ import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
 import { X, UserPlus, Mail, Shield, Eye, Pencil, Trash2, Loader2, CheckCircle2, AlertCircle, ChevronDown, Link as LinkIcon, Copy, Share2 } from 'lucide-react'
 import { CollaborationService } from '@/services/ExternalApiService'
-import { collaboration } from '@/lib/collaboration'
 import { useScrollLock } from '@/hooks/useScrollLock'
-import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
+import { createInvitationRepository, type DocumentPendingInvitation } from '@nexvoy/core/supabase/invitationRepository'
 import type { DocumentKeyProvisioningRequest } from '@nexvoy/core/sync/keyProvisioning'
 import {
     DocumentKeyProvisioningStatusBadge,
@@ -66,6 +65,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor')
     const [loading, setLoading] = useState(false)
     const [collaborators, setCollaborators] = useState<Collaborator[]>([])
+    const [pendingInvitations, setPendingInvitations] = useState<DocumentPendingInvitation[]>([])
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
     const [editingRoleId, setEditingRoleId] = useState<string | null>(null)
@@ -111,28 +111,32 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     }, [isOpen, canInvite, tripId])
 
     const fetchCollaborators = async () => {
-        const { data, error } = await supabase
-            .from('trip_members')
-            .select('*, profiles(nickname, email)')
-            .eq('trip_id', tripId)
-
-        if (error) {
-            console.error('Error fetching collaborators:', error)
-            return
+        try {
+            const repository = createInvitationRepository(supabase)
+            const [rows, pending] = await Promise.all([
+                repository.listDocumentCollaborators(tripId),
+                repository.listDocumentPendingInvitations(tripId).catch(() => []),
+            ])
+            const formatted: Collaborator[] = rows.map((item) => ({
+                memberId: item.memberId,
+                userId: item.userId,
+                nickname: item.nickname,
+                email: item.email || item.invitedEmail || '',
+                role: item.role,
+                joined_at: item.createdAt,
+                status: item.status,
+            }))
+            setCollaborators(formatted)
+            setPendingInvitations(pending)
+            const { data: { user } } = await supabase.auth.getUser()
+            const actorRole = user?.id === ownerId
+                ? 'owner'
+                : formatted.find((member) => member.userId === user?.id)?.role ?? null
+            await syncCollaboratorSnapshot(formatted, actorRole)
+        } catch (fetchError) {
+            console.error('Error fetching collaborators:', fetchError)
+            setError('동행자 목록을 불러오지 못했습니다.')
         }
-
-        const formatted: Collaborator[] = (data || []).map((item: any) => ({
-            memberId: item.id,
-            userId: item.user_id || null,
-            nickname: item.profiles?.nickname || null,
-            email: item.profiles?.email || item.invited_email || '',
-            role: item.role,
-            joined_at: item.created_at,
-            status: item.status || 'accepted',
-        }))
-
-        setCollaborators(formatted)
-        await syncCollaboratorSnapshot(formatted)
     }
 
     const handleInvite = async (e: React.FormEvent) => {
@@ -152,34 +156,25 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                 tripId,
             })
 
-            const repo = createInvitationRepository(supabase)
-            const invitation = await repo.createDocumentInvitationLink({
+            const result = await CollaborationService.createInvite({
                 documentId: tripId,
+                email: email.trim(),
+                destination: tripTitle,
                 role: inviteRole,
-                maxUses: 1,
             })
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || window.location.origin
-            const inviteUrl = `${appUrl}/join?token=${encodeURIComponent(invitation.token)}`
+            const invitation = result.invitation
 
             setGeneratedInvite({
                 id: invitation.id,
-                inviteUrl,
+                inviteUrl: result.inviteUrl,
                 inviteCode: invitation.inviteCode,
                 role: invitation.role,
                 expiresAt: invitation.expiresAt,
             })
 
-            await CollaborationService.createInvite({
-                tripId,
-                email: email.trim(),
-                tripTitle,
-                inviteUrl,
-                inviteCode: invitation.inviteCode,
-                role: invitation.role,
-            })
-
             setSuccess(`${email}님을 ${ROLE_LABELS[inviteRole]}(으)로 초대했습니다!`)
             setEmail('')
+            await fetchCollaborators()
         } catch (err: any) {
             setError(err.message || '초대 중 오류가 발생했습니다.')
         } finally {
@@ -190,10 +185,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const handleRoleChange = async (memberId: string, newRole: MemberRole) => {
         if (newRole === 'owner') return
 
-        const { error } = await collaboration.updateMemberRole(memberId, newRole)
-        if (error) {
-            alert('권한 변경 실패: ' + (typeof error === 'string' ? error : error.message))
-        } else {
+        try {
+            await createInvitationRepository(supabase).setDocumentMemberRole({ memberId, role: newRole })
             setCollaborators(prev =>
                 prev.map(m => m.memberId === memberId ? { ...m, role: newRole } : m)
             )
@@ -201,6 +194,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             if (member) {
                 await upsertCollaboratorSnapshot({ ...member, role: newRole })
             }
+        } catch (roleError) {
+            alert('권한 변경 실패: ' + formatErrorMessage(roleError))
         }
         setEditingRoleId(null)
     }
@@ -208,10 +203,8 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const handleRemove = async (memberId: string, isSelf: boolean = false) => {
         if (!confirm(isSelf ? '정말 이 여정에서 나가시겠습니까?' : '이 멤버를 제외하시겠습니까?')) return
 
-        const { error } = await collaboration.removeMember(memberId)
-        if (error) {
-            alert((isSelf ? '나가기 실패: ' : '멤버 삭제 실패: ') + formatErrorMessage(error))
-        } else {
+        try {
+            await createInvitationRepository(supabase).revokeDocumentMember(memberId)
             if (isSelf) {
                 await revokeCollaboratorSnapshot(memberId)
                 onClose()
@@ -220,13 +213,15 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                 await revokeCollaboratorSnapshot(memberId)
                 fetchCollaborators()
             }
+        } catch (removeError) {
+            alert((isSelf ? '나가기 실패: ' : '멤버 삭제 실패: ') + formatErrorMessage(removeError))
         }
     }
 
-    const syncCollaboratorSnapshot = async (members: Collaborator[]) => {
+    const syncCollaboratorSnapshot = async (members: Collaborator[], actorRole: MemberRole | null) => {
         try {
             const repositories = await createWebDocumentPrimaryRepositories(supabase, {
-                actorRole: currentMemberRole ?? null,
+                actorRole,
             })
             await Promise.all(members.map((member) =>
                 repositories.members.upsertMember(tripId, {
@@ -559,6 +554,18 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                 </p>
                             ) : null}
                         />
+                    ) : null}
+
+                    {canInvite && pendingInvitations.length > 0 ? (
+                        <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
+                            <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>수락 대기 ({pendingInvitations.length})</h3>
+                            {pendingInvitations.map((invitation) => (
+                                <div key={invitation.id} className={css({ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', p: '10px 12px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px' })}>
+                                    <span className={css({ minW: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '13px', color: 'brand.ink' })}>{invitation.targetEmail}</span>
+                                    <span className={css({ flexShrink: 0, fontSize: '11px', color: 'brand.muted' })}>{ROLE_LABELS[invitation.role]}</span>
+                                </div>
+                            ))}
+                        </div>
                     ) : null}
 
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>

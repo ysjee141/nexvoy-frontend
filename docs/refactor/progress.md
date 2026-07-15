@@ -11,6 +11,14 @@
 - `TASK-044`에서 targeted invitation authority를 통합하고 `TASK-045`에서 join UX와 key delivery를 제품화한다.
 - 두 task의 Web/Mobile 다중 사용자 검증 완료 전 Closed Beta 초대 기능은 준비되지 않은 것으로 판정한다.
 
+2026-07-16 TASK-044 완료:
+
+- targeted invitation에 정규화된 대상 이메일과 최소 표시 metadata를 추가했다.
+- Web 메일 API가 세션과 document editor 권한을 검증하고 서버에서 token/code/link를 생성한다.
+- 홈 pending 초대와 협업자 관리가 legacy `trip_members` 대신 document registry RPC를 사용한다.
+- targeted token/code 수락은 로그인 계정 이메일이 일치할 때만 허용한다.
+- wrapped key 자동 전달과 참여 준비 UX는 계획대로 `TASK-045`에서 완료한다.
+
 ## 0. 목표 정정
 
 이번 refactor의 최종 목표는 "준비물 Web-to-Web P2P 검증"이 아니다. 목표는 OnVoy 핵심 기능 전체를 Web/Mobile 양쪽에서 Local-first 기반으로 전환하는 것이다.

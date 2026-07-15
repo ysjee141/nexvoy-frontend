@@ -25,6 +25,10 @@ export interface CreateDocumentInvitationInput {
   role: DocumentInvitationRole
   expiresAt?: string | null
   maxUses?: number | null
+  targetEmail?: string | null
+  destination?: string | null
+  startDate?: string | null
+  endDate?: string | null
 }
 
 export interface CreatedDocumentInvitation {
@@ -35,6 +39,41 @@ export interface CreatedDocumentInvitation {
   inviteCode: string
   expiresAt: string | null
   maxUses: number | null
+  targetEmail: string | null
+  invitationKind: 'generic' | 'targeted'
+}
+
+export interface PendingDocumentInvitation {
+  id: string
+  documentId: string
+  role: DocumentInvitationRole
+  destination: string | null
+  startDate: string | null
+  endDate: string | null
+  ownerNickname: string | null
+  expiresAt: string | null
+  createdAt: string
+}
+
+export interface DocumentCollaborator {
+  memberId: string
+  userId: string | null
+  invitedEmail: string | null
+  nickname: string | null
+  email: string | null
+  role: DocumentInvitationRole | 'owner'
+  status: 'pending' | 'accepted' | 'revoked'
+  createdAt: string
+  updatedAt: string
+}
+
+export interface DocumentPendingInvitation {
+  id: string
+  documentId: string
+  role: DocumentInvitationRole
+  targetEmail: string
+  expiresAt: string | null
+  createdAt: string
 }
 
 export interface DocumentInvitationLookup {
@@ -159,6 +198,11 @@ export interface InvitationRepository {
   createDocumentInvitationLink(input: CreateDocumentInvitationInput): Promise<CreatedDocumentInvitation>
   getDocumentInvitationSummary(input: DocumentInvitationLookup): Promise<DocumentInvitationSummary | null>
   acceptDocumentInvitation(input: DocumentInvitationLookup): Promise<AcceptedDocumentInvitation>
+  listMyPendingDocumentInvitations(): Promise<PendingDocumentInvitation[]>
+  acceptMyDocumentInvitation(invitationId: string): Promise<AcceptedDocumentInvitation>
+  declineMyDocumentInvitation(invitationId: string): Promise<void>
+  listDocumentCollaborators(documentId: string): Promise<DocumentCollaborator[]>
+  listDocumentPendingInvitations(documentId: string): Promise<DocumentPendingInvitation[]>
   registerUserKeyMaterial(input: RegisterUserKeyMaterialInput): Promise<UserKeyMaterialRegistration>
   revokeUserKeyMaterial(input: RevokeUserKeyMaterialInput): Promise<void>
   requestDocumentKeyProvisioning(input: RequestDocumentKeyProvisioningInput): Promise<DocumentKeyProvisioningStatusRecord>
@@ -186,6 +230,10 @@ export function createInvitationRepository(sb: SupabaseClient): InvitationReposi
         p_role: input.role,
         p_expires_at: input.expiresAt ?? null,
         p_max_uses: input.maxUses ?? 1,
+        p_target_email: input.targetEmail ?? null,
+        p_destination: input.destination ?? null,
+        p_start_date: input.startDate ?? null,
+        p_end_date: input.endDate ?? null,
       })
       if (error) throw error
       return toCreatedDocumentInvitation(data)
@@ -205,6 +253,38 @@ export function createInvitationRepository(sb: SupabaseClient): InvitationReposi
       })
       if (error) throw error
       return toAcceptedDocumentInvitation(data)
+    },
+    listMyPendingDocumentInvitations: async () => {
+      const { data, error } = await sb.rpc('list_my_pending_document_invitations')
+      if (error) throw error
+      return (Array.isArray(data) ? data : []).map(toPendingDocumentInvitation)
+    },
+    acceptMyDocumentInvitation: async (invitationId) => {
+      const { data, error } = await sb.rpc('accept_my_document_invitation', {
+        p_invitation_id: invitationId,
+      })
+      if (error) throw error
+      return toAcceptedDocumentInvitation(data)
+    },
+    declineMyDocumentInvitation: async (invitationId) => {
+      const { error } = await sb.rpc('decline_my_document_invitation', {
+        p_invitation_id: invitationId,
+      })
+      if (error) throw error
+    },
+    listDocumentCollaborators: async (documentId) => {
+      const { data, error } = await sb.rpc('list_document_collaborators', {
+        p_document_id: documentId,
+      })
+      if (error) throw error
+      return (Array.isArray(data) ? data : []).map(toDocumentCollaborator)
+    },
+    listDocumentPendingInvitations: async (documentId) => {
+      const { data, error } = await sb.rpc('list_document_pending_invitations', {
+        p_document_id: documentId,
+      })
+      if (error) throw error
+      return (Array.isArray(data) ? data : []).map(toDocumentPendingInvitation)
     },
     registerUserKeyMaterial: async (input) => {
       const { data, error } = await sb.rpc('register_user_key_material', {
@@ -420,6 +500,50 @@ function toCreatedDocumentInvitation(value: unknown): CreatedDocumentInvitation 
     inviteCode: expectString(row.invite_code),
     expiresAt: nullableString(row.expires_at),
     maxUses: nullableNumber(row.max_uses),
+    targetEmail: nullableString(row.target_email),
+    invitationKind: row.invitation_kind === 'targeted' ? 'targeted' : 'generic',
+  }
+}
+
+function toPendingDocumentInvitation(value: unknown): PendingDocumentInvitation {
+  const row = expectRecord(value)
+  return {
+    id: expectString(row.id),
+    documentId: expectString(row.document_id),
+    role: expectInvitationRole(row.role),
+    destination: nullableString(row.destination),
+    startDate: nullableString(row.start_date),
+    endDate: nullableString(row.end_date),
+    ownerNickname: nullableString(row.owner_nickname),
+    expiresAt: nullableString(row.expires_at),
+    createdAt: expectString(row.created_at),
+  }
+}
+
+function toDocumentCollaborator(value: unknown): DocumentCollaborator {
+  const row = expectRecord(value)
+  return {
+    memberId: expectString(row.member_id),
+    userId: nullableString(row.user_id),
+    invitedEmail: nullableString(row.invited_email),
+    nickname: nullableString(row.nickname),
+    email: nullableString(row.email),
+    role: row.role === 'owner' ? 'owner' : expectInvitationRole(row.role),
+    status: row.status === 'pending' || row.status === 'revoked' ? row.status : 'accepted',
+    createdAt: expectString(row.created_at),
+    updatedAt: expectString(row.updated_at),
+  }
+}
+
+function toDocumentPendingInvitation(value: unknown): DocumentPendingInvitation {
+  const row = expectRecord(value)
+  return {
+    id: expectString(row.id),
+    documentId: expectString(row.document_id),
+    role: expectInvitationRole(row.role),
+    targetEmail: expectString(row.target_email),
+    expiresAt: nullableString(row.expires_at),
+    createdAt: expectString(row.created_at),
   }
 }
 
