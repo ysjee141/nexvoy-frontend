@@ -32,6 +32,7 @@ import {
     ensureWebTripDocumentRemoteBootstrap,
 } from '@/lib/local-first/documentPrimaryRepositories'
 import { tripDetailToWebMemberRows, tripDetailToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
+import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -111,7 +112,15 @@ export default function TripLayoutClient() {
                 const documentTrip = await repositories.trips.getTrip(id)
 
                 if (!documentTrip) {
-                    router.replace('/404')
+                    const registryMembers = await createInvitationRepository(supabase)
+                        .listDocumentCollaborators(id)
+                        .catch(() => [])
+                    const acceptedMember = registryMembers.find((member) => member.userId === currentUser.id)
+                    if (acceptedMember) {
+                        router.replace(`/join?acceptedDocumentId=${encodeURIComponent(id)}`)
+                    } else {
+                        router.replace('/404')
+                    }
                 } else {
                     setTrip(tripDetailToWebTripRow(documentTrip))
                     const documentMembers = tripDetailToWebMemberRows(documentTrip)
@@ -140,7 +149,10 @@ export default function TripLayoutClient() {
             members,
         })
         let disposed = false
+        let running = false
         const run = () => {
+            if (disposed || running) return
+            running = true
             void (async () => {
                 if (role === 'owner') {
                     await ensureWebTripDocumentRemoteBootstrap({
@@ -161,19 +173,26 @@ export default function TripLayoutClient() {
             })().catch((error) => {
                 const reason = error instanceof Error ? error.message : 'unknown'
                 console.warn('[document key readiness failed]', reason)
+            }).finally(() => {
+                running = false
             })
         }
 
         run()
-        if (role !== 'owner') return () => { disposed = true }
+        if (role !== 'owner' && role !== 'editor') return () => { disposed = true }
 
         const intervalId = window.setInterval(() => {
             if (!disposed) run()
         }, 10_000)
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') run()
+        }
+        document.addEventListener('visibilitychange', handleVisibility)
 
         return () => {
             disposed = true
             window.clearInterval(intervalId)
+            document.removeEventListener('visibilitychange', handleVisibility)
         }
     }, [currentUser?.id, id, isOnline, members, supabase, trip?.user_id])
 

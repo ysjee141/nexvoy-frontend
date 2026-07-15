@@ -6,6 +6,8 @@ import { BackupCryptoError } from '@nexvoy/core/sync/backupTypes'
 import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepository'
 import { getCurrentWebDocumentKeyOrRecoverStaleDeviceKey, getOrCreateWebDeviceId } from './keyProvisioningService'
 import { getWebBackupCryptoProvider } from './webCryptoProvider'
+import { resolveWebOwnerContext } from './ownerNamespace'
+import { createWebTripDocumentStore } from './webDocumentStores'
 
 export type WebBackupRestoreStatus =
   | 'missing'
@@ -69,6 +71,21 @@ export async function restoreWebTripDocumentFromBackup(input: {
       reason: error instanceof Error ? error.message : 'restore_failed',
     }
   }
+}
+
+export async function restoreAndPersistWebTripDocumentFromBackup(input: {
+  supabase: SupabaseClient
+  documentId: string
+}): Promise<WebBackupRestoreResult> {
+  const result = await restoreWebTripDocumentFromBackup(input)
+  if (result.status !== 'restored' || !result.document) return result
+
+  const ownerContext = await resolveWebOwnerContext(input.supabase)
+  await createWebTripDocumentStore(ownerContext).putDocument(
+    input.documentId,
+    result.document,
+  )
+  return result
 }
 
 export async function restoreWebTemplateDocumentFromBackup(input: {

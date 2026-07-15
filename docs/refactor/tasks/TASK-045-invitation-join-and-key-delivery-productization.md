@@ -1,6 +1,6 @@
 # TASK-045: Invitation Join and Key Delivery Productization
 
-- 상태: 예정
+- 상태: 구현 완료 (DEV 다중 사용자 검증 대기)
 
 ## 목적
 
@@ -94,4 +94,3 @@ provisioning을 완성한다. 초대받은 사용자가 owner/editor 기기가 �
 - 링크와 코드로 수락한 사용자가 명확한 UI 상태를 거쳐 encrypted document를 실제로 복원한다.
 - key 보유 owner/editor가 온라인이면 pending key 전달이 자동 완료된다.
 - Web/Mobile에서 수락한 사용자가 owner와 동일한 여정 데이터를 보고 P2P 또는 backup sync에 참여한다.
-

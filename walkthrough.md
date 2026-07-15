@@ -1,3 +1,50 @@
+# Walkthrough: TASK-045 Invitation Join and Key Delivery Productization
+
+## Summary
+
+TASK-045는 초대 membership 성공과 encrypted document 준비 상태를 분리했다. key를 보유한 owner/editor는
+pending 요청을 자동 처리한다. invitee는 active key 확인뿐 아니라 snapshot 복호화와 local 저장까지 성공해야
+여행 상세로 이동한다.
+
+## Artifacts
+
+- GitHub Issue [#350](https://github.com/ysjee141/nexvoy-frontend/issues/350)
+- Pull Request [#351](https://github.com/ysjee141/nexvoy-frontend/pull/351)
+- 브랜치: `feature/task-045-invitation-key-delivery-350`
+- `apps/web/app/join/JoinClient.tsx`
+- `apps/web/lib/local-first/keyProvisioningService.ts`
+- `apps/web/lib/local-first/backupRestoreService.ts`
+- `apps/web/app/trips/detail/TripLayoutClient.tsx`
+- `apps/mobile/app/join.tsx`
+
+## Key Changes
+
+- Web owner/editor가 자기 document key를 보유해도 pending key request를 먼저 처리한다.
+- detail foreground, 10초 interval, visibility 복귀 trigger를 중복 실행 방지와 함께 적용한다.
+- Web join을 명시적 참여·준비·완료·오류 상태로 분리하고 Panda CSS로 재구현했다.
+- Web restore 성공 시 복호화한 document를 현재 사용자 IndexedDB namespace에 저장한다.
+- Mobile join도 key 완료 후 encrypted snapshot restore 성공을 상세 이동 조건으로 사용한다.
+- 홈 pending 수락과 local document 없는 상세 진입은 accepted document join 준비 화면으로 이동한다.
+
+## Verification
+
+| 명령/검증 | 결과 |
+| --- | --- |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| Web/Mobile `tsc --noEmit` | PASS |
+| `pnpm build` | PASS |
+| `pnpm lint:mobile` | PASS |
+| `pnpm build:mobile` | PASS, 기존 WebRTC export warning만 발생 |
+| In-app browser desktop 1280x800 | PASS |
+| In-app browser mobile 390x844 | PASS |
+| Browser console warn/error | 없음 |
+
+## Remaining DEV Verification
+
+- TASK-044 migration 적용 후 Web owner와 Web invitee의 link/code 수락 및 자동 restore를 확인한다.
+- owner offline 수락 후 owner 재접속 시 10초 이내 자동 key completion을 확인한다.
+- Web owner와 Mobile invitee 조합에서 동일 snapshot과 viewer write 차단을 확인한다.
+
 # Walkthrough: TASK-044 Targeted Document Invitation Authority
 
 ## Summary
