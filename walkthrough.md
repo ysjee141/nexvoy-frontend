@@ -5,7 +5,9 @@
 TASK-043은 Closed Beta 테스트 중 확인된 Web trip entry 회귀를 수정했다. 홈 목록이 legacy row-only 여행을
 직접 읽던 경로를 제거하고 document-primary repository 목록으로 전환했으며, 여행 상세 진입도 `trips` row가 아니라
 `TripDocumentV1` read model을 우선 사용하도록 정리했다. 신규 Web 여행 생성 시 owner member snapshot을
-문서에 포함해 협업/초대 UI가 owner 권한을 안정적으로 판정하도록 보강했다.
+문서에 포함해 협업/초대 UI가 owner 권한을 안정적으로 판정하도록 보강했다. 추가로 신규 document snapshot/key
+bootstrap이 owner member 생성 전에 `get_my_active_document_key`를 호출해 `권한이 없습니다.`로 실패하던 순서를
+수정했다.
 
 ## Artifacts
 
@@ -25,6 +27,9 @@ TASK-043은 Closed Beta 테스트 중 확인된 Web trip entry 회귀를 수정�
 - TripClient role 조회가 document owner/member snapshot을 우선 사용하고 legacy role query는 fallback으로만 사용한다.
 - Web 신규 trip document에 owner member snapshot을 추가해 owner read model이 비어 있지 않게 했다.
 - Home/Global modal의 `NewTripModal` 생성 경로도 legacy `trips.insert().select()`에서 `createWebTripDocument()`로 전환했다.
+- Web/Mobile 신규 document 생성 시 `documents` owner row와 `document_members` owner row를 먼저 확보한 뒤 active key RPC를 호출한다.
+- `ensureDocumentBootstrapped()`가 trip/template type과 schema version을 입력받도록 확장했다.
+- `hasSnapshot()`은 빈 `documents` bootstrap row가 아니라 실제 snapshot payload 존재 여부를 반환하도록 정정했다.
 - NewPlanModal이 장소 미선택 상태에서 조용히 return하지 않고 오류 메시지를 표시한다.
 - NewPlanModal form에 `noValidate`를 적용하고 방문 날짜/시간/체류 시간 검증을 React 경로에서 명시 처리한다.
 - 일정 저장 후 mutation 결과 document에서 저장된 plan을 즉시 materialize해 화면 state에 반영한다.

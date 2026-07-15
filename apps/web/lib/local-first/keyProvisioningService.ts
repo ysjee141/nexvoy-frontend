@@ -181,6 +181,13 @@ export async function ensureWebOwnerDocumentKeyForSnapshot(
   input: EnsureWebOwnerDocumentKeyForSnapshotInput,
 ): Promise<void> {
   const repository = createSupabaseBackupRepository(input.supabase)
+  await repository.ensureDocumentBootstrapped({
+    documentId: input.documentId,
+    ownerId: input.ownerId,
+    type: input.documentType,
+    schemaVersion: input.schemaVersion,
+  })
+
   const { deviceId } = await ensureWebDeviceKeyMaterial(input.supabase)
   const activeKey = await repository.getMyActiveDocumentKey({
     documentId: input.documentId,
@@ -210,10 +217,6 @@ export async function ensureWebOwnerDocumentKeyForSnapshot(
     snapshot: serializeEncryptedBackupPayload(encryptedPayload),
     snapshotHash: await sha256Hex(input.snapshotPayload),
     encrypted: true,
-  })
-  await repository.upsertOwnerMember({
-    documentId: input.documentId,
-    userId: input.ownerId,
   })
   await bootstrapWebDeviceDocumentKey({
     supabase: input.supabase,
