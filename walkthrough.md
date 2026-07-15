@@ -25,6 +25,7 @@ TASK-043은 Closed Beta 테스트 중 확인된 Web trip entry 회귀를 수정�
 - TripClient role 조회가 document owner/member snapshot을 우선 사용하고 legacy role query는 fallback으로만 사용한다.
 - Web 신규 trip document에 owner member snapshot을 추가해 owner read model이 비어 있지 않게 했다.
 - NewPlanModal이 장소 미선택 상태에서 조용히 return하지 않고 오류 메시지를 표시한다.
+- NewPlanModal form에 `noValidate`를 적용하고 방문 날짜/시간/체류 시간 검증을 React 경로에서 명시 처리한다.
 - 일정 저장 후 mutation 결과 document에서 저장된 plan을 즉시 materialize해 화면 state에 반영한다.
 - RouteMapView의 일정 조회/수정/삭제/저장 경로도 Supabase row 직접 접근에서 document-primary repository로 전환했다.
 

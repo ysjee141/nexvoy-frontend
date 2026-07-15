@@ -289,6 +289,30 @@ export default function NewPlanModal({
             setError('장소를 선택하거나 직접 입력해 주세요.')
             return
         }
+        if (!selectedPlace.name.trim()) {
+            setError('장소 이름을 입력해 주세요.')
+            return
+        }
+        if (!visitDate) {
+            setError('방문 날짜를 선택해 주세요.')
+            return
+        }
+        if (tripStartDate && visitDate < tripStartDate) {
+            setError('방문 날짜가 여행 시작일보다 빠를 수 없습니다.')
+            return
+        }
+        if (tripEndDate && visitDate > tripEndDate) {
+            setError('방문 날짜가 여행 종료일보다 늦을 수 없습니다.')
+            return
+        }
+        if (!visitTime) {
+            setError('방문 시간을 선택해 주세요.')
+            return
+        }
+        if (!duration || Number.isNaN(Number(duration)) || Number(duration) <= 0) {
+            setError('체류 시간을 선택해 주세요.')
+            return
+        }
 
         setLoading(true)
         setError('')
@@ -538,7 +562,7 @@ export default function NewPlanModal({
                         </div>
                     ) : (
                         /* 단계 2: 상세 정보 입력 */
-                        <form onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.4s ease-out' })}>
+                        <form noValidate onSubmit={handleSubmit} className={css({ display: 'flex', flexDirection: 'column', gap: '24px', animation: 'fadeIn 0.4s ease-out' })}>
 
                             {/* 선택된 장소 편집 필드 */}
                             {selectedPlace && (
