@@ -1,10 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
-  convertLegacyTripRowsToDocument,
   createEmptyTripDocumentV1,
   createDocumentPrimaryRepositoryBundle,
   createEmptyTemplateDocumentV1,
-  getLegacyTripRowBundle,
   shouldBootstrapDocumentRegistry,
   type DocumentMutationResult,
   type TemplateDocumentV1,
@@ -26,7 +24,7 @@ import {
   createWebTripDocumentStore,
 } from './webDocumentStores'
 import { enqueueWebBackupUpdate } from './backupSyncService'
-import { restoreWebTripDocumentFromBackup } from './backupRestoreService'
+import { restoreWebTemplateDocumentFromBackup, restoreWebTripDocumentFromBackup } from './backupRestoreService'
 import { ensureWebOwnerDocumentKey, ensureWebOwnerDocumentKeyForSnapshot } from './keyProvisioningService'
 
 export async function createWebDocumentPrimaryRepositories(
@@ -45,15 +43,16 @@ export async function createWebDocumentPrimaryRepositories(
   const tripStore = createWebTripDocumentStore(ownerContext, {
     hydrateDocument: async (tripId) => {
       const restored = await restoreWebTripDocumentFromBackup({ supabase, documentId: tripId })
-      if (restored.document) return restored.document
-
-      const bundle = await getLegacyTripRowBundle(supabase, tripId, ownerContext.authUserId)
-      return bundle ? convertLegacyTripRowsToDocument(bundle).document : null
+      return restored.document
     },
+    listRemoteDocumentIds: () => listRemoteDocumentIds(supabase, 'trip'),
   })
   const templateStore = createWebTemplateDocumentStore(ownerContext, {
-    hydrateDocument: (templateId) => hydrateTemplateDocument(supabase, templateId),
-    listLegacyDocumentIds: () => listLegacyTemplateIds(supabase, ownerContext.authUserId),
+    hydrateDocument: async (templateId) => {
+      const restored = await restoreWebTemplateDocumentFromBackup({ supabase, documentId: templateId })
+      return restored.document
+    },
+    listRemoteDocumentIds: () => listRemoteDocumentIds(supabase, 'template'),
   })
 
   return createDocumentPrimaryRepositoryBundle({
@@ -241,100 +240,17 @@ export async function createWebTemplateDocument(input: {
   return templateId
 }
 
-async function listLegacyTemplateIds(
+async function listRemoteDocumentIds(
   supabase: SupabaseClient,
-  currentUserId: string | null,
+  type: 'trip' | 'template',
 ): Promise<EntityId[]> {
-  if (!currentUserId) return []
-  const owned = supabase
-    .from('checklist_templates')
+  const { data, error } = await supabase
+    .from('documents')
     .select('id')
-    .eq('user_id', currentUserId)
-  const publicTemplates = supabase
-    .from('checklist_templates')
-    .select('id')
-    .is('user_id', null)
-  const shared = supabase
-    .from('checklist_template_shares')
-    .select('template_id')
-    .eq('shared_with_user_id', currentUserId)
-
-  const [ownedResult, publicResult, sharedResult] = await Promise.all([owned, publicTemplates, shared])
-  if (ownedResult.error) throw ownedResult.error
-  if (publicResult.error) throw publicResult.error
-  if (sharedResult.error) throw sharedResult.error
-
-  return Array.from(new Set([
-    ...(ownedResult.data ?? []).map((row) => row.id),
-    ...(publicResult.data ?? []).map((row) => row.id),
-    ...(sharedResult.data ?? []).map((row) => row.template_id),
-  ]))
-}
-
-async function hydrateTemplateDocument(
-  supabase: SupabaseClient,
-  templateId: EntityId,
-): Promise<TemplateDocumentV1 | null> {
-  const { data: template, error: templateError } = await supabase
-    .from('checklist_templates')
-    .select('id, user_id, title, created_at')
-    .eq('id', templateId)
-    .maybeSingle()
-  if (templateError) throw templateError
-  if (!template) return null
-
-  const [itemsResult, sharesResult] = await Promise.all([
-    supabase
-      .from('checklist_template_items')
-      .select('id, template_id, item_name, category, is_private, created_at')
-      .eq('template_id', templateId),
-    supabase
-      .from('checklist_template_shares')
-      .select('id, template_id, shared_with_user_id, role, created_by, created_at')
-      .eq('template_id', templateId),
-  ])
-  if (itemsResult.error) throw itemsResult.error
-  if (sharesResult.error) throw sharesResult.error
-
-  const createdAt = template.created_at ?? new Date().toISOString()
-  const document = createEmptyTemplateDocumentV1({
-    id: template.id,
-    ownerId: template.user_id,
-    title: template.title,
-    visibility: (sharesResult.data?.length ?? 0) > 0 ? 'shared' : 'private',
-    createdAt,
-    updatedAt: createdAt,
-    createdFromLegacyAt: new Date().toISOString(),
-  })
-
-  ;(itemsResult.data ?? []).forEach((item, index) => {
-    const itemCreatedAt = item.created_at ?? createdAt
-    document.items[item.id] = {
-      id: item.id,
-      templateId,
-      name: item.item_name,
-      categoryName: item.category ?? '기타',
-      isPrivate: item.is_private ?? false,
-      sortOrder: index,
-      createdAt: itemCreatedAt,
-      updatedAt: itemCreatedAt,
-    }
-  })
-
-  ;(sharesResult.data ?? []).forEach((share) => {
-    const shareCreatedAt = share.created_at ?? createdAt
-    document.shares[share.id] = {
-      id: share.id,
-      templateId,
-      sharedWithUserId: share.shared_with_user_id,
-      role: share.role === 'editor' ? 'editor' : 'viewer',
-      createdBy: share.created_by,
-      createdAt: shareCreatedAt,
-      updatedAt: null,
-    }
-  })
-
-  return document
+    .eq('type', type)
+    .order('updated_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((row) => row.id)
 }
 
 export type WebDocumentPrimaryMutationResult =

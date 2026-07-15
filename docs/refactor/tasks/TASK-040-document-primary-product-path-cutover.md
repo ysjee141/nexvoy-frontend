@@ -1,5 +1,8 @@
 # TASK-040: Document-Primary Product Path Cutover
 
+- 상태: 완료
+- GitHub Issue: #339
+
 ## 목적
 
 여행, 일정, 준비물, 템플릿 화면이 기존 row hydrate/fallback에 의존하지 않고 document-primary repository를
@@ -34,11 +37,11 @@
 
 ## 구현 단계
 
-1. 목록은 document registry/backup metadata 또는 local document list 기준으로 재정의한다.
-2. 상세/일정/준비물은 local document 없을 때 backup restore만 시도한다.
-3. legacy row hydrate fallback을 제품 경로에서 제거한다.
-4. 템플릿도 `TemplateDocumentV1` 기준으로 전환한다.
-5. 기존 row 데이터가 화면에 나타나지 않는지 확인한다.
+1. 목록은 document registry/backup metadata 또는 local document list 기준으로 재정의한다. ✅
+2. 상세/일정/준비물은 local document 없을 때 backup restore만 시도한다. ✅
+3. legacy row hydrate fallback을 제품 경로에서 제거한다. ✅
+4. 템플릿도 `TemplateDocumentV1` 기준으로 전환한다. ✅
+5. 기존 row 데이터가 화면에 나타나지 않는지 확인한다. ✅
 
 ## 데이터 호환성 고려사항
 

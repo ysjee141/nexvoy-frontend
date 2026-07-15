@@ -1,10 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { subtle } from 'react-native-quick-crypto'
 import {
-  convertLegacyTripRowsToDocument,
   createEmptyTripDocumentV1,
   createDocumentPrimaryRepositoryBundle,
   createEmptyTemplateDocumentV1,
-  getLegacyTripRowBundle,
   shouldBootstrapDocumentRegistry,
   type DocumentMutationResult,
   type TemplateDocumentV1,
@@ -14,18 +13,30 @@ import { createSupabaseBackupRepository } from '@nexvoy/core/supabase/backupRepo
 import { TRIP_DOCUMENT_SCHEMA_VERSION, type EntityId } from '@nexvoy/core/local-first/documentModel'
 import { createYjsTripDocument, encodeTripDocumentUpdate } from '@nexvoy/core/local-first/yjsTripDocument'
 import {
+  applyTemplateDocumentUpdate,
   TEMPLATE_DOCUMENT_SCHEMA_VERSION,
   createYjsTemplateDocument,
   encodeTemplateDocumentUpdate,
+  readTemplateDocumentFromYjs,
 } from '@nexvoy/core/local-first/templateDocument'
 import type { DocumentPrimaryRepositoryBundle } from '@nexvoy/core/repositories/documentPrimaryRepository'
+import { decryptRestoreSnapshot } from '@nexvoy/core/sync/mobileRestore'
 import { publishLocalMobileTripDocumentUpdate } from './p2pUpdateBridge'
 import {
   createMobileTemplateDocumentStore,
   createMobileTripDocumentStore,
 } from './mobileDocumentStores'
 import { enqueueMobileBackupUpdate } from './mobileBackupSyncService'
-import { ensureMobileOwnerDocumentKeyForSnapshot } from './documentBootstrapService'
+import { ensureMobileOwnerDocumentKeyForSnapshot, getMobileBackupCryptoProvider } from './documentBootstrapService'
+import { getOrCreateMobileDeviceId } from './mobileDeviceIdentity'
+import { getCurrentMobileDocumentKey } from './keyProvisioningService'
+import { restoreMobileEncryptedSnapshot } from './mobileSnapshotRestoreService'
+import {
+  applyMobileTripDocumentUpdateToDoc,
+  createMobileYjsTripDocument,
+  loadMobileTripDocumentUpdate,
+  readTripDocumentFromMobileYjs,
+} from './mobileYjsTripDocument'
 
 export async function createMobileDocumentPrimaryRepositories(
   supabase: SupabaseClient,
@@ -44,13 +55,13 @@ export async function createMobileDocumentPrimaryRepositories(
 
   const tripStore = createMobileTripDocumentStore({
     hydrateDocument: async (tripId) => {
-      const bundle = await getLegacyTripRowBundle(supabase, tripId, data.user?.id ?? null)
-      return bundle ? convertLegacyTripRowsToDocument(bundle).document : null
+      return restoreMobileTripDocumentFromBackup(supabase, tripId)
     },
+    listRemoteDocumentIds: () => listRemoteDocumentIds(supabase, 'trip'),
   })
   const templateStore = createMobileTemplateDocumentStore({
-    hydrateDocument: (templateId) => hydrateTemplateDocument(supabase, templateId),
-    listLegacyDocumentIds: () => listLegacyTemplateIds(supabase, data.user?.id ?? null),
+    hydrateDocument: (templateId) => restoreMobileTemplateDocumentFromBackup(supabase, templateId),
+    listRemoteDocumentIds: () => listRemoteDocumentIds(supabase, 'template'),
   })
 
   return createDocumentPrimaryRepositoryBundle({
@@ -210,100 +221,60 @@ export async function createMobileTemplateDocument(input: {
   return templateId
 }
 
-async function listLegacyTemplateIds(
+async function listRemoteDocumentIds(
   supabase: SupabaseClient,
-  currentUserId: string | null,
+  type: 'trip' | 'template',
 ): Promise<EntityId[]> {
-  if (!currentUserId) return []
-  const owned = supabase
-    .from('checklist_templates')
+  const { data, error } = await supabase
+    .from('documents')
     .select('id')
-    .eq('user_id', currentUserId)
-  const publicTemplates = supabase
-    .from('checklist_templates')
-    .select('id')
-    .is('user_id', null)
-  const shared = supabase
-    .from('checklist_template_shares')
-    .select('template_id')
-    .eq('shared_with_user_id', currentUserId)
-
-  const [ownedResult, publicResult, sharedResult] = await Promise.all([owned, publicTemplates, shared])
-  if (ownedResult.error) throw ownedResult.error
-  if (publicResult.error) throw publicResult.error
-  if (sharedResult.error) throw sharedResult.error
-
-  return Array.from(new Set([
-    ...(ownedResult.data ?? []).map((row) => row.id),
-    ...(publicResult.data ?? []).map((row) => row.id),
-    ...(sharedResult.data ?? []).map((row) => row.template_id),
-  ]))
+    .eq('type', type)
+    .order('updated_at', { ascending: false })
+  if (error) throw error
+  return (data ?? []).map((row) => row.id)
 }
 
-async function hydrateTemplateDocument(
+async function restoreMobileTripDocumentFromBackup(
+  supabase: SupabaseClient,
+  documentId: EntityId,
+): Promise<TripDocumentV1 | null> {
+  const outcome = await restoreMobileEncryptedSnapshot({ supabase, documentId })
+  if (outcome.status !== 'restored') return null
+
+  const update = await loadMobileTripDocumentUpdate({ documentId })
+  if (!update) return null
+
+  const doc = createMobileYjsTripDocument()
+  applyMobileTripDocumentUpdateToDoc(doc, update)
+  return readTripDocumentFromMobileYjs(doc)
+}
+
+async function restoreMobileTemplateDocumentFromBackup(
   supabase: SupabaseClient,
   templateId: EntityId,
 ): Promise<TemplateDocumentV1 | null> {
-  const { data: template, error: templateError } = await supabase
-    .from('checklist_templates')
-    .select('id, user_id, title, created_at')
-    .eq('id', templateId)
-    .maybeSingle()
-  if (templateError) throw templateError
-  if (!template) return null
+  const repository = createSupabaseBackupRepository(supabase)
+  const snapshot = await repository.getLatestSnapshot(templateId)
+  if (!snapshot) return null
 
-  const [itemsResult, sharesResult] = await Promise.all([
-    supabase
-      .from('checklist_template_items')
-      .select('id, template_id, item_name, category, is_private, created_at')
-      .eq('template_id', templateId),
-    supabase
-      .from('checklist_template_shares')
-      .select('id, template_id, shared_with_user_id, role, created_by, created_at')
-      .eq('template_id', templateId),
-  ])
-  if (itemsResult.error) throw itemsResult.error
-  if (sharesResult.error) throw sharesResult.error
-
-  const createdAt = template.created_at ?? new Date().toISOString()
-  const document = createEmptyTemplateDocumentV1({
-    id: template.id,
-    ownerId: template.user_id,
-    title: template.title,
-    visibility: (sharesResult.data?.length ?? 0) > 0 ? 'shared' : 'private',
-    createdAt,
-    updatedAt: createdAt,
-    createdFromLegacyAt: new Date().toISOString(),
+  const documentKey = await getCurrentMobileDocumentKey({
+    supabase,
+    documentId: templateId,
+    deviceId: await getOrCreateMobileDeviceId(),
   })
+  if (!documentKey) return null
 
-  ;(itemsResult.data ?? []).forEach((item, index) => {
-    const itemCreatedAt = item.created_at ?? createdAt
-    document.items[item.id] = {
-      id: item.id,
-      templateId,
-      name: item.item_name,
-      categoryName: item.category ?? '기타',
-      isPrivate: item.is_private ?? false,
-      sortOrder: index,
-      createdAt: itemCreatedAt,
-      updatedAt: itemCreatedAt,
-    }
+  const result = await decryptRestoreSnapshot({
+    provider: getMobileBackupCryptoProvider(),
+    snapshot,
+    key: documentKey,
+    hash: sha256Hex,
   })
+  if (result.kind !== 'opaque') return null
 
-  ;(sharesResult.data ?? []).forEach((share) => {
-    const shareCreatedAt = share.created_at ?? createdAt
-    document.shares[share.id] = {
-      id: share.id,
-      templateId,
-      sharedWithUserId: share.shared_with_user_id,
-      role: share.role === 'editor' ? 'editor' : 'viewer',
-      createdBy: share.created_by,
-      createdAt: shareCreatedAt,
-      updatedAt: null,
-    }
-  })
-
-  return document
+  const doc = createYjsTemplateDocument()
+  applyTemplateDocumentUpdate(doc, result.plaintext)
+  return readTemplateDocumentFromYjs(doc)
 }
 
 export type MobileDocumentPrimaryMutationResult =
@@ -338,4 +309,14 @@ async function upsertTripReadModel(
       children_count: input.childrenCount,
     })
   if (error) throw error
+}
+
+async function sha256Hex(bytes: Uint8Array): Promise<string> {
+  const buffer = new ArrayBuffer(bytes.byteLength)
+  new Uint8Array(buffer).set(bytes)
+  const digest = await (subtle as unknown as Pick<SubtleCrypto, 'digest'>).digest(
+    'SHA-256',
+    buffer,
+  )
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('')
 }

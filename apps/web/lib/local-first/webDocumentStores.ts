@@ -33,7 +33,7 @@ export function createWebTripDocumentStore(
   ownerContext: WebOwnerContext,
   options: {
     hydrateDocument?: (documentId: EntityId) => Promise<TripDocumentV1 | null>
-    listLegacyDocumentIds?: () => Promise<EntityId[]>
+    listRemoteDocumentIds?: () => Promise<EntityId[]>
   } = {},
 ): LocalDocumentStore<TripDocumentV1> {
   return {
@@ -42,8 +42,8 @@ export function createWebTripDocumentStore(
       const localIds = rows
         .map((row) => row.documentId)
         .filter((documentId): documentId is string => Boolean(documentId))
-      const legacyIds = await options.listLegacyDocumentIds?.() ?? []
-      return Array.from(new Set([...localIds, ...legacyIds]))
+      const remoteIds = await options.listRemoteDocumentIds?.() ?? []
+      return Array.from(new Set([...localIds, ...remoteIds]))
     },
     getDocument: async (documentId) => {
       const update = await loadTripDocumentUpdate({
@@ -75,7 +75,7 @@ export function createWebTemplateDocumentStore(
   ownerContext: WebOwnerContext,
   options: {
     hydrateDocument?: (documentId: EntityId) => Promise<TemplateDocumentV1 | null>
-    listLegacyDocumentIds?: () => Promise<EntityId[]>
+    listRemoteDocumentIds?: () => Promise<EntityId[]>
   } = {},
 ): LocalDocumentStore<TemplateDocumentV1> {
   const namespace = getTemplateNamespace(ownerContext)
@@ -85,8 +85,8 @@ export function createWebTemplateDocumentStore(
       const localIds = rows
         .map((row) => row.documentId)
         .filter((documentId): documentId is string => Boolean(documentId))
-      const legacyIds = await options.listLegacyDocumentIds?.() ?? []
-      return Array.from(new Set([...localIds, ...legacyIds]))
+      const remoteIds = await options.listRemoteDocumentIds?.() ?? []
+      return Array.from(new Set([...localIds, ...remoteIds]))
     },
     getDocument: async (documentId) => {
       const update = await loadTripDocumentUpdate({ namespace, documentId })

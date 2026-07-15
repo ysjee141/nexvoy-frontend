@@ -102,7 +102,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-037-web-document-primary-key-bootstrap-and-photo-storage.md` | 완료 | Web document-primary key bootstrap, backup restore/status, place photo storage 호환성 보완, Issue #334, PR #335 |
 | `TASK-038-closed-beta-baseline-reset-plan.md` | 완료 | 기존 데이터 자동 보존 전제를 제거하고 Closed Beta 기준선을 신규 document-primary 데이터로 재정의 |
 | `TASK-039-new-document-bootstrap.md` | 완료 | 신규 여행/템플릿 생성 시 local document + encrypted snapshot + owner key bootstrap, Issue #337 |
-| `TASK-040-document-primary-product-path-cutover.md` | 예정 | 여행/일정/준비물/템플릿 제품 경로에서 legacy hydrate/fallback 제거 |
+| `TASK-040-document-primary-product-path-cutover.md` | 완료 | 여행/일정/준비물/템플릿 제품 경로에서 legacy hydrate/fallback 제거, Issue #339 |
 | `TASK-041-backup-freshness-and-cost-control.md` | 예정 | local-first freshness, trigger 기반 backup pull/upload, Supabase 비용 최소화 |
 | `TASK-042-legacy-migration-tool.md` | 예정 | 기존 row 데이터를 명시적으로 document-primary로 전환하는 후속 도구 |
 
