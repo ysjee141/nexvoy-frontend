@@ -31,6 +31,7 @@ bootstrap이 owner member 생성 전에 `get_my_active_document_key`를 호출�
 - `ensureDocumentBootstrapped()`가 trip/template type과 schema version을 입력받도록 확장했다.
 - `hasSnapshot()`은 빈 `documents` bootstrap row가 아니라 실제 snapshot payload 존재 여부를 반환하도록 정정했다.
 - 이메일 동행자 초대 경로가 legacy `trip_members.insert()`를 호출하지 않고 document invitation link RPC를 생성한 뒤 해당 링크/코드를 메일로 발송하도록 변경했다.
+- 로컬 IndexedDB에는 여행이 있지만 Supabase `documents`/`document_members` registry가 비어 있는 중간 상태에서도, owner가 초대 생성 전에 원격 snapshot/key/read-model을 재부트스트랩하도록 보강했다.
 - NewPlanModal이 장소 미선택 상태에서 조용히 return하지 않고 오류 메시지를 표시한다.
 - NewPlanModal form에 `noValidate`를 적용하고 방문 날짜/시간/체류 시간 검증을 React 경로에서 명시 처리한다.
 - 일정 저장 후 mutation 결과 document에서 저장된 plan을 즉시 materialize해 화면 state에 반영한다.

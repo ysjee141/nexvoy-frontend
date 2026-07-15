@@ -214,6 +214,38 @@ export async function createWebTripDocument(input: {
   return tripId
 }
 
+export async function ensureWebTripDocumentRemoteBootstrap(input: {
+  supabase: SupabaseClient
+  tripId: string
+}): Promise<void> {
+  const ownerContext = await resolveWebOwnerContext(input.supabase)
+  if (!ownerContext.authUserId) throw new Error('인증 정보가 없습니다.')
+
+  const tripStore = createWebTripDocumentStore(ownerContext)
+  const document = await tripStore.getDocument(input.tripId)
+  if (!document) throw new Error('Trip document was not found.')
+  if (document.trip.ownerId !== ownerContext.authUserId) return
+
+  const update = encodeTripDocumentUpdate(createYjsTripDocument(document))
+  await ensureWebOwnerDocumentKeyForSnapshot({
+    supabase: input.supabase,
+    documentId: input.tripId,
+    ownerId: ownerContext.authUserId,
+    documentType: 'trip',
+    schemaVersion: TRIP_DOCUMENT_SCHEMA_VERSION,
+    snapshotPayload: update,
+  })
+  await upsertTripReadModel(input.supabase, {
+    tripId: input.tripId,
+    ownerId: ownerContext.authUserId,
+    destination: document.trip.destination,
+    startDate: document.trip.startDate,
+    endDate: document.trip.endDate,
+    adultsCount: document.trip.adultsCount,
+    childrenCount: document.trip.childrenCount,
+  })
+}
+
 export async function createWebTemplateDocument(input: {
   supabase: SupabaseClient
   title: string
