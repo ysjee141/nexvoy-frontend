@@ -15,7 +15,10 @@ import {
     type DocumentKeyProvisioningStatus,
 } from './DocumentKeyProvisioningStatus'
 import { ensureWebDeviceKeyMaterial, runWebForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
-import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import {
+    createWebDocumentPrimaryRepositories,
+    ensureWebTripDocumentRemoteBootstrap,
+} from '@/lib/local-first/documentPrimaryRepositories'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -143,6 +146,11 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('로그인이 필요합니다.')
+
+            await ensureWebTripDocumentRemoteBootstrap({
+                supabase,
+                tripId,
+            })
 
             const repo = createInvitationRepository(supabase)
             const invitation = await repo.createDocumentInvitationLink({
