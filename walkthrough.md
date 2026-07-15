@@ -1,3 +1,47 @@
+# Walkthrough: TASK-043 Document-Primary Trip Entry Fix
+
+## Summary
+
+TASK-043은 Closed Beta 테스트 중 확인된 Web trip entry 회귀를 수정했다. 홈 목록이 legacy row-only 여행을
+직접 읽던 경로를 제거하고 document-primary repository 목록으로 전환했으며, 여행 상세 진입도 `trips` row가 아니라
+`TripDocumentV1` read model을 우선 사용하도록 정리했다. 신규 Web 여행 생성 시 owner member snapshot을
+문서에 포함해 협업/초대 UI가 owner 권한을 안정적으로 판정하도록 보강했다.
+
+## Artifacts
+
+- GitHub Issue [#346](https://github.com/ysjee141/nexvoy-frontend/issues/346)
+- 브랜치: `feature/task-043-document-primary-trip-entry`
+- `apps/web/app/HomeClient.tsx`
+- `apps/web/app/trips/detail/TripLayoutClient.tsx`
+- `apps/web/app/trips/detail/TripClient.tsx`
+- `apps/web/lib/local-first/documentPrimaryRepositories.ts`
+- `apps/web/lib/local-first/tripReadModelAdapters.ts`
+
+## Key Changes
+
+- Home trip list에서 `trips`/`trip_members`/`checklists` row 직접 조회를 제거하고 `repositories.trips.listTrips()`를 사용한다.
+- `TripSummaryReadModel`/`TripDetailReadModel`을 기존 Web 카드/상세 row shape로 변환하는 adapter를 추가했다.
+- Trip detail layout이 `repositories.trips.getTrip()` 결과를 기준으로 trip header와 member rows를 구성한다.
+- TripClient role 조회가 document owner/member snapshot을 우선 사용하고 legacy role query는 fallback으로만 사용한다.
+- Web 신규 trip document에 owner member snapshot을 추가해 owner read model이 비어 있지 않게 했다.
+
+## Verification
+
+| 명령 | 결과 |
+| --- | --- |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm -C packages/core typecheck` | PASS |
+| `pnpm -C apps/web exec tsc --noEmit` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS, 기존 `react-native-webrtc`/`event-target-shim` export warning만 발생 |
+
+## Notes
+
+- 이미 Supabase `documents`에 존재하는 과거 snapshot은 document-primary 데이터로 간주되어 목록에 표시될 수 있다.
+  이번 수정은 legacy row-only 여행이 제품 목록에 섞이는 경로를 제거한 것이다.
+- `pnpm typecheck`는 출력상 TypeScript 오류는 없지만 workspace filter 실행이 `tsc` shim으로 빠져 exit code 1을 반환했다.
+  개별 core/web 검증과 mobile build는 통과했다.
+
 # Walkthrough: TASK-042 Legacy Migration Tool
 
 ## Summary

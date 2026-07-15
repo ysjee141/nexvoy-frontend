@@ -178,6 +178,18 @@ export async function createWebTripDocument(input: {
     childrenCount: input.childrenCount,
     createdAt: now,
   })
+  const ownerMemberId = `member:${ownerContext.authUserId}`
+  document.members[ownerMemberId] = {
+    id: ownerMemberId,
+    userId: ownerContext.authUserId,
+    invitedEmail: null,
+    role: 'owner',
+    status: 'accepted',
+    nickname: null,
+    email: null,
+    createdAt: now,
+    updatedAt: now,
+  }
   const update = encodeTripDocumentUpdate(createYjsTripDocument(document))
 
   await tripStore.putDocument(tripId, document, update)
