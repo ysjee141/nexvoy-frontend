@@ -243,6 +243,12 @@ importers:
       dotenv:
         specifier: ^16.0.0
         version: 16.6.1
+      fake-indexeddb:
+        specifier: ^6.2.5
+        version: 6.2.5
+      tsx:
+        specifier: ^4.22.4
+        version: 4.22.4
       typescript:
         specifier: ^5
         version: 5.9.3
@@ -262,6 +268,9 @@ importers:
       '@supabase/supabase-js':
         specifier: ^2.0.0
         version: 2.98.0
+      '@types/node':
+        specifier: ^20.19.35
+        version: 20.19.35
       tsx:
         specifier: ^4.22.4
         version: 4.22.4
@@ -4420,6 +4429,10 @@ packages:
 
   exsolve@1.0.8:
     resolution: {integrity: sha512-LmDxfWXwcTArk8fUEnOfSZpHOJ6zOMUJKOtFLFqJLoKJetuQG874Uc7/Kki7zFLzYybmZhp1M7+98pfMqeX8yA==}
+
+  fake-indexeddb@6.2.5:
+    resolution: {integrity: sha512-CGnyrvbhPlWYMngksqrSSUT1BAVP49dZocrHuK0SvtR0D5TMs5wP0o3j7jexDJW01KSadjBp1M/71o/KR3nD1w==}
+    engines: {node: '>=18'}
 
   fast-base64-decode@1.0.0:
     resolution: {integrity: sha512-qwaScUgUGBYeDNRnbc/KyllVU88Jk1pRHPStuF/lO7B0/RTRLj7U0lkdTAutlBblY08rwZDff6tNU9cjv6j//Q==}
@@ -12125,6 +12138,8 @@ snapshots:
       - supports-color
 
   exsolve@1.0.8: {}
+
+  fake-indexeddb@6.2.5: {}
 
   fast-base64-decode@1.0.0: {}
 

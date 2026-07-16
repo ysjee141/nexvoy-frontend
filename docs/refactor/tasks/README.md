@@ -114,10 +114,10 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-042-legacy-migration-tool.md` | 완료 | 기존 row 데이터를 명시적으로 document-primary로 전환하는 Web dev migration tool, Issue #343 |
 | `TASK-044-targeted-document-invitation-authority.md` | 완료 | 이메일 대상 초대 authority, pending 초대, 안전한 메일 발송, document member registry 통합 |
 | `TASK-045-invitation-join-and-key-delivery-productization.md` | 구현 완료 | Web/Mobile join UX, 자동 key provisioning, restore 구현. DEV 다중 사용자 검증 대기 |
-| `TASK-046-relational-authority-and-command-rpc.md` | 대기 | normalized row authority, revision, idempotency, batch RPC, RLS |
-| `TASK-047-shared-offline-sync-core.md` | 대기 | 공통 domain command, Repository, outbox, conflict/retry core |
-| `TASK-048-web-indexeddb-cache-outbox.md` | 대기 | Web account-scoped IndexedDB cache와 transactional outbox |
-| `TASK-049-realtime-invalidation-and-revision-recovery.md` | 대기 | private Broadcast invalidation과 Web revision gap 복구 |
+| `TASK-046-relational-authority-and-command-rpc.md` | 완료 | normalized row authority, revision, idempotency, batch RPC, RLS |
+| `TASK-047-shared-offline-sync-core.md` | 완료 | 공통 domain command, Repository, outbox, conflict/retry core |
+| `TASK-048-web-indexeddb-cache-outbox.md` | 완료 | Web account-scoped IndexedDB cache와 transactional outbox |
+| `TASK-049-realtime-invalidation-and-revision-recovery.md` | 완료 | private Broadcast invalidation과 Web revision gap 복구 |
 | `TASK-050-web-server-authority-product-cutover.md` | 대기 | Web 전체 기능 server-authority 제품 경로 전환 |
 | `TASK-051-mobile-sqlite-cache-outbox.md` | 대기 | Mobile SQLite cache/outbox와 Realtime adapter |
 | `TASK-052-mobile-server-authority-product-cutover.md` | 대기 | Mobile 전체 기능 server-authority 제품 경로 전환 |
@@ -211,10 +211,10 @@ rotating room secret 보안 하드닝을 완료했다.
 
 ### Phase 9: Offline-Capable Server Authority
 
-- [ ] `TASK-046-relational-authority-and-command-rpc.md`: 관계형 authority와 atomic batch command RPC
-- [ ] `TASK-047-shared-offline-sync-core.md`: 공통 command/repository/outbox/conflict core
-- [ ] `TASK-048-web-indexeddb-cache-outbox.md`: Web IndexedDB cache/outbox adapter
-- [ ] `TASK-049-realtime-invalidation-and-revision-recovery.md`: Realtime invalidation과 Web revision recovery
+- [x] `TASK-046-relational-authority-and-command-rpc.md`: 관계형 authority와 atomic batch command RPC
+- [x] `TASK-047-shared-offline-sync-core.md`: 공통 command/repository/outbox/conflict core
+- [x] `TASK-048-web-indexeddb-cache-outbox.md`: Web IndexedDB cache/outbox adapter
+- [x] `TASK-049-realtime-invalidation-and-revision-recovery.md`: Realtime invalidation과 Web revision recovery
 - [ ] `TASK-050-web-server-authority-product-cutover.md`: Web 전체 제품 경로 전환
 - [ ] `TASK-051-mobile-sqlite-cache-outbox.md`: Mobile SQLite cache/outbox와 Realtime adapter
 - [ ] `TASK-052-mobile-server-authority-product-cutover.md`: Mobile 전체 제품 경로 전환

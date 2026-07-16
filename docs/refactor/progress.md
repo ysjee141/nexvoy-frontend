@@ -18,6 +18,15 @@
 신규 실행 계획은 `TASK-046`~`TASK-056`이다. 아래 TASK-001~045 내용은 이전 Local-first 시도의 구현
 이력으로 유지하며 신규 설계 지침으로 사용하지 않는다.
 
+## 2026-07-17 TASK-046~049 완료
+
+- 정규화 행에 version/tombstone metadata를 추가하고 `apply_trip_commands` / `apply_template_commands`를 authority write 경계로 만들었다.
+- 신규 authority state가 없는 기존 행은 신규 summary/bundle에서 제외한다.
+- Core가 command, canonical ack, conflict, outbox, retry, revision reconciliation을 플랫폼 독립 계약으로 제공한다.
+- Web은 별도 `onvoy-server-authority` IndexedDB에서 account-scoped cache와 outbox를 원자적으로 관리한다.
+- Realtime은 private resource topic에 1KB 미만 invalidation만 보낸다. 연속 revision은 entity RPC, gap/reconnect는 full bundle로 복구한다.
+- 이번 단계는 기반 구현이다. 현재 Web 제품 화면은 TASK-050에서 이 repository와 sync session으로 전환한다.
+
 2026-07-16 초대 흐름 재점검:
 
 - 이메일 초대와 기존 로그인 후 Accept UI가 서로 다른 registry를 사용하고 있음을 확인했다.

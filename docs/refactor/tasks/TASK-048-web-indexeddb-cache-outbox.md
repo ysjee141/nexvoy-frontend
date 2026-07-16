@@ -1,6 +1,6 @@
 # TASK-048: Web IndexedDB Cache and Transactional Outbox
 
-- 상태: 대기
+- 상태: 완료
 
 ## 목적
 
@@ -53,6 +53,14 @@ Web에서 계정별 canonical cache와 durable command outbox를 IndexedDB 한 t
 - 로그아웃은 계정 cache를 무조건 삭제하지 않는다. 다음 로그인의 offline 조회를 위해 namespace만 분리한다.
 - revoke 또는 명시적 계정 데이터 삭제는 별도 purge API로 처리한다.
 - browser storage eviction 가능성을 고려해 server authority에서 언제든 full bundle을 복구할 수 있어야 한다.
+
+## 구현 결과
+
+- 레거시 `onvoy-local-first-spike`와 분리된 `onvoy-server-authority` IndexedDB를 추가했다.
+- account/resource cache와 outbox를 같은 transaction으로 커밋하고 operation ID 충돌과 stale optimistic write를 거부한다.
+- sending 복구, retry/conflict, out-of-order ack, 후속 command revision rebase, guest namespace 승격을 구현했다.
+- online, visibility, detail enter, mutation trigger를 제공하는 Web sync session을 추가했다.
+- 계정 전환과 stop 시 활성 Realtime subscription을 해제하고 다른 계정 namespace를 조회하지 않는다.
 
 ## 검증 방법
 

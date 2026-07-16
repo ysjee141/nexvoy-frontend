@@ -21,4 +21,8 @@
 - `docs/refactor/tasks/TASK-044-targeted-document-invitation-authority.md`
 - `docs/refactor/tasks/TASK-045-invitation-join-and-key-delivery-productization.md`
 - `docs/refactor/tasks/TASK-046-relational-authority-and-command-rpc.md`
+- `docs/refactor/tasks/TASK-047-shared-offline-sync-core.md`
+- `docs/refactor/tasks/TASK-048-web-indexeddb-cache-outbox.md`
+- `docs/refactor/tasks/TASK-049-realtime-invalidation-and-revision-recovery.md`
+- `docs/refactor/tasks/TASK-050-web-server-authority-product-cutover.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
