@@ -53,6 +53,11 @@ export const CacheUtil = {
         return await this.get<any>('auth_last_profile')
     },
 
+    async clearAuthSession() {
+        await this.remove('auth_last_user')
+        await this.remove('auth_last_profile')
+    },
+
     async clear() {
         if (!hasWindow()) return
         try {
