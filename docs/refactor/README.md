@@ -13,6 +13,8 @@ Local-first refactor 작업은 항상 `refactoring/local-first-architecture`를 
 
 ## 관련 문서
 
+- `docs/refactor/reports/LOCAL-FIRST-DATA-INTEGRITY-AUDIT.md` - Production 단계별 계정 데이터 보장, 권한, 암호화, 저장소, P2P, 백업/복구 감사
+- `docs/refactor/reports/PRODUCT-DATA-TRANSPORT-COST-EVALUATION.md` - 기존 P2P/local-first 제약을 제거한 제품 기능 기반 통신량·운영비용 비교
 - `docs/refactor/progress.md`
 - `docs/refactor/tasks/README.md`
 - `docs/refactor/tasks/TASK-044-targeted-document-invitation-authority.md`
