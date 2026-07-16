@@ -1,6 +1,6 @@
 # ADR-011: 초대 수락 후 Document Key Provisioning 전략
 
-- 상태: 제안됨
+- 상태: 대체됨 (`ADR-015-offline-capable-server-authority.md`)
 - 제안일: 2026-07-06
 - 결정자: ysjee141
 - 관련 문서:

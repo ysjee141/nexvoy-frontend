@@ -1,5 +1,10 @@
 # Local-First Data Engine Technical Spec
 
+> [!WARNING]
+> 이 문서는 TASK-001~045 Local-first/Yjs/P2P 구현의 역사적 명세다. 2026-07-17 이후 목표 아키텍처는
+> `ADR-015-offline-capable-server-authority.md`와 `TASK-046`~`TASK-056`이 대체한다. 신규 구현에서 이 문서의
+> document-primary, WebRTC, encrypted backup 지시를 적용하지 않는다.
+
 ## 1. 목적
 
 OnVoy의 데이터 통신 구조를 Supabase 원본 DB 중심에서 Local-first 원본 저장소 중심으로 전환한다. 클라이언트는 로컬 저장소와 CRDT(Yjs)를 우선 사용하고, P2P(WebRTC)로 실시간 협업을 수행한다. Supabase는 사용자 인증, 권한 registry, 백업, 복구, 초대/공유 bootstrap, 첨부 파일 저장을 담당한다.

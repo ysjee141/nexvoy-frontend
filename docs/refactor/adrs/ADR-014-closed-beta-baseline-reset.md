@@ -1,6 +1,6 @@
 # ADR-014: Closed Beta Baseline Reset
 
-- 상태: 채택됨
+- 상태: 부분 대체됨 (기존 데이터 reset은 유지, sync 기준은 `ADR-015`로 대체)
 - 결정일: 2026-07-15
 - 결정자: ysjee141
 - 관련 문서:

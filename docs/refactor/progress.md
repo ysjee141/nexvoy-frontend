@@ -1,8 +1,22 @@
-# Local-First Full Product Progress
+# Data Architecture Refactor Progress
 
-작성일: 2026-07-14  
+작성일: 2026-07-17
 기준 브랜치: `refactoring/local-first-architecture`  
-목표 해석: **웹/앱의 모든 핵심 기능을 신규 Local-first document-primary 데이터 기준으로 완성한 뒤 통합테스트와 Closed Beta를 진행한다.**  
+현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
+
+## 2026-07-17 아키텍처 재결정
+
+`PRODUCT-DATA-TRANSPORT-COST-EVALUATION.md`의 권장 결정을 승인하고 `ADR-015`를 채택했다.
+
+- Supabase normalized row를 committed data의 최종 권위로 둔다.
+- Web IndexedDB와 Mobile SQLite는 빠른 조회, optimistic edit, offline outbox를 담당한다.
+- remote write는 authenticated batch RPC, live update는 작은 Realtime invalidation을 사용한다.
+- WebRTC/P2P, Yjs, app-layer E2EE, encrypted document backup은 목표 구조에서 제거한다.
+- 현재 V1 document/backup은 자동 migration하지 않고 신규 경로 검증 후 reset한다.
+- 최종 검증 기준은 Closed Beta 전용이 아니라 Initial Production 데이터 정합성과 비용 gate다.
+
+신규 실행 계획은 `TASK-046`~`TASK-056`이다. 아래 TASK-001~045 내용은 이전 Local-first 시도의 구현
+이력으로 유지하며 신규 설계 지침으로 사용하지 않는다.
 
 2026-07-16 초대 흐름 재점검:
 

@@ -1,6 +1,6 @@
 # ADR-003: 백업 암호화 및 키 관리 전략
 
-- 상태: 채택됨
+- 상태: 대체됨 (`ADR-015-offline-capable-server-authority.md`)
 - 결정일: 2026-06-29
 - 결정자: ysjee141
 - 관련 문서:

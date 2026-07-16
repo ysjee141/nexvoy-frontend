@@ -1,6 +1,6 @@
 # ADR-012: P2P Signaling 전송 계층으로 Supabase Realtime Broadcast 채택
 
-- 상태: 채택됨
+- 상태: 대체됨 (`ADR-015-offline-capable-server-authority.md`)
 - 결정일: 2026-07-12
 - 결정자: ysjee141
 - 관련 문서:

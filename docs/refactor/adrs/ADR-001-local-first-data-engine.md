@@ -1,6 +1,6 @@
 # ADR-001: Local-First Data Engine 전환
 
-- 상태: 채택됨
+- 상태: 대체됨 (`ADR-015-offline-capable-server-authority.md`)
 - 결정일: 2026-06-29
 - 결정자: ysjee141
 - 관련 문서:

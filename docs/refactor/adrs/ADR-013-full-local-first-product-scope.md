@@ -1,6 +1,6 @@
 # ADR-013: Full Local-first Product Scope
 
-- 상태: 채택됨, Closed Beta 데이터 기준선은 ADR-014로 수정됨
+- 상태: 부분 대체됨 (제품 범위는 유지, document-primary 방식은 `ADR-015`로 대체)
 - 결정일: 2026-07-14
 - 결정자: ysjee141
 - 관련 문서:

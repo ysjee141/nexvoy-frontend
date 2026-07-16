@@ -1,8 +1,8 @@
-# Local-First Refactor
+# Data Architecture Refactor
 
 ## 기준 브랜치
 
-Local-first refactor 작업은 항상 `refactoring/local-first-architecture`를 기준 브랜치로 사용한다.
+데이터 아키텍처 refactor 작업은 기존 규칙을 유지해 항상 `refactoring/local-first-architecture`를 기준 브랜치로 사용한다.
 
 - 새 refactor task 브랜치는 `refactoring/local-first-architecture`에서 분기한다.
 - refactor task PR의 base branch도 `refactoring/local-first-architecture`로 지정한다.
@@ -13,10 +13,12 @@ Local-first refactor 작업은 항상 `refactoring/local-first-architecture`를 
 
 ## 관련 문서
 
+- `docs/refactor/adrs/ADR-015-offline-capable-server-authority.md` - 2026-07-17 이후 채택된 데이터 권위 및 동기화 기준
 - `docs/refactor/reports/LOCAL-FIRST-DATA-INTEGRITY-AUDIT.md` - Production 단계별 계정 데이터 보장, 권한, 암호화, 저장소, P2P, 백업/복구 감사
 - `docs/refactor/reports/PRODUCT-DATA-TRANSPORT-COST-EVALUATION.md` - 기존 P2P/local-first 제약을 제거한 제품 기능 기반 통신량·운영비용 비교
 - `docs/refactor/progress.md`
 - `docs/refactor/tasks/README.md`
 - `docs/refactor/tasks/TASK-044-targeted-document-invitation-authority.md`
 - `docs/refactor/tasks/TASK-045-invitation-join-and-key-delivery-productization.md`
+- `docs/refactor/tasks/TASK-046-relational-authority-and-command-rpc.md`
 - `docs/refactor/TECHNICAL-SPEC.md`

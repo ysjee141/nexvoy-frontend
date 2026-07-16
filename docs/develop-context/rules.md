@@ -17,25 +17,25 @@ OnVoy 프로젝트에 참여하는 모든 AI 모델은 본 문서에 정의된 �
     - **Mobile**: `pnpm --filter nexvoy-app lint`, `pnpm --filter nexvoy-app typecheck`, `pnpm --filter nexvoy-app build`로 Expo/RN 앱을 확인합니다.
 6.  **PR 생성 (Pull Request)**: `develop` 브랜치를 대상으로 PR을 생성하며, 본문에 `Resolves #NN`, `Close #NN` 문구를 포함하여 이슈를 자동 연동합니다.
 
-### 1.1 Local-First Refactor Workflow
+### 1.1 Data Architecture Refactor Workflow
 
-Local-first 전환 작업은 일반 기능 개발보다 먼저 `docs/refactor/` 문서를 확인한다.
+데이터 아키텍처 전환 작업은 일반 기능 개발보다 먼저 `docs/refactor/` 문서를 확인한다.
 
 필수 참조:
 
-- `docs/refactor/TECHNICAL-SPEC.md`
-- `docs/refactor/adrs/`
+- `docs/refactor/adrs/ADR-015-offline-capable-server-authority.md`
+- `docs/refactor/reports/PRODUCT-DATA-TRANSPORT-COST-EVALUATION.md`
 - `docs/refactor/tasks/`
 
 작업 원칙:
 
 - task 문서 하나를 가능한 한 하나의 PR 단위로 다룬다.
-- 현재 운영 구조가 Supabase row primary임을 전제로 fallback을 유지한다.
 - UI는 Repository interface를 통해서만 data source에 접근한다.
-- Local write는 네트워크 실패와 무관하게 성공해야 한다.
-- Supabase backup pull/push가 기본 sync/restore 경로이며, WebRTC는 optional fast path다.
-- Cloudflare STUN/TURN은 P2P connectivity 보조 인프라로 사용한다.
-- document content는 로그, push payload, signaling metadata에 포함하지 않는다.
+- Supabase normalized row를 committed data의 최종 권위로 사용한다.
+- Local cache mutation과 durable outbox append는 네트워크와 무관한 한 transaction으로 처리한다.
+- Remote write는 authenticated batch RPC, live update는 최소 Realtime invalidation을 사용한다.
+- WebRTC, Yjs, app-layer document encryption, custom backup 경로를 신규 구현하지 않는다.
+- command/row content는 로그, push payload, Realtime metadata에 포함하지 않는다.
 
 ---
 
@@ -47,13 +47,13 @@ Local-first 전환 작업은 일반 기능 개발보다 먼저 `docs/refactor/` 
 2.  **Owner Policy**: 사용자 본인의 데이터(`user_id = auth.uid()`)에 대해서만 모든 권한을 주는 정책을 먼저 생성합니다.
 3.  **Shared Policy**: 협업 및 공개 기능이 필요한 경우, `collaborators` 테이블 등 관계형 체크를 통해 접근 권한을 확장합니다.
 
-Local-first backup/registry 테이블은 다음 원칙을 추가로 적용한다.
+Server-authority row/registry는 다음 원칙을 추가로 적용한다.
 
-- `documents`, `document_updates`, `document_members`, `document_keys`, `document_invitation_links`는 RLS를 필수로 활성화한다.
-- owner/editor만 backup update upload가 가능하다.
-- viewer는 read/restore만 가능하고 write propagation은 차단한다.
-- 초대 수락, role 변경, hard delete는 RPC 또는 server-side 검증을 거친다.
-- encrypted snapshot/update blob은 서버에서 복호화하지 않는다.
+- product row, `document_members`, `document_invitation_links`, Realtime topic은 RLS를 필수로 활성화한다.
+- owner/editor만 domain command write가 가능하고 viewer는 canonical row read만 허용한다.
+- 초대 수락, role 변경, revoke, batch mutation은 authenticated RPC와 server-side 검증을 거친다.
+- client가 전달한 user ID, role, server timestamp를 권한 근거로 신뢰하지 않는다.
+- revoked user의 row, Realtime, asset 접근을 함께 차단한다.
 
 ---
 
@@ -70,7 +70,7 @@ OnVoy의 디자인 가치와 브랜드 아이デン티티를 훼손하지 마십
 ## 4. 🧠 Antigravity Rules (AI Special)
 
 - **맥락 확인**: 작업을 시작하기 전 반드시 `docs/develop-context/` 폴더의 모든 문서를 읽고 지식을 최신화하십시오.
-- **Refactor 문서 우선**: local-first 관련 작업은 `docs/refactor/TECHNICAL-SPEC.md`, 관련 ADR, 해당 task 문서를 먼저 확인하십시오.
+- **Refactor 문서 우선**: 데이터 전환 작업은 `ADR-015`, 비용 평가 보고서, 해당 task 문서를 먼저 확인하십시오.
 - **모바일 플랫폼 경계**: RN/Expo 환경 구현 시 웹 전용 API와 네이티브 모듈 사용 위치를 분리하십시오.
 - **설명 최소화**: 코드 변경 후에는 요점만 간략히 설명하고, 상세 내역은 아티팩트(`walkthrough.md`)를 활용하십시오.
 

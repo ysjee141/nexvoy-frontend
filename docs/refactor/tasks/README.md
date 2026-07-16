@@ -1,13 +1,17 @@
-# Local-First Refactor Tasks
+# Data Architecture Refactor Tasks
 
-이 디렉토리는 Local-first Data Engine 전환 작업의 phase별 실행 문서를 보관한다.
+이 디렉토리는 OnVoy 데이터 아키텍처 전환 작업의 phase별 실행 문서를 보관한다. `TASK-046`부터는
+`ADR-015`의 offline-capable server authority를 현재 기준으로 사용한다. 이전 Local-first/Yjs/P2P task는
+구현 이력이며 신규 설계 기준이 아니다.
 
 상위 문서:
 
-- `docs/refactor/TECHNICAL-SPEC.md`
+- `docs/refactor/adrs/ADR-015-offline-capable-server-authority.md`
+- `docs/refactor/reports/PRODUCT-DATA-TRANSPORT-COST-EVALUATION.md`
 - `docs/refactor/progress.md`
-- `docs/refactor/adrs/ADR-001-local-first-data-engine.md`
-- `docs/refactor/adrs/ADR-014-closed-beta-baseline-reset.md`
+- `docs/refactor/TECHNICAL-SPEC.md` (TASK-001~045 역사적 명세)
+- `docs/refactor/adrs/ADR-001-local-first-data-engine.md` (대체됨)
+- `docs/refactor/adrs/ADR-014-closed-beta-baseline-reset.md` (부분 대체됨)
 - `docs/plans/PLAN-008-local-first-architecture-review.md`
 
 ## 문서 네이밍
@@ -54,9 +58,12 @@ TASK-008a-web-checklist-read-through-hydration.md
 - 각 task는 가능한 한 하나의 PR로 끝낼 수 있는 크기를 유지한다.
 - UI는 Supabase, Yjs, WebRTC를 직접 호출하지 않고 Repository 또는 platform adapter를 통해 접근한다.
 - `packages/core`에는 IndexedDB, SQLite, WebRTC, Next.js, Expo/RN API를 넣지 않는다.
-- Closed Beta 제품 경로는 신규 document-primary 데이터만 대상으로 한다. 기존 Supabase row 데이터는 자동 hydrate/fallback하지 않고 후속 migration tool의 source로만 유지한다.
-- WebRTC/P2P는 optional fast path이며, 기본 sync/restore는 Supabase backup pull/push다.
-- Cloudflare STUN/TURN은 managed provider 기준선으로 사용한다.
+- Supabase normalized row를 committed data의 최종 권위로 사용한다.
+- Web IndexedDB와 Mobile SQLite는 account-scoped cache와 durable outbox를 담당한다.
+- local mutation과 outbox append는 하나의 local transaction으로 처리한다.
+- remote write는 authenticated batch RPC, live update는 작은 Realtime invalidation을 사용한다.
+- WebRTC/P2P, Yjs, app-layer E2EE, encrypted document backup을 신규 제품 경로에 추가하지 않는다.
+- 기존 V1 document/backup은 자동 hydrate/migration하지 않고 TASK-055에서 단계적으로 reset한다.
 
 ## 진행 현황
 
@@ -107,6 +114,19 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-042-legacy-migration-tool.md` | 완료 | 기존 row 데이터를 명시적으로 document-primary로 전환하는 Web dev migration tool, Issue #343 |
 | `TASK-044-targeted-document-invitation-authority.md` | 완료 | 이메일 대상 초대 authority, pending 초대, 안전한 메일 발송, document member registry 통합 |
 | `TASK-045-invitation-join-and-key-delivery-productization.md` | 구현 완료 | Web/Mobile join UX, 자동 key provisioning, restore 구현. DEV 다중 사용자 검증 대기 |
+| `TASK-046-relational-authority-and-command-rpc.md` | 대기 | normalized row authority, revision, idempotency, batch RPC, RLS |
+| `TASK-047-shared-offline-sync-core.md` | 대기 | 공통 domain command, Repository, outbox, conflict/retry core |
+| `TASK-048-web-indexeddb-cache-outbox.md` | 대기 | Web account-scoped IndexedDB cache와 transactional outbox |
+| `TASK-049-realtime-invalidation-and-revision-recovery.md` | 대기 | private Broadcast invalidation과 Web revision gap 복구 |
+| `TASK-050-web-server-authority-product-cutover.md` | 대기 | Web 전체 기능 server-authority 제품 경로 전환 |
+| `TASK-051-mobile-sqlite-cache-outbox.md` | 대기 | Mobile SQLite cache/outbox와 Realtime adapter |
+| `TASK-052-mobile-server-authority-product-cutover.md` | 대기 | Mobile 전체 기능 server-authority 제품 경로 전환 |
+| `TASK-053-membership-invitation-without-document-keys.md` | 대기 | document key 없는 membership/invitation/role/revoke |
+| `TASK-054-direct-asset-storage-and-delivery.md` | 대기 | Storage 직접 업로드, thumbnail, CDN, orphan cleanup |
+| `TASK-055-retire-yjs-p2p-encrypted-backup.md` | 대기 | Yjs/P2P/key/custom backup runtime 제거와 V1 reset |
+| `TASK-056-production-data-integrity-and-cost-gate.md` | 대기 | Production 정합성·권한·비용 gate와 rollout runbook |
+
+## 이전 단계 이력
 
 현재 `Phase 0: 모델과 변환 기반`, `Phase 1: Repository 경계와 Web 스파이크`, `Phase 2: Backup, 암호화, Restore`, `Phase 2.5: Web Read-through 보완`은 완료되었다. `TASK-038`부터는 ADR-014에 따라 Closed Beta 기준선을 기존 row 자동 migration에서 신규 document-primary 데이터로 재설정한다. 기존 row 데이터는 제품 경로에서 자동 hydrate하지 않고, `TASK-042`의 명시적 migration tool source로만 남긴다.
 
@@ -189,15 +209,42 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-044-targeted-document-invitation-authority.md`: 이메일·pending UI·링크·코드 초대를 document authority로 통합
 - [x] `TASK-045-invitation-join-and-key-delivery-productization.md`: 참여 UX, 자동 key 전달, restore 구현 (DEV 수동 검증 필요)
 
+### Phase 9: Offline-Capable Server Authority
+
+- [ ] `TASK-046-relational-authority-and-command-rpc.md`: 관계형 authority와 atomic batch command RPC
+- [ ] `TASK-047-shared-offline-sync-core.md`: 공통 command/repository/outbox/conflict core
+- [ ] `TASK-048-web-indexeddb-cache-outbox.md`: Web IndexedDB cache/outbox adapter
+- [ ] `TASK-049-realtime-invalidation-and-revision-recovery.md`: Realtime invalidation과 Web revision recovery
+- [ ] `TASK-050-web-server-authority-product-cutover.md`: Web 전체 제품 경로 전환
+- [ ] `TASK-051-mobile-sqlite-cache-outbox.md`: Mobile SQLite cache/outbox와 Realtime adapter
+- [ ] `TASK-052-mobile-server-authority-product-cutover.md`: Mobile 전체 제품 경로 전환
+- [ ] `TASK-053-membership-invitation-without-document-keys.md`: keyless membership/invitation 전환
+- [ ] `TASK-054-direct-asset-storage-and-delivery.md`: asset 직접 전송과 egress 최적화
+- [ ] `TASK-055-retire-yjs-p2p-encrypted-backup.md`: legacy runtime 제거와 데이터 reset
+- [ ] `TASK-056-production-data-integrity-and-cost-gate.md`: Production gate와 rollout
+
 ## 권장 시작 순서
 
-TASK-001~028까지 완료되어 Web checklist 도메인에서 local-first read/write 스파이크, Supabase backup schema/RLS, document key model, backup queue, snapshot/update restore flow, 기존 Supabase row 기반 read-through hydration, 모바일 WebRTC native runtime 조건, Cloudflare STUN/TURN ICE config 발급 경로, checklist dual-write/mismatch detector, guest auth promotion, 초대/권한 registry, notification/observability boundary, Web foreground owner-side key provisioning, Mobile native key provisioning MVP와 foreground/resume/background sync, native non-exportable key storage hardening, Mobile-first owner device key bootstrap, Mobile encrypted snapshot restore, Web/Mobile P2P signaling/data-channel wiring, Web-to-Web Yjs update exchange, P2P 연결 생명주기 하드닝, Mobile Yjs runtime adapter, signaling rotating room topic hardening까지 검증을 완료했다.
+```mermaid
+flowchart TD
+    T46["TASK-046 DB authority/RPC"] --> T47["TASK-047 shared sync core"]
+    T47 --> T48["TASK-048 Web IndexedDB"]
+    T48 --> T49["TASK-049 Realtime invalidation"]
+    T49 --> T50["TASK-050 Web cutover"]
+    T50 --> T51["TASK-051 Mobile SQLite/Realtime"]
+    T51 --> T52["TASK-052 Mobile cutover"]
+    T50 --> T53["TASK-053 membership/invitation"]
+    T52 --> T53
+    T50 --> T54["TASK-054 asset transport"]
+    T52 --> T54
+    T53 --> T55["TASK-055 legacy retirement"]
+    T54 --> T55
+    T55 --> T56["TASK-056 Production gate"]
+```
 
-`TASK-021`은 Web-to-Web P2P 연결을 최초로 증명했고, `TASK-022`는 일반 계정 trip의 document registry 등록 갭을 해소했다. `TASK-023`은 Mobile 배선까지 확장했고, `TASK-024`는 Web-to-Web Yjs update 교환을 구현했다. `TASK-025`는 Web 준비물 화면에서 P2P 연결을 자동 시도하고 상태를 표시하도록 연결했다. `TASK-026`은 Web checklist P2P 재연결/backoff와 탭 종료 정리, Mobile lifecycle hook point를 추가했다. `TASK-027`은 Mobile도 같은 Yjs update format을 apply하도록 runtime adapter와 P2P apply 경로를 추가했다. `TASK-028`은 signaling topic을 server-issued active topic으로 전환하고 Realtime RLS를 강화했다.
-
-다음 권장 순서는 partial checklist pilot을 확장하는 방식이 아니라 전체 제품 Local-first 완료를 목표로 한다.
-
-1. `TASK-031`과 `TASK-032`: Web/App의 준비물, 일정, 템플릿, 동행자 초대/수락/거부를 document-primary로 전환한다.
-2. `TASK-033`과 `TASK-034`: 모든 도메인 mutation을 encrypted backup sync와 P2P fast path에 연결한다.
-3. `TASK-035`: 전체 기능이 구현된 뒤 Web/App 통합 테스트와 실기기 smoke를 수행한다.
-4. `TASK-036`: 완성된 제품 기준으로 Closed Beta 출시 준비를 완료한다.
+1. `TASK-046`과 `TASK-047`로 server와 shared contract를 먼저 고정한다.
+2. `TASK-048`~`TASK-050`에서 Web adapter, Realtime, 제품 경로를 먼저 검증한다.
+3. `TASK-051`과 `TASK-052`에서 검증된 계약을 Mobile SQLite와 제품 경로에 재표현한다.
+4. `TASK-053`과 `TASK-054`는 두 플랫폼 cutover 이후 병렬 진행할 수 있다.
+5. `TASK-055`는 신규 경로 검증 전 실행하지 않는다.
+6. `TASK-056`에서 Initial Production go/no-go를 판정한다.

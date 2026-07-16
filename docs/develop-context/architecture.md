@@ -51,33 +51,37 @@
 - **Mobile Client**: `apps/mobile/lib/supabase.ts`에서 RN/Expo용 Supabase client를 구성합니다.
 - **Pattern**: 화면 컴포넌트에 임의의 중복 query를 늘리지 말고, 공유 가능한 로직은 `packages/core`로 끌어올립니다.
 
-### 2-4. Local-First 전환 목표 (Refactor Target)
+### 2-4. Offline-Capable Server Authority (Refactor Target)
 
-현재 운영 구조는 Supabase row DB가 primary data source다. `refactoring/local-first-architecture` 전환 작업에서는 이를 즉시 대체하지 않고, 다음 목표 아키텍처로 단계적으로 이관한다.
+`ADR-015`에 따라 Supabase normalized row를 committed data의 최종 권위로 사용한다. 로컬 저장소는 빠른 조회,
+optimistic edit, offline command outbox를 담당한다.
 
-- **Target primary**: Trip 단위 local-first document (`TripDocumentV1`) + Yjs CRDT
-- **Local persistence**: Web은 IndexedDB, Mobile은 SQLite 계열 저장소 검토
-- **Sync/restore primary**: Supabase encrypted backup snapshot/update pull/push
-- **P2P**: WebRTC는 optional fast path이며 실패해도 local write와 Supabase backup은 유지
-- **Auth/authority**: Supabase Auth, document permission registry, invitation registry는 유지
-- **STUN/TURN**: Cloudflare STUN/TURN을 managed provider 기준선으로 사용
-- **Hosting**: Vercel 웹 호스팅은 단기 유지, Cloudflare Pages/Workers 이전은 별도 후속 검토
+- **Remote authority**: `trips`, `plans`, checklist/template row와 `document_members`
+- **Local persistence**: Web IndexedDB, Mobile SQLite의 account-scoped cache/outbox
+- **Write protocol**: domain command를 local transaction으로 기록한 뒤 authenticated batch RPC로 전송
+- **Live update**: Supabase private Broadcast는 resource revision과 changed entity ID만 전달
+- **Recovery**: foreground/reconnect/detail enter에서 revision을 비교하고 canonical bundle을 refresh
+- **Security**: Supabase Auth, RLS, TLS, provider-managed encryption
+- **Assets**: client-to-Storage 직접 upload와 CDN/thumbnail
+- **Removed target**: Yjs CRDT, WebRTC/P2P, STUN/TURN, app-layer E2EE, encrypted document backup
 
 전환 순서:
 
-1. Repository abstraction
-2. row → document 변환 및 materialized read model
-3. Web checklist local-first spike
-4. Supabase backup schema/RLS 및 encrypted restore
-5. dual-write mismatch 검증
-6. document-primary 전환
-7. legacy row 의존 축소
+1. relational authority schema/RLS/batch RPC
+2. shared command/repository/sync core
+3. Web IndexedDB와 Mobile SQLite adapter
+4. Realtime invalidation과 revision recovery
+5. Web/Mobile 제품 경로 전환
+6. invitation/key 및 asset 경로 단순화
+7. legacy Yjs/P2P/backup runtime 제거
+8. Initial Production data integrity/cost gate
 
 구현 기준 문서:
 
 - `docs/refactor/TECHNICAL-SPEC.md`
 - `docs/refactor/adrs/`
 - `docs/refactor/tasks/`
+- `docs/refactor/reports/PRODUCT-DATA-TRANSPORT-COST-EVALUATION.md`
 
 ---
 

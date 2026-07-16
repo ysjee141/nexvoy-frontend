@@ -12,12 +12,11 @@ OnVoy 프로젝트를 구성하는 핵심 도메인과 비즈니스 로직의 �
 - **Logistics (Storage)**: 
   - 여행과 관련된 모든 사진 및 자산은 `trips` 버킷 내에 저장됩니다.
   - **경로 규칙**: `[user_id]/[trip_id]/[filename]` 형식을 반드시 준수하여 데이터 격리를 보장합니다.
-- **Local-first Target**:
-  - 전환 후 Trip은 root document boundary가 된다.
-  - 초기 모델은 Trip 하나를 하나의 `TripDocumentV1`/Yjs document로 저장한다.
-  - 기존 `trips.id`는 document id로 유지한다.
-  - Plan, Checklist, Member, Asset은 Trip document 내부 entity로 materialize된다.
-  - 향후 document 크기나 compaction 비용이 커질 경우 `plans`, `checklist`, `members`, `assets` subdocument 분리를 후속 ADR로 검토한다.
+- **Server-Authority Target**:
+  - `trips`와 관련 normalized row가 committed data의 최종 권위다.
+  - `trips.id`는 Web/Mobile cache, command, Realtime topic에서 같은 resource ID로 사용한다.
+  - `document_members`는 Trip row 접근의 owner/editor/viewer authority다.
+  - local cache는 account namespace와 resource revision을 반드시 포함한다.
 
 ## 2. 📅 Plan (일정)
 여행 기간 내의 세부 활동을 타임라인 형식으로 관리합니다.
@@ -25,10 +24,11 @@ OnVoy 프로젝트를 구성하는 핵심 도메인과 비즈니스 로직의 �
 - **Entity**: 활동명, 시간, 장소 정보(Location), 예산, 메모.
 - **Logic**: 
   - 특정 날짜(`date`)와 시간(`time`)을 기준으로 정렬되어 표시됩니다.
-- **Local-first Target**:
-  - 기존 `plans.id`는 document 내부 `plans[id]` entity id로 유지한다.
-  - 정렬은 동시 편집에 안전하도록 명시적 order 또는 sort key를 사용한다.
-  - 장소 사진과 첨부 asset은 Yjs document에 binary로 넣지 않고 Storage reference로 유지한다.
+- **Server-Authority Target**:
+  - `plans.id`는 client UUID와 server row에서 동일하게 유지한다.
+  - 정렬은 명시적 stable/fractional sort key를 사용한다.
+  - 변경은 entity version이 포함된 field patch command로 처리한다.
+  - 사진과 첨부 asset은 command에 binary를 넣지 않고 Storage reference로 유지한다.
 
 ## 3. ✅ Checklist (준비물)
 여행을 준비하기 위해 챙겨야 할 아이템들의 목록입니다.
@@ -36,11 +36,10 @@ OnVoy 프로젝트를 구성하는 핵심 도메인과 비즈니스 로직의 �
 - **Entity**: 아이템 이름, 카테고리, 완료 여부(is_completed), 담당자 정보.
 - **Rules**: 
   - **스와이프 인터랙션**: 모바일 UX 최적화를 위해 리스트 아이템을 왼쪽으로 스와이프할 때만 수정/삭제 액션이 노출됩니다.
-- **Local-first Target**:
-  - 체크리스트는 첫 local-first spike 도메인이다.
-  - 기존 `checklist_items.id`는 document 내부 entity id로 유지한다.
-  - 개인별 체크 상태는 user check map에서 계산하며, legacy `is_checked`는 호환 필드로만 취급한다.
-  - 삭제는 즉시 hard delete가 아니라 tombstone으로 전파한 뒤 compaction 단계에서 정리한다.
+- **Server-Authority Target**:
+  - checklist/item/assignee/user-check는 독립 normalized row와 entity ID를 사용한다.
+  - 개인별 체크는 `(item_id, user_id)` unique row의 set semantics로 처리한다.
+  - offline catch-up 기간 동안 delete tombstone을 유지한 뒤 server retention 정책으로 정리한다.
 
 ## 4. 📋 Template (템플릿)
 재사용 가능한 체크리스트 세트입니다.
@@ -56,31 +55,31 @@ OnVoy 프로젝트를 구성하는 핵심 도메인과 비즈니스 로직의 �
   - **경로 규칙**: `[user_id]/avatar_[timestamp].jpg` 형식을 사용합니다.
 - **Features**: 
   - **Premium**: 인원 초과 협업 등 고급 기능을 위한 구독 상태를 관리합니다.
-- **Local-first Target**:
+- **Server-Authority Target**:
   - Supabase Auth는 유지한다.
-  - 로그인 전 guest local document 작성을 허용하되, 공유/백업/웹-모바일 동기화/초대 수락 시 로그인으로 승격한다.
-  - 로그인 후 guest document의 `ownerId`를 Supabase `auth.user.id`로 승격하고 최초 encrypted backup snapshot을 업로드한다.
-  - 로그아웃, 계정 전환, 회원 탈퇴 시 local store namespace, backup row, push token 정리 정책을 함께 적용한다.
+  - 로그인 전 guest draft를 허용하면 별도 guest namespace에만 저장하고 협업/동기화 대상으로 보지 않는다.
+  - 로그인 후 guest draft는 authenticated create command로 승격한다.
+  - 로그아웃, 계정 전환, 회원 탈퇴 시 local cache/outbox namespace와 push token lifecycle을 함께 적용한다.
 
 ---
 
-## 6. 🔐 Document Permission & Sharing
+## 6. 🔐 Permission & Sharing
 
-Local-first 전환 후에도 권한의 최종 authority는 Supabase registry다.
+권한의 최종 authority는 Supabase registry다.
 
 - `document_members`: owner/editor/viewer role과 accepted/revoked 상태를 관리한다.
 - `document_invitation_links`: 딥 링크 초대와 초대 코드 fallback을 관리한다.
 - `document_share_tokens`: 기존 공유 token 호환성을 유지한다.
-- 클라이언트 document 내부 `members` snapshot은 UI guard용이며 보안 경계가 아니다.
-- backup upload, invitation accept, role 변경, hard delete는 서버 검증을 거친다.
+- local membership cache는 UX guard이며 보안 경계가 아니다.
+- domain command, invitation accept, role 변경, revoke, hard delete는 서버 검증을 거친다.
 
 ## 7. 🔔 Notifications
 
-알림은 local-first 구조에서 두 종류로 분리한다.
+알림은 두 종류로 분리한다.
 
 - 시간 기반 로컬 알림: 일정 리마인더와 준비물 리마인더는 기기 로컬 알림으로 예약한다.
-- 협업 변경 push: Yjs blob을 서버가 해석하지 않도록 별도 `notification_events` metadata를 사용한다.
-- push payload에는 document content 전체를 넣지 않는다.
+- 협업 변경 push: canonical mutation 결과에서 최소 `notification_events` metadata를 생성한다.
+- push payload에는 command/row content 전체를 넣지 않는다.
 
 ---
 

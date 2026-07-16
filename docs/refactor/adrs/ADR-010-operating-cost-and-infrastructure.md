@@ -1,6 +1,6 @@
 # ADR-010: 운영 비용 및 인프라 구성 전략
 
-- 상태: 후속 검토
+- 상태: 대체됨 (`ADR-015-offline-capable-server-authority.md`)
 - 결정일: 미정
 - 결정자: ysjee141
 - 관련 문서:
