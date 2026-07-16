@@ -13,7 +13,6 @@ import AccountLinking from '@/components/profile/AccountLinking'
 import DownloadedTripsModal from '@/components/profile/DownloadedTripsModal'
 import { AuthService } from '@/services/AuthService'
 import { CacheUtil } from '@/lib/cache'
-import { clearAllLocalFirstDocuments } from '@/lib/local-first/localDocumentCleanup'
 
 function ProfileContent() {
     const supabase = createClient()
@@ -245,8 +244,7 @@ function ProfileContent() {
     
     const handleLogout = async () => {
         await supabase.auth.signOut()
-        await clearAllLocalFirstDocuments()
-        await CacheUtil.clear()
+        await CacheUtil.clearAuthSession()
         router.push('/')
         router.refresh()
     }

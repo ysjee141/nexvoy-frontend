@@ -143,6 +143,19 @@ export async function loadWebDeviceKeyMaterial(deviceId: string): Promise<Stored
   return row ?? null
 }
 
+export async function loadAllWebDeviceKeyMaterials(): Promise<StoredWebDeviceKeyMaterial[]> {
+  if (!canUseIndexedDb()) return []
+  const db = await openDatabase()
+  const rows = await runTransaction<StoredWebDeviceKeyMaterial[]>(
+    db,
+    KEY_MATERIAL_STORE,
+    'readonly',
+    (store) => store.getAll(),
+  )
+  db.close()
+  return rows.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+}
+
 export async function saveWebDeviceKeyMaterial(
   material: Omit<StoredWebDeviceKeyMaterial, 'id' | 'updatedAt'>,
 ): Promise<void> {

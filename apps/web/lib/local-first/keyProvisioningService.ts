@@ -19,7 +19,12 @@ import { TRIP_DOCUMENT_SCHEMA_VERSION, type TripDocumentV1 } from '@nexvoy/core/
 import { createYjsTripDocument, encodeTripDocumentUpdate } from '@nexvoy/core/local-first/yjsTripDocument'
 import type { BackupDocumentType } from '@nexvoy/core/sync/backupTypes'
 import { analytics } from '@/services/AnalyticsService'
-import { deleteWebDeviceKeyMaterial, loadWebDeviceKeyMaterial, saveWebDeviceKeyMaterial } from './indexedDbStore'
+import {
+  deleteWebDeviceKeyMaterial,
+  loadAllWebDeviceKeyMaterials,
+  loadWebDeviceKeyMaterial,
+  saveWebDeviceKeyMaterial,
+} from './indexedDbStore'
 import {
   createWebRsaOaepWrappingProvider,
   generateWebRsaOaepKeyMaterial,
@@ -277,13 +282,34 @@ export async function getCurrentWebDocumentKeyOrRecoverStaleDeviceKey(input: {
   deviceId: string
   provider?: RsaOaepWrappingProvider
 }): Promise<DocumentEncryptionKey | null> {
+  let unwrapFailed = false
   try {
-    return await getCurrentWebDocumentKey(input)
+    const currentKey = await getCurrentWebDocumentKey(input)
+    if (currentKey) return currentKey
   } catch (error) {
     if (!isKeyUnwrapFailure(error)) throw error
-    await resetStaleWebDeviceKey(input.supabase, input.deviceId)
-    return null
+    unwrapFailed = true
   }
+
+  const storedMaterials = await loadAllWebDeviceKeyMaterials()
+  for (const material of storedMaterials) {
+    if (material.deviceId === input.deviceId) continue
+    try {
+      const recoveredKey = await getCurrentWebDocumentKey({
+        ...input,
+        deviceId: material.deviceId,
+      })
+      if (!recoveredKey) continue
+      window.localStorage.setItem(WEB_DEVICE_ID_STORAGE_KEY, material.deviceId)
+      await ensureWebDeviceKeyMaterial(input.supabase)
+      return recoveredKey
+    } catch (error) {
+      if (!isKeyUnwrapFailure(error)) throw error
+    }
+  }
+
+  if (unwrapFailed) await resetStaleWebDeviceKey(input.supabase, input.deviceId)
+  return null
 }
 
 async function resetStaleWebDeviceKey(
