@@ -1,6 +1,6 @@
 # TASK-046: Relational Authority and Atomic Command RPC
 
-- 상태: 대기
+- 상태: 완료
 
 ## 목적
 
@@ -61,6 +61,15 @@ command RPC 한 transaction에서 처리하고, revision, idempotency, RLS를 �
 - 기존 normalized row를 authority로 재사용하되 V1 Yjs snapshot/update를 import하지 않는다.
 - `documents`/`document_members`는 permission registry로 유지할 수 있지만 `documents.snapshot`을 authority로 읽지 않는다.
 - destructive drop/reset은 TASK-055 전까지 수행하지 않는다.
+
+## 구현 결과
+
+- 기존 정규화 테이블에 `version`, `updated_at`, `deleted_at`, `sort_key`를 보강했다.
+- `trip_authority_state`, `template_authority_state`, `applied_operations`로 신규 authority generation, revision, 멱등성을 관리한다.
+- `apply_trip_commands`와 `apply_template_commands`는 최대 32개 명령, resource/entity conflict, canonical ack를 제공한다.
+- summary/revision/bundle 및 연속 revision용 entity change RPC를 추가했다. private 준비물은 기존 RLS와 같은 사용자 가시성 조건을 적용한다.
+- authority state가 생성된 리소스는 restrictive RLS로 직접 table 접근을 차단하고 canonical RPC만 허용한다. state 없는 legacy 행은 TASK-050 전환 전까지 기존 정책을 유지한다.
+- 신규 authority state가 없는 기존 행은 신규 summary/bundle에 노출하지 않는다.
 
 ## 검증 방법
 

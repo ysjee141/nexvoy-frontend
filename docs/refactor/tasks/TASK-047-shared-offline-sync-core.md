@@ -1,6 +1,6 @@
 # TASK-047: Shared Offline Sync Core
 
-- 상태: 대기
+- 상태: 완료
 
 ## 목적
 
@@ -55,6 +55,14 @@ Web과 Mobile이 공유할 domain command, Repository, local transaction, outbox
 - Core는 IndexedDB, SQLite, DOM, Next.js, Expo/RN API를 import하지 않는다.
 - 시간, UUID, network state, scheduler는 주입 가능한 port로 둔다.
 - Web/Mobile이 같은 command serialization과 error classification을 사용해야 한다.
+
+## 구현 결과
+
+- Trip/Template command union, canonical bundle/change, conflict, outbox 타입을 `packages/core`에 추가했다.
+- Supabase RPC repository와 플랫폼 독립 `AuthorityLocalStore` port를 구현했다.
+- coordinator가 최대 32개 batching, 100개 순차 rebase, stale sending 복구, retry/backoff, reject/conflict, canonical ack를 처리한다.
+- Realtime invalidation parser와 연속 revision entity reconciliation을 Core에 두어 Mobile SQLite도 같은 계약을 재사용할 수 있다.
+- 관측 이벤트는 command 본문 없이 queue count, age, 추정 bytes, error code만 전달한다.
 
 ## 검증 방법
 

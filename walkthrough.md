@@ -1,3 +1,81 @@
+# Walkthrough: TASK-046~049 Server Authority Sync Foundation
+
+## Summary
+
+TASK-046부터 TASK-049를 하나의 전환 기반으로 구현했다. Supabase 정규화 행을 committed data의 최종 권위로
+고정하고, Web IndexedDB는 account-scoped cache와 durable outbox를 담당한다. Realtime은 데이터 본문 대신
+resource revision과 entity ID만 전달한다. 기존 Yjs/WebRTC/암호화 backup 제품 경로는 TASK-050 전환과
+TASK-055 제거 전까지 그대로 유지한다.
+
+```mermaid
+flowchart LR
+    UI["TASK-050 product repository"] --> IDB["Web IndexedDB cache + outbox"]
+    IDB --> CORE["Shared sync coordinator"]
+    CORE --> RPC["Atomic command RPC"]
+    RPC --> ROWS["Normalized authority rows"]
+    ROWS --> RT["Private revision invalidation"]
+    RT --> DELTA["Entity refresh"]
+    RT --> FULL["Gap/reconnect full bundle"]
+    DELTA --> IDB
+    FULL --> IDB
+```
+
+## Artifacts
+
+- GitHub Issue [#352](https://github.com/ysjee141/nexvoy-frontend/issues/352)
+- Pull Request [#353](https://github.com/ysjee141/nexvoy-frontend/pull/353)
+- 브랜치: `codex/task-046-049-server-authority`
+- `supabase/migrations/20260717000001_task046_relational_authority_and_command_rpc.sql`
+- `supabase/migrations/20260717000002_task049_realtime_authority_invalidation.sql`
+- `packages/core/src/sync/serverAuthoritySync.ts`
+- `apps/web/lib/server-authority/indexedDbStore.ts`
+- `_workspace/01_planner_analysis.md`
+- `_workspace/03_review_result.md`
+- `_workspace/04_qa_result.md`
+
+## Key Changes
+
+- `version`, server `updated_at`, `deleted_at`, `sort_key` metadata와 trip/template authority revision state를 추가했다.
+- `apply_trip_commands` / `apply_template_commands`가 최대 32개 command를 한 transaction으로 적용한다.
+- operation receipt가 retry를 멱등 처리하고 payload가 다른 operation ID 재사용을 거부한다.
+- base revision과 entity version conflict를 구조화해 반환하며 batch 중간 conflict는 전체 변경을 rollback한다.
+- 신규 authority state가 없는 기존 행은 신규 summary/bundle에 노출하지 않는다.
+- authority state가 있는 리소스는 restrictive RLS로 직접 table 접근을 차단하고 canonical RPC만 허용한다.
+- security-definer canonical read가 private checklist item의 기존 사용자 가시성 규칙을 유지한다.
+- Core에 command union, repository/local-store port, retry/backoff, canonical materialization, 100개 batching/rebase를 추가했다.
+- Web은 별도 `onvoy-server-authority` DB에서 cache와 outbox를 원자 저장하고 계정 namespace를 격리한다.
+- Realtime private topic은 최대 6개 entity ID의 1KB 미만 invalidation만 발행한다.
+- 연속 revision은 entity change RPC로 최소 행만 갱신한다. gap, 빈 변경, reconnect는 full bundle로 수렴한다.
+
+## Verification
+
+| 검증 | 결과 |
+| --- | --- |
+| `pnpm exec supabase migration up --local` | PASS |
+| `supabase/tests/task046_server_authority.sql` | PASS |
+| `supabase/tests/task049_realtime_authority_invalidation.sql` | PASS |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm typecheck` | PASS |
+| `pnpm build:packages` | PASS |
+| `pnpm --filter nexvoy-web test:authority` | PASS |
+| `pnpm build:web` | PASS |
+
+## Rollback
+
+- TASK-050 전에는 제품 호출 지점이 없으므로 신규 sync session 사용을 중지하면 기존 runtime이 유지된다.
+- Realtime trigger를 비활성화해도 detail-enter/foreground revision 조회와 명시적 refresh로 복구할 수 있다.
+- 신규 IndexedDB는 레거시 DB와 이름이 다르므로 기존 local data를 손상시키지 않는다.
+- migration object 제거는 가능하지만 정규화 행의 신규 metadata는 TASK-055 전까지 destructive cleanup하지 않는다.
+
+## Remaining Work
+
+- DEV와 PROD Supabase에 두 migration을 각각 적용해야 한다.
+- 실제 Web 제품 repository 전환과 두 브라우저 협업 검증은 TASK-050 범위다.
+- Mobile SQLite/cache/outbox와 제품 경로 전환은 TASK-051/052 범위다.
+- 기존 Yjs, WebRTC, document key, encrypted backup 제거와 V1 reset은 TASK-055 전까지 실행하지 않는다.
+
+---
+
 # Walkthrough: TASK-045 Invitation Join and Key Delivery Productization
 
 ## Summary

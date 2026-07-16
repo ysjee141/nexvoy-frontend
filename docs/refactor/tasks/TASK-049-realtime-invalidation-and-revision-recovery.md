@@ -1,6 +1,6 @@
 # TASK-049: Realtime Invalidation and Revision Recovery
 
-- 상태: 대기
+- 상태: 완료
 
 ## 목적
 
@@ -51,6 +51,14 @@ event 유실, 중복, 순서 역전이 있어도 server revision 비교로 최�
 - 일반 invalidation payload는 1KB 미만을 목표로 한다.
 - 전체 row/document를 Broadcast하지 않는다.
 - Initial 단계에서 full refresh가 병목이 될 때만 Growth task로 delta cursor를 제안한다.
+
+## 구현 결과
+
+- private `trip:<id>` / `template:<id>` topic과 accepted member 기반 Realtime Authorization을 추가했다.
+- command transaction의 resource revision trigger가 본문 없이 최대 6개 entity ID를 포함한 1KB 미만 payload를 발행한다.
+- Web adapter는 stale/duplicate event를 무시한다. 연속 revision은 entity change RPC로 갱신하고 gap, 빈 변경 목록, reconnect에서는 full bundle로 복구한다.
+- 활성 resource subscription은 명시적으로 생성·해제하며 계정 전환 시 정리한다.
+- SQL 테스트가 accepted viewer 수신, revoked/비회원 차단, private payload, 크기 제한을 검증한다.
 
 ## 검증 방법
 
