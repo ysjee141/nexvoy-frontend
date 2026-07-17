@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ImageIcon } from 'lucide-react'
 import { css } from 'styled-system/css'
+import { derivePlacePhotoThumbUrl } from '@nexvoy/core/supabase/storagePaths'
 import { useImageRecovery } from '@/hooks/useImageRecovery'
 import { canStoreNow } from '@/services/PlacePhotoService'
 
@@ -117,8 +118,17 @@ export function PlanImage(props: PlanImageProps) {
     const reducedMotion = usePrefersReducedMotion()
     const { recover } = useImageRecovery()
 
+    /**
+     * thumbnail variant는 _w240 파생 URL을 우선 사용한다 (TASK-054).
+     * legacy URL(폭 suffix 없음)은 파생이 null → 원본 그대로.
+     */
+    const preferredUrl = useMemo<string | null>(() => {
+        if (variant !== 'thumbnail') return imageUrl ?? null
+        return derivePlacePhotoThumbUrl(imageUrl) ?? imageUrl ?? null
+    }, [imageUrl, variant])
+
     /** 현재 렌더링 중인 URL (복구 후 갱신 시 변경) */
-    const [activeUrl, setActiveUrl] = useState<string | null>(imageUrl ?? null)
+    const [activeUrl, setActiveUrl] = useState<string | null>(preferredUrl)
     /** 신규 생성 5초 타임아웃 경과 여부 */
     const [isNewnessExpired, setIsNewnessExpired] = useState<boolean>(() => {
         return !getNewnessInfo(createdAt).isNew
@@ -137,16 +147,18 @@ export function PlanImage(props: PlanImageProps) {
     const autoTriggerAttemptedRef = useRef(false)
 
     /** 외부에서 imageUrl이 갱신되면 activeUrl 동기화 + 상태 리셋 */
+    const lastPreferredUrlRef = useRef<string | null>(preferredUrl)
     useEffect(() => {
-        if (imageUrl === activeUrl) return
-        setActiveUrl(imageUrl ?? null)
+        if (preferredUrl === lastPreferredUrlRef.current) return
+        lastPreferredUrlRef.current = preferredUrl
+        setActiveUrl(preferredUrl)
         setImgLoaded(false)
         setRecoveryFailed(false)
         setIsRecovering(false)
         setRecoveryRequested(false)
         recoveryStartedAtRef.current = null
         autoTriggerAttemptedRef.current = false
-    }, [imageUrl, activeUrl])
+    }, [preferredUrl])
 
     /** createdAt 기반 idle-empty 타임아웃 처리 */
     useEffect(() => {
@@ -180,8 +192,14 @@ export function PlanImage(props: PlanImageProps) {
         return 'idle-empty'
     }, [activeUrl, imgLoaded, isRecovering, recoveryFailed, photoReference, placeId, disableRecovery, isNewnessExpired, recoveryRequested])
 
-    /** 이미지 onError → 복구 시도 트리거 */
+    /** 이미지 onError → thumbnail이면 원본 1회 fallback, 아니면 복구 시도 트리거 */
     const handleImgError = useCallback(async () => {
+        // thumb(_w240) 로드 실패 시 원본으로 1회 fallback (legacy·미생성 thumb 대응)
+        if (imageUrl && activeUrl && activeUrl !== imageUrl) {
+            setActiveUrl(imageUrl)
+            setImgLoaded(false)
+            return
+        }
         if (disableRecovery || !placeId) {
             setRecoveryFailed(true)
             onRecoveryFailed?.()
@@ -216,7 +234,7 @@ export function PlanImage(props: PlanImageProps) {
             setIsRecovering(false)
             recoveryStartedAtRef.current = null
         }
-    }, [planId, tripId, placeId, photoReference, disableRecovery, recover, onRecovered, onRecoveryFailed])
+    }, [planId, tripId, placeId, photoReference, disableRecovery, recover, onRecovered, onRecoveryFailed, imageUrl, activeUrl])
 
     /**
      * image_url=null 자발 복구 트리거

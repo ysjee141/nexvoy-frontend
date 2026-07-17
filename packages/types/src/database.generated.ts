@@ -1234,6 +1234,39 @@ export type Database = {
           },
         ]
       }
+      trip_asset_objects: {
+        Row: {
+          bucket_id: string
+          created_at: string
+          id: string
+          object_path: string
+          plan_id: string | null
+          trip_id: string
+          user_id: string
+          width: number | null
+        }
+        Insert: {
+          bucket_id?: string
+          created_at?: string
+          id?: string
+          object_path: string
+          plan_id?: string | null
+          trip_id: string
+          user_id: string
+          width?: number | null
+        }
+        Update: {
+          bucket_id?: string
+          created_at?: string
+          id?: string
+          object_path?: string
+          plan_id?: string | null
+          trip_id?: string
+          user_id?: string
+          width?: number | null
+        }
+        Relationships: []
+      }
       trip_authority_state: {
         Row: {
           changed_entities: Json
@@ -1619,6 +1652,10 @@ export type Database = {
         }
         Returns: Json
       }
+      bump_authority_revision_for_membership: {
+        Args: { p_document_id: string }
+        Returns: undefined
+      }
       can_receive_authority_topic: {
         Args: { p_topic: string; p_user_id: string }
         Returns: boolean
@@ -1891,6 +1928,14 @@ export type Database = {
       list_my_pending_document_invitations: { Args: never; Returns: Json[] }
       list_my_template_authority_summaries: { Args: never; Returns: Json }
       list_my_trip_authority_summaries: { Args: never; Returns: Json }
+      list_orphan_place_photo_assets: {
+        Args: { p_retention?: string }
+        Returns: {
+          asset_id: string
+          bucket_id: string
+          object_path: string
+        }[]
+      }
       list_pending_document_key_provisioning_requests: {
         Args: { p_document_id?: string; p_limit?: number }
         Returns: {
@@ -1946,6 +1991,16 @@ export type Database = {
       }
       notification_title_key_for_event: {
         Args: { p_event_type: string }
+        Returns: string
+      }
+      register_place_photo_asset: {
+        Args: {
+          p_bucket_id?: string
+          p_object_path: string
+          p_plan_id: string
+          p_trip_id: string
+          p_width: number
+        }
         Returns: string
       }
       register_user_key_material: {
@@ -2161,3 +2216,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

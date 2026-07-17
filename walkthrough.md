@@ -1,3 +1,44 @@
+# Walkthrough: TASK-054 Direct Asset Storage and Delivery
+
+## 결과
+
+Issue [#364](https://github.com/ysjee141/nexvoy-frontend/issues/364)의 asset 전송 정리를 구현했다. place photo는 width suffix immutable path(`_w800`/`_w240`)로 저장되고, list 화면은 thumbnail만 요청하며, 모든 object는 `trip_asset_objects` metadata registry에 등록되어 plan 삭제/사진 교체 후 retention이 지나면 orphan cleanup 대상이 된다. asset binary는 여전히 Repository command와 Realtime을 통과하지 않는다.
+
+```mermaid
+flowchart LR
+    Client["Web route / Mobile client"] -->|"w800 + w240"| Storage["Supabase Storage (immutable path, cache 1y)"]
+    Client --> Register["register_place_photo_asset RPC"]
+    Register --> Meta["trip_asset_objects registry"]
+    List["List 카드"] -->|"_w240 thumb"| Storage
+    Detail["상세 hero"] -->|"_w800 원본"| Storage
+    Cron["스케줄러 → /api/assets/cleanup"] --> Orphans["list_orphan_place_photo_assets"]
+    Orphans --> Remove["Storage API remove + metadata 삭제"]
+```
+
+## 구현
+
+- core `storagePaths.ts`: `placePhotoObjectPath`(width suffix), `derivePlacePhotoThumbUrl`(`_w800→_w240` 파생, legacy는 null) + 단위 테스트. 실제 경로와 불일치하던 미사용 `planPhotoPath` 제거.
+- `20260718000002_task054_trip_asset_objects.sql`: metadata 테이블(RLS: member SELECT만, client 직접 쓰기 금지), `register_place_photo_asset`(본인 폴더 + trip 쓰기 권한 검증), `list_orphan_place_photo_assets`(service_role 전용, plan soft-delete·사진 교체 + retention 기준).
+- Web `/api/places/photo/store`: Google w800/w240 이중 fetch(썸네일 실패 non-fatal) 후 upload + metadata 등록, 응답 `{ imageUrl, thumbUrl }`. Google→서버→Storage ingest는 ADR-006(API key 보호·CORS) 때문에 유지 — client binary proxy는 없다.
+- Mobile `storePlanPlacePhoto`: 동일한 이중 direct upload + 등록.
+- Web `PlanImage`(thumbnail variant)와 Mobile plan 카드: thumb 우선, onError 시 원본 1회 fallback. 상세 hero는 원본 유지.
+- 신규 `/api/assets/cleanup`: `x-cron-secret`(=`ASSET_CLEANUP_SECRET`) 검증, dryRun/retentionDays 지원, orphan을 Storage API로 삭제 후 metadata 정리. SQL은 storage.objects를 직접 조작하지 않는다.
+- `packages/types/database.generated.ts` 재생성 (신규 테이블·RPC 반영, 원격 전용 `delete_user` 타입 수동 유지).
+
+## 검증
+
+- core/web/mobile typecheck, core 테스트(storagePaths 포함), `pnpm build`, `pnpm build:mobile` 통과.
+- 로컬 Supabase 마이그레이션 적용 + `supabase/tests/task054_asset_objects.sql` 통과: 본인 폴더 외/비멤버 등록 42501, 직접 INSERT RLS 차단, outsider 조회 0건, retention 내 orphan 0건, plan 삭제·사진 교체 orphan 판정.
+- 회귀: `task053_membership_invitation.sql` 통과.
+
+## 남은 항목
+
+- 스케줄러(cron)에서 `/api/assets/cleanup` 주기 호출 연결과 `ASSET_CLEANUP_SECRET` 설정.
+- DEV 실기기/실브라우저에서 신규 ingest 후 list가 `_w240`을 요청하는지 network 확인.
+- placeIdHash8 플랫폼 불일치(web sha256-8 / mobile djb2) 통일은 후속 과제.
+
+---
+
 # Walkthrough: TASK-053 Membership and Invitation Without Document Keys
 
 ## 결과

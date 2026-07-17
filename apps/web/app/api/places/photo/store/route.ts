@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createHash } from 'crypto'
+import {
+  PLACE_PHOTO_ORIGINAL_WIDTH,
+  PLACE_PHOTO_THUMB_WIDTH,
+  placePhotoObjectPath,
+  type PlacePhotoWidth,
+} from '@nexvoy/core/supabase/storagePaths'
 
 interface StoreRequestBody {
     planId?: string
@@ -10,7 +16,6 @@ interface StoreRequestBody {
     documentPrimary?: boolean
 }
 
-const PHOTO_MAX_WIDTH = 800
 const STORAGE_BUCKET = 'place-photos'
 const STORAGE_CONTENT_TYPE = 'image/jpeg'
 
@@ -62,8 +67,34 @@ function placeIdHash8(placeId: string): string {
     return createHash('sha256').update(placeId).digest('hex').slice(0, 8)
 }
 
-function buildStoragePath(userId: string, tripId: string, planId: string, placeId: string): string {
-    return `${userId}/${tripId}/${planId}_${placeIdHash8(placeId)}.jpg`
+interface FetchedPhoto {
+    buffer: Buffer
+    width: PlacePhotoWidth
+}
+
+/**
+ * Google Places Photo API에서 지정 폭 이미지를 가져온다.
+ * 실패는 상태 코드와 함께 반환해 호출측이 원본/썸네일을 구분 처리한다.
+ */
+async function fetchGooglePhoto(
+    photoReference: string,
+    width: PlacePhotoWidth,
+    apiKey: string,
+): Promise<{ photo: FetchedPhoto } | { errorStatus: number }> {
+    const photoApiUrl =
+        `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${width}` +
+        `&photo_reference=${encodeURIComponent(photoReference)}` +
+        `&key=${apiKey}`
+    let res: Response
+    try {
+        res = await fetch(photoApiUrl, { redirect: 'follow' })
+    } catch {
+        return { errorStatus: 502 }
+    }
+    if (!res.ok) return { errorStatus: res.status }
+    const arrayBuffer = await res.arrayBuffer()
+    if (!arrayBuffer.byteLength) return { errorStatus: 502 }
+    return { photo: { buffer: Buffer.from(arrayBuffer), width } }
 }
 
 export async function POST(request: NextRequest) {
@@ -177,62 +208,76 @@ export async function POST(request: NextRequest) {
             photoReference = recovered
         }
 
-        // 5) Google Photo CDN fetch
-        //    Places Photo API는 302 리다이렉트 → 실제 CDN. fetch는 자동 follow.
-        const photoApiUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${PHOTO_MAX_WIDTH}&photo_reference=${encodeURIComponent(
-            photoReference
-        )}&key=${apiKey}`
+        // 5) Google Photo CDN fetch — 원본(w800)과 thumbnail(w240)을 각각 요청한다.
+        //    Google이 리사이즈를 담당하므로 서버에 이미지 처리 라이브러리가 필요 없다.
+        //    thumbnail 실패는 non-fatal: 원본만으로 기존 동작을 유지한다.
+        const [originalResult, thumbResult] = await Promise.all([
+            fetchGooglePhoto(photoReference, PLACE_PHOTO_ORIGINAL_WIDTH, apiKey),
+            fetchGooglePhoto(photoReference, PLACE_PHOTO_THUMB_WIDTH, apiKey),
+        ])
 
-        let photoRes: Response
-        try {
-            photoRes = await fetch(photoApiUrl, { redirect: 'follow' })
-        } catch (err) {
-            const message = err instanceof Error ? err.message : 'fetch failed'
-            console.error('[places/photo/store] Google Photo fetch failed:', message)
-            return NextResponse.json({ error: 'Photo fetch failed' }, { status: 502 })
-        }
-
-        // 403/410은 토큰 만료/거부 — 클라이언트가 photo_reference 무효화 처리해야 함
-        if (photoRes.status === 403 || photoRes.status === 410) {
-            console.warn(
-                `[places/photo/store] Google Photo expired (status=${photoRes.status}) for plan=${planId}`
-            )
-            return NextResponse.json({ error: 'Photo reference expired' }, { status: 410 })
-        }
-        if (!photoRes.ok) {
+        if ('errorStatus' in originalResult) {
+            // 403/410은 토큰 만료/거부 — 클라이언트가 photo_reference 무효화 처리해야 함
+            if (originalResult.errorStatus === 403 || originalResult.errorStatus === 410) {
+                console.warn(
+                    `[places/photo/store] Google Photo expired (status=${originalResult.errorStatus}) for plan=${planId}`
+                )
+                return NextResponse.json({ error: 'Photo reference expired' }, { status: 410 })
+            }
             console.error(
-                `[places/photo/store] Google Photo fetch returned ${photoRes.status} for plan=${planId}`
+                `[places/photo/store] Google Photo fetch returned ${originalResult.errorStatus} for plan=${planId}`
             )
             return NextResponse.json({ error: 'Photo fetch failed' }, { status: 502 })
         }
 
-        const photoArrayBuffer = await photoRes.arrayBuffer()
-        if (!photoArrayBuffer.byteLength) {
-            return NextResponse.json({ error: 'Empty photo response' }, { status: 502 })
-        }
-        const photoBuffer = Buffer.from(photoArrayBuffer)
+        // 6) Supabase Storage upload — width suffix immutable path.
+        const hash8 = placeIdHash8(placeId)
+        const uploads: FetchedPhoto[] = [originalResult.photo]
+        if ('photo' in thumbResult) uploads.push(thumbResult.photo)
 
-        // 6) Supabase Storage upload
-        const storagePath = buildStoragePath(user.id, tripId, planId, placeId)
-        const { error: uploadError } = await supabase.storage
-            .from(STORAGE_BUCKET)
-            .upload(storagePath, photoBuffer, {
-                contentType: STORAGE_CONTENT_TYPE,
-                upsert: true,
-                cacheControl: '31536000',
+        let publicUrl: string | null = null
+        let thumbUrl: string | null = null
+        for (const { buffer, width } of uploads) {
+            const storagePath = placePhotoObjectPath(user.id, tripId, planId, hash8, width)
+            const { error: uploadError } = await supabase.storage
+                .from(STORAGE_BUCKET)
+                .upload(storagePath, buffer, {
+                    contentType: STORAGE_CONTENT_TYPE,
+                    upsert: true,
+                    cacheControl: '31536000',
+                })
+            if (uploadError) {
+                if (width === PLACE_PHOTO_ORIGINAL_WIDTH) {
+                    console.error('[places/photo/store] Storage upload failed:', uploadError.message)
+                    return NextResponse.json({ error: 'Storage upload failed' }, { status: 500 })
+                }
+                console.warn('[places/photo/store] thumbnail upload failed:', uploadError.message)
+                continue
+            }
+
+            const { data: publicUrlData } = supabase.storage
+                .from(STORAGE_BUCKET)
+                .getPublicUrl(storagePath)
+            if (width === PLACE_PHOTO_ORIGINAL_WIDTH) publicUrl = publicUrlData?.publicUrl ?? null
+            else thumbUrl = publicUrlData?.publicUrl ?? null
+
+            // metadata registry 등록 — orphan cleanup의 기준. 실패해도 ingest는 유지한다.
+            const registration = await supabase.rpc('register_place_photo_asset', {
+                p_trip_id: tripId,
+                p_plan_id: planId,
+                p_object_path: storagePath,
+                p_width: width,
             })
-        if (uploadError) {
-            console.error('[places/photo/store] Storage upload failed:', uploadError.message)
-            return NextResponse.json({ error: 'Storage upload failed' }, { status: 500 })
+            if (registration.error) {
+                console.warn(
+                    '[places/photo/store] asset registration failed:',
+                    registration.error.message
+                )
+            }
         }
 
-        // 7) publicUrl 획득
-        const { data: publicUrlData } = supabase.storage
-            .from(STORAGE_BUCKET)
-            .getPublicUrl(storagePath)
-        const publicUrl = publicUrlData?.publicUrl
         if (!publicUrl) {
-            console.error('[places/photo/store] getPublicUrl returned empty for', storagePath)
+            console.error('[places/photo/store] getPublicUrl returned empty for plan', planId)
             return NextResponse.json({ error: 'Public URL generation failed' }, { status: 500 })
         }
 
@@ -250,7 +295,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        return NextResponse.json({ imageUrl: publicUrl }, { status: 200 })
+        return NextResponse.json({ imageUrl: publicUrl, thumbUrl }, { status: 200 })
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : 'Unknown error'
         console.error('[places/photo/store] Unhandled error:', message)

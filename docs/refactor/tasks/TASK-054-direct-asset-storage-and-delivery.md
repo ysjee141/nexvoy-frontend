@@ -1,6 +1,6 @@
 # TASK-054: Direct Asset Storage and Delivery
 
-- 상태: 대기
+- 상태: 구현 완료 (Issue [#364](https://github.com/ysjee141/nexvoy-frontend/issues/364), 로컬 자동 검증 완료 · cleanup 스케줄러 연결과 DEV network 확인은 후속)
 
 ## 목적
 
