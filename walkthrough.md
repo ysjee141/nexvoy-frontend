@@ -1,3 +1,39 @@
+# Walkthrough: TASK-052 Mobile Server-Authority Product Cutover
+
+## 결과
+
+Issue [#360](https://github.com/ysjee141/nexvoy-frontend/issues/360)의 Mobile 제품 경로 전환을 구현했다. 여행, 일정, 준비물, 템플릿은 이제 account-scoped SQLite cache를 먼저 읽고 durable outbox와 canonical command RPC로 저장한다.
+
+```mermaid
+flowchart LR
+    UI["Mobile product screens"] --> Repo["Shared Core product repository"]
+    Repo --> SQLite["Account-scoped SQLite cache + outbox"]
+    SQLite --> RPC["Canonical command RPC"]
+    RPC --> Ack["Ack + optimistic rebase"]
+    Realtime["Private revision invalidation"] --> Recovery["Revision recovery"]
+    Lifecycle["Foreground / reconnect"] --> Recovery
+    Recovery --> SQLite
+```
+
+## 구현
+
+- Web의 제품 repository 로직을 Core factory로 추출해 Web과 Mobile의 command shape, 권한, projection을 일치시켰다.
+- Mobile 홈/상세/템플릿/프로필 파생 조회를 authority repository로 전환하고 local-first rendering과 background refresh를 연결했다.
+- 모든 제품 mutation을 SQLite optimistic transaction과 outbox append로 처리하며 foreground, reconnect, debounce trigger에서 flush한다.
+- 상세 화면에 Realtime revision recovery와 동기화 상태 badge를 추가했다.
+- 신규 resource의 첫 server ack 전에는 초대와 이미지 업로드를 제한한다.
+- authority mode에서는 legacy key provisioning, encrypted backup, P2P 실행을 차단한다.
+
+## 리뷰 및 검증
+
+- 목록의 여행별 원격 조회를 summary projection으로 제거했다.
+- revision 0 신규 resource의 첫 구독 실패 후 ack 시 자동 재구독하도록 보완했다.
+- foreground/reconnect 목록 refresh와 화면 subscription 정리를 검증했다.
+- Core/Web authority/Mobile tests, 전체 typecheck, Mobile lint, Web build, Expo export를 통과했다.
+- Android development local build는 통과했다. 연결된 기기가 없어 계정 전환, 비행기 모드, Web/Mobile 교차 동기화는 `docs/refactor/runbooks/TASK-052-mobile-authority-product-smoke.md` 절차로 남겼다.
+
+---
+
 # Walkthrough: TASK-051 Mobile SQLite Cache and Transactional Outbox
 
 ## 결과

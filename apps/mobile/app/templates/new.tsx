@@ -26,7 +26,7 @@ import { getChecklistCategories } from '@nexvoy/core'
 import type { ChecklistCategory } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
-import { createMobileTemplateDocument } from '@/lib/local-first/documentPrimaryRepositories'
+import { createMobileProductTemplate } from '@/lib/data/repositoryFactory'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const TITLE_MAX = 50
@@ -125,7 +125,7 @@ export default function NewTemplateScreen() {
     setLoading(true)
     setError(null)
     try {
-      await createMobileTemplateDocument({
+      await createMobileProductTemplate({
         supabase,
         title: title.trim(),
         items: items.map((item) => ({

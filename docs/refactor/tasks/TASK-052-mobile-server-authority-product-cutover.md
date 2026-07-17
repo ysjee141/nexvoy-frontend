@@ -1,6 +1,8 @@
 # TASK-052: Mobile Server-Authority Product Cutover
 
-- 상태: 대기
+- 상태: 구현 완료 (실기기 smoke 대기)
+
+- Issue: [#360](https://github.com/ysjee141/nexvoy-frontend/issues/360)
 
 ## 목적
 
@@ -73,3 +75,17 @@ Repository로 전환한다. Web과 같은 canonical row와 conflict 정책을 �
 - Mobile 핵심 기능이 SQLite/cache/outbox/RPC 경로에서 동작한다.
 - Web/Mobile이 동일 canonical row와 revision을 본다.
 - 앱 종료, offline, reconnect, 계정 전환에서 데이터 유실·혼합이 없다.
+
+## 구현 결과
+
+- Web에 있던 제품 repository를 Core의 platform-independent factory로 추출하고 Mobile SQLite runtime을 연결했다.
+- Mobile 여행, 일정, 준비물, 템플릿과 프로필 파생 조회를 account-scoped cache/outbox 경로로 전환했다.
+- 목록은 local cache를 먼저 표시하고 foreground/reconnect에서 summary를 갱신한다. 상세는 private Realtime invalidation과 revision recovery를 구독한다.
+- mutation은 SQLite optimistic transaction과 durable command outbox를 사용하고, 1초 debounce와 lifecycle trigger로 flush한다.
+- 신규 resource의 server ack 전에는 초대와 이미지 업로드를 제한하며, sync badge로 offline/pending/synced/conflict/error를 구분한다.
+- authority mode에서는 legacy key provisioning, encrypted backup, WebRTC/P2P runtime을 시작하지 않는다.
+- 롤백 플래그 `EXPO_PUBLIC_MOBILE_SERVER_AUTHORITY=0`을 유지했다.
+- DB migration이나 신규 RPC는 없으며 TASK-046~051 authority 계약을 재사용한다.
+
+자동 unit/typecheck/lint/Web build/Expo export/Android native build를 수행했다. 실제 기기의 계정 전환, 비행기 모드, Web/Mobile 교차 동기화는
+`docs/refactor/runbooks/TASK-052-mobile-authority-product-smoke.md` 절차로 최종 확인한다.

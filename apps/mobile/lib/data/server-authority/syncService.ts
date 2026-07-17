@@ -17,7 +17,7 @@ import {
   type MobileAuthorityInvalidationSubscription,
 } from './realtimeInvalidation'
 
-interface MobileAuthorityRuntime {
+export interface MobileAuthorityRuntime {
   store: MobileAuthoritySqliteStore
   coordinator: ServerAuthoritySyncCoordinator
 }
@@ -31,6 +31,10 @@ const activeRealtimeSubscriptions = new Set<MobileAuthorityInvalidationSubscript
 
 export async function getMobileAuthorityStore(): Promise<MobileAuthoritySqliteStore> {
   return (await getRuntime()).store
+}
+
+export function getMobileAuthorityRuntime(): Promise<MobileAuthorityRuntime> {
+  return getRuntime()
 }
 
 export async function startMobileAuthoritySync(accountId: string): Promise<void> {

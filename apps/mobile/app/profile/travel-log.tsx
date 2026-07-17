@@ -1,7 +1,7 @@
 /**
  * 여행 기록 화면 (nexvoy-app)
  *
- * getTravelStats(@nexvoy/core)로 사용자 여행 통계를 집계해
+ * 제품 Repository의 로컬 read model로 사용자 여행 통계를 집계해
  * 4칸 통계 카드 + 지난/예정 여정 목록으로 표시한다.
  * 화면은 데이터 표시/로딩/에러 상태만 담당하며 집계 로직은 core 쿼리에 위임.
  */
@@ -17,10 +17,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { formatDate, getTravelStats } from '@nexvoy/core'
+import { formatDate } from '@nexvoy/core'
 import type { TravelStats } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { getMobileProductTravelStats } from '@/lib/data/productDerivedData'
+import {
+  refreshMobileProductList,
+  subscribeMobileProductAccount,
+} from '@/lib/data/repositoryFactory'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 type TripEntry = TravelStats['pastTrips'][number]
@@ -39,7 +44,7 @@ export default function TravelLogScreen() {
     setLoading(true)
     setError(null)
     try {
-      const data = await getTravelStats(supabase, session.user.id)
+      const data = await getMobileProductTravelStats(supabase, session.user.id)
       if (isMounted.current) setStats(data)
     } catch {
       if (isMounted.current) {
@@ -53,6 +58,23 @@ export default function TravelLogScreen() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    if (!session?.user) return
+    let unsubscribe: () => void = () => undefined
+    let disposed = false
+    void subscribeMobileProductAccount(supabase, 'trip', () => {
+      if (!disposed) void load()
+    }).then((next) => {
+      if (disposed) next()
+      else unsubscribe = next
+    })
+    void refreshMobileProductList(supabase, 'trip').catch(() => undefined)
+    return () => {
+      disposed = true
+      unsubscribe()
+    }
+  }, [load, session?.user])
 
   const hasAny =
     !!stats &&

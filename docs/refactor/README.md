@@ -27,4 +27,6 @@
 - `docs/refactor/tasks/TASK-050-web-server-authority-product-cutover.md`
 - `docs/refactor/tasks/TASK-051-mobile-sqlite-cache-outbox.md`
 - `docs/refactor/runbooks/TASK-051-mobile-sqlite-authority-smoke.md`
+- `docs/refactor/tasks/TASK-052-mobile-server-authority-product-cutover.md`
+- `docs/refactor/runbooks/TASK-052-mobile-authority-product-smoke.md`
 - `docs/refactor/TECHNICAL-SPEC.md`

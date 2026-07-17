@@ -32,6 +32,7 @@ import {
   startMobileAuthoritySync,
   stopMobileAuthoritySync,
 } from './data/server-authority/syncService'
+import { isMobileServerAuthorityEnabled } from './data/repositoryFactory'
 
 interface AuthContextValue {
   session: Session | null
@@ -84,9 +85,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const accountId = session?.user.id
     if (accountId) {
       setMobileBackgroundWorkPaused(false)
-      void registerMobileProvisioningBackgroundTask()
-      void registerMobileAuthorityBackgroundTask()
-      void startMobileAuthoritySync(accountId)
+      if (isMobileServerAuthorityEnabled()) {
+        void unregisterMobileProvisioningBackgroundTask()
+        void registerMobileAuthorityBackgroundTask()
+        void startMobileAuthoritySync(accountId)
+      } else {
+        void registerMobileProvisioningBackgroundTask()
+        void unregisterMobileAuthorityBackgroundTask()
+        void stopMobileAuthoritySync()
+      }
       return
     }
     setMobileBackgroundWorkPaused(true)
@@ -107,10 +114,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // 알림 정리 실패가 로그아웃을 막으면 계정 전환 시 더 위험하다.
     }
-    try {
-      await revokeAndClearCurrentMobileKeyMaterial(supabase)
-    } catch {
-      // 서버/로컬 키 정리 실패도 로그아웃 자체를 막지 않는다.
+    if (!isMobileServerAuthorityEnabled()) {
+      try {
+        await revokeAndClearCurrentMobileKeyMaterial(supabase)
+      } catch {
+        // 서버/로컬 키 정리 실패도 로그아웃 자체를 막지 않는다.
+      }
     }
     try {
       await supabase.rpc('cleanup_current_user_push_tokens')

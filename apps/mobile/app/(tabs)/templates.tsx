@@ -27,7 +27,11 @@ import type { TemplateWithPreview } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { ConfirmSheet, EmptyState } from '@/components/ui'
-import { createMobileDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import {
+  createMobileProductRepositories,
+  refreshMobileProductList,
+  subscribeMobileProductAccount,
+} from '@/lib/data/repositoryFactory'
 import { toTemplatePreviewRow } from '@/lib/local-first/documentPrimaryAdapters'
 import { colors, fontSizes, fontWeights, radii, spacing, shadows } from '@/theme'
 
@@ -53,11 +57,11 @@ export default function TemplatesScreen() {
   const [pendingDelete, setPendingDelete] = useState<TemplateWithPreview | null>(null)
   const isMounted = useRef(true)
 
-  const loadTemplates = useCallback(async () => {
+  const loadTemplates = useCallback(async (showLoading = true) => {
     if (!currentUserId) return
-    setLoading(true)
+    if (showLoading) setLoading(true)
     try {
-      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const repositories = await createMobileProductRepositories(supabase)
       const data = await repositories.templates.listTemplates(currentUserId)
       if (isMounted.current) {
         setTemplates(data.map((template) => toTemplatePreviewRow(template, currentUserId)))
@@ -72,9 +76,20 @@ export default function TemplatesScreen() {
   useFocusEffect(
     useCallback(() => {
       isMounted.current = true
-      loadTemplates()
+      let disposed = false
+      let unsubscribe: () => void = () => undefined
+      void loadTemplates()
+      void subscribeMobileProductAccount(supabase, 'template', () => {
+        if (isMounted.current) void loadTemplates(false)
+      }).then((next) => {
+        if (!disposed) unsubscribe = next
+        else next()
+      })
+      void refreshMobileProductList(supabase, 'template').catch(() => undefined)
       return () => {
+        disposed = true
         isMounted.current = false
+        unsubscribe()
       }
     }, [loadTemplates])
   )
@@ -91,7 +106,7 @@ export default function TemplatesScreen() {
   const confirmDelete = useCallback(async () => {
     if (!pendingDelete) return
     try {
-      const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+      const repositories = await createMobileProductRepositories(supabase, { actorRole: 'owner' })
       await repositories.templates.deleteTemplate(pendingDelete.id)
       setPendingDelete(null)
       await loadTemplates()
