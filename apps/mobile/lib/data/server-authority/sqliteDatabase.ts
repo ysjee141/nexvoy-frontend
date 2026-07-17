@@ -386,6 +386,24 @@ function createDatabaseTransaction(executor: SqlExecutor): MobileAuthorityDataba
       await executor.runAsync('DELETE FROM authority_sync_state WHERE account_id = ?', [accountId])
       await executor.runAsync('DELETE FROM authority_resources WHERE account_id = ?', [accountId])
     },
+
+    async purgeResource(accountId, resourceType, resourceId) {
+      await executor.runAsync(
+        `DELETE FROM authority_outbox
+          WHERE account_id = ? AND resource_type = ? AND resource_id = ?`,
+        [accountId, resourceType, resourceId],
+      )
+      await executor.runAsync(
+        `DELETE FROM authority_sync_state
+          WHERE account_id = ? AND resource_type = ? AND resource_id = ?`,
+        [accountId, resourceType, resourceId],
+      )
+      await executor.runAsync(
+        `DELETE FROM authority_resources
+          WHERE account_id = ? AND resource_type = ? AND resource_id = ?`,
+        [accountId, resourceType, resourceId],
+      )
+    },
   }
 }
 

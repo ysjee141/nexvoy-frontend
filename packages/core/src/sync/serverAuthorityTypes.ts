@@ -208,6 +208,11 @@ export interface AuthorityLocalStore {
   ): Promise<void>
   recoverStaleSending(accountId: string, staleBefore: string, now: string): Promise<number>
   promoteGuestAccount(guestAccountId: string, accountId: string, now: string): Promise<void>
+  purgeResource(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ): Promise<void>
 }
 
 export type AuthoritySyncMetric =
@@ -238,6 +243,12 @@ export type AuthoritySyncMetric =
       name: 'authority_sending_recovered'
       accountId: string
       commandCount: number
+    }
+  | {
+      name: 'authority_membership_revoked'
+      accountId: string
+      resourceType: AuthorityResourceType
+      resourceId: string
     }
 
 export type AuthoritySyncMetricSink = (metric: AuthoritySyncMetric) => void

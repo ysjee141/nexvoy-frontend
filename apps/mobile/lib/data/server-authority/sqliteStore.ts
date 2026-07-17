@@ -175,6 +175,17 @@ export class MobileAuthoritySqliteStore implements AuthorityLocalStore {
     this.emit({ accountId })
   }
 
+  async purgeResource(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ): Promise<void> {
+    await this.database.transaction((transaction) =>
+      transaction.purgeResource(accountId, resourceType, resourceId),
+    )
+    this.emit({ accountId, resourceType, resourceId })
+  }
+
   async getSyncSnapshot(
     accountId: string,
     resourceType: AuthorityResourceType,

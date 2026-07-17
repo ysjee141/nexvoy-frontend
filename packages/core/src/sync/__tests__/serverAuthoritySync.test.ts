@@ -139,6 +139,20 @@ class FakeStore implements AuthorityLocalStore {
 
   async promoteGuestAccount(): Promise<void> {}
 
+  async purgeResource(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ): Promise<void> {
+    this.resources.delete(`${accountId}:${resourceType}:${resourceId}`)
+    this.records = this.records.filter(
+      (item) =>
+        item.accountId !== accountId ||
+        item.resourceType !== resourceType ||
+        item.resourceId !== resourceId,
+    )
+  }
+
   private update(
     operationIds: string[],
     transform: (item: AuthorityOutboxRecord) => AuthorityOutboxRecord,
@@ -383,6 +397,74 @@ async function run(): Promise<void> {
   assert.equal(
     (await conflictStore.getResource('account-1', 'trip', conflictBundle.resourceId))?.revision,
     8,
+  )
+
+  const revokedStore = new FakeStore([record(401), record(402)])
+  await revokedStore.putResource('account-1', {
+    resourceType: 'trip',
+    resourceId: record(401).resourceId,
+    revision: 4,
+    serverUpdatedAt: now,
+    data: { trip: { id: record(401).resourceId } },
+  })
+  const revokedEvents: string[] = []
+  const revokedCoordinator = new ServerAuthoritySyncCoordinator({
+    store: revokedStore,
+    repository: repositoryWith(async () => {
+      throw new ServerAuthorityRepositoryError({
+        message: 'authority_trip_forbidden',
+        code: '42501',
+        retryable: false,
+        status: 403,
+      })
+    }),
+    now: () => new Date(now),
+    random: () => 0,
+    onMembershipRevoked: (accountId, resourceType, resourceId) => {
+      revokedEvents.push(`${accountId}:${resourceType}:${resourceId}`)
+    },
+  })
+  const revoked = await revokedCoordinator.flush('account-1')
+  assert.equal(revoked.rejected, 2)
+  assert.equal(revokedStore.records.length, 0)
+  assert.equal(await revokedStore.getResource('account-1', 'trip', record(401).resourceId), null)
+  assert.deepEqual(revokedEvents, [`account-1:trip:${record(401).resourceId}`])
+
+  const revokedRefreshStore = new FakeStore([])
+  await revokedRefreshStore.putResource('account-1', {
+    resourceType: 'trip',
+    resourceId: record(401).resourceId,
+    revision: 4,
+    serverUpdatedAt: now,
+    data: { trip: { id: record(401).resourceId } },
+  })
+  const refreshDenied = repositoryWith(async () => {
+    throw new Error('unused')
+  })
+  refreshDenied.getBundle = async () => {
+    throw new ServerAuthorityRepositoryError({
+      message: 'authority_trip_forbidden',
+      code: '42501',
+      retryable: false,
+      status: 403,
+    })
+  }
+  const revokedRefreshCoordinator = new ServerAuthoritySyncCoordinator({
+    store: revokedRefreshStore,
+    repository: refreshDenied,
+    now: () => new Date(now),
+  })
+  await assert.rejects(
+    revokedRefreshCoordinator.refreshResource(
+      'account-1',
+      'trip',
+      record(401).resourceId,
+      Number.MAX_SAFE_INTEGER,
+    ),
+  )
+  assert.equal(
+    await revokedRefreshStore.getResource('account-1', 'trip', record(401).resourceId),
+    null,
   )
 
   console.log('serverAuthoritySync tests passed')

@@ -1,6 +1,6 @@
 # TASK-053: Membership and Invitation Without Document Keys
 
-- 상태: 대기
+- 상태: 구현 완료 (Issue [#362](https://github.com/ysjee141/nexvoy-frontend/issues/362), 로컬 자동 검증 완료 · DEV 다중 사용자 수동 검증 대기)
 
 ## 목적
 

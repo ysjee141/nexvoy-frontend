@@ -142,7 +142,7 @@ export async function purgeMobileAuthorityResource(
       matchingSubscriptions.map((subscription) => subscription.unsubscribe()),
     )
   }
-  await (await getRuntime()).store.deleteResource(accountId, resourceType, resourceId)
+  await (await getRuntime()).store.purgeResource(accountId, resourceType, resourceId)
 }
 
 export async function purgeMobileAuthorityAccount(accountId: string): Promise<void> {
@@ -172,6 +172,14 @@ async function getRuntime(): Promise<MobileAuthorityRuntime> {
         coordinator: new ServerAuthoritySyncCoordinator({
           repository: createServerAuthorityRepository(supabase),
           store,
+          onMembershipRevoked: (_revokedAccountId, resourceType, resourceId) => {
+            const topic = `${resourceType}:${resourceId}`
+            const matchingSubscriptions = [...activeRealtimeSubscriptions]
+              .filter((subscription) => subscription.topic === topic)
+            void Promise.allSettled(
+              matchingSubscriptions.map((subscription) => subscription.unsubscribe()),
+            )
+          },
         }),
       }
     })

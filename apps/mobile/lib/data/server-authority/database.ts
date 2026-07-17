@@ -59,6 +59,11 @@ export interface MobileAuthorityDatabaseTransaction extends MobileAuthorityDatab
   deleteOutbox(operationId: string): Promise<void>
   putSyncState(state: MobileAuthoritySyncState): Promise<void>
   deleteAccount(accountId: string): Promise<void>
+  purgeResource(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ): Promise<void>
 }
 
 export interface MobileAuthorityDatabase extends MobileAuthorityDatabaseReader {
