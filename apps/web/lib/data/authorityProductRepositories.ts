@@ -69,6 +69,7 @@ class WebAuthorityProductRuntime {
   private readonly watchedResources = new Map<string, AuthorityRuntimeSubscription>()
   private readonly flushTimers = new Map<string, ReturnType<typeof setTimeout>>()
   private readonly retryTimers = new Map<string, ReturnType<typeof setTimeout>>()
+  private readonly accountRepairPromises = new Map<string, Promise<void>>()
 
   constructor(private readonly supabase: SupabaseClient) {
     this.remote = createServerAuthorityRepository(supabase)
@@ -86,13 +87,29 @@ class WebAuthorityProductRuntime {
 
   async accountId(): Promise<string> {
     const { data: sessionData } = await this.supabase.auth.getSession()
-    if (sessionData.session?.user) return sessionData.session.user.id
+    if (sessionData.session?.user) return this.prepareAccount(sessionData.session.user.id)
     if (isBrowserOnline()) {
       const { data, error } = await this.supabase.auth.getUser()
       if (error) throw error
-      if (data.user) return data.user.id
+      if (data.user) return this.prepareAccount(data.user.id)
     }
     throw new Error('인증 정보가 없습니다.')
+  }
+
+  private async prepareAccount(accountId: string): Promise<string> {
+    let repair = this.accountRepairPromises.get(accountId)
+    if (!repair) {
+      repair = this.store
+        .repairMislabeledPlanCommands(accountId, new Date().toISOString())
+        .then(() => undefined)
+        .catch((error: unknown) => {
+          this.accountRepairPromises.delete(accountId)
+          throw error
+        })
+      this.accountRepairPromises.set(accountId, repair)
+    }
+    await repair
+    return accountId
   }
 
   async listLocal(resourceType: AuthorityResourceType): Promise<CanonicalResourceBundle[]> {
@@ -395,21 +412,21 @@ export async function createWebAuthorityDocumentRepositories(
       async createPlan(tripId, input) {
         assertWritable(actorRole)
         const bundle = await requireBundle(runtime, 'trip', tripId)
-        const command = commandFor('trip', tripId, input.id, 'upsert', planCreatePayload(input))
+        const command = commandFor('plan', tripId, input.id, 'upsert', planCreatePayload(input))
         const optimistic = await runtime.commit(bundle, [command])
         return tripMutationResult('plan.create', optimistic, [{ entityType: 'plan', entityId: input.id }])
       },
       async updatePlan(tripId, input) {
         assertWritable(actorRole)
         const bundle = await requireBundle(runtime, 'trip', tripId)
-        const command = commandFor('trip', tripId, input.planId, 'upsert', planPatchPayload(input))
+        const command = commandFor('plan', tripId, input.planId, 'upsert', planPatchPayload(input))
         const optimistic = await runtime.commit(bundle, [command])
         return tripMutationResult('plan.update', optimistic, [{ entityType: 'plan', entityId: input.planId }])
       },
       async deletePlan(tripId, planId) {
         assertWritable(actorRole)
         const bundle = await requireBundle(runtime, 'trip', tripId)
-        const command = commandFor('trip', tripId, planId, 'delete', {})
+        const command = commandFor('plan', tripId, planId, 'delete', {})
         const optimistic = await runtime.commit(bundle, [command])
         return tripMutationResult('plan.delete', optimistic, [{ entityType: 'plan', entityId: planId }])
       },
@@ -753,6 +770,12 @@ function commandFor(
   payload: Record<string, Json | undefined>,
   createdAt = new Date().toISOString(),
 ): AuthorityCommand {
+  if (
+    (entityType === 'trip' || entityType === 'template') &&
+    entityId !== resourceId
+  ) {
+    throw new Error('Authority root command must target its resource id.')
+  }
   return {
     operationId: createId(),
     resourceId,

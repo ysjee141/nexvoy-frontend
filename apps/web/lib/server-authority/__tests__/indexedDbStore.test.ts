@@ -90,6 +90,94 @@ async function run(): Promise<void> {
     'error',
   )
 
+  const planId = '48000000-0000-0000-0000-000000000099'
+  const repairBase: CanonicalResourceBundle = {
+    resourceType: 'trip',
+    resourceId: tripId,
+    revision: 0,
+    serverUpdatedAt: now,
+    data: { trip: null, plans: [], checklists: [], _role: 'owner' },
+  }
+  const repairCommands: AuthorityCommand[] = [
+    command('48000000-0000-0000-0000-000000000031', '전주 복구'),
+    {
+      operationId: '48000000-0000-0000-0000-000000000032',
+      resourceId: tripId,
+      entityType: 'checklist',
+      entityId: '48000000-0000-0000-0000-000000000098',
+      action: 'upsert',
+      payload: { title: '준비물' },
+      createdAt: now,
+    },
+    {
+      operationId: '48000000-0000-0000-0000-000000000033',
+      resourceId: tripId,
+      entityType: 'trip',
+      entityId: planId,
+      action: 'upsert',
+      payload: { title: '한옥마을 산책', start_datetime_local: '2026-07-17T10:00:00' },
+      createdAt: now,
+    },
+  ]
+  const corruptedProjection: CanonicalResourceBundle = {
+    ...repairBase,
+    data: {
+      ...repairBase.data,
+      trip: {
+        id: planId,
+        title: '한옥마을 산책',
+        start_datetime_local: '2026-07-17T10:00:00',
+      },
+      checklists: [{
+        id: '48000000-0000-0000-0000-000000000098',
+        title: '준비물',
+      }],
+    },
+  }
+  await store.commitOptimisticMutations({
+    accountId: 'account-repair',
+    baseBundle: repairBase,
+    bundle: corruptedProjection,
+    commands: repairCommands,
+    now,
+  })
+  await store.markRejected(
+    'account-repair',
+    repairCommands.map((item) => item.operationId),
+    '22023',
+    now,
+  )
+  assert.equal(
+    ((await store.getResource('account-repair', 'trip', tripId))?.data.trip as { id?: string }).id,
+    planId,
+  )
+
+  assert.equal(
+    await store.repairMislabeledPlanCommands(
+      'account-repair',
+      '2026-07-17T01:00:01.000Z',
+    ),
+    1,
+  )
+  const repairedRows = await store.listReadyOutbox('account-repair', now, 10)
+  assert.deepEqual(repairedRows.map((row) => row.command.entityType), [
+    'trip',
+    'checklist',
+    'plan',
+  ])
+  assert.equal(
+    ((await store.getResource('account-repair', 'trip', tripId))?.data.trip as { id?: string }).id,
+    tripId,
+  )
+  assert.equal(
+    ((await store.getResource('account-repair', 'trip', tripId))?.data.plans as Array<{ id?: string }>)[0]?.id,
+    planId,
+  )
+  assert.equal(
+    (await store.getSyncSnapshot('account-repair', 'trip', tripId, true)).status,
+    'pending',
+  )
+
   await store.commitOptimisticMutation({
     accountId: 'account-a',
     bundle: bundle('전주'),

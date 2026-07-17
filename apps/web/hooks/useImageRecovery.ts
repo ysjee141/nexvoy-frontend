@@ -59,6 +59,9 @@ export function useImageRecovery(): UseImageRecoveryReturn {
                     tripId,
                     placeId,
                     photoReference,
+                    // Product plans are local-first/server-authority records and may be
+                    // recovered before their relational row is visible to direct RLS reads.
+                    documentPrimary: true,
                 })
 
                 if (result.ok) {

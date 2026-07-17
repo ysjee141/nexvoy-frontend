@@ -52,6 +52,12 @@ export function applyOptimisticAuthorityCommandsToBundle(
     ) {
       throw new Error('Optimistic authority command does not match the resource bundle.')
     }
+    if (
+      (command.entityType === 'trip' || command.entityType === 'template') &&
+      command.entityId !== command.resourceId
+    ) {
+      throw new Error('Optimistic authority root command must target its resource id.')
+    }
     applyOptimisticCommand(data, command, now)
   }
   return { ...current, serverUpdatedAt: now, data }
