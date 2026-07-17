@@ -1,3 +1,50 @@
+# Walkthrough: TASK-050 Plan Command Recovery
+
+## Summary
+
+TASK-050 Web 전환 후 일정 명령이 `plan` 대신 `trip`으로 생성되어 optimistic trip root를 덮어쓰고,
+신규 여행의 첫 server batch 전체를 `22023`으로 rollback하던 결함을 수정했다. 기존 브라우저에 이미 거절된
+배치는 canonical base에서 자동 재구축해 여행·준비물·일정을 함께 재전송한다.
+
+## Artifacts
+
+- GitHub Issue [#356](https://github.com/ysjee141/nexvoy-frontend/issues/356)
+- Pull Request [#357](https://github.com/ysjee141/nexvoy-frontend/pull/357)
+- 브랜치: `codex/fix-task050-plan-command`
+- `apps/web/lib/data/authorityProductRepositories.ts`
+- `apps/web/lib/server-authority/indexedDbStore.ts`
+- `packages/core/src/sync/serverAuthorityMaterialize.ts`
+- `apps/web/e2e/server-authority-product.spec.ts`
+
+## Key Changes
+
+- 일정 create/update/delete command를 `entityType: plan`으로 교정했다.
+- trip/template root command가 resource ID와 다른 entity ID를 대상으로 하면 즉시 거부한다.
+- 기존 오분류 command와 같은 `22023` 거절 batch를 pending으로 되돌리고 canonical bundle에서 projection을 재구축한다.
+- 서버 권위 일정 이미지 복구는 direct plan RLS 조회 대신 document owner/editor write 권한을 사용한다.
+- 일정 생성 후 trip root 유지, canonical plan 반영, IndexedDB 거절 batch 복구 회귀 테스트를 추가했다.
+
+## Verification
+
+| 검증 | 결과 |
+| --- | --- |
+| `pnpm --filter nexvoy-web test:authority` | PASS |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm --filter nexvoy-web exec tsc --noEmit --pretty false` | PASS |
+| `pnpm typecheck` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS |
+| `pnpm --filter nexvoy-web exec playwright test --list` | PASS, 15 tests |
+| 일정 생성 Playwright 실제 실행 | BLOCKED, 원격 DEV cleanup 방지 안전장치 |
+| 기존 실패 draft 브라우저 복구 | PASS, 일정 1개 및 `동기화 완료` 확인 |
+
+## Rollback
+
+plan command 교정만 되돌리면 데이터 손상 결함이 재발하므로 부분 rollback은 허용하지 않는다. 전체 rollback 시
+runtime의 local repair 호출, IndexedDB repair 함수, root 불변식, 이미지 권한 분기를 함께 제거한다. DB migration은 없다.
+
+---
+
 # Walkthrough: TASK-050 Web Server-Authority Product Cutover
 
 ## Summary

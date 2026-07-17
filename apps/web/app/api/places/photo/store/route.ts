@@ -100,7 +100,8 @@ export async function POST(request: NextRequest) {
 
         // 3) 멤버십 검증
         //    Legacy row plan은 plans row로 trip 소속을 확인한다.
-        //    Document-primary plan은 plans row가 없을 수 있으므로 trip-level owner/editor 권한만 확인한다.
+        //    Local-first/server-authority plan은 plans row가 아직 보이지 않을 수 있으므로
+        //    trip-level owner/editor 권한만 확인한다.
         if (!isDocumentPrimary) {
             const { data: planRow, error: planLookupError } = await supabase
                 .from('plans')
@@ -120,22 +121,36 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 소유자 또는 멤버(편집자) 권한 검증.
-        // 두 보조 함수를 RPC 호출하여 OR 조건을 평가한다.
-        const [ownerResp, editorResp] = await Promise.all([
-            supabase.rpc('check_is_trip_owner', { _trip_id: tripId, _user_id: user.id }),
-            supabase.rpc('check_is_trip_editor', { _trip_id: tripId, _user_id: user.id }),
-        ])
-        if (ownerResp.error) {
-            console.error('[places/photo/store] check_is_trip_owner failed:', ownerResp.error.message)
-        }
-        if (editorResp.error) {
-            console.error('[places/photo/store] check_is_trip_editor failed:', editorResp.error.message)
-        }
-        const isOwner = ownerResp.data === true
-        const isEditor = editorResp.data === true
-        if (!isOwner && !isEditor) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        if (isDocumentPrimary) {
+            const authorityWrite = await supabase.rpc('check_can_write_authority_trip', {
+                p_trip_id: tripId,
+                p_user_id: user.id,
+            })
+            if (authorityWrite.error) {
+                console.error(
+                    '[places/photo/store] check_can_write_authority_trip failed:',
+                    authorityWrite.error.message
+                )
+                return NextResponse.json({ error: 'Permission lookup failed' }, { status: 500 })
+            }
+            if (authorityWrite.data !== true) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
+        } else {
+            // Legacy rows use trip owner/trip_members editor authority.
+            const [ownerResp, editorResp] = await Promise.all([
+                supabase.rpc('check_is_trip_owner', { _trip_id: tripId, _user_id: user.id }),
+                supabase.rpc('check_is_trip_editor', { _trip_id: tripId, _user_id: user.id }),
+            ])
+            if (ownerResp.error) {
+                console.error('[places/photo/store] check_is_trip_owner failed:', ownerResp.error.message)
+            }
+            if (editorResp.error) {
+                console.error('[places/photo/store] check_is_trip_editor failed:', editorResp.error.message)
+            }
+            if (ownerResp.data !== true && editorResp.data !== true) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+            }
         }
 
         // 4) Google Maps API Key (서버 보유)

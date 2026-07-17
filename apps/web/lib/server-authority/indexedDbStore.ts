@@ -2,6 +2,7 @@ import {
   applyCanonicalChangesToBundle,
   applyOptimisticAuthorityCommandsToBundle,
   type AuthorityApplyResult,
+  type AuthorityCommand,
   type AuthorityLocalStore,
   type AuthorityOutboxRecord,
   type AuthorityOutboxStatus,
@@ -472,6 +473,87 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
     return rows.length
   }
 
+  async repairMislabeledPlanCommands(accountId: string, now: string): Promise<number> {
+    const database = await this.open()
+    const transaction = database.transaction([RESOURCE_STORE, OUTBOX_STORE], 'readwrite')
+    const resources = transaction.objectStore(RESOURCE_STORE)
+    const outbox = transaction.objectStore(OUTBOX_STORE)
+    const accountRows = await requestValue<AuthorityOutboxRecord[]>(
+      outbox.index(ACCOUNT_INDEX).getAll(accountId),
+    )
+    const malformed = accountRows.filter(isMislabeledPlanCommand)
+    if (malformed.length === 0) {
+      await transactionComplete(transaction)
+      return 0
+    }
+
+    const affectedResources = new Map<string, AuthorityOutboxRecord[]>()
+    for (const row of malformed) {
+      const key = resourceKey(accountId, row.resourceType, row.resourceId)
+      affectedResources.set(
+        key,
+        accountRows.filter((candidate) =>
+          candidate.resourceType === row.resourceType && candidate.resourceId === row.resourceId,
+        ),
+      )
+    }
+
+    const repairedChanges: WebAuthorityStoreChange[] = []
+    let repairedCount = 0
+    for (const [key, rows] of affectedResources) {
+      const stored = await requestValue<StoredAuthorityResource | undefined>(resources.get(key))
+      if (!stored?.canonicalBundle) continue
+
+      const malformedBaseRevisions = new Set(
+        rows.filter(isMislabeledPlanCommand).map((row) => row.baseRevision),
+      )
+      const repairedRows = rows.map((row) => {
+        const mislabeled = isMislabeledPlanCommand(row)
+        const rejectedWithBatch =
+          row.status === 'rejected' &&
+          row.lastError === '22023' &&
+          malformedBaseRevisions.has(row.baseRevision)
+        if (!mislabeled && !rejectedWithBatch) return row
+        if (mislabeled) repairedCount += 1
+        const repairedRow: AuthorityOutboxRecord = {
+          ...row,
+          command: mislabeled
+            ? { ...row.command, entityType: 'plan' as const }
+            : row.command,
+          status: 'pending' as const,
+          attempts: 0,
+          nextAttemptAt: null,
+          lastError: null,
+          updatedAt: now,
+        }
+        return repairedRow
+      })
+      const optimisticCommands = repairedRows
+        .filter((row) =>
+          row.status === 'pending' || row.status === 'sending' || row.status === 'retryable',
+        )
+        .sort(compareOutbox)
+        .map((row) => row.command)
+      const projected = applyOptimisticAuthorityCommandsToBundle(
+        stored.canonicalBundle,
+        optimisticCommands,
+        now,
+      )
+
+      repairedRows.forEach((row) => outbox.put(row))
+      resources.put(toStoredResource(accountId, projected, now, stored.canonicalBundle))
+      repairedChanges.push({
+        accountId,
+        resourceType: stored.resourceType,
+        resourceId: stored.resourceId,
+      })
+    }
+
+    await transactionComplete(transaction)
+    repairedChanges.forEach((change) => emitStoreChange(this.databaseName, change))
+    return repairedCount
+  }
+
   async promoteGuestAccount(
     guestAccountId: string,
     accountId: string,
@@ -610,6 +692,19 @@ function requestValue<T>(request: IDBRequest<T>): Promise<T> {
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed.'))
   })
+}
+
+function isMislabeledPlanCommand(
+  row: AuthorityOutboxRecord,
+): row is AuthorityOutboxRecord & {
+  command: Extract<AuthorityCommand, { entityType: 'trip' }>
+} {
+  return (
+    row.resourceType === 'trip' &&
+    row.command.entityType === 'trip' &&
+    row.command.resourceId === row.resourceId &&
+    row.command.entityId !== row.resourceId
+  )
 }
 
 function transactionComplete(transaction: IDBTransaction): Promise<void> {

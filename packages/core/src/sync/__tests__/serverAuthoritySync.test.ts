@@ -175,7 +175,7 @@ async function run(): Promise<void> {
     resourceId: optimisticTripId,
     revision: 0,
     serverUpdatedAt: now,
-    data: { trip: null, checklists: [], checklist_item_assignees: [] },
+    data: { trip: null, plans: [], checklists: [], checklist_item_assignees: [] },
   }, [
     {
       operationId: '00000000-0000-0000-0000-000000000091',
@@ -195,9 +195,31 @@ async function run(): Promise<void> {
       payload: { title: '준비물' },
       createdAt: now,
     },
+    {
+      operationId: '00000000-0000-0000-0000-000000000093',
+      resourceId: optimisticTripId,
+      entityType: 'plan',
+      entityId: '10000000-0000-0000-0000-000000000097',
+      action: 'upsert',
+      payload: { title: '한옥마을 산책' },
+      createdAt: now,
+    },
   ], now)
   assert.equal((optimistic.data.trip as { destination?: string }).destination, '전주')
   assert.equal((optimistic.data.checklists as Array<{ title?: string }>)[0]?.title, '준비물')
+  assert.equal((optimistic.data.plans as Array<{ title?: string }>)[0]?.title, '한옥마을 산책')
+  assert.throws(
+    () => applyOptimisticAuthorityCommandsToBundle(optimistic, [{
+      operationId: '00000000-0000-0000-0000-000000000094',
+      resourceId: optimisticTripId,
+      entityType: 'trip',
+      entityId: '10000000-0000-0000-0000-000000000096',
+      action: 'upsert',
+      payload: { title: '잘못 분류된 일정' },
+      createdAt: now,
+    }], now),
+    /root command must target its resource id/,
+  )
 
   const invalidation = parseAuthorityInvalidation({
     resource_type: 'trip',

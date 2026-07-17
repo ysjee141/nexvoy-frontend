@@ -332,6 +332,23 @@ export async function getChecklistItemByName(
   return (data as { id: string; is_checked: boolean } | null) ?? null;
 }
 
+export async function getPlanByTitle(
+  tripId: string,
+  title: string,
+): Promise<{ id: string; title: string } | null> {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .from('plans')
+    .select('id, title')
+    .eq('trip_id', tripId)
+    .eq('title', title)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw new Error(`getPlanByTitle 실패: ${error.message}`);
+  return (data as { id: string; title: string } | null) ?? null;
+}
+
 /**
  * 검증용 단일 항목 조회.
  */
