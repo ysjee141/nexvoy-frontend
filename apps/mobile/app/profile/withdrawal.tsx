@@ -6,7 +6,7 @@
  *
  * 실제 삭제는 deleteUser(delete_user RPC, SECURITY DEFINER 서버측 검증) 호출.
  * 삭제 성공 후 signOut() → 루트 레이아웃 auth gate 가 로그인 화면으로 리다이렉트한다.
- * 데이터 카운트 조회는 RLS 로 본인 데이터만 노출됨을 전제로 한다.
+ * 데이터 카운트는 제품 Repository의 계정별 로컬 read model에서 계산한다.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -28,6 +28,11 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { cancelAllLocalNotifications } from '@/lib/notifications'
 import { purgeMobileAuthorityAccount } from '@/lib/data/server-authority/syncService'
+import { getMobileProductDeletionSummary } from '@/lib/data/productDerivedData'
+import {
+  refreshMobileProductList,
+  subscribeMobileProductAccount,
+} from '@/lib/data/repositoryFactory'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const CONFIRM_KEYWORD = '탈퇴'
@@ -51,35 +56,11 @@ export default function WithdrawalScreen() {
     setLoading(true)
     setError(null)
     try {
-      const { data: trips, error: tripErr } = await supabase
-        .from('trips')
-        .select('id')
-        .eq('user_id', session.user.id)
-      if (tripErr) throw tripErr
-
-      const tripIds = (trips ?? []).map((t: { id: string }) => t.id)
-      let items = 0
-      if (tripIds.length > 0) {
-        const { data: checklists, error: clErr } = await supabase
-          .from('checklists')
-          .select('id')
-          .in('trip_id', tripIds)
-        if (clErr) throw clErr
-
-        const checklistIds = (checklists ?? []).map((c: { id: string }) => c.id)
-        if (checklistIds.length > 0) {
-          const { count, error: itemErr } = await supabase
-            .from('checklist_items')
-            .select('id', { count: 'exact', head: true })
-            .in('checklist_id', checklistIds)
-          if (itemErr) throw itemErr
-          items = count ?? 0
-        }
-      }
+      const summary = await getMobileProductDeletionSummary(supabase, session.user.id)
 
       if (isMounted.current) {
-        setTripCount(tripIds.length)
-        setItemCount(items)
+        setTripCount(summary.tripCount)
+        setItemCount(summary.itemCount)
       }
     } catch {
       if (isMounted.current) {
@@ -93,6 +74,23 @@ export default function WithdrawalScreen() {
   useEffect(() => {
     loadStats()
   }, [loadStats])
+
+  useEffect(() => {
+    if (!session?.user) return
+    let unsubscribe: () => void = () => undefined
+    let disposed = false
+    void subscribeMobileProductAccount(supabase, 'trip', () => {
+      if (!disposed) void loadStats()
+    }).then((next) => {
+      if (disposed) next()
+      else unsubscribe = next
+    })
+    void refreshMobileProductList(supabase, 'trip').catch(() => undefined)
+    return () => {
+      disposed = true
+      unsubscribe()
+    }
+  }, [loadStats, session?.user])
 
   const canConfirm = confirmText.trim() === CONFIRM_KEYWORD && !deleting
 

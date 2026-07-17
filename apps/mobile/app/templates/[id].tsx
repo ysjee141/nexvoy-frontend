@@ -31,7 +31,10 @@ import {
 import type { ChecklistCategory, ChecklistTemplateShareRole, ChecklistTemplateShareWithProfile } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { BottomSheet } from '@/components/ui'
-import { createMobileDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import {
+  createMobileProductRepositories,
+  subscribeMobileProductResource,
+} from '@/lib/data/repositoryFactory'
 import {
   toTemplateItemRows,
   toTemplateShareRows,
@@ -77,7 +80,7 @@ export default function EditTemplateScreen() {
     if (!id) return
     setSharesLoading(true)
     try {
-      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const repositories = await createMobileProductRepositories(supabase)
       const template = await repositories.templates.getTemplate(id)
       if (isMounted.current) setShares(template ? toTemplateShareRows(template) : [])
     } catch {
@@ -87,11 +90,11 @@ export default function EditTemplateScreen() {
     }
   }, [id])
 
-  const loadTemplate = useCallback(async () => {
+  const loadTemplate = useCallback(async (showLoading = true) => {
     if (!id) return
-    setInitialLoading(true)
+    if (showLoading) setInitialLoading(true)
     try {
-      const repositories = await createMobileDocumentPrimaryRepositories(supabase)
+      const repositories = await createMobileProductRepositories(supabase)
       const result = await repositories.templates.getTemplate(id)
       if (!isMounted.current) return
       if (!result) {
@@ -118,8 +121,27 @@ export default function EditTemplateScreen() {
   }, [id])
 
   useEffect(() => {
-    loadTemplate()
+    void loadTemplate()
   }, [loadTemplate])
+
+  useEffect(() => {
+    if (!id) return undefined
+    let disposed = false
+    let unsubscribe: (() => Promise<void>) | null = null
+    void subscribeMobileProductResource(supabase, 'template', id, () => {
+      if (!disposed) {
+        void loadTemplate(false)
+        void loadShares()
+      }
+    }).then((next) => {
+      if (disposed) void next()
+      else unsubscribe = next
+    })
+    return () => {
+      disposed = true
+      if (unsubscribe) void unsubscribe()
+    }
+  }, [id, loadShares, loadTemplate])
 
   const trimmedDraft = itemDraft.trim()
   const canAddItem = trimmedDraft.length > 0
@@ -183,7 +205,7 @@ export default function EditTemplateScreen() {
     setSaving(true)
     setError(null)
     try {
-      const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: canManageShares ? 'owner' : 'editor' })
+      const repositories = await createMobileProductRepositories(supabase, { actorRole: canManageShares ? 'owner' : 'editor' })
       await repositories.templates.updateTemplate(id, { title: title.trim() })
       await repositories.templates.replaceItems(id, {
         items: items.map((item, index) => ({
@@ -222,7 +244,7 @@ export default function EditTemplateScreen() {
             setDeleting(true)
             setError(null)
             try {
-              const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+              const repositories = await createMobileProductRepositories(supabase, { actorRole: 'owner' })
               await repositories.templates.deleteTemplate(id)
               router.back()
             } catch (e) {
@@ -251,7 +273,7 @@ export default function EditTemplateScreen() {
     const profile = await getProfileByEmail(supabase, email)
     if (!profile) throw new Error('해당 이메일의 사용자를 찾을 수 없어요.')
     if (profile.id === currentUserId) throw new Error('내 계정에는 공유할 수 없어요.')
-    const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+    const repositories = await createMobileProductRepositories(supabase, { actorRole: 'owner' })
     await repositories.templates.upsertShare(id, {
       share: {
         id: createEntityId('template-share'),
@@ -268,7 +290,7 @@ export default function EditTemplateScreen() {
 
   const handleUpdateShareRole = async (shareId: string, role: ChecklistTemplateShareRole) => {
     if (!id) return
-    const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+    const repositories = await createMobileProductRepositories(supabase, { actorRole: 'owner' })
     const template = await repositories.templates.getTemplate(id)
     const share = template?.shares.find((candidate) => candidate.id === shareId)
     if (!share) return
@@ -288,7 +310,7 @@ export default function EditTemplateScreen() {
 
   const handleRemoveShare = async (shareId: string) => {
     if (!id) return
-    const repositories = await createMobileDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+    const repositories = await createMobileProductRepositories(supabase, { actorRole: 'owner' })
     await repositories.templates.removeShare(id, shareId)
     await loadShares()
   }

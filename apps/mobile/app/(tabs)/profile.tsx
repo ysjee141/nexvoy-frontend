@@ -16,11 +16,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { getProfile, getTravelStats } from '@nexvoy/core'
+import { getProfile } from '@nexvoy/core'
 import type { Profile, TravelStats } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { ConfirmSheet } from '@/components/ui'
+import { getMobileProductTravelStats } from '@/lib/data/productDerivedData'
+import {
+  refreshMobileProductList,
+  subscribeMobileProductAccount,
+} from '@/lib/data/repositoryFactory'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 function getInitial(nickname: string | null, email: string | null): string {
@@ -85,13 +90,13 @@ export default function ProfileScreen() {
   const [nicknameError, setNicknameError] = useState('')
   const [showLogoutSheet, setShowLogoutSheet] = useState(false)
 
-  const loadProfile = useCallback(async () => {
+  const loadProfile = useCallback(async (showLoading = true) => {
     if (!session?.user) return
-    setLoading(true)
+    if (showLoading) setLoading(true)
     try {
       const [profileData, statsData] = await Promise.all([
         getProfile(supabase, session.user.id),
-        getTravelStats(supabase, session.user.id).catch(() => null),
+        getMobileProductTravelStats(supabase, session.user.id).catch(() => null),
       ])
       if (isMounted.current) {
         setProfile(profileData)
@@ -105,8 +110,25 @@ export default function ProfileScreen() {
   }, [session?.user])
 
   useEffect(() => {
-    loadProfile()
+    void loadProfile()
   }, [loadProfile])
+
+  useEffect(() => {
+    if (!session?.user) return
+    let unsubscribe: () => void = () => undefined
+    let disposed = false
+    void subscribeMobileProductAccount(supabase, 'trip', () => {
+      if (!disposed) void loadProfile(false)
+    }).then((next) => {
+      if (disposed) next()
+      else unsubscribe = next
+    })
+    void refreshMobileProductList(supabase, 'trip').catch(() => undefined)
+    return () => {
+      disposed = true
+      unsubscribe()
+    }
+  }, [loadProfile, session?.user])
 
   const startEditingNickname = () => {
     setEditNickname(profile?.nickname || displayName)

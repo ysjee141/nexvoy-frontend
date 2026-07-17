@@ -120,7 +120,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-049-realtime-invalidation-and-revision-recovery.md` | 완료 | private Broadcast invalidation과 Web revision gap 복구 |
 | `TASK-050-web-server-authority-product-cutover.md` | 구현 완료 | Web 전체 기능 server-authority 전환, 로컬 Supabase E2E 실행 대기 |
 | `TASK-051-mobile-sqlite-cache-outbox.md` | 구현 완료 | Mobile SQLite cache/outbox, lifecycle flush, Realtime adapter, Android development build |
-| `TASK-052-mobile-server-authority-product-cutover.md` | 대기 | Mobile 전체 기능 server-authority 제품 경로 전환 |
+| `TASK-052-mobile-server-authority-product-cutover.md` | 구현 완료 | Mobile 전체 기능 server-authority 제품 경로 전환, 실기기 smoke 대기 |
 | `TASK-053-membership-invitation-without-document-keys.md` | 대기 | document key 없는 membership/invitation/role/revoke |
 | `TASK-054-direct-asset-storage-and-delivery.md` | 대기 | Storage 직접 업로드, thumbnail, CDN, orphan cleanup |
 | `TASK-055-retire-yjs-p2p-encrypted-backup.md` | 대기 | Yjs/P2P/key/custom backup runtime 제거와 V1 reset |
@@ -217,7 +217,7 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-049-realtime-invalidation-and-revision-recovery.md`: Realtime invalidation과 Web revision recovery
 - [x] `TASK-050-web-server-authority-product-cutover.md`: Web 전체 제품 경로 전환 (로컬 Supabase E2E 실행 대기)
 - [x] `TASK-051-mobile-sqlite-cache-outbox.md`: Mobile SQLite cache/outbox와 Realtime adapter
-- [ ] `TASK-052-mobile-server-authority-product-cutover.md`: Mobile 전체 제품 경로 전환
+- [x] `TASK-052-mobile-server-authority-product-cutover.md`: Mobile 전체 제품 경로 전환
 - [ ] `TASK-053-membership-invitation-without-document-keys.md`: keyless membership/invitation 전환
 - [ ] `TASK-054-direct-asset-storage-and-delivery.md`: asset 직접 전송과 egress 최적화
 - [ ] `TASK-055-retire-yjs-p2p-encrypted-backup.md`: legacy runtime 제거와 데이터 reset

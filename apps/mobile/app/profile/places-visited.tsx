@@ -1,7 +1,7 @@
 /**
  * 방문한 곳 화면 (nexvoy-app)
  *
- * getVisitedPlacesByUser(@nexvoy/core)로 plans.location 기준 집계된
+ * 제품 Repository의 로컬 read model로 plans.location 기준 집계된
  * 방문 목적지 목록을 표시한다. 각 카드는 장소명 + 방문 횟수 + 연관 여정 목적지.
  * 집계 로직은 core 쿼리에 위임하고 화면은 표시/로딩/에러만 담당.
  */
@@ -17,10 +17,14 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
-import { getVisitedPlacesByUser } from '@nexvoy/core'
 import type { VisitedPlace } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { getMobileProductVisitedPlaces } from '@/lib/data/productDerivedData'
+import {
+  refreshMobileProductList,
+  subscribeMobileProductAccount,
+} from '@/lib/data/repositoryFactory'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 export default function PlacesVisitedScreen() {
@@ -37,7 +41,7 @@ export default function PlacesVisitedScreen() {
     setLoading(true)
     setError(null)
     try {
-      const data = await getVisitedPlacesByUser(supabase, session.user.id)
+      const data = await getMobileProductVisitedPlaces(supabase, session.user.id)
       if (isMounted.current) setPlaces(data)
     } catch {
       if (isMounted.current) {
@@ -51,6 +55,23 @@ export default function PlacesVisitedScreen() {
   useEffect(() => {
     load()
   }, [load])
+
+  useEffect(() => {
+    if (!session?.user) return
+    let unsubscribe: () => void = () => undefined
+    let disposed = false
+    void subscribeMobileProductAccount(supabase, 'trip', () => {
+      if (!disposed) void load()
+    }).then((next) => {
+      if (disposed) next()
+      else unsubscribe = next
+    })
+    void refreshMobileProductList(supabase, 'trip').catch(() => undefined)
+    return () => {
+      disposed = true
+      unsubscribe()
+    }
+  }, [load, session?.user])
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>

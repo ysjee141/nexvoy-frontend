@@ -17,10 +17,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { getTripsWithProgress, formatDate } from '@nexvoy/core'
+import { formatDate } from '@nexvoy/core'
 import type { TripWithProgress } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import {
+  createMobileProductRepositories,
+  refreshMobileProductList,
+  subscribeMobileProductAccount,
+} from '@/lib/data/repositoryFactory'
+import { toTripRow } from '@/lib/local-first/documentPrimaryAdapters'
 import { colors, fontSizes, fontWeights, radii, spacing, shadows } from '@/theme'
 
 type TripStatus = 'ongoing' | 'upcoming' | 'past'
@@ -62,11 +68,17 @@ export default function HomeScreen() {
     past: false,
   })
 
-  const loadTrips = useCallback(async () => {
+  const loadTrips = useCallback(async (showLoading = true) => {
     if (!session?.user) return
-    setLoading(true)
+    if (showLoading) setLoading(true)
     try {
-      const data = await getTripsWithProgress(supabase, session.user.id)
+      const repositories = await createMobileProductRepositories(supabase)
+      const summaries = await repositories.trips.listTrips(session.user.id)
+      const data = summaries.map((summary): TripWithProgress => ({
+        ...toTripRow(summary),
+        progressPercent: summary.progressPercent,
+        isOwner: summary.ownerId === session.user.id,
+      }))
       setTrips(data)
     } catch {
       // 조회 실패 시 직전 목록 유지 (useFocusEffect 재진입 시 깜박임 방지)
@@ -77,7 +89,20 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadTrips()
+      let disposed = false
+      let unsubscribe: () => void = () => undefined
+      void loadTrips()
+      void subscribeMobileProductAccount(supabase, 'trip', () => {
+        if (!disposed) void loadTrips(false)
+      }).then((next) => {
+        if (disposed) next()
+        else unsubscribe = next
+      })
+      void refreshMobileProductList(supabase, 'trip').catch(() => undefined)
+      return () => {
+        disposed = true
+        unsubscribe()
+      }
     }, [loadTrips])
   )
 

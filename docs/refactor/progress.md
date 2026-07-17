@@ -46,6 +46,16 @@
 - private Realtime invalidation과 revision gap recovery adapter를 준비했다. 상세 화면 구독과 제품 repository 전환은 TASK-052 범위다.
 - authority 단위 테스트, 전체 typecheck, Web build, 전 플랫폼 Expo export와 Android development build가 통과했다.
 
+## 2026-07-17 TASK-052 구현 완료
+
+- Web 제품 repository의 platform-independent 명령/조회 로직을 Core로 옮기고 Web과 Mobile이 같은 계약을 사용하도록 통합했다.
+- Mobile 여행, 일정, 준비물, 템플릿과 프로필 파생 조회를 SQLite cache와 durable outbox 기반 repository로 전환했다.
+- 목록 foreground/reconnect refresh와 상세 Realtime invalidation/revision recovery를 화면 lifecycle에 연결했다.
+- 신규 resource의 server ack 전 초대·이미지 업로드를 제한하고 offline/pending/synced/conflict/error 상태를 표시한다.
+- authority mode에서 legacy document key, encrypted backup, WebRTC/P2P runtime 실행을 차단했다.
+- Core/Mobile 단위 테스트, 전체 typecheck, lint, Web build, 전 플랫폼 Expo export와 Android native build를 검증했다.
+- 실제 기기의 비행기 모드, 계정 전환, Web/Mobile 교차 동기화는 TASK-052 smoke runbook으로 최종 확인한다.
+
 2026-07-16 초대 흐름 재점검:
 
 - 이메일 초대와 기존 로그인 후 Accept UI가 서로 다른 registry를 사용하고 있음을 확인했다.

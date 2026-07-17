@@ -29,7 +29,7 @@ import { useRouter } from 'expo-router'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
-import { createMobileTripDocument } from '@/lib/local-first/documentPrimaryRepositories'
+import { createMobileProductTrip } from '@/lib/data/repositoryFactory'
 import { colors, fontSizes, fontWeights, radii, shadows, spacing } from '@/theme'
 
 const DESTINATION_MAX = 50
@@ -140,7 +140,7 @@ export default function NewTripScreen() {
     setLoading(true)
     setError(null)
     try {
-      const tripId = await createMobileTripDocument({
+      const tripId = await createMobileProductTrip({
         supabase,
         destination: destination.trim(),
         startDate: toDateString(startDate),
