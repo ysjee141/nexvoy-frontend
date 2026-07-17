@@ -2,7 +2,7 @@
 
 ## 결과
 
-Issue [#358](https://github.com/ysjee141/nexvoy-frontend/issues/358)의 Mobile server-authority persistence 기반을 구현했다. Mobile 화면은 아직 기존 repository를 유지하지만, TASK-052가 사용할 SQLite cache/outbox와 lifecycle sync 경계가 준비됐다.
+Issue [#358](https://github.com/ysjee141/nexvoy-frontend/issues/358)의 Mobile server-authority persistence 기반을 구현했다. Mobile 화면은 아직 기존 repository를 유지하지만, TASK-052가 사용할 SQLite cache/outbox와 lifecycle sync 경계가 준비됐다. Pull Request: [#359](https://github.com/ysjee141/nexvoy-frontend/pull/359)
 
 ```mermaid
 flowchart LR
