@@ -24,6 +24,7 @@ module.exports = () => {
     ...(config.plugins ?? []),
     'expo-background-task',
     'expo-build-properties',
+    'expo-sqlite',
     'react-native-quick-crypto',
   ]
 

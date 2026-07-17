@@ -1,6 +1,6 @@
 # TASK-051: Mobile SQLite Cache and Transactional Outbox
 
-- 상태: 대기
+- 상태: 구현 완료
 
 ## 목적
 
@@ -15,13 +15,13 @@ queue의 비원자성을 제거하고 Web과 동일한 command/revision 계약�
 - foreground/network reconnect/background opportunity sync
 - batch RPC flush와 canonical ack 적용
 - TASK-049 계약을 사용하는 Mobile Realtime subscription/revision recovery adapter
-- account switch/logout/revoke purge
+- account switch namespace 격리, logout cache 보존, withdrawal/revoke purge
 - native lifecycle 및 실제 개발 빌드 검증
 
 제외:
 
 - Mobile 화면 repository cutover
-- Realtime subscription
+- 제품 화면의 Realtime subscription 연결(TASK-052)
 - AsyncStorage/Yjs/crypto 파일 제거
 
 ## 선행 조건
@@ -47,9 +47,10 @@ queue의 비원자성을 제거하고 Web과 동일한 command/revision 계약�
 5. network reconnect, foreground, background execution opportunity에서 제한된 batch를 flush한다.
 6. OS background 제한을 보장처럼 표현하지 않고 다음 foreground에서도 반드시 이어서 처리한다.
 7. canonical ack와 revision을 transaction으로 반영하고 terminal error를 보존한다.
-8. 계정 전환과 revoke에서 활성 query/cache/outbox가 격리·정리되는지 검증한다.
+8. 계정 전환에서는 namespace를 격리하고 logout에서는 cache를 보존한다. withdrawal은 account namespace를,
+   revoke는 해당 resource namespace를 purge한다.
 9. guest namespace의 draft는 로그인 시 authenticated create command로 승격한다.
-10. active detail Realtime invalidation과 foreground/reconnect revision recovery를 연결한다.
+10. Realtime invalidation/revision recovery adapter를 구현한다. active detail 화면 연결은 TASK-052에서 수행한다.
 11. Android/iOS development build와 Expo export를 검증한다.
 
 ## 데이터 고려사항
