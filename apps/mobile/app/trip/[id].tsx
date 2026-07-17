@@ -64,6 +64,13 @@ import {
   type DocumentInvitationRole,
   type DocumentShareType,
 } from '@nexvoy/core/supabase/invitationRepository'
+import {
+  PLACE_PHOTO_ORIGINAL_WIDTH,
+  PLACE_PHOTO_THUMB_WIDTH,
+  derivePlacePhotoThumbUrl,
+  placePhotoObjectPath,
+  type PlacePhotoWidth,
+} from '@nexvoy/core/supabase/storagePaths'
 import type {
   Plan,
   PlanUrl,
@@ -232,7 +239,6 @@ const WEB_APP_BASE =
   process.env.EXPO_PUBLIC_WEB_API_URL ??
   'https://app.nexvoy.xyz'
 const PLACE_PHOTO_BUCKET = 'place-photos'
-const PLACE_PHOTO_MAX_WIDTH = 800
 const DURATION_OPTIONS = [
   { value: '0.5', label: '30분' },
   { value: '1', label: '1시간' },
@@ -392,6 +398,27 @@ function addHoursToLocalDateTime(dateTime: string, hours: number): string {
   return `${toDateString(base)} ${String(base.getHours()).padStart(2, '0')}:${String(base.getMinutes()).padStart(2, '0')}:00`
 }
 
+/**
+ * Plan list 카드 thumbnail — _w240 파생 URL 우선, 로드 실패 시 원본 1회 fallback (TASK-054).
+ * legacy URL(폭 suffix 없음)은 파생이 null이라 원본을 그대로 쓴다.
+ */
+function PlanCardThumbnailImage({ imageUrl, title }: { imageUrl: string; title: string }) {
+  const thumbUrl = derivePlacePhotoThumbUrl(imageUrl)
+  const [useOriginal, setUseOriginal] = useState(false)
+  const uri = !useOriginal && thumbUrl ? thumbUrl : imageUrl
+  return (
+    <Image
+      source={{ uri }}
+      alt={`${title} 장소 사진`}
+      style={styles.planThumbnailImage}
+      resizeMode="cover"
+      onError={() => {
+        if (!useOriginal && thumbUrl) setUseOriginal(true)
+      }}
+    />
+  )
+}
+
 function placeIdHash8(placeId: string): string {
   let hash = 5381
   for (let i = 0; i < placeId.length; i += 1) {
@@ -495,32 +522,64 @@ async function storePlanPlacePhoto({
 }): Promise<string | null> {
   if (!PLACES_API_KEY || !placeId || !photoReference) return null
 
-  const photoUrl =
-    `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${PLACE_PHOTO_MAX_WIDTH}` +
-    `&photo_reference=${encodeURIComponent(photoReference)}` +
-    `&key=${PLACES_API_KEY}`
+  // 원본(w800)과 thumbnail(w240)을 각각 요청한다 — Google이 리사이즈를 담당 (TASK-054).
+  // thumbnail 실패는 non-fatal: 원본만으로 기존 동작을 유지한다.
+  const fetchPhoto = async (width: PlacePhotoWidth): Promise<ArrayBuffer | null> => {
+    const photoUrl =
+      `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${width}` +
+      `&photo_reference=${encodeURIComponent(photoReference)}` +
+      `&key=${PLACES_API_KEY}`
+    const res = await fetch(photoUrl, { redirect: 'follow' })
+    if (!res.ok) return null
+    const buffer = await res.arrayBuffer()
+    return buffer.byteLength > 0 ? buffer : null
+  }
 
-  const photoRes = await fetch(photoUrl, { redirect: 'follow' })
-  if (!photoRes.ok) return null
+  const [originalBuffer, thumbBuffer] = await Promise.all([
+    fetchPhoto(PLACE_PHOTO_ORIGINAL_WIDTH),
+    fetchPhoto(PLACE_PHOTO_THUMB_WIDTH).catch(() => null),
+  ])
+  if (!originalBuffer) return null
 
-  const photoBuffer = await photoRes.arrayBuffer()
-  if (photoBuffer.byteLength === 0) return null
+  const hash8 = placeIdHash8(placeId)
+  const uploads: Array<{ buffer: ArrayBuffer; width: PlacePhotoWidth }> = [
+    { buffer: originalBuffer, width: PLACE_PHOTO_ORIGINAL_WIDTH },
+  ]
+  if (thumbBuffer) uploads.push({ buffer: thumbBuffer, width: PLACE_PHOTO_THUMB_WIDTH })
 
-  const storagePath = `${userId}/${tripId}/${planId}_${placeIdHash8(placeId)}.jpg`
-  const { error: uploadError } = await supabase.storage
-    .from(PLACE_PHOTO_BUCKET)
-    .upload(storagePath, photoBuffer, {
-      contentType: 'image/jpeg',
-      upsert: true,
-      cacheControl: '31536000',
+  let publicUrl: string | null = null
+  for (const { buffer, width } of uploads) {
+    const storagePath = placePhotoObjectPath(userId, tripId, planId, hash8, width)
+    const { error: uploadError } = await supabase.storage
+      .from(PLACE_PHOTO_BUCKET)
+      .upload(storagePath, buffer, {
+        contentType: 'image/jpeg',
+        upsert: true,
+        cacheControl: '31536000',
+      })
+    if (uploadError) {
+      if (width === PLACE_PHOTO_ORIGINAL_WIDTH) throw uploadError
+      console.warn('[PlanEditSheet] thumbnail upload failed', uploadError.message)
+      continue
+    }
+
+    if (width === PLACE_PHOTO_ORIGINAL_WIDTH) {
+      const { data } = supabase.storage.from(PLACE_PHOTO_BUCKET).getPublicUrl(storagePath)
+      publicUrl = data.publicUrl || null
+    }
+
+    // metadata registry 등록 — orphan cleanup 기준. 실패해도 ingest는 유지한다.
+    const registration = await supabase.rpc('register_place_photo_asset', {
+      p_trip_id: tripId,
+      p_plan_id: planId,
+      p_object_path: storagePath,
+      p_width: width,
     })
-  if (uploadError) throw uploadError
+    if (registration.error) {
+      console.warn('[PlanEditSheet] asset registration failed', registration.error.message)
+    }
+  }
 
-  const { data } = supabase.storage
-    .from(PLACE_PHOTO_BUCKET)
-    .getPublicUrl(storagePath)
-  const publicUrl = data.publicUrl
-  if (!publicUrl) return null
   return publicUrl
 }
 
@@ -2971,12 +3030,7 @@ function PlansTab({
                     >
                       <View style={styles.planThumbnail}>
                         {plan.image_url ? (
-                          <Image
-                            source={{ uri: plan.image_url }}
-                            alt={`${plan.title} 장소 사진`}
-                            style={styles.planThumbnailImage}
-                            resizeMode="cover"
-                          />
+                          <PlanCardThumbnailImage imageUrl={plan.image_url} title={plan.title} />
                         ) : (
                           <View style={styles.planThumbnailFallback}>
                             <Ionicons name="image-outline" size={22} color={colors.brand.mutedSoft} />
