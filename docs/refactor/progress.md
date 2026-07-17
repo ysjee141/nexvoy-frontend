@@ -37,6 +37,15 @@
 - 기능 플래그로 document-primary 경로를 롤백 경로로 유지한다. 실제 legacy runtime 삭제는 TASK-055 범위다.
 - 단위 테스트, typecheck, Web/Mobile build와 Playwright discovery는 통과했다. 다중 사용자 E2E 실제 실행은 로컬 Supabase 환경이 필요하다.
 
+## 2026-07-17 TASK-051 구현 완료
+
+- Mobile에 account/resource-scoped SQLite v1 schema와 WAL 기반 transaction adapter를 추가했다.
+- optimistic resource 갱신과 outbox append, canonical ack/rebase, retry/conflict, guest promotion을 원자 처리한다.
+- 로그인, foreground, network reconnect, retry timer, OS background opportunity에서 공통 authority coordinator를 flush한다.
+- 로그아웃은 account cache를 보존하고 계정 전환은 namespace로 격리한다. withdrawal/revoke는 account/resource를 purge한다.
+- private Realtime invalidation과 revision gap recovery adapter를 준비했다. 상세 화면 구독과 제품 repository 전환은 TASK-052 범위다.
+- authority 단위 테스트, 전체 typecheck, Web build, 전 플랫폼 Expo export와 Android development build가 통과했다.
+
 2026-07-16 초대 흐름 재점검:
 
 - 이메일 초대와 기존 로그인 후 Accept UI가 서로 다른 registry를 사용하고 있음을 확인했다.

@@ -25,4 +25,6 @@
 - `docs/refactor/tasks/TASK-048-web-indexeddb-cache-outbox.md`
 - `docs/refactor/tasks/TASK-049-realtime-invalidation-and-revision-recovery.md`
 - `docs/refactor/tasks/TASK-050-web-server-authority-product-cutover.md`
+- `docs/refactor/tasks/TASK-051-mobile-sqlite-cache-outbox.md`
+- `docs/refactor/runbooks/TASK-051-mobile-sqlite-authority-smoke.md`
 - `docs/refactor/TECHNICAL-SPEC.md`

@@ -1,3 +1,44 @@
+# Walkthrough: TASK-051 Mobile SQLite Cache and Transactional Outbox
+
+## 결과
+
+Issue [#358](https://github.com/ysjee141/nexvoy-frontend/issues/358)의 Mobile server-authority persistence 기반을 구현했다. Mobile 화면은 아직 기존 repository를 유지하지만, TASK-052가 사용할 SQLite cache/outbox와 lifecycle sync 경계가 준비됐다.
+
+```mermaid
+flowchart LR
+    UI["TASK-052 product repository"] --> Store["Account-scoped SQLite store"]
+    Store --> TX["Atomic optimistic update + outbox"]
+    TX --> Coordinator["Shared authority coordinator"]
+    Coordinator --> RPC["Authenticated batch RPC"]
+    RPC --> Ack["Canonical ack + revision rebase"]
+    Realtime["Private Realtime invalidation"] --> Coordinator
+    Lifecycle["Foreground / reconnect / background"] --> Coordinator
+```
+
+## 구현
+
+- `authority_resources`, `authority_outbox`, `authority_sync_state`를 포함하는 version 1 SQLite migration과 WAL/foreign-key 설정을 추가했다.
+- optimistic mutation과 command append, acknowledgement, retry/conflict, stale sending recovery, guest promotion, account/resource purge를 exclusive transaction으로 구현했다.
+- 로그인 시 sync runtime/background task를 시작하고 foreground, network reconnect, retry 시각에 queue를 재개한다.
+- logout에서는 namespaced cache를 보존하고 withdrawal에서는 account purge 실패 시 전체 authority DB 삭제로 local data 잔존을 막는다.
+- Realtime invalidation/revision recovery adapter를 추가하되 제품 화면의 실제 구독은 TASK-052로 남겼다.
+- Expo Web export의 SQLite WASM asset을 위해 Metro에 `wasm` 확장자를 등록했다.
+
+## 검증
+
+| 항목 | 결과 |
+|---|---|
+| Mobile authority transaction tests | PASS, 5 tests |
+| Core tests | PASS |
+| `pnpm typecheck` | PASS |
+| Mobile lint | PASS |
+| Web production build | PASS |
+| Web/iOS/Android Expo export | PASS |
+| Android development local build | PASS |
+| Expo dependency compatibility | PASS |
+
+실기기 계정 전환, 비행기 모드, OS background smoke 절차는 `docs/refactor/runbooks/TASK-051-mobile-sqlite-authority-smoke.md`에 정리했다. 실제 제품 화면의 offline mutation과 Realtime 구독 검증은 TASK-052에서 수행한다.
+
 # Walkthrough: TASK-050 Plan Command Recovery
 
 ## Summary

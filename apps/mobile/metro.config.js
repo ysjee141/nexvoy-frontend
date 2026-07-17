@@ -8,6 +8,9 @@ const monorepoRoot = path.resolve(projectRoot, '../..')
 
 const config = getDefaultConfig(projectRoot)
 
+// expo-sqlite Web worker가 포함하는 wa-sqlite WASM을 Metro asset으로 번들링한다.
+config.resolver.assetExts = [...new Set([...config.resolver.assetExts, 'wasm'])]
+
 // 1) 모노레포 루트 전체를 감시하여 @nexvoy/* workspace 패키지 변경 감지
 config.watchFolders = [monorepoRoot]
 

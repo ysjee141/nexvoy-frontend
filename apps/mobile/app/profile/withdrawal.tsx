@@ -27,6 +27,7 @@ import { deleteUser } from '@nexvoy/core'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { cancelAllLocalNotifications } from '@/lib/notifications'
+import { purgeMobileAuthorityAccount } from '@/lib/data/server-authority/syncService'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const CONFIRM_KEYWORD = '탈퇴'
@@ -107,7 +108,11 @@ export default function WithdrawalScreen() {
         // 탈퇴 본 작업은 서버 delete_user RPC가 최종 책임을 가진다.
       }
       await deleteUser(supabase)
-      await signOut()
+      try {
+        if (session?.user.id) await purgeMobileAuthorityAccount(session.user.id)
+      } finally {
+        await signOut()
+      }
       // auth gate 가 세션 소멸을 감지해 자동 리다이렉트하지만,
       // 명시적으로 로그인 화면으로 이동시켜 잔여 상태를 정리한다.
       router.replace('/(auth)/login')

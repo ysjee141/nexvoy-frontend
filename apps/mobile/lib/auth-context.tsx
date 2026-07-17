@@ -24,6 +24,14 @@ import {
   registerMobileProvisioningBackgroundTask,
   unregisterMobileProvisioningBackgroundTask,
 } from './local-first/provisioningBackgroundTask'
+import {
+  registerMobileAuthorityBackgroundTask,
+  unregisterMobileAuthorityBackgroundTask,
+} from './data/server-authority/backgroundTask'
+import {
+  startMobileAuthoritySync,
+  stopMobileAuthoritySync,
+} from './data/server-authority/syncService'
 
 interface AuthContextValue {
   session: Session | null
@@ -73,18 +81,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isLoading) return
-    if (session) {
+    const accountId = session?.user.id
+    if (accountId) {
       setMobileBackgroundWorkPaused(false)
       void registerMobileProvisioningBackgroundTask()
+      void registerMobileAuthorityBackgroundTask()
+      void startMobileAuthoritySync(accountId)
       return
     }
     setMobileBackgroundWorkPaused(true)
     void unregisterMobileProvisioningBackgroundTask()
-  }, [isLoading, session])
+    void unregisterMobileAuthorityBackgroundTask()
+    void stopMobileAuthoritySync()
+  }, [isLoading, session?.user.id])
 
   const signOut = async () => {
     setMobileBackgroundWorkPaused(true)
-    await unregisterMobileProvisioningBackgroundTask()
+    await Promise.all([
+      unregisterMobileProvisioningBackgroundTask(),
+      unregisterMobileAuthorityBackgroundTask(),
+      stopMobileAuthoritySync(),
+    ])
     try {
       await cancelAllLocalNotifications()
     } catch {

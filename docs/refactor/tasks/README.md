@@ -119,7 +119,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-048-web-indexeddb-cache-outbox.md` | 완료 | Web account-scoped IndexedDB cache와 transactional outbox |
 | `TASK-049-realtime-invalidation-and-revision-recovery.md` | 완료 | private Broadcast invalidation과 Web revision gap 복구 |
 | `TASK-050-web-server-authority-product-cutover.md` | 구현 완료 | Web 전체 기능 server-authority 전환, 로컬 Supabase E2E 실행 대기 |
-| `TASK-051-mobile-sqlite-cache-outbox.md` | 대기 | Mobile SQLite cache/outbox와 Realtime adapter |
+| `TASK-051-mobile-sqlite-cache-outbox.md` | 구현 완료 | Mobile SQLite cache/outbox, lifecycle flush, Realtime adapter, Android development build |
 | `TASK-052-mobile-server-authority-product-cutover.md` | 대기 | Mobile 전체 기능 server-authority 제품 경로 전환 |
 | `TASK-053-membership-invitation-without-document-keys.md` | 대기 | document key 없는 membership/invitation/role/revoke |
 | `TASK-054-direct-asset-storage-and-delivery.md` | 대기 | Storage 직접 업로드, thumbnail, CDN, orphan cleanup |
@@ -216,7 +216,7 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-048-web-indexeddb-cache-outbox.md`: Web IndexedDB cache/outbox adapter
 - [x] `TASK-049-realtime-invalidation-and-revision-recovery.md`: Realtime invalidation과 Web revision recovery
 - [x] `TASK-050-web-server-authority-product-cutover.md`: Web 전체 제품 경로 전환 (로컬 Supabase E2E 실행 대기)
-- [ ] `TASK-051-mobile-sqlite-cache-outbox.md`: Mobile SQLite cache/outbox와 Realtime adapter
+- [x] `TASK-051-mobile-sqlite-cache-outbox.md`: Mobile SQLite cache/outbox와 Realtime adapter
 - [ ] `TASK-052-mobile-server-authority-product-cutover.md`: Mobile 전체 제품 경로 전환
 - [ ] `TASK-053-membership-invitation-without-document-keys.md`: keyless membership/invitation 전환
 - [ ] `TASK-054-direct-asset-storage-and-delivery.md`: asset 직접 전송과 egress 최적화
