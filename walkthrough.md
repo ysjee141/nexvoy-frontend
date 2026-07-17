@@ -2,7 +2,7 @@
 
 ## 결과
 
-Issue [#360](https://github.com/ysjee141/nexvoy-frontend/issues/360)의 Mobile 제품 경로 전환을 구현했다. 여행, 일정, 준비물, 템플릿은 이제 account-scoped SQLite cache를 먼저 읽고 durable outbox와 canonical command RPC로 저장한다.
+Issue [#360](https://github.com/ysjee141/nexvoy-frontend/issues/360)의 Mobile 제품 경로 전환을 구현했다. 여행, 일정, 준비물, 템플릿은 이제 account-scoped SQLite cache를 먼저 읽고 durable outbox와 canonical command RPC로 저장한다. Pull Request: [#361](https://github.com/ysjee141/nexvoy-frontend/pull/361)
 
 ```mermaid
 flowchart LR

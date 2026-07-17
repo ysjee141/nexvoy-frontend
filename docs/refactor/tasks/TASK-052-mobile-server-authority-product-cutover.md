@@ -3,6 +3,7 @@
 - 상태: 구현 완료 (실기기 smoke 대기)
 
 - Issue: [#360](https://github.com/ysjee141/nexvoy-frontend/issues/360)
+- Pull Request: [#361](https://github.com/ysjee141/nexvoy-frontend/pull/361)
 
 ## 목적
 
