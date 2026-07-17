@@ -102,7 +102,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const pendingProvisioningCount = keyProvisioningRequests.length
 
     useEffect(() => {
-        if (isOpen && canInvite) {
+        if (isOpen && canInvite && !isWebServerAuthorityEnabled()) {
             void fetchKeyProvisioningRequests()
         } else if (!isOpen) {
             setKeyProvisioningRequests([])
@@ -320,7 +320,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     }
 
     const handleRunKeyProvisioning = async () => {
-        if (keyProvisioningBusy) return
+        if (keyProvisioningBusy || isWebServerAuthorityEnabled()) return
         setKeyProvisioningBusy(true)
         setKeyProvisioningMessage(null)
         try {

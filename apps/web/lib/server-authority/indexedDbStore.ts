@@ -219,6 +219,23 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
     emitStoreChange(this.databaseName, { accountId, resourceType, resourceId })
   }
 
+  async purgeResource(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ): Promise<void> {
+    const database = await this.open()
+    const transaction = database.transaction([RESOURCE_STORE, OUTBOX_STORE], 'readwrite')
+    transaction.objectStore(RESOURCE_STORE).delete(resourceKey(accountId, resourceType, resourceId))
+    const outbox = transaction.objectStore(OUTBOX_STORE)
+    const rows = await requestValue<AuthorityOutboxRecord[]>(
+      outbox.index(ACCOUNT_RESOURCE_INDEX).getAll([accountId, resourceType, resourceId]),
+    )
+    for (const row of rows) outbox.delete(row.operationId)
+    await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, { accountId, resourceType, resourceId })
+  }
+
   async getSyncSnapshot(
     accountId: string,
     resourceType: AuthorityResourceType,

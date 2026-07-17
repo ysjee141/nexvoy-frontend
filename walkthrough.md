@@ -1,3 +1,42 @@
+# Walkthrough: TASK-053 Membership and Invitation Without Document Keys
+
+## 결과
+
+Issue [#362](https://github.com/ysjee141/nexvoy-frontend/issues/362)의 keyless membership/invitation 전환을 구현했다. 초대 수락은 이제 accepted membership transaction으로 끝나고, 참여자는 key 전달·snapshot restore 대기 없이 canonical bundle을 즉시 읽는다. role 변경과 revoke는 server RPC로만 수행되며 authority revision을 bump해 Realtime로 전파되고, revoke된 client는 해당 resource의 local cache와 pending outbox를 purge한다.
+
+```mermaid
+flowchart LR
+    Invite["초대 링크/코드"] --> Accept["accept RPC (membership transaction)"]
+    Accept --> Members["document_members accepted"]
+    Members --> Bundle["canonical bundle read"]
+    Owner["owner role/revoke RPC"] --> Bump["authority revision bump"]
+    Bump --> RT["Realtime invalidation"]
+    RT --> Refresh["client refresh"]
+    Refresh -->|forbidden 42501| Purge["local cache + outbox purge"]
+```
+
+## 구현
+
+- `20260718000001_task053_keyless_membership_invitation.sql`: `accept_document_invitation_unchecked`와 `accept_my_document_invitation`에서 key provisioning 큐잉·알림을 제거하고 membership accept를 완료 조건으로 확정했다. `bump_authority_revision_for_membership`으로 accept/role change/revoke가 trip/template authority revision을 bump한다.
+- Core `ServerAuthoritySyncCoordinator`: `authority_(trip|template)_*_forbidden`(42501) 오류를 membership 상실로 분류해 `AuthorityLocalStore.purgeResource`(resource+outbox 원자 삭제)를 호출하고 `authority_membership_revoked` metric과 `onMembershipRevoked` 콜백을 발행한다. offline 중 revoke된 command는 `markRejected` terminal로 끝나고 재시도하지 않는다.
+- Web IndexedDB store와 Mobile SQLite store에 `purgeResource`를 구현했고, 양 플랫폼 sync service는 revoke 시 해당 topic Realtime 구독을 해제한다.
+- Web `JoinClient`·`InvitationBanner`, Mobile `join.tsx`: server-authority mode에서 수락 즉시 여정 상세로 이동한다. `데이터 준비 중` 상태·polling·device key material 생성은 legacy flag 경로에만 남는다. 대상 이메일 불일치 오류는 별도 문구로 분리했다.
+- `CollaboratorModal`: server-authority mode에서 key provisioning 섹션을 노출하지 않는다. role 변경/revoke RPC 경로는 유지된다.
+
+## 검증
+
+- core typecheck/전체 테스트(회수 purge·refresh denied 케이스 추가), mobile typecheck·sqliteStore 테스트 통과.
+- `pnpm build`와 `pnpm build:mobile` 통과.
+- 로컬 Supabase에 마이그레이션 적용 후 `supabase/tests/task053_membership_invitation.sql` 통과: 이메일 불일치 수락 차단, keyless accept(0 provisioning rows) 즉시 bundle read, viewer write 차단, 직접 `document_members` UPDATE 차단, role change/revoke revision bump, revoked member의 row/Realtime/summaries 차단.
+- 회귀: `task046_server_authority.sql`, `task049_realtime_authority_invalidation.sql` 통과.
+
+## 남은 항목
+
+- DEV 다중 사용자 실브라우저/실기기 초대·revoke 수동 시나리오.
+- legacy key table/RPC 물리 제거와 V1 데이터 reset은 `TASK-055`.
+
+---
+
 # Walkthrough: TASK-052 Mobile Server-Authority Product Cutover
 
 ## 결과

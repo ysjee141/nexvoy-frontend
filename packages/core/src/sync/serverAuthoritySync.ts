@@ -28,6 +28,11 @@ export interface ServerAuthoritySyncCoordinatorOptions {
   batchSize?: number
   recoveryAfterMs?: number
   outboxReadLimit?: number
+  onMembershipRevoked?: (
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ) => void
 }
 
 export interface AuthorityFlushResult {
@@ -54,6 +59,11 @@ export class ServerAuthoritySyncCoordinator {
   private readonly batchSize: number
   private readonly recoveryAfterMs: number
   private readonly outboxReadLimit: number
+  private readonly onMembershipRevoked?: (
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ) => void
   private readonly activeFlushes = new Map<string, Promise<AuthorityFlushResult>>()
 
   constructor(options: ServerAuthoritySyncCoordinatorOptions) {
@@ -65,6 +75,7 @@ export class ServerAuthoritySyncCoordinator {
     this.batchSize = clampBatchSize(options.batchSize ?? DEFAULT_BATCH_SIZE)
     this.recoveryAfterMs = options.recoveryAfterMs ?? DEFAULT_RECOVERY_AFTER_MS
     this.outboxReadLimit = options.outboxReadLimit ?? DEFAULT_OUTBOX_READ_LIMIT
+    this.onMembershipRevoked = options.onMembershipRevoked
   }
 
   flush(accountId: string): Promise<AuthorityFlushResult> {
@@ -87,9 +98,32 @@ export class ServerAuthoritySyncCoordinator {
     const local = await this.store.getResource(accountId, resourceType, resourceId)
     if (local && local.revision >= minimumRevision) return local
 
-    const remote = await this.repository.getBundle(resourceType, resourceId)
+    let remote: CanonicalResourceBundle | null
+    try {
+      remote = await this.repository.getBundle(resourceType, resourceId)
+    } catch (error) {
+      if (isAuthorityMembershipDeniedError(error)) {
+        await this.handleMembershipRevoked(accountId, resourceType, resourceId)
+      }
+      throw error
+    }
     if (remote) await this.store.putResource(accountId, remote)
     return remote
+  }
+
+  private async handleMembershipRevoked(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ): Promise<void> {
+    await this.store.purgeResource(accountId, resourceType, resourceId)
+    this.metricSink?.({
+      name: 'authority_membership_revoked',
+      accountId,
+      resourceType,
+      resourceId,
+    })
+    this.onMembershipRevoked?.(accountId, resourceType, resourceId)
   }
 
   async reconcileInvalidation(
@@ -292,6 +326,9 @@ export class ServerAuthoritySyncCoordinator {
             commandCount: operationIds.length,
             errorCode: classified.code,
           })
+          if (isAuthorityMembershipDeniedError(error)) {
+            await this.handleMembershipRevoked(accountId, batch.resourceType, batch.resourceId)
+          }
         }
       }
     }
@@ -336,6 +373,16 @@ export function computeAuthorityRetryDelayMs(attempt: number, randomValue: numbe
   const baseDelay = Math.min(1_000 * 2 ** exponent, 60_000)
   const jitter = Math.round(baseDelay * 0.2 * Math.min(Math.max(randomValue, 0), 1))
   return baseDelay + jitter
+}
+
+// 42501 covers command/resource mismatch errors too — only the explicit
+// authority forbidden messages mean the caller lost membership.
+const AUTHORITY_MEMBERSHIP_DENIED_MESSAGE = /^authority_(trip|template)_(create_|write_)?forbidden$/
+
+export function isAuthorityMembershipDeniedError(error: unknown): boolean {
+  if (!(error instanceof ServerAuthorityRepositoryError)) return false
+  if (error.retryable) return false
+  return AUTHORITY_MEMBERSHIP_DENIED_MESSAGE.test(error.message)
 }
 
 export function classifyAuthoritySyncError(error: unknown): {

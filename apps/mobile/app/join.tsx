@@ -26,6 +26,7 @@ import {
 } from '@/components/trip/DocumentKeyProvisioningStatusCard'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
+import { isMobileServerAuthorityEnabled } from '@/lib/data/repositoryFactory'
 import {
   ensureMobileDeviceKeyMaterial,
   loadOrRequestMobileProvisioningStatus,
@@ -127,6 +128,10 @@ export default function JoinScreen() {
     try {
       const result = await acceptInvitationWithLegacyFallback(supabase, activeInput)
       if (result.source === 'document') {
+        if (isMobileServerAuthorityEnabled()) {
+          router.replace({ pathname: '/trip/[id]', params: { id: result.result.documentId } })
+          return
+        }
         const { deviceId } = await ensureMobileDeviceKeyMaterial(supabase)
         const status = await loadOrRequestMobileProvisioningStatus({
           supabase,
@@ -154,8 +159,11 @@ export default function JoinScreen() {
         return
       }
       router.replace({ pathname: '/trip/[id]', params: { id: result.tripId ?? summary.tripId } })
-    } catch {
-      setMessage('초대를 수락하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+    } catch (error) {
+      const detail = (error as { message?: string } | null)?.message ?? ''
+      setMessage(detail.includes('다른 계정')
+        ? '이 초대는 다른 계정으로 발송되었습니다. 초대받은 이메일 계정으로 로그인해 주세요.'
+        : '초대를 수락하지 못했습니다. 잠시 후 다시 시도해 주세요.')
     } finally {
       setAccepting(false)
     }

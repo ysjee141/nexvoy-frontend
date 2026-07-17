@@ -280,6 +280,10 @@ implements MobileAuthorityDatabase, MobileAuthorityDatabaseTransaction {
     }
   }
 
+  async purgeResource(accountId: string, resourceType: AuthorityResourceType, resourceId: string) {
+    await this.deleteResource(accountId, resourceType, resourceId)
+  }
+
   async close() {}
 }
 

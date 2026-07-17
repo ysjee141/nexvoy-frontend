@@ -36,14 +36,21 @@ export function createWebAuthoritySyncSession(
   options: WebAuthoritySyncRuntimeOptions,
 ): WebAuthoritySyncSession {
   const store = new WebAuthorityIndexedDbStore()
+  let accountId: string | null = null
+  let started = false
+  const activeSubscriptions = new Set<WebAuthorityInvalidationSubscription>()
+
   const coordinator = new ServerAuthoritySyncCoordinator({
     repository: createServerAuthorityRepository(options.supabase),
     store,
     metricSink: options.metricSink,
+    onMembershipRevoked: (_revokedAccountId, resourceType, resourceId) => {
+      const topic = `${resourceType}:${resourceId}`
+      for (const subscription of [...activeSubscriptions]) {
+        if (subscription.topic === topic) void subscription.unsubscribe()
+      }
+    },
   })
-  let accountId: string | null = null
-  let started = false
-  const activeSubscriptions = new Set<WebAuthorityInvalidationSubscription>()
 
   const closeSubscriptions = async (): Promise<void> => {
     const subscriptions = [...activeSubscriptions]

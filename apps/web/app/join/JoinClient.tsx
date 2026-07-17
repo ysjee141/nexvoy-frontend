@@ -13,8 +13,9 @@ import {
 } from '@nexvoy/core/supabase/invitationRepository'
 import type { DocumentKeyProvisioningStatusRecord } from '@nexvoy/core/sync/keyProvisioning'
 import { createClient } from '@/lib/supabase/client'
-import { ensureWebDeviceKeyMaterial, getOrCreateWebDeviceId } from '@/lib/local-first/keyProvisioningService'
+import { ensureWebDeviceKeyMaterial } from '@/lib/local-first/keyProvisioningService'
 import { restoreAndPersistWebTripDocumentFromBackup } from '@/lib/local-first/backupRestoreService'
+import { isWebServerAuthorityEnabled } from '@/lib/local-first/repositoryFactory'
 
 type JoinState = 'code_entry' | 'resolving' | 'preview' | 'accepting' | 'accepted_preparing' | 'ready' | 'invalid' | 'error'
 type JoinInput = { token?: string; inviteCode?: string }
@@ -118,6 +119,10 @@ export default function JoinClient() {
         const code = searchParams.get('code')
         const acceptedDocumentId = searchParams.get('acceptedDocumentId')
         if (acceptedDocumentId) {
+            if (isWebServerAuthorityEnabled()) {
+                router.replace(`/trips/detail?id=${acceptedDocumentId}`)
+                return
+            }
             setDocumentId(acceptedDocumentId)
             setState('accepted_preparing')
             void checkReadiness(acceptedDocumentId)
@@ -140,17 +145,25 @@ export default function JoinClient() {
         setMessage(null)
         try {
             const supabase = createClient()
-            if (summary.source === 'document') await ensureWebDeviceKeyMaterial(supabase)
+            const keylessJoin = isWebServerAuthorityEnabled()
+            if (summary.source === 'document' && !keylessJoin) await ensureWebDeviceKeyMaterial(supabase)
             const result = await acceptInvitationWithLegacyFallback(supabase, activeInput)
             if (result.source === 'legacy') {
                 router.replace(`/trips/detail?id=${result.tripId ?? summary.tripId}`)
                 return
             }
+            if (keylessJoin) {
+                router.replace(`/trips/detail?id=${result.result.documentId}`)
+                return
+            }
             setDocumentId(result.result.documentId)
             setState('accepted_preparing')
             await checkReadiness(result.result.documentId)
-        } catch {
-            setMessage('초대를 수락하지 못했습니다. 잠시 후 다시 시도해 주세요.')
+        } catch (error) {
+            const detail = (error as { message?: string } | null)?.message ?? ''
+            setMessage(detail.includes('다른 계정')
+                ? '이 초대는 다른 계정으로 발송되었습니다. 초대받은 이메일 계정으로 로그인해 주세요.'
+                : '초대를 수락하지 못했습니다. 잠시 후 다시 시도해 주세요.')
             setState('error')
         }
     }
