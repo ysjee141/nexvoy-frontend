@@ -6,7 +6,7 @@ import { X, Copy, Loader2 } from 'lucide-react'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/lib/supabase/client'
-import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
 
 interface TemplateModalProps {
     isOpen: boolean
@@ -33,7 +33,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, tripId, cu
             setLoading(true)
 
             if (currentUser?.id) {
-                const repositories = await createWebDocumentPrimaryRepositories(supabase)
+                const repositories = await createWebProductDocumentRepositories(supabase)
                 const summaries = await repositories.templates.listTemplates(currentUser.id)
                 setTemplates(summaries.map((template) => ({
                     id: template.id,
@@ -56,7 +56,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, tripId, cu
         setLoadingTemplateId(templateId)
 
         try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: currentUserRole })
+            const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: currentUserRole })
             const template = await repositories.templates.getTemplate(templateId)
             if (!template) throw new Error('Template document was not found.')
             const result = await repositories.checklists.applyTemplate(

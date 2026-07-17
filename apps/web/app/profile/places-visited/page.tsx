@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import {
+    createWebProductDocumentRepositories,
+    refreshWebProductList,
+} from '@/lib/local-first/repositoryFactory'
 import { css } from 'styled-system/css'
 import { MapPin, Search, ChevronLeft, Calendar, Footprints, Heart, Sparkles } from 'lucide-react'
 import { formatDate } from '@nexvoy/core'
@@ -77,20 +81,24 @@ export default function PlacesVisitedPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            // 1. 사용자의 모든 여행 가져오기
-            const { data: trips } = await supabase
-                .from('trips')
-                .select('id, destination, start_date')
-                .eq('user_id', user.id)
-            
-            const tripIds = trips?.map((t: any) => t.id) || []
+            await refreshWebProductList(supabase, 'trip')
+            const repositories = await createWebProductDocumentRepositories(supabase)
+            const tripSummaries = (await repositories.trips.listTrips(user.id))
+                .filter((trip) => trip.ownerId === user.id)
+            const trips = tripSummaries.map((trip) => ({
+                id: trip.id,
+                destination: trip.destination,
+                start_date: trip.startDate,
+            }))
+            const tripIds = trips.map((trip) => trip.id)
 
             if (tripIds.length > 0) {
-                // 2. 해당 여행들에 속한 장소들 인출
-                const { data: plans } = await supabase
-                    .from('plans')
-                    .select('location, trip_id')
-                    .in('trip_id', tripIds)
+                const plans = (await Promise.all(tripIds.map(async (tripId) =>
+                    (await repositories.plans.listPlans(tripId)).map((plan) => ({
+                        location: plan.location,
+                        trip_id: tripId,
+                    })),
+                ))).flat()
 
                 if (plans) {
                     // 3. 집계 및 중복 제거 로직
@@ -108,7 +116,7 @@ export default function PlacesVisitedPage() {
                         
                         // 해당 장소가 포함된 여행(trip_id) 중복 체크
                         const tripId = plan.trip_id
-                        const tripDetail = trips?.find((t: any) => t.id === tripId)
+                        const tripDetail = trips.find((trip) => trip.id === tripId)
                         
                         if (tripDetail) {
                             const alreadyAdded = acc[loc].associatedTrips.some(t => t.id === tripId)

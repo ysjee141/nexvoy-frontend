@@ -15,8 +15,7 @@ import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
 import { createWebRepositories } from '@/lib/local-first/repositoryFactory'
-import { subscribeToTripDocumentUpdates } from '@/lib/local-first/indexedDbStore'
-import P2PConnectionStatusBadge, { type P2PConnectionStatus } from '@/components/trips/P2PConnectionStatusBadge'
+import { subscribeWebProductResource } from '@/lib/local-first/repositoryFactory'
 
 const getMemberDisplayName = (p: any, isMe: boolean = false) => {
     if (!p) return isMe ? '나' : '동행자'
@@ -374,25 +373,24 @@ export default function ChecklistPage({
     isActive = true,
     tripId: propsTripId,
     isOffline = false,
-    p2pStatus = 'idle',
 }: {
     isActive?: boolean
     tripId?: string
     isOffline?: boolean
-    p2pStatus?: P2PConnectionStatus
 }) {
     const searchParams = useSearchParams()
     const tripId = propsTripId || searchParams.get('id')
     const supabase = useMemo(() => createClient(), [])
     const repositories = useMemo(() => createWebRepositories(supabase), [supabase])
     const { isOnline } = useNetworkStore()
-    const isLocalFirstChecklistSpike = repositories.mode === 'local-first-checklist-spike'
     const isLocalFirstChecklistMode = repositories.mode === 'local-first-checklist-spike'
         || repositories.mode === 'local-first-checklist-dual-write'
         || repositories.mode === 'document-primary'
+        || repositories.mode === 'server-authority'
     const canApplyTemplates = repositories.mode === 'legacy-supabase'
         || repositories.mode === 'document-primary'
-    const canUseChecklistActions = (isOnline || isLocalFirstChecklistSpike) && !isOffline
+        || repositories.mode === 'server-authority'
+    const canUseChecklistActions = (isOnline || isLocalFirstChecklistMode) && !isOffline
 
     const [isLoading, setIsLoading] = useState(true)
     const [checklistId, setChecklistId] = useState<string | null>(null)
@@ -461,12 +459,6 @@ export default function ChecklistPage({
                 setTripOwner({ id: snapshot.trip.user_id, profiles: snapshot.trip.profiles, email: snapshot.trip.profiles?.email })
             }
 
-            // 이미 다운로드된 여행이라면 백그라운드에서 전체 데이터 동기화
-            const bundle = await DownloadService.getBundle(tripId!)
-            if (bundle) {
-                DownloadService.downloadTrip(tripId!)
-            }
-
             if (snapshot.trip) {
                 const pendingCount = snapshot.items.filter((i: any) => !i.is_checked).length
                 import('@/services/NotificationService').then(({ NotificationService }) => {
@@ -484,18 +476,20 @@ export default function ChecklistPage({
         if (isActive) {
             fetchChecklist()
             supabase.auth
-                .getUser()
-                .then(({ data }: { data: { user: any } }) => setCurrentUser(data.user))
+                .getSession()
+                .then(({ data }) => setCurrentUser(data.session?.user ?? null))
                 .catch(() => setCurrentUser(null))
         }
     }, [isActive, fetchChecklist])
 
     useEffect(() => {
         if (!tripId || !isLocalFirstChecklistMode) return
-        return subscribeToTripDocumentUpdates(tripId, () => {
+        let unsubscribe: (() => Promise<void>) | undefined
+        void subscribeWebProductResource(supabase, 'trip', tripId, () => {
             void fetchChecklist()
-        })
-    }, [fetchChecklist, isLocalFirstChecklistMode, tripId])
+        }).then((next) => { unsubscribe = next })
+        return () => { void unsubscribe?.() }
+    }, [fetchChecklist, isLocalFirstChecklistMode, supabase, tripId])
 
     const toggleItem = async (itemId: string, currentStatus: boolean) => {
         const item = items.find(i => i.id === itemId)
@@ -1214,12 +1208,6 @@ export default function ChecklistPage({
                             totalItems > 0 && <span className={css({ color: 'brand.primary', ml: '8px' })}>{progressPercent}%</span>
                         )}
                     </h2>
-                    <div className={css({ display: { base: 'none', sm: 'block' } })}>
-                        <P2PConnectionStatusBadge status={p2pStatus} />
-                    </div>
-                </div>
-                <div className={css({ display: { base: 'flex', sm: 'none' }, justifyContent: 'flex-start' })}>
-                    <P2PConnectionStatusBadge status={p2pStatus} />
                 </div>
 
                 {/* PC/모바일 분기 액션 버튼 및 필터 라인 */}

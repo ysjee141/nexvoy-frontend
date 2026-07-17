@@ -32,14 +32,14 @@ function bundle(destination: string, revision = 0): CanonicalResourceBundle {
   }
 }
 
-function command(operationId: string): AuthorityCommand {
+function command(operationId: string, destination = '전주'): AuthorityCommand {
   return {
     operationId,
     resourceId: tripId,
     entityType: 'trip',
     entityId: tripId,
     action: 'upsert',
-    payload: { destination: '전주' },
+    payload: { destination },
     createdAt: now,
   }
 }
@@ -57,6 +57,38 @@ async function run(): Promise<void> {
   assert.equal((await store.getResource('account-a', 'trip', tripId))?.data.trip !== undefined, true)
   assert.equal(await store.getResource('account-b', 'trip', tripId), null)
   assert.equal((await store.listReadyOutbox('account-a', now, 10)).length, 1)
+
+  const batchOperations = [
+    command('48000000-0000-0000-0000-000000000021'),
+    command('48000000-0000-0000-0000-000000000022'),
+  ]
+  await store.commitOptimisticMutations({
+    accountId: 'account-batch',
+    bundle: bundle('batch trip'),
+    commands: batchOperations,
+    now,
+  })
+  assert.equal((await store.listReadyOutbox('account-batch', now, 10)).length, 2)
+  assert.equal((await store.listResources('account-batch', 'trip')).length, 1)
+  assert.deepEqual(await store.getSyncSnapshot('account-batch', 'trip', tripId, true), {
+    status: 'pending',
+    pendingCount: 2,
+    lastError: null,
+  })
+  await store.markRejected(
+    'account-batch',
+    [batchOperations[0].operationId],
+    'authority_trip_forbidden',
+    now,
+  )
+  assert.equal(
+    (await store.getSyncSnapshot('account-batch', 'trip', tripId, true)).status,
+    'error',
+  )
+  assert.equal(
+    (await store.getSyncSnapshot('account-batch', 'trip', tripId, false)).status,
+    'error',
+  )
 
   await store.commitOptimisticMutation({
     accountId: 'account-a',
@@ -88,12 +120,13 @@ async function run(): Promise<void> {
     (await store.listReadyOutbox('account-a', '2026-07-17T01:03:00.000Z', 10))[0]?.status,
     'retryable',
   )
+  assert.equal(await store.getNextRetryAt('account-a'), '2026-07-17T01:03:00.000Z')
 
   const secondOperation = '48000000-0000-0000-0000-000000000013'
   await store.commitOptimisticMutation({
     accountId: 'account-a',
     bundle: bundle('전주 후속 변경'),
-    command: command(secondOperation),
+    command: command(secondOperation, '전주 후속 변경'),
     now: '2026-07-17T01:03:30.000Z',
   })
 
@@ -125,11 +158,31 @@ async function run(): Promise<void> {
   assert.equal(rebased[0]?.operationId, secondOperation)
   assert.equal(rebased[0]?.baseRevision, 1)
   assert.equal((await store.getResource('account-a', 'trip', tripId))?.revision, 1)
+  assert.equal(
+    ((await store.getResource('account-a', 'trip', tripId))?.data.trip as { destination?: string })
+      .destination,
+    '전주 후속 변경',
+  )
+
+  await store.putResource('account-role', {
+    ...bundle('role cache', 1),
+    data: { ...bundle('role cache', 1).data, _role: 'editor' },
+  })
+  await store.putResource('account-role', bundle('remote without role', 2))
+  assert.equal(
+    (await store.getResource('account-role', 'trip', tripId))?.data._role,
+    'editor',
+  )
 
   await store.putResource('account-a', {
     ...bundle('newer canonical', 3),
     serverUpdatedAt: '2026-07-17T01:05:00.000Z',
   })
+  assert.equal(
+    ((await store.getResource('account-a', 'trip', tripId))?.data.trip as { destination?: string })
+      .destination,
+    '전주 후속 변경',
+  )
   await store.applyAcknowledgement(
     'account-a',
     {
@@ -141,6 +194,11 @@ async function run(): Promise<void> {
     '2026-07-17T01:05:30.000Z',
   )
   assert.equal((await store.getResource('account-a', 'trip', tripId))?.revision, 3)
+  assert.equal(
+    ((await store.getResource('account-a', 'trip', tripId))?.data.trip as { destination?: string })
+      .destination,
+    'newer canonical',
+  )
   assert.equal((await store.listReadyOutbox('account-a', now, 10)).length, 0)
 
   await assert.rejects(

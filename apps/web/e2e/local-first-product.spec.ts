@@ -7,7 +7,7 @@ import {
   seedTripMember,
 } from './helpers/seed';
 
-test.describe('Local-first document-primary product integration', () => {
+test.describe('Document-primary rollback integration', () => {
   test('owner/editor can edit plans while viewer stays read-only', async ({
     createAuthenticatedContextFor,
     multiUsers,
@@ -35,9 +35,9 @@ test.describe('Local-first document-primary product integration', () => {
       const editorPage = await editorContext.newPage();
       const viewerPage = await viewerContext.newPage();
 
-      await ownerPage.goto(`/trips/detail?id=${trip.id}&tab=plans&documentPrimary=1`);
-      await editorPage.goto(`/trips/detail?id=${trip.id}&tab=plans&documentPrimary=1`);
-      await viewerPage.goto(`/trips/detail?id=${trip.id}&tab=plans&documentPrimary=1`);
+      await ownerPage.goto(`/trips/detail?id=${trip.id}&tab=plans&serverAuthority=0&documentPrimary=1`);
+      await editorPage.goto(`/trips/detail?id=${trip.id}&tab=plans&serverAuthority=0&documentPrimary=1`);
+      await viewerPage.goto(`/trips/detail?id=${trip.id}&tab=plans&serverAuthority=0&documentPrimary=1`);
 
       await expect(ownerPage.getByText('TASK35 권한 검증', { exact: false })).toBeVisible({
         timeout: 15000,
@@ -71,7 +71,7 @@ test.describe('Local-first document-primary product integration', () => {
       await getOrCreateChecklist(trip.id);
 
       const page = await authenticatedContext.newPage();
-      await page.goto(`/trips/detail?id=${trip.id}&tab=checklist&documentPrimary=1`);
+      await page.goto(`/trips/detail?id=${trip.id}&tab=checklist&serverAuthority=0&documentPrimary=1`);
 
       const addToggleButton = page.getByRole('button', { name: '항목 추가' });
       await expect(addToggleButton).toBeVisible({ timeout: 15000 });

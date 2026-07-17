@@ -11,6 +11,7 @@ import { useSearchParams } from 'next/navigation'
 import { formatDate } from '@nexvoy/core'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { useBottomSheetDrag } from '@/hooks/useBottomSheetDrag'
+import { createWebRepositories, refreshWebProductList } from '@/lib/local-first/repositoryFactory'
 
 interface Trip {
     id: string
@@ -100,34 +101,16 @@ export default function TripSwitcherModal() {
             
 
             // 2. 네트워크 페칭
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { session } } = await supabase.auth.getSession()
+            const user = session?.user
             if (!user) {
                 setLoading(false)
                 return
             }
 
-            const { data: memberTripData } = await supabase
-                .from('trip_members')
-                .select('trip_id')
-                .eq('user_id', user.id)
-                .eq('status', 'accepted')
-
-            const memberTripIds = memberTripData?.map((m: { trip_id: string }) => m.trip_id) || []
-
-            let query = supabase
-                .from('trips')
-                .select('*')
-
-            if (memberTripIds.length > 0) {
-                query = query.or(`user_id.eq.${user.id},id.in.(${memberTripIds.join(',')})`)
-            } else {
-                query = query.eq('user_id', user.id)
-            }
-
-            const { data: trips } = await query.order('start_date', { ascending: true })
-            if (trips) {
-                processTrips(trips as Trip[])
-            }
+            await refreshWebProductList(supabase, 'trip')
+            const trips = await createWebRepositories(supabase).trips.listTrips(user.id)
+            processTrips([...trips].sort((left, right) => left.start_date.localeCompare(right.start_date)))
             setLoading(false)
         }
 

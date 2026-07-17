@@ -20,7 +20,7 @@ import {
     updateTemplateShareRole,
 } from '@nexvoy/core'
 import type { ChecklistCategory, ChecklistTemplateShareWithProfile } from '@nexvoy/types'
-import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
 
 interface EditTemplateModalProps {
     isOpen: boolean
@@ -54,7 +54,7 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
         
         setFetching(true)
         try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase)
+            const repositories = await createWebProductDocumentRepositories(supabase)
             const data = await repositories.templates.getTemplate(templateId)
 
             if (data) {
@@ -120,7 +120,7 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
 
         setLoading(true)
         try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: 'owner' })
+            const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: 'owner' })
             await repositories.templates.deleteTemplate(templateId)
             
             if (onSuccess) onSuccess()
@@ -154,7 +154,7 @@ export default function EditTemplateModal({ isOpen, onClose, templateId, onSucce
         setLoading(true)
 
         try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase, {
+            const repositories = await createWebProductDocumentRepositories(supabase, {
                 actorRole: canManageShares ? 'owner' : 'editor',
             })
             await repositories.templates.updateTemplate(templateId, { title: title.trim() })

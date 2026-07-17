@@ -27,6 +27,16 @@
 - Realtime은 private resource topic에 1KB 미만 invalidation만 보낸다. 연속 revision은 entity RPC, gap/reconnect는 full bundle로 복구한다.
 - 이번 단계는 기반 구현이다. 현재 Web 제품 화면은 TASK-050에서 이 repository와 sync session으로 전환한다.
 
+## 2026-07-17 TASK-050 구현 완료
+
+- Web 여행, 일정, 준비물, 템플릿과 프로필 파생 조회를 server-authority repository로 전환했다.
+- IndexedDB canonical cache와 optimistic projection을 분리하고 local mutation과 outbox append를 원자 처리한다.
+- online/foreground/retry flush와 Realtime revision invalidation으로 다른 Web 계정의 화면을 canonical row에 수렴시킨다.
+- 제품 경로에서 Yjs update, WebRTC signaling, document key, encrypted backup 호출을 제거했다.
+- 상세 화면은 오프라인 저장, 저장 대기, 동기화 완료, 충돌, 저장 오류를 구분해 표시한다.
+- 기능 플래그로 document-primary 경로를 롤백 경로로 유지한다. 실제 legacy runtime 삭제는 TASK-055 범위다.
+- 단위 테스트, typecheck, Web/Mobile build와 Playwright discovery는 통과했다. 다중 사용자 E2E 실제 실행은 로컬 Supabase 환경이 필요하다.
+
 2026-07-16 초대 흐름 재점검:
 
 - 이메일 초대와 기존 로그인 후 Accept UI가 서로 다른 registry를 사용하고 있음을 확인했다.

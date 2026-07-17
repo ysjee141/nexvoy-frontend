@@ -4,12 +4,11 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
-import { Calendar, Users, Pencil, Trash2, Wallet, Loader2, CloudDownload, CloudCheck } from 'lucide-react'
+import { Calendar, Users, Pencil, Trash2, Wallet, Loader2 } from 'lucide-react'
 import { getCurrencyFromTimezone, formatKRW, formatDate } from '@nexvoy/core'
 import { ExchangeService } from '@/services/ExternalApiService'
-import { DownloadService } from '@/services/DownloadService'
 import EditTripModal from './EditTripModal'
-import { useToastStore } from '@/stores/useToastStore'
+import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
 
 interface TripHeaderActionsProps {
     trip: {
@@ -28,14 +27,11 @@ interface TripHeaderActionsProps {
 export default function TripHeaderActions({ trip, onUpdate, isOffline = false }: TripHeaderActionsProps) {
     const router = useRouter()
     const supabase = createClient()
-    const toast = useToastStore()
 
     const [isOwner, setIsOwner] = useState(false)
     const [showEditModal, setShowEditModal] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [deleting, setDeleting] = useState(false)
-    const [isDownloading, setIsDownloading] = useState(false)
-    const [isDownloaded, setIsDownloaded] = useState(false)
 
     // 총 비용 요약 상태
     interface CostSummary {
@@ -49,37 +45,13 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
     const end = formatDate(trip.end_date)
 
     useEffect(() => {
-        const checkStatus = async () => {
-            const downloaded = await DownloadService.isDownloaded(trip.id)
-            setIsDownloaded(downloaded)
-        }
-        checkStatus()
-    }, [trip.id])
-
-    const handleDownload = async () => {
-        if (isDownloading) return
-        setIsDownloading(true)
-        const loadingId = toast.loading('여행 정보를 다운로드하는 중입니다...')
-        try {
-            await DownloadService.downloadTrip(trip.id)
-            setIsDownloaded(true)
-            toast.removeToast(loadingId)
-            toast.success('여행 정보가 성공적으로 다운로드되었습니다. 이제 오프라인에서도 확인할 수 있습니다!')
-        } catch (error) {
-            console.error('Download failed:', error)
-            toast.removeToast(loadingId)
-            toast.error('다운로드에 실패했습니다. 네트워크 상태를 확인해 주세요.')
-        } finally {
-            setIsDownloading(false)
-        }
-    }
-    useEffect(() => {
         const checkOwner = async () => {
             if (isOffline) {
                 setIsOwner(false)
                 return
             }
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { session } } = await supabase.auth.getSession()
+            const user = session?.user
             if (user && user.id === trip.user_id) {
                 setIsOwner(true)
             }
@@ -94,11 +66,8 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
                 setCostSummary({ totalKrw: 0, byCurrency: [], loading: false })
                 return
             }
-            const { data: plans } = await supabase
-                .from('plans')
-                .select('cost, timezone_string')
-                .eq('trip_id', trip.id)
-                .gt('cost', 0)
+            const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: 'viewer' })
+            const plans = (await repositories.plans.listPlans(trip.id)).filter((plan) => plan.cost > 0)
 
             if (!plans || plans.length === 0) {
                 setCostSummary({ totalKrw: 0, byCurrency: [], loading: false })
@@ -108,12 +77,12 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
             const byCode: Record<string, { code: string; symbol: string; total: number }> = {}
             const uniqueNonKrw = new Set<string>()
 
-            plans.forEach((p: any) => {
-                const currency = getCurrencyFromTimezone(p.timezone_string || 'Asia/Seoul')
+            plans.forEach((plan) => {
+                const currency = getCurrencyFromTimezone(plan.timezone || 'Asia/Seoul')
                 if (!byCode[currency.code]) {
                     byCode[currency.code] = { code: currency.code, symbol: currency.symbol, total: 0 }
                 }
-                byCode[currency.code].total += p.cost
+                byCode[currency.code].total += plan.cost
                 if (currency.code !== 'KRW') uniqueNonKrw.add(currency.code)
             })
 
@@ -155,14 +124,11 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
 
     const handleDelete = async () => {
         setDeleting(true)
-        const { error } = await supabase
-            .from('trips')
-            .delete()
-            .eq('id', trip.id)
-
-        if (!error) {
+        try {
+            const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: 'owner' })
+            await repositories.trips.deleteTrip(trip.id)
             router.push('/')
-        } else {
+        } catch {
             setDeleting(false)
         }
     }
@@ -186,29 +152,6 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
 
                     {!isOffline && (
                         <div className={css({ display: 'flex', gap: '8px', flexShrink: 0 })}>
-                            <button
-                                onClick={handleDownload}
-                                disabled={isDownloading}
-                                className={css({
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    p: '8px', bg: isDownloaded ? 'rgba(46, 196, 182, 0.05)' : 'white', 
-                                    color: isDownloaded ? 'brand.primary' : 'brand.muted', 
-                                    border: '1.5px solid', borderColor: isDownloaded ? 'brand.primary' : 'brand.border', 
-                                    borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s',
-                                    _hover: { bg: 'bg.softCotton', color: 'brand.primary', borderColor: 'brand.primary' },
-                                    _active: { transform: 'scale(0.92)' }
-                                })}
-                                title={isDownloaded ? "다운로드됨" : "오프라인 다운로드"}
-                            >
-                                {isDownloading ? (
-                                    <Loader2 size={18} className={css({ animation: 'spin 1s linear infinite' })} />
-                                ) : isDownloaded ? (
-                                    <CloudCheck size={18} />
-                                ) : (
-                                    <CloudDownload size={18} />
-                                )}
-                            </button>
-
                             {isOwner && (
                                 <>
                                     <button

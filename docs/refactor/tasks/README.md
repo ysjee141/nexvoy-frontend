@@ -118,7 +118,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-047-shared-offline-sync-core.md` | 완료 | 공통 domain command, Repository, outbox, conflict/retry core |
 | `TASK-048-web-indexeddb-cache-outbox.md` | 완료 | Web account-scoped IndexedDB cache와 transactional outbox |
 | `TASK-049-realtime-invalidation-and-revision-recovery.md` | 완료 | private Broadcast invalidation과 Web revision gap 복구 |
-| `TASK-050-web-server-authority-product-cutover.md` | 대기 | Web 전체 기능 server-authority 제품 경로 전환 |
+| `TASK-050-web-server-authority-product-cutover.md` | 구현 완료 | Web 전체 기능 server-authority 전환, 로컬 Supabase E2E 실행 대기 |
 | `TASK-051-mobile-sqlite-cache-outbox.md` | 대기 | Mobile SQLite cache/outbox와 Realtime adapter |
 | `TASK-052-mobile-server-authority-product-cutover.md` | 대기 | Mobile 전체 기능 server-authority 제품 경로 전환 |
 | `TASK-053-membership-invitation-without-document-keys.md` | 대기 | document key 없는 membership/invitation/role/revoke |
@@ -215,7 +215,7 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-047-shared-offline-sync-core.md`: 공통 command/repository/outbox/conflict core
 - [x] `TASK-048-web-indexeddb-cache-outbox.md`: Web IndexedDB cache/outbox adapter
 - [x] `TASK-049-realtime-invalidation-and-revision-recovery.md`: Realtime invalidation과 Web revision recovery
-- [ ] `TASK-050-web-server-authority-product-cutover.md`: Web 전체 제품 경로 전환
+- [x] `TASK-050-web-server-authority-product-cutover.md`: Web 전체 제품 경로 전환 (로컬 Supabase E2E 실행 대기)
 - [ ] `TASK-051-mobile-sqlite-cache-outbox.md`: Mobile SQLite cache/outbox와 Realtime adapter
 - [ ] `TASK-052-mobile-server-authority-product-cutover.md`: Mobile 전체 제품 경로 전환
 - [ ] `TASK-053-membership-invitation-without-document-keys.md`: keyless membership/invitation 전환

@@ -10,8 +10,11 @@ import TripSection from '@/components/trips/TripSection'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { CacheUtil } from '@/lib/cache'
-import { promotePendingGuestDocuments } from '@/lib/local-first/guestPromotionService'
-import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import {
+  createWebProductDocumentRepositories,
+  refreshWebProductList,
+  subscribeWebProductAccount,
+} from '@/lib/local-first/repositoryFactory'
 import { tripSummaryToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
 import {
   Map, CheckSquare, Globe, Wallet,
@@ -276,13 +279,6 @@ export default function HomeClient() {
             return
         }
         setUser(networkUser)
-        const promotionResult = await promotePendingGuestDocuments(supabase)
-        if (promotionResult.conflicts > 0) {
-            alert('이미 계정에 연결된 같은 여행 문서가 있어, 게스트 문서는 덮어쓰지 않고 보관했어요.')
-        }
-        if (promotionResult.failed > 0) {
-            alert('게스트 문서를 계정에 연결하는 중 일부 백업이 완료되지 않았어요. 다음 로그인 때 다시 시도할게요.')
-        }
         // 오프라인 UI 판정을 위해 유저 정보 캐싱
         await CacheUtil.setAuthUser(networkUser)
 
@@ -298,7 +294,8 @@ export default function HomeClient() {
         }
         setShowNicknamePrompt(!profile?.nickname)
 
-        const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: 'viewer' })
+        await refreshWebProductList(supabase, 'trip')
+        const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: 'viewer' })
         const allTrips = (await repositories.trips.listTrips(networkUser.id))
             .map(tripSummaryToWebTripRow)
             .sort((a, b) => a.start_date.localeCompare(b.start_date))
@@ -315,14 +312,6 @@ export default function HomeClient() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (session?.user) {
         setUser(session.user)
-        void promotePendingGuestDocuments(supabase).then((result) => {
-          if (result.conflicts > 0) {
-            alert('이미 계정에 연결된 같은 여행 문서가 있어, 게스트 문서는 덮어쓰지 않고 보관했어요.')
-          }
-          if (result.failed > 0) {
-            alert('게스트 문서를 계정에 연결하는 중 일부 백업이 완료되지 않았어요. 다음 로그인 때 다시 시도할게요.')
-          }
-        })
         fetchNetworkBackground()
       } else if (event === 'SIGNED_OUT') {
         setUser(null)
@@ -351,6 +340,11 @@ export default function HomeClient() {
         } else {
             setNickname(localUser.email?.split('@')[0] || '여행자')
         }
+        const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: 'viewer' })
+        const localTrips = (await repositories.trips.listTrips(localUser.id))
+          .map(tripSummaryToWebTripRow)
+          .sort((a, b) => a.start_date.localeCompare(b.start_date))
+        processTrips(localTrips)
       }
       // 세션을 확인했든 못 했든 초기 로딩 해제 (화면 진입)
       setLoading(false)
@@ -362,6 +356,21 @@ export default function HomeClient() {
         fetchNetworkBackground()
     })
   }, [supabase, processTrips, fetchNetworkBackground])
+
+  useEffect(() => {
+    if (!user?.id) return undefined
+    let unsubscribe: (() => void) | undefined
+    void subscribeWebProductAccount(supabase, 'trip', () => {
+      void createWebProductDocumentRepositories(supabase, { actorRole: 'viewer' })
+        .then((repositories) => repositories.trips.listTrips(user.id))
+        .then((trips) => processTrips(
+          trips
+            .map(tripSummaryToWebTripRow)
+            .sort((a, b) => a.start_date.localeCompare(b.start_date)),
+        ))
+    }).then((next) => { unsubscribe = next })
+    return () => unsubscribe?.()
+  }, [processTrips, supabase, user?.id])
 
   // 탭 파라미터에 따른 스크롤 처리
   useEffect(() => {
