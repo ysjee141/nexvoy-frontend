@@ -9,6 +9,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Skeleton from '@/components/ui/Skeleton'
 import CommonListSkeleton from '@/components/common/CommonListSkeleton'
+import {
+    createWebProductDocumentRepositories,
+    refreshWebProductList,
+} from '@/lib/local-first/repositoryFactory'
 
 interface Trip {
     id: string
@@ -35,11 +39,17 @@ export default function TravelLogPage() {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) return
 
-            const { data: trips } = await supabase
-                .from('trips')
-                .select('id, destination, start_date, end_date')
-                .eq('user_id', user.id)
-                .order('start_date', { ascending: false })
+            await refreshWebProductList(supabase, 'trip')
+            const repositories = await createWebProductDocumentRepositories(supabase)
+            const trips = (await repositories.trips.listTrips(user.id))
+                .filter((trip) => trip.ownerId === user.id)
+                .map((trip) => ({
+                    id: trip.id,
+                    destination: trip.destination,
+                    start_date: trip.startDate,
+                    end_date: trip.endDate,
+                }))
+                .sort((left, right) => right.start_date.localeCompare(left.start_date))
 
             if (trips) {
                 const today = new Date()

@@ -1,5 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { randomUUID } from 'node:crypto';
 import { assertLocalSupabaseUrl } from './supabase';
+import type { TestUser } from './supabase';
 
 /**
  * E2E 시드/정리/검증 헬퍼.
@@ -92,6 +94,74 @@ export async function seedTrip(
   }
 
   return data as SeededTrip;
+}
+
+export async function seedAuthorityTrip(
+  owner: TestUser,
+  overrides: TripOverrides = {},
+): Promise<SeededTrip> {
+  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const anonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  assertLocalSupabaseUrl(url);
+  const client = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${owner.accessToken}` } },
+  });
+  const tripId = randomUUID();
+  const checklistId = randomUUID();
+  const createdAt = new Date().toISOString();
+  const payload = {
+    user_id: owner.id,
+    destination: overrides.destination ?? 'TASK-050 서버 권위 여행',
+    start_date: overrides.start_date ?? dateOffset(1),
+    end_date: overrides.end_date ?? dateOffset(2),
+    adults_count: overrides.adults_count ?? 1,
+    children_count: overrides.children_count ?? 0,
+  };
+  const commands = [
+    {
+      operation_id: randomUUID(),
+      entity_type: 'trip',
+      entity_id: tripId,
+      action: 'upsert',
+      payload,
+      created_at: createdAt,
+    },
+    {
+      operation_id: randomUUID(),
+      entity_type: 'checklist',
+      entity_id: checklistId,
+      action: 'upsert',
+      payload: { title: '준비물' },
+      created_at: new Date(Date.parse(createdAt) + 1).toISOString(),
+    },
+  ];
+
+  const { error } = await client.rpc('apply_trip_commands', {
+    p_trip_id: tripId,
+    p_commands: commands,
+    p_base_revision: 0,
+  });
+  if (error) throw new Error(`seedAuthorityTrip 실패: ${error.message}`);
+
+  return { id: tripId, ...payload };
+}
+
+export async function seedAuthorityDocumentMember(
+  documentId: string,
+  user: TestUser,
+  role: 'editor' | 'viewer',
+): Promise<void> {
+  const client = getServiceClient();
+  const { error } = await client.from('document_members').upsert({
+    document_id: documentId,
+    user_id: user.id,
+    invited_email: user.email,
+    role,
+    status: 'accepted',
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'document_id,user_id' });
+  if (error) throw new Error(`seedAuthorityDocumentMember 실패: ${error.message}`);
 }
 
 export interface SeededTripMember {
@@ -294,6 +364,15 @@ export async function cleanupTripsByUser(userId: string): Promise<void> {
 
   if (error) {
     throw new Error(`cleanupTripsByUser 실패: ${error.message}`);
+  }
+
+  const { error: documentError } = await client
+    .from('documents')
+    .delete()
+    .eq('owner_id', userId)
+    .eq('type', 'trip');
+  if (documentError) {
+    throw new Error(`cleanupTripsByUser document 정리 실패: ${documentError.message}`);
   }
 }
 

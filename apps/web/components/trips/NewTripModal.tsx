@@ -8,7 +8,7 @@ import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useRouter } from 'next/navigation'
 import { analytics } from '@/services/AnalyticsService'
-import { createWebTripDocument } from '@/lib/local-first/documentPrimaryRepositories'
+import { createWebProductTrip } from '@/lib/local-first/repositoryFactory'
 
 const libraries: ("places")[] = ["places"]
 
@@ -106,13 +106,14 @@ export default function NewTripModal({ isOpen, onClose, onSuccess }: NewTripModa
         setError('')
 
         try {
-            const { data: { user } } = await supabase.auth.getUser()
+            const { data: { session } } = await supabase.auth.getSession()
+            const user = session?.user
             if (!user) {
                 router.push('/login')
                 return
             }
 
-            const tripId = await createWebTripDocument({
+            const tripId = await createWebProductTrip({
                 supabase,
                 destination,
                 startDate,
@@ -203,9 +204,18 @@ export default function NewTripModal({ isOpen, onClose, onSuccess }: NewTripModa
                                     />
                                 </PlacesAutocomplete>
                             ) : (
-                                <div className={css({ w: '100%', p: '18px 20px', bg: 'white', borderRadius: '8px', border: '1px solid', borderColor: 'brand.hairline', color: 'brand.muted', display: 'flex', alignItems: 'center', gap: '10px' })}>
-                                    <Loader2 size={18} className={css({ animation: 'spin 1.5s linear infinite' })} /> 지도 정보를 불러오는 중...
-                                </div>
+                                <input
+                                    type="text"
+                                    required
+                                    value={destination}
+                                    onChange={e => setDestination(e.target.value)}
+                                    placeholder="여행지를 입력하세요"
+                                    className={css({
+                                        w: '100%', p: '18px 20px', bg: 'white', border: '1px solid', borderColor: 'brand.hairline',
+                                        borderRadius: '8px', fontSize: '16px', fontWeight: '600', outline: 'none',
+                                        transition: 'all 0.3s', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 5px rgba(var(--colors-brand-primary-rgb), 0.1)' }
+                                    })}
+                                />
                             )}
                         </div>
 

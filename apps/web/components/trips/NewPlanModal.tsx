@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, type ComponentType, type ReactNode } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
 import { X, MapPin, Clock, Calendar, Check, Search, ChevronRight, Loader2, Camera, Navigation, Map, Info, Compass, Bell } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
@@ -43,7 +42,7 @@ interface NewPlanModalProps {
      * 부모가 plans 리스트의 해당 항목 image_url을 패치할 때 사용.
      */
     onPlanImageUpdated?: (planId: string, imageUrl: string) => void
-    onSavePlan?: (input: {
+    onSavePlan: (input: {
         plan: PlanInsert
         editPlanId?: string
     }) => Promise<string>
@@ -75,7 +74,6 @@ export default function NewPlanModal({
     onPlanImageUpdated,
     onSavePlan,
 }: NewPlanModalProps) {
-    const supabase = createClient()
     const [step, setStep] = useState(1) // 1: 장소검색, 2: 상세입력
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
@@ -318,7 +316,9 @@ export default function NewPlanModal({
         setError('')
 
         try {
-            const tzData = await LocationService.getTimezone(selectedPlace.lat, selectedPlace.lng)
+            const tzData = typeof navigator !== 'undefined' && !navigator.onLine
+                ? { timeZoneId: editData?.timezone_string || 'Asia/Seoul' }
+                : await LocationService.getTimezone(selectedPlace.lat, selectedPlace.lng)
 
             const startStr = `${visitDate}T${visitTime}:00`
             const startDateObj = new Date(startStr)
@@ -351,35 +351,16 @@ export default function NewPlanModal({
                 timezone_string: tzData.timeZoneId || 'Asia/Seoul'
             }
 
-            let savedPlanId: string | null = null
-            if (onSavePlan) {
-                savedPlanId = await onSavePlan({
-                    plan: planData,
-                    editPlanId: editData?.id,
-                })
-            } else if (editData?.id) {
-                const result = await supabase
-                    .from('plans')
-                    .update(planData)
-                    .eq('id', editData.id)
-                    .select('id')
-                    .single()
-                if (result.error) throw result.error
-                savedPlanId = (result.data as { id?: string } | null)?.id ?? editData.id
-            } else {
-                const result = await supabase
-                    .from('plans')
-                    .insert(planData)
-                    .select('id')
-                    .single()
-                if (result.error) throw result.error
-                savedPlanId = (result.data as { id?: string } | null)?.id ?? null
-            }
+            const savedPlanId = await onSavePlan({
+                plan: planData,
+                editPlanId: editData?.id,
+            })
 
             // 백그라운드 업로드 (fire-and-forget). photo_reference + placeId 모두 있을 때만 시도.
             // 모달 close 이전에 시작해야 try/catch/finally가 의도대로 동작한다.
             if (
                 savedPlanId &&
+                (typeof navigator === 'undefined' || navigator.onLine) &&
                 selectedPlace.photoReference &&
                 selectedPlace.googlePlaceId
             ) {
@@ -390,7 +371,7 @@ export default function NewPlanModal({
                             tripId,
                             placeId: selectedPlace.googlePlaceId,
                             photoReference: selectedPlace.photoReference,
-                            documentPrimary: Boolean(onSavePlan),
+                            documentPrimary: true,
                         },
                         (imageUrl) => {
                             // Zustand store가 plan-level에 없어, 부모에게 콜백으로 통지
@@ -492,7 +473,7 @@ export default function NewPlanModal({
                             </div>
 
                             <div className={css({ position: 'relative' })}>
-                                {isLoaded && (
+                                {isLoaded ? (
                                     <PlacesAutocomplete onLoad={(a) => setAutocomplete(a)} onPlaceChanged={onPlaceChanged}>
                                             <div className={css({ position: 'relative', width: '100%' })}>
                                                 <div className={css({ 
@@ -522,6 +503,32 @@ export default function NewPlanModal({
                                                 />
                                             </div>
                                     </PlacesAutocomplete>
+                                ) : (
+                                    <div className={css({ position: 'relative', width: '100%' })}>
+                                        <div className={css({
+                                            position: 'absolute', left: '18px', top: '50%', transform: 'translateY(-50%)',
+                                            color: 'brand.muted', zIndex: 10, pointerEvents: 'none',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        })}>
+                                            <Search size={20} />
+                                        </div>
+                                        <input
+                                            ref={searchInputRef}
+                                            type="text"
+                                            placeholder="장소 이름을 입력하세요"
+                                            value={inputValue}
+                                            onChange={(e) => setInputValue(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && inputValue.trim()) handleContinueManual()
+                                            }}
+                                            className={css({
+                                                w: '100%', p: '18px 20px 18px 52px', bg: 'bg.softCotton', border: '1px solid', borderColor: 'brand.hairlineSoft',
+                                                borderRadius: '16px', fontSize: '16px', fontWeight: '600', outline: 'none',
+                                                transition: 'all 0.3s', _focus: { borderColor: 'brand.primary', bg: 'white' }
+                                            })}
+                                            autoFocus
+                                        />
+                                    </div>
                                 )}
 
                                 {inputValue.trim().length > 0 && (
@@ -582,10 +589,26 @@ export default function NewPlanModal({
                                         </div>
                                         <div className={css({ flex: 1, minW: 0 })}>
                                             <label className={css({ display: 'block', fontSize: '12px', fontWeight: '700', color: 'brand.muted', mb: '4px' })}>장소 이름</label>
-                                            <PlacesAutocomplete 
-                                                onLoad={(a) => setDetailAutocomplete(a)} 
-                                                onPlaceChanged={onDetailPlaceChanged}
-                                            >
+                                            {isLoaded ? (
+                                                <PlacesAutocomplete
+                                                    onLoad={(a) => setDetailAutocomplete(a)}
+                                                    onPlaceChanged={onDetailPlaceChanged}
+                                                >
+                                                    <input
+                                                        type="text"
+                                                        value={selectedPlace.name}
+                                                        onChange={e => setSelectedPlace({ ...selectedPlace, name: e.target.value })}
+                                                        placeholder="장소 이름을 입력하세요"
+                                                        className={css({
+                                                            w: '100%', fontSize: '16px', fontWeight: '800', color: 'brand.ink',
+                                                            border: 'none', bg: 'transparent', outline: 'none', p: 0,
+                                                            borderBottom: '1.5px solid transparent',
+                                                            transition: 'all 0.2s',
+                                                            _focus: { borderBottomColor: 'brand.primary' }
+                                                        })}
+                                                    />
+                                                </PlacesAutocomplete>
+                                            ) : (
                                                 <input
                                                     type="text"
                                                     value={selectedPlace.name}
@@ -599,7 +622,7 @@ export default function NewPlanModal({
                                                         _focus: { borderBottomColor: 'brand.primary' } 
                                                     })}
                                                 />
-                                            </PlacesAutocomplete>
+                                            )}
                                         </div>
                                     </div>
                                     <div className={css({ borderTop: '1px solid', borderColor: 'brand.hairlineSoft', pt: '12px' })}>

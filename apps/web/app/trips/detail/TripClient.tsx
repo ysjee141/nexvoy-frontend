@@ -9,7 +9,6 @@ import NewPlanModal from '@/components/trips/NewPlanModal'
 import CollaboratorModal from '@/components/trips/CollaboratorModal'
 import ShareModal from '@/components/trips/ShareModal'
 import PlanDetailModal from '@/components/trips/PlanDetailModal'
-import { collaboration } from '@/lib/collaboration'
 import PlanList from '@/components/trips/PlanList'
 import { useNetworkStore } from '@/stores/useNetworkStore'
 import { getCurrencyFromTimezone } from '@nexvoy/core'
@@ -18,11 +17,11 @@ import { CacheUtil } from '@/lib/cache'
 import { NotificationService } from '@/services/NotificationService'
 import { DownloadService } from '@/services/DownloadService'
 import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
-import { Download, CloudDownload, CloudCheck, Loader2 } from 'lucide-react'
 import TripDetailSkeleton from './TripDetailSkeleton'
-import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
-import { flushWebBackupQueue } from '@/lib/local-first/backupSyncService'
-import { subscribeToTripDocumentUpdates } from '@/lib/local-first/indexedDbStore'
+import {
+    createWebProductDocumentRepositories,
+    subscribeWebProductResource,
+} from '@/lib/local-first/repositoryFactory'
 import { materializePlanTimeline } from '@nexvoy/core/local-first/materialize'
 import {
     planTimelineItemToWebPlanRow,
@@ -102,8 +101,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
     const [timeDisplayMode, setTimeDisplayMode] = useState<'local' | 'kst' | 'both'>('local')
     const [userRole, setUserRole] = useState<'owner' | 'editor' | 'viewer' | null>(null)
     const { isOnline } = useNetworkStore()
-    const [isDownloaded, setIsDownloaded] = useState(false)
-    const [isDownloading, setIsDownloading] = useState(false)
 
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
     const [editingPlan, setEditingPlan] = useState<any>(null)
@@ -194,7 +191,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             if (bundle?.trip) setTrip(bundle.trip)
             return
         }
-        const repositories = await createWebDocumentPrimaryRepositories(supabase)
+        const repositories = await createWebProductDocumentRepositories(supabase)
         const data = await repositories.trips.getTrip(tripId)
         if (data) setTrip(tripDetailToWebTripRow(data))
     }, [tripId, supabase, isOffline])
@@ -210,14 +207,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 return
             }
 
-            // 2. 네트워크 확인
-            const { isOfflineMode } = useNetworkStore.getState()
-            if (!isOnline || isOfflineMode) {
-                setIsLoading(false)
-                return
-            }
-
-            const repositories = await createWebDocumentPrimaryRepositories(supabase)
+            const repositories = await createWebProductDocumentRepositories(supabase)
             const data = (await repositories.plans.listPlans(tripId)).map((plan) =>
                 planTimelineItemToWebPlanRow(tripId, plan),
             )
@@ -227,28 +217,24 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 // 명시적 다운로드 정책에 따라 자동 저장은 제거하고 알림만 예약
                 NotificationService.scheduleOfflineReminders(data)
                 
-                // 이미 다운로드된 여행이라면 백그라운드에서 최신 데이터로 동기화
-                const bundle = await DownloadService.getBundle(tripId)
-                if (bundle) {
-                    DownloadService.downloadTrip(tripId)
-                }
             }
         } catch (err) {
             console.error('fetchPlans Error:', err)
         } finally {
             setIsLoading(false)
         }
-    }, [tripId, supabase, isOnline])
+    }, [tripId, supabase, isOffline])
 
     const fetchUserRole = useCallback(async () => {
         if (!tripId) return
-        const { data: { user } } = await supabase.auth.getUser()
+        const { data: { session } } = await supabase.auth.getSession()
+        const user = session?.user ?? await CacheUtil.getAuthUser()
         if (!user) {
             setUserRole(null)
             return
         }
 
-        const repositories = await createWebDocumentPrimaryRepositories(supabase)
+        const repositories = await createWebProductDocumentRepositories(supabase)
         const documentTrip = await repositories.trips.getTrip(tripId)
         if (documentTrip?.ownerId === user.id) {
             setUserRole('owner')
@@ -263,8 +249,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             return
         }
 
-        const { data } = await collaboration.getUserRole(tripId)
-        setUserRole(data as any)
+        setUserRole(null)
     }, [tripId, supabase])
 
     useEffect(() => {
@@ -277,31 +262,13 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
 
     useEffect(() => {
         if (!tripId || isOffline) return undefined
-        return subscribeToTripDocumentUpdates(tripId, () => {
+        let unsubscribe: (() => Promise<void>) | undefined
+        void subscribeWebProductResource(supabase, 'trip', tripId, () => {
             void fetchTrip()
             void fetchPlans()
-        })
-    }, [fetchPlans, fetchTrip, isOffline, tripId])
-
-    useEffect(() => {
-        if (!tripId || isOffline || !isOnline || (userRole !== 'owner' && userRole !== 'editor')) return
-
-        const flushPendingBackup = () => {
-            void flushWebBackupQueue({ supabase, documentId: tripId }).catch(() => undefined)
-        }
-
-        flushPendingBackup()
-
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') flushPendingBackup()
-        }
-        document.addEventListener('visibilitychange', handleVisibilityChange)
-
-        return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange)
-        }
-    }, [tripId, isOffline, isOnline, supabase, userRole])
-
+        }).then((next) => { unsubscribe = next })
+        return () => { void unsubscribe?.() }
+    }, [fetchPlans, fetchTrip, isOffline, supabase, tripId])
 
     const handleDeletePlan = async (planId: string) => {
         if (!tripId) return
@@ -317,7 +284,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         }
 
         try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+            const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: userRole })
             await repositories.plans.deletePlan(tripId, planId)
             setActiveDropdown(null)
             fetchPlans()
@@ -335,7 +302,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             cur && cur.id === planId ? { ...cur, image_url: newImageUrl } : cur
         ))
         if (tripId && (userRole === 'owner' || userRole === 'editor')) {
-            createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+            createWebProductDocumentRepositories(supabase, { actorRole: userRole })
                 .then((repositories) => repositories.plans.updatePlan(tripId, {
                     planId,
                     patch: { imageUrl: newImageUrl },
@@ -369,7 +336,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         // 디테일 모달이 열려 있으면 선택된 plan도 업데이트
         setSelectedPlanForDetail((prev: any) => prev && prev.id === planId ? { ...prev, is_visited: isVisited } : prev)
         try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+            const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: userRole })
             await repositories.plans.updatePlan(tripId, {
                 planId,
                 patch: { isVisited },
@@ -389,7 +356,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         if (userRole !== 'owner' && userRole !== 'editor') {
             throw new Error('일정을 수정할 권한이 없습니다.')
         }
-        const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+        const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: userRole })
         const planId = editPlanId ?? createLocalPlanId()
         const input = toDocumentPlanInput(planId, plan)
         const result = editPlanId
@@ -415,21 +382,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
     const handlePlanDetail = (plan: any) => {
         setSelectedPlanForDetail(plan)
         setIsDetailModalOpen(true)
-    }
-
-    const handleDownload = async () => {
-        if (!tripId || isDownloading) return
-        
-        setIsDownloading(true)
-        const success = await DownloadService.downloadTrip(tripId)
-        setIsDownloading(false)
-        
-        if (success) {
-            setIsDownloaded(true)
-            alert('여행 정보가 성공적으로 다운로드되었습니다. 오프라인에서도 확인할 수 있습니다!')
-        } else {
-            alert('다운로드에 실패했습니다. 네트워크 상태를 확인해 주세요.')
-        }
     }
 
     // 24시간 이내 가장 가까운 일정 계산
@@ -552,7 +504,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     </div>
                     
                     {/* PC 전용 일정 추가 버튼 */}
-                    {(userRole === 'owner' || userRole === 'editor') && isOnline && !isOffline && (
+                    {(userRole === 'owner' || userRole === 'editor') && !isOffline && (
                         <button
                             onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                              className={css({
@@ -576,7 +528,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             ) : (!plans || plans.length === 0) ? (
                 <div className={css({ textAlign: 'center', py: '80px', color: 'brand.muted' })}>
                     <p className={css({ fontSize: '18px', fontWeight: '700', mb: '12px', color: 'brand.ink' })}>아직 등록된 여정이 없어요. 🗺️</p>
-                    {(userRole === 'owner' || userRole === 'editor') && isOnline && (
+                    {(userRole === 'owner' || userRole === 'editor') && (
                         <p className={css({ fontSize: '15px', color: 'brand.muted', lineHeight: '1.6' })}>새로운 일정을 추가해서 설레는 여정을 완성해 볼까요?</p>
                     )}
                 </div>
@@ -645,7 +597,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 />
             )}
             {/* 모바일 전용 Sticky CTA (편집 권한 있을 때만) */}
-            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && isOnline && !isOffline && (
+            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && !isOffline && (
                 <button
                     onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                     className={css({

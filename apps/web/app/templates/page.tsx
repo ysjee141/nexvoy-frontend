@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
 import Link from 'next/link'
 import { Plus, ListTodo } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Skeleton from '@/components/ui/Skeleton'
 import CommonListSkeleton from '@/components/common/CommonListSkeleton'
@@ -12,7 +12,11 @@ import type { TemplateWithPreview } from '@nexvoy/types'
 
 import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/lib/cache'
-import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import {
+    createWebProductDocumentRepositories,
+    refreshWebProductList,
+    subscribeWebProductAccount,
+} from '@/lib/local-first/repositoryFactory'
 
 export default function TemplatesPage() {
     const supabase = createClient()
@@ -28,17 +32,16 @@ export default function TemplatesPage() {
     const [templates, setTemplates] = useState<TemplateWithPreview[]>([])
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => {
-        async function fetchTemplates() {
-            const { data: { user: networkUser } } = await supabase.auth.getUser()
-            const user = networkUser || await CacheUtil.getAuthUser()
+    const fetchTemplates = useCallback(async (refreshServer: boolean) => {
+        const { data: { session } } = await supabase.auth.getSession()
+        const user = session?.user || await CacheUtil.getAuthUser()
+        if (!user) {
+            router.push('/login')
+            return
+        }
 
-            if (!user) {
-                router.push('/login')
-                return
-            }
-
-            const repositories = await createWebDocumentPrimaryRepositories(supabase)
+        const repositories = await createWebProductDocumentRepositories(supabase)
+        const applyLocalTemplates = async () => {
             const templateSummaries = await repositories.templates.listTemplates(user.id)
             setTemplates(templateSummaries.map((template) => ({
                 id: template.id,
@@ -55,10 +58,24 @@ export default function TemplatesPage() {
             })))
             setLoading(false)
         }
+        await applyLocalTemplates()
+        if (refreshServer) {
+            await refreshWebProductList(supabase, 'template')
+            await applyLocalTemplates()
+        }
+    }, [router, supabase])
 
-        fetchTemplates()
+    useEffect(() => {
+        void fetchTemplates(true)
     // 모달이 닫힐 때(false로 변경) 목록을 다시 가져와 UI를 갱신한다.
-    }, [supabase, router, isNewTemplateModalOpen, isEditTemplateModalOpen])
+    }, [fetchTemplates, isNewTemplateModalOpen, isEditTemplateModalOpen])
+
+    useEffect(() => {
+        let unsubscribe: (() => void) | undefined
+        void subscribeWebProductAccount(supabase, 'template', () => { void fetchTemplates(false) })
+            .then((next) => { unsubscribe = next })
+        return () => unsubscribe?.()
+    }, [fetchTemplates, supabase])
 
     if (loading) {
         return (

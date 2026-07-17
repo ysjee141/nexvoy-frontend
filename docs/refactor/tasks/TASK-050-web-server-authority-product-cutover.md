@@ -1,6 +1,8 @@
 # TASK-050: Web Server-Authority Product Cutover
 
-- 상태: 대기
+- 상태: 구현 완료 (로컬 Supabase 통합 E2E 실행 대기)
+- Issue: [#354](https://github.com/ysjee141/nexvoy-frontend/issues/354)
+- Pull Request: [#355](https://github.com/ysjee141/nexvoy-frontend/pull/355)
 
 ## 목적
 
@@ -75,3 +77,26 @@ Web의 여행, 일정, 준비물, 템플릿 제품 경로를 server-authority Re
 - Web 핵심 기능이 신규 Repository/cache/outbox/RPC 경로에서 동작한다.
 - Web 제품 mutation이 full Yjs update를 생성하거나 P2P/backup에 publish하지 않는다.
 - offline, cross-account collaboration, refresh가 데이터 유실 없이 검증된다.
+
+## 구현 결과
+
+- 여행, 일정, 준비물, 템플릿 및 프로필 파생 조회를 server-authority repository로 전환했다.
+- `onvoy-server-authority` IndexedDB가 canonical bundle과 optimistic projection을 분리하고 mutation과 outbox를 한 transaction에 저장한다.
+- 1초 debounce, 재시도 시각 예약, foreground/online flush, Realtime revision invalidation을 제품 runtime에 연결했다.
+- 여행 상세에 오프라인 저장, 저장 대기, 동기화 완료, 충돌, 저장 오류 상태를 표시한다.
+- 기본값은 신규 경로이며 `NEXT_PUBLIC_WEB_SERVER_AUTHORITY=0` 또는 `?serverAuthority=0`으로 기존 document-primary 경로를 사용할 수 있다.
+- 신규 migration은 없으며 TASK-046/049의 RPC와 Realtime 계약을 사용한다.
+
+## 검증 결과
+
+- `pnpm --filter nexvoy-web test:authority`
+- `pnpm --filter @nexvoy/core test`
+- `pnpm typecheck`
+- `pnpm build:packages`
+- `pnpm build`
+- `pnpm build:mobile`
+- `pnpm --filter nexvoy-web exec playwright test --list`
+
+위 검증은 통과했다. `server-authority-product.spec.ts`는 offline outbox, reconnect flush, editor Realtime 수신,
+legacy key/backup/signaling 호출 부재를 검증한다. 실제 실행은 `.env.test.local`이 원격 DEV를 가리켜 destructive cleanup
+안전장치가 중단했으며, 로컬 Supabase 환경에서 후속 실행해야 한다.

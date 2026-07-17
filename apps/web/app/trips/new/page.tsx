@@ -8,7 +8,7 @@ import { css } from 'styled-system/css'
 import { Plus, ArrowLeft, ChevronLeft, Minus } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { CacheUtil } from '@/lib/cache'
-import { createWebTripDocument } from '@/lib/local-first/documentPrimaryRepositories'
+import { createWebProductTrip } from '@/lib/local-first/repositoryFactory'
 
 const libraries: ("places")[] = ["places"]
 
@@ -41,7 +41,8 @@ export default function NewTripPage() {
     useEffect(() => {
         async function checkAuth() {
             const supabase = createClient()
-            const { data: { user: networkUser } } = await supabase.auth.getUser()
+            const { data: { session } } = await supabase.auth.getSession()
+            const networkUser = session?.user
             const user = networkUser || await CacheUtil.getAuthUser()
             if (!user) {
                 router.push('/login')
@@ -69,7 +70,8 @@ export default function NewTripPage() {
         }
 
         const supabase = createClient()
-        const { data: { user: networkUser } } = await supabase.auth.getUser()
+        const { data: { session } } = await supabase.auth.getSession()
+        const networkUser = session?.user
         const user = networkUser || await CacheUtil.getAuthUser()
 
         if (!user) {
@@ -78,7 +80,7 @@ export default function NewTripPage() {
         }
 
         try {
-            const tripId = await createWebTripDocument({
+            const tripId = await createWebProductTrip({
                 supabase,
                 destination,
                 startDate,
@@ -166,7 +168,7 @@ export default function NewTripPage() {
                                             fontWeight: '600',
                                             color: '#2C3A47',
                                             _placeholder: { color: '#CCC', fontWeight: '400' },
-                                            _focus: { borderColor: '#2EC4B6', bg: 'white', boxShadow: '0 0 0 3px rgba(46, 196, 182, 0.1)' },
+                                            _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 3px rgba(var(--colors-brand-primary-rgb), 0.1)' },
                                         })}
                                     />
                                 </PlacesAutocomplete>
@@ -176,15 +178,20 @@ export default function NewTripPage() {
                                     required
                                     value={destination}
                                     onChange={e => setDestination(e.target.value)}
-                                    placeholder="지도 로딩 중..."
-                                    disabled
+                                    placeholder="여행지를 입력하세요"
                                     className={css({
                                         w: '100%',
-                                        p: '14px',
-                                        border: '1px solid #ddd',
-                                        borderRadius: '12px',
+                                        p: '16px 18px',
+                                        border: '1px solid',
+                                        borderColor: 'brand.hairline',
+                                        borderRadius: '16px',
                                         outline: 'none',
-                                        bg: '#f1f1f1'
+                                        bg: 'bg.surfaceSoft',
+                                        fontSize: '16px',
+                                        fontWeight: '600',
+                                        color: 'brand.ink',
+                                        _placeholder: { color: 'brand.muted', fontWeight: '400' },
+                                        _focus: { borderColor: 'brand.primary', bg: 'white' },
                                     })}
                                 />
                             )}

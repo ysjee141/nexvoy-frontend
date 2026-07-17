@@ -21,12 +21,21 @@ import type {
 import type { TripDocumentV1 } from '@nexvoy/core/local-first/documentModel'
 import { createWebDocumentPrimaryRepositories } from './documentPrimaryRepositories'
 
+export type WebDocumentRepositoryFactory = typeof createWebDocumentPrimaryRepositories
+
 export function createWebDocumentPrimaryChecklistRepository(
   supabase: SupabaseClient,
 ): ChecklistRepository {
+  return createWebChecklistRepository(supabase, createWebDocumentPrimaryRepositories)
+}
+
+export function createWebChecklistRepository(
+  supabase: SupabaseClient,
+  createRepositories: WebDocumentRepositoryFactory,
+): ChecklistRepository {
   return {
     getChecklist: async (tripId) => {
-      const repositories = await createWebDocumentPrimaryRepositories(supabase)
+      const repositories = await createRepositories(supabase)
       const [trip, checklists] = await Promise.all([
         repositories.trips.getTrip(tripId),
         repositories.checklists.getChecklist(tripId),
@@ -35,11 +44,11 @@ export function createWebDocumentPrimaryChecklistRepository(
       return toChecklistSnapshot(trip, checklists)
     },
     createItem: async (checklistId, input) => {
-      const repositories = await createWebDocumentPrimaryRepositories(supabase)
+      const repositories = await createRepositories(supabase)
       const tripId = await resolveTripIdForChecklist(repositories, checklistId)
       if (!tripId) throw new Error('Checklist document was not found.')
       const role = await resolveCurrentTripRole(supabase, repositories, tripId)
-      const writeRepositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: role })
+      const writeRepositories = await createRepositories(supabase, { actorRole: role })
       const itemId = createEntityId('checklist-item')
       const result = await writeRepositories.checklists.createItem(tripId, {
         id: itemId,
@@ -56,11 +65,11 @@ export function createWebDocumentPrimaryChecklistRepository(
       return toMutationResult(result.document, itemId)
     },
     updateItem: async (itemId, input) => {
-      const repositories = await createWebDocumentPrimaryRepositories(supabase)
+      const repositories = await createRepositories(supabase)
       const resolved = await resolveTripAndItem(repositories, itemId)
       if (!resolved) throw new Error('Checklist item document was not found.')
       const role = await resolveCurrentTripRole(supabase, repositories, resolved.tripId)
-      const writeRepositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: role })
+      const writeRepositories = await createRepositories(supabase, { actorRole: role })
       const result = await writeRepositories.checklists.updateItem(resolved.tripId, {
         itemId,
         patch: {
@@ -76,30 +85,30 @@ export function createWebDocumentPrimaryChecklistRepository(
       return toMutationResult(result.document, itemId)
     },
     deleteItem: async (itemId) => {
-      const repositories = await createWebDocumentPrimaryRepositories(supabase)
+      const repositories = await createRepositories(supabase)
       const resolved = await resolveTripAndItem(repositories, itemId)
       if (!resolved) throw new Error('Checklist item document was not found.')
       const role = await resolveCurrentTripRole(supabase, repositories, resolved.tripId)
-      const writeRepositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: role })
+      const writeRepositories = await createRepositories(supabase, { actorRole: role })
       await writeRepositories.checklists.deleteItem(resolved.tripId, itemId)
     },
     toggleItem: async (itemId, isChecked) => {
-      const repositories = await createWebDocumentPrimaryRepositories(supabase)
+      const repositories = await createRepositories(supabase)
       const resolved = await resolveTripAndItem(repositories, itemId)
       if (!resolved) throw new Error('Checklist item document was not found.')
       const role = await resolveCurrentTripRole(supabase, repositories, resolved.tripId)
-      const writeRepositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: role })
+      const writeRepositories = await createRepositories(supabase, { actorRole: role })
       await writeRepositories.checklists.toggleItem(resolved.tripId, {
         itemId,
         nextChecked: isChecked,
       })
     },
     toggleItemForUser: async (input) => {
-      const repositories = await createWebDocumentPrimaryRepositories(supabase)
+      const repositories = await createRepositories(supabase)
       const resolved = await resolveTripAndItem(repositories, input.item.id)
       if (!resolved) throw new Error('Checklist item document was not found.')
       const role = await resolveCurrentTripRole(supabase, repositories, resolved.tripId)
-      const writeRepositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: role })
+      const writeRepositories = await createRepositories(supabase, { actorRole: role })
       const result = await writeRepositories.checklists.toggleItem(resolved.tripId, {
         itemId: input.item.id,
         nextChecked: input.nextChecked,
@@ -233,8 +242,8 @@ async function resolveCurrentTripRole(
   repositories: Awaited<ReturnType<typeof createWebDocumentPrimaryRepositories>>,
   tripId: string,
 ): Promise<'owner' | 'editor' | 'viewer' | null> {
-  const { data } = await supabase.auth.getUser()
-  const userId = data.user?.id
+  const { data } = await supabase.auth.getSession()
+  const userId = data.session?.user.id
   if (!userId) return null
   const document = await repositories.trips.getTripDocument(tripId)
   if (!document) return null

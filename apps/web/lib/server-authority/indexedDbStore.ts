@@ -1,12 +1,15 @@
 import {
   applyCanonicalChangesToBundle,
+  applyOptimisticAuthorityCommandsToBundle,
   type AuthorityApplyResult,
   type AuthorityLocalStore,
   type AuthorityOutboxRecord,
   type AuthorityOutboxStatus,
+  type AuthorityProductSyncSnapshot,
   type AuthorityResourceType,
   type CanonicalResourceBundle,
   type CommitOptimisticAuthorityMutationInput,
+  type CommitOptimisticAuthorityMutationsInput,
 } from '@nexvoy/core'
 
 export const WEB_AUTHORITY_DB_NAME = 'onvoy-server-authority'
@@ -23,6 +26,7 @@ interface StoredAuthorityResource {
   resourceType: AuthorityResourceType
   resourceId: string
   bundle: CanonicalResourceBundle
+  canonicalBundle?: CanonicalResourceBundle
   updatedAt: string
 }
 
@@ -30,6 +34,16 @@ interface WebAuthorityIndexedDbOptions {
   indexedDB?: IDBFactory
   databaseName?: string
 }
+
+export interface WebAuthorityStoreChange {
+  accountId: string
+  resourceType?: AuthorityResourceType
+  resourceId?: string
+}
+
+type WebAuthorityStoreListener = (change: WebAuthorityStoreChange) => void
+
+const storeListeners = new Map<string, Set<WebAuthorityStoreListener>>()
 
 export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
   private readonly indexedDB: IDBFactory
@@ -59,20 +73,64 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
 
   async putResource(accountId: string, bundle: CanonicalResourceBundle): Promise<void> {
     const database = await this.open()
-    const transaction = database.transaction(RESOURCE_STORE, 'readwrite')
+    const transaction = database.transaction([RESOURCE_STORE, OUTBOX_STORE], 'readwrite')
     const store = transaction.objectStore(RESOURCE_STORE)
+    const outbox = transaction.objectStore(OUTBOX_STORE)
     const id = resourceKey(accountId, bundle.resourceType, bundle.resourceId)
     const existing = await requestValue<StoredAuthorityResource | undefined>(store.get(id))
-    if (!existing || shouldReplaceResource(existing.bundle, bundle)) {
-      store.put(toStoredResource(accountId, bundle))
+    const currentCanonical = existing?.canonicalBundle ?? existing?.bundle
+    const candidate = existing ? preserveLocalMetadata(existing.bundle, bundle) : bundle
+    if (!currentCanonical || shouldReplaceResource(currentCanonical, candidate)) {
+      const remaining = await requestValue<AuthorityOutboxRecord[]>(
+        outbox.index(ACCOUNT_RESOURCE_INDEX).getAll([
+          accountId,
+          bundle.resourceType,
+          bundle.resourceId,
+        ]),
+      )
+      const optimisticCommands = remaining
+        .filter((row) =>
+          row.status === 'pending' || row.status === 'sending' || row.status === 'retryable',
+        )
+        .sort(compareOutbox)
+        .map((row) => row.command)
+      const projected = optimisticCommands.length > 0
+        ? {
+            ...applyOptimisticAuthorityCommandsToBundle(
+              candidate,
+              optimisticCommands,
+              candidate.serverUpdatedAt,
+            ),
+            serverUpdatedAt: candidate.serverUpdatedAt,
+          }
+        : candidate
+      store.put(toStoredResource(accountId, projected, candidate.serverUpdatedAt, candidate))
     }
     await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, {
+      accountId,
+      resourceType: bundle.resourceType,
+      resourceId: bundle.resourceId,
+    })
   }
 
   async commitOptimisticMutation(
     input: CommitOptimisticAuthorityMutationInput,
   ): Promise<void> {
-    validateMutation(input)
+    await this.commitOptimisticMutations({
+      accountId: input.accountId,
+      baseBundle: input.baseBundle,
+      bundle: input.bundle,
+      commands: [input.command],
+      now: input.now,
+    })
+  }
+
+  async commitOptimisticMutations(
+    input: CommitOptimisticAuthorityMutationsInput,
+  ): Promise<void> {
+    if (input.commands.length === 0) throw new Error('Authority mutation batch is empty.')
+    input.commands.forEach((command) => validateMutation({ ...input, command }))
     const database = await this.open()
     const transaction = database.transaction([RESOURCE_STORE, OUTBOX_STORE], 'readwrite')
     const resources = transaction.objectStore(RESOURCE_STORE)
@@ -85,43 +143,153 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
     const currentResource = await requestValue<StoredAuthorityResource | undefined>(
       resources.get(resourceId),
     )
-    const existing = await requestValue<AuthorityOutboxRecord | undefined>(
-      outbox.get(input.command.operationId),
-    )
-
-    if (existing) {
-      if (
-        existing.accountId !== input.accountId ||
-        JSON.stringify(existing.command) !== JSON.stringify(input.command)
-      ) {
-        transaction.abort()
-        throw new Error('Authority operation id is already used by another mutation.')
-      }
-      await transactionComplete(transaction)
-      return
-    }
-
     if (currentResource && input.bundle.revision < currentResource.bundle.revision) {
       transaction.abort()
       throw new Error('Optimistic mutation is based on a stale authority revision.')
     }
 
-    resources.put(toStoredResource(input.accountId, input.bundle, input.now))
-    outbox.put({
-      operationId: input.command.operationId,
+    const canonicalBundle = currentResource?.canonicalBundle
+      ?? currentResource?.bundle
+      ?? input.baseBundle
+      ?? input.bundle
+    resources.put(toStoredResource(input.accountId, input.bundle, input.now, canonicalBundle))
+    for (const command of input.commands) {
+      const existing = await requestValue<AuthorityOutboxRecord | undefined>(
+        outbox.get(command.operationId),
+      )
+      if (existing) {
+        if (
+          existing.accountId !== input.accountId ||
+          JSON.stringify(existing.command) !== JSON.stringify(command)
+        ) {
+          transaction.abort()
+          throw new Error('Authority operation id is already used by another mutation.')
+        }
+        continue
+      }
+      outbox.put({
+        operationId: command.operationId,
+        accountId: input.accountId,
+        resourceType: input.bundle.resourceType,
+        resourceId: input.bundle.resourceId,
+        baseRevision: input.bundle.revision,
+        command,
+        status: 'pending',
+        attempts: 0,
+        nextAttemptAt: null,
+        lastError: null,
+        createdAt: command.createdAt,
+        updatedAt: input.now,
+      } satisfies AuthorityOutboxRecord)
+    }
+    await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, {
       accountId: input.accountId,
       resourceType: input.bundle.resourceType,
       resourceId: input.bundle.resourceId,
-      baseRevision: input.bundle.revision,
-      command: input.command,
-      status: 'pending',
-      attempts: 0,
-      nextAttemptAt: null,
-      lastError: null,
-      createdAt: input.command.createdAt,
-      updatedAt: input.now,
-    } satisfies AuthorityOutboxRecord)
+    })
+  }
+
+  async listResources(
+    accountId: string,
+    resourceType?: AuthorityResourceType,
+  ): Promise<CanonicalResourceBundle[]> {
+    const database = await this.open()
+    const transaction = database.transaction(RESOURCE_STORE, 'readonly')
+    const rows = await requestValue<StoredAuthorityResource[]>(
+      transaction.objectStore(RESOURCE_STORE).index(ACCOUNT_INDEX).getAll(accountId),
+    )
     await transactionComplete(transaction)
+    return rows
+      .filter((row) => !resourceType || row.resourceType === resourceType)
+      .map((row) => row.bundle)
+      .sort((left, right) => right.serverUpdatedAt.localeCompare(left.serverUpdatedAt))
+  }
+
+  async deleteResource(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+  ): Promise<void> {
+    const database = await this.open()
+    const transaction = database.transaction(RESOURCE_STORE, 'readwrite')
+    transaction.objectStore(RESOURCE_STORE).delete(resourceKey(accountId, resourceType, resourceId))
+    await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, { accountId, resourceType, resourceId })
+  }
+
+  async getSyncSnapshot(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+    online = typeof navigator === 'undefined' || navigator.onLine,
+  ): Promise<AuthorityProductSyncSnapshot> {
+    const rows = (await this.listAccountOutbox(accountId)).filter(
+      (row) => row.resourceType === resourceType && row.resourceId === resourceId,
+    )
+    const conflict = rows.find((row) => row.status === 'conflict')
+    const rejected = rows.find((row) => row.status === 'rejected')
+    const pending = rows.filter((row) =>
+      row.status === 'pending' || row.status === 'sending' || row.status === 'retryable',
+    )
+    if (conflict) {
+      return { status: 'conflict', pendingCount: rows.length, lastError: conflict.lastError }
+    }
+    if (rejected) {
+      return { status: 'error', pendingCount: rows.length, lastError: rejected.lastError }
+    }
+    if (!online) {
+      return { status: 'offline', pendingCount: pending.length, lastError: null }
+    }
+    return {
+      status: pending.length > 0 ? 'pending' : 'synced',
+      pendingCount: pending.length,
+      lastError: pending.find((row) => row.lastError)?.lastError ?? null,
+    }
+  }
+
+  subscribe(listener: WebAuthorityStoreListener): () => void {
+    const listeners = storeListeners.get(this.databaseName) ?? new Set<WebAuthorityStoreListener>()
+    listeners.add(listener)
+    storeListeners.set(this.databaseName, listeners)
+    return () => {
+      listeners.delete(listener)
+      if (listeners.size === 0) storeListeners.delete(this.databaseName)
+    }
+  }
+
+  async setResourceRole(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+    role: string,
+  ): Promise<CanonicalResourceBundle | null> {
+    const database = await this.open()
+    const transaction = database.transaction(RESOURCE_STORE, 'readwrite')
+    const resources = transaction.objectStore(RESOURCE_STORE)
+    const id = resourceKey(accountId, resourceType, resourceId)
+    const row = await requestValue<StoredAuthorityResource | undefined>(resources.get(id))
+    if (!row) {
+      await transactionComplete(transaction)
+      return null
+    }
+
+    const bundle = { ...row.bundle, data: { ...row.bundle.data, _role: role } }
+    const canonical = row.canonicalBundle
+      ? { ...row.canonicalBundle, data: { ...row.canonicalBundle.data, _role: role } }
+      : undefined
+    resources.put({ ...row, bundle, canonicalBundle: canonical })
+    await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, { accountId, resourceType, resourceId })
+    return bundle
+  }
+
+  async getNextRetryAt(accountId: string): Promise<string | null> {
+    const retryAt = (await this.listAccountOutbox(accountId))
+      .filter((row) => row.status === 'retryable' && row.nextAttemptAt)
+      .map((row) => row.nextAttemptAt as string)
+      .sort()[0]
+    return retryAt ?? null
   }
 
   async listReadyOutbox(
@@ -159,18 +327,24 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
     const id = resourceKey(accountId, result.resourceType, result.resourceId)
     const existing = await requestValue<StoredAuthorityResource | undefined>(resources.get(id))
 
-    let effectiveRevision = existing?.bundle.revision ?? 0
-    if (result.bundle && (!existing || shouldReplaceResource(existing.bundle, result.bundle))) {
-      resources.put(toStoredResource(accountId, result.bundle, now))
-      effectiveRevision = result.bundle.revision
-    } else if (existing && result.revision >= existing.bundle.revision) {
-      const canonical = applyCanonicalChangesToBundle(existing.bundle, result, now)
-      resources.put(toStoredResource(accountId, canonical, now))
-      effectiveRevision = canonical.revision
-    } else if (!existing) {
+    const existingCanonical = existing?.canonicalBundle ?? existing?.bundle ?? null
+    let canonicalBundle = existingCanonical
+    const resultBundle = result.bundle && existing
+      ? preserveLocalMetadata(existing.bundle, result.bundle)
+      : result.bundle
+    if (resultBundle && (!existingCanonical || shouldReplaceResource(existingCanonical, resultBundle))) {
+      canonicalBundle = resultBundle
+    } else if (existingCanonical && result.revision >= existingCanonical.revision) {
+      canonicalBundle = applyCanonicalChangesToBundle(existingCanonical, result, now)
+    } else if (!existingCanonical) {
       transaction.abort()
       throw new Error('Cannot acknowledge authority commands without a local resource cache.')
     }
+    if (!canonicalBundle) {
+      transaction.abort()
+      throw new Error('Canonical authority state is unavailable after acknowledgement.')
+    }
+    const effectiveRevision = canonicalBundle.revision
 
     for (const operationId of result.acknowledgedOperationIds) {
       const row = await requestValue<AuthorityOutboxRecord | undefined>(outbox.get(operationId))
@@ -192,7 +366,22 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
         outbox.put({ ...row, baseRevision: effectiveRevision, updatedAt: now })
       }
     }
+    const optimisticCommands = remaining
+      .filter((row) =>
+        row.status === 'pending' || row.status === 'sending' || row.status === 'retryable',
+      )
+      .sort(compareOutbox)
+      .map((row) => row.command)
+    const projection = optimisticCommands.length > 0
+      ? applyOptimisticAuthorityCommandsToBundle(canonicalBundle, optimisticCommands, now)
+      : canonicalBundle
+    resources.put(toStoredResource(accountId, projection, now, canonicalBundle))
     await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, {
+      accountId,
+      resourceType: result.resourceType,
+      resourceId: result.resourceId,
+    })
   }
 
   async markRetryable(
@@ -238,7 +427,12 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
     const resources = transaction.objectStore(RESOURCE_STORE)
     const outbox = transaction.objectStore(OUTBOX_STORE)
 
-    if (bundle) resources.put(toStoredResource(accountId, bundle, now))
+    if (bundle) {
+      const id = resourceKey(accountId, bundle.resourceType, bundle.resourceId)
+      const existing = await requestValue<StoredAuthorityResource | undefined>(resources.get(id))
+      const canonicalBundle = existing ? preserveLocalMetadata(existing.bundle, bundle) : bundle
+      resources.put(toStoredResource(accountId, canonicalBundle, now, canonicalBundle))
+    }
     for (const operationId of operationIds) {
       const row = await requestValue<AuthorityOutboxRecord | undefined>(outbox.get(operationId))
       if (row?.accountId === accountId) {
@@ -252,6 +446,7 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
       }
     }
     await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, { accountId })
   }
 
   async recoverStaleSending(
@@ -331,6 +526,7 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
     }
 
     await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, { accountId })
   }
 
   close(): void {
@@ -368,6 +564,7 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
       if (row?.accountId === accountId) outbox.put(transform(row))
     }
     await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, { accountId })
   }
 }
 
@@ -435,6 +632,7 @@ function toStoredResource(
   accountId: string,
   bundle: CanonicalResourceBundle,
   updatedAt = bundle.serverUpdatedAt,
+  canonicalBundle: CanonicalResourceBundle = bundle,
 ): StoredAuthorityResource {
   return {
     id: resourceKey(accountId, bundle.resourceType, bundle.resourceId),
@@ -442,6 +640,7 @@ function toStoredResource(
     resourceType: bundle.resourceType,
     resourceId: bundle.resourceId,
     bundle,
+    canonicalBundle,
     updatedAt,
   }
 }
@@ -455,6 +654,15 @@ function shouldReplaceResource(
     (candidate.revision === current.revision &&
       candidate.serverUpdatedAt >= current.serverUpdatedAt)
   )
+}
+
+function preserveLocalMetadata(
+  current: CanonicalResourceBundle,
+  candidate: CanonicalResourceBundle,
+): CanonicalResourceBundle {
+  const role = current.data._role
+  if (candidate.data._role !== undefined || role === undefined) return candidate
+  return { ...candidate, data: { ...candidate.data, _role: role } }
 }
 
 function validateMutation(input: CommitOptimisticAuthorityMutationInput): void {
@@ -475,4 +683,8 @@ function compareOutbox(left: AuthorityOutboxRecord, right: AuthorityOutboxRecord
 
 function normalizePromotedStatus(status: AuthorityOutboxStatus): AuthorityOutboxStatus {
   return status === 'sending' ? 'retryable' : status
+}
+
+function emitStoreChange(databaseName: string, change: WebAuthorityStoreChange): void {
+  storeListeners.get(databaseName)?.forEach((listener) => listener(change))
 }

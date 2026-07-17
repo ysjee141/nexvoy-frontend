@@ -144,9 +144,31 @@ export interface AuthorityOutboxRecord {
 
 export interface CommitOptimisticAuthorityMutationInput {
   accountId: string
+  baseBundle?: CanonicalResourceBundle
   bundle: CanonicalResourceBundle
   command: AuthorityCommand
   now: string
+}
+
+export interface CommitOptimisticAuthorityMutationsInput {
+  accountId: string
+  baseBundle?: CanonicalResourceBundle
+  bundle: CanonicalResourceBundle
+  commands: AuthorityCommand[]
+  now: string
+}
+
+export type AuthorityProductSyncStatus =
+  | 'offline'
+  | 'pending'
+  | 'synced'
+  | 'conflict'
+  | 'error'
+
+export interface AuthorityProductSyncSnapshot {
+  status: AuthorityProductSyncStatus
+  pendingCount: number
+  lastError: string | null
 }
 
 export interface AuthorityLocalStore {
@@ -157,6 +179,7 @@ export interface AuthorityLocalStore {
   ): Promise<CanonicalResourceBundle | null>
   putResource(accountId: string, bundle: CanonicalResourceBundle): Promise<void>
   commitOptimisticMutation(input: CommitOptimisticAuthorityMutationInput): Promise<void>
+  commitOptimisticMutations(input: CommitOptimisticAuthorityMutationsInput): Promise<void>
   listReadyOutbox(accountId: string, now: string, limit: number): Promise<AuthorityOutboxRecord[]>
   markSending(accountId: string, operationIds: string[], now: string): Promise<void>
   applyAcknowledgement(

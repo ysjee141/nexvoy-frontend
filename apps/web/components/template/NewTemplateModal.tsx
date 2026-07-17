@@ -7,7 +7,7 @@ import { X, Sparkles } from 'lucide-react'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useRouter } from 'next/navigation'
 import TemplateForm, { TemplateItemInput } from './TemplateForm'
-import { createWebTemplateDocument } from '@/lib/local-first/documentPrimaryRepositories'
+import { createWebProductTemplate } from '@/lib/local-first/repositoryFactory'
 import {
     createChecklistCategory,
     deleteChecklistCategory,
@@ -100,7 +100,7 @@ export default function NewTemplateModal({ isOpen, onClose, onSuccess }: NewTemp
             const { data: { session } } = await supabase.auth.getSession()
             if (!session?.user) throw new Error('인증 정보가 없습니다.')
 
-            await createWebTemplateDocument({
+            await createWebProductTemplate({
                 supabase,
                 title: title.trim(),
                 items: validItems.map((item) => ({

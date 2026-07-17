@@ -10,6 +10,7 @@ import {
   decideAuthorityInvalidation,
   parseAuthorityInvalidation,
 } from '../serverAuthorityInvalidation'
+import { applyOptimisticAuthorityCommandsToBundle } from '../serverAuthorityMaterialize'
 import type {
   AuthorityApplyResult,
   AuthorityLocalStore,
@@ -70,6 +71,8 @@ class FakeStore implements AuthorityLocalStore {
   }
 
   async commitOptimisticMutation(): Promise<void> {}
+
+  async commitOptimisticMutations(): Promise<void> {}
 
   async listReadyOutbox(): Promise<AuthorityOutboxRecord[]> {
     return this.records.filter((item) => item.status === 'pending' || item.status === 'retryable')
@@ -166,6 +169,36 @@ function repositoryWith(
 }
 
 async function run(): Promise<void> {
+  const optimisticTripId = '10000000-0000-0000-0000-000000000099'
+  const optimistic = applyOptimisticAuthorityCommandsToBundle({
+    resourceType: 'trip',
+    resourceId: optimisticTripId,
+    revision: 0,
+    serverUpdatedAt: now,
+    data: { trip: null, checklists: [], checklist_item_assignees: [] },
+  }, [
+    {
+      operationId: '00000000-0000-0000-0000-000000000091',
+      resourceId: optimisticTripId,
+      entityType: 'trip',
+      entityId: optimisticTripId,
+      action: 'upsert',
+      payload: { destination: '전주', user_id: 'account-1' },
+      createdAt: now,
+    },
+    {
+      operationId: '00000000-0000-0000-0000-000000000092',
+      resourceId: optimisticTripId,
+      entityType: 'checklist',
+      entityId: '10000000-0000-0000-0000-000000000098',
+      action: 'upsert',
+      payload: { title: '준비물' },
+      createdAt: now,
+    },
+  ], now)
+  assert.equal((optimistic.data.trip as { destination?: string }).destination, '전주')
+  assert.equal((optimistic.data.checklists as Array<{ title?: string }>)[0]?.title, '준비물')
+
   const invalidation = parseAuthorityInvalidation({
     resource_type: 'trip',
     resource_id: '10000000-0000-0000-0000-000000000001',

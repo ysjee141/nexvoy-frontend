@@ -2,8 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
-import Link from 'next/link'
-import { ArrowLeft, Calendar, ListChecks, MapPin } from 'lucide-react'
+import { Calendar, ListChecks, MapPin } from 'lucide-react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import TripHeaderActions from '@/components/trips/TripHeaderActions'
 import { useEffect, useState } from 'react'
@@ -15,24 +14,16 @@ import ChecklistClient from '../checklist/ChecklistClient'
 const RouteMapView = dynamic(() => import('@/components/trips/RouteMapView'), { ssr: false })
 import { useUIStore } from '@/stores/useUIStore'
 import { CacheUtil } from '@/lib/cache'
-import { collaboration } from '@/lib/collaboration'
 import { useNetworkStore } from '@/stores/useNetworkStore'
-import P2PConnectionStatusBadge from '@/components/trips/P2PConnectionStatusBadge'
-import type { P2PConnectionStatus } from '@/components/trips/P2PConnectionStatusBadge'
-import { useWebP2PDocumentConnection } from '@/lib/local-first/webP2PDocumentConnection'
-import { ensureWebDocumentKeyReadiness } from '@/lib/local-first/keyProvisioningService'
 import {
-    flushWebBackupQueue,
-    getWebBackupQueueSnapshot,
-    subscribeToWebBackupQueue,
-    type WebBackupQueueSnapshot,
-} from '@/lib/local-first/backupSyncService'
-import {
-    createWebDocumentPrimaryRepositories,
-    ensureWebTripDocumentRemoteBootstrap,
-} from '@/lib/local-first/documentPrimaryRepositories'
-import { tripDetailToWebMemberRows, tripDetailToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
+    createWebProductDocumentRepositories,
+    getWebProductSyncSnapshot,
+    subscribeWebProductResource,
+} from '@/lib/local-first/repositoryFactory'
+import { tripDetailToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
 import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
+import type { AuthorityProductSyncSnapshot } from '@nexvoy/core'
+import AuthoritySyncStatusBadge from '@/components/trips/AuthoritySyncStatusBadge'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -47,20 +38,16 @@ export default function TripLayoutClient() {
 
     const [trip, setTrip] = useState<any>(null)
     const [currentUser, setCurrentUser] = useState<any>(null)
-    const [members, setMembers] = useState<any[]>([])
-    const [backupQueue, setBackupQueue] = useState<WebBackupQueueSnapshot | null>(null)
+    const [syncSnapshot, setSyncSnapshot] = useState<AuthorityProductSyncSnapshot>({
+        status: 'synced',
+        pendingCount: 0,
+        lastError: null,
+    })
     const [loading, setLoading] = useState(true)
     const [activeTab, setActiveTab] = useState<'plans' | 'checklist' | 'map'>(initialTab)
     const { setMobileTitle } = useUIStore()
     const { isOnline } = useNetworkStore()
-    const p2pStatus = useWebP2PDocumentConnection({
-        enabled: Boolean(id && currentUser?.id && trip?.user_id && isOnline),
-        documentId: id,
-        currentUserId: currentUser?.id ?? null,
-        ownerId: trip?.user_id ?? null,
-        members,
-    })
-    const syncStatus = resolveVisibleSyncStatus(p2pStatus, backupQueue)
+    const syncStatus = syncSnapshot.status
 
     useEffect(() => {
         const urlTab = searchParams.get('tab')
@@ -108,7 +95,7 @@ export default function TripLayoutClient() {
                 }
                 setCurrentUser(currentUser)
                 
-                const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: 'viewer' })
+                const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: 'viewer' })
                 const documentTrip = await repositories.trips.getTrip(id)
 
                 if (!documentTrip) {
@@ -123,13 +110,6 @@ export default function TripLayoutClient() {
                     }
                 } else {
                     setTrip(tripDetailToWebTripRow(documentTrip))
-                    const documentMembers = tripDetailToWebMemberRows(documentTrip)
-                    if (documentMembers.length > 0) {
-                        setMembers(documentMembers)
-                    } else {
-                        const { data: memberRows } = await collaboration.getMembers(id)
-                        setMembers(memberRows ?? [])
-                    }
                 }
             } catch (err) {
                 console.error('Failed to fetch trip:', err)
@@ -141,86 +121,30 @@ export default function TripLayoutClient() {
     }, [id, supabase, router])
 
     useEffect(() => {
-        if (!id || !currentUser?.id || !trip?.user_id || !isOnline) return undefined
-
-        const role = resolveDocumentKeyReadinessRole({
-            currentUserId: currentUser.id,
-            ownerId: trip.user_id,
-            members,
-        })
+        if (!id || !currentUser?.id) return undefined
         let disposed = false
-        let running = false
-        const run = () => {
-            if (disposed || running) return
-            running = true
-            void (async () => {
-                if (role === 'owner') {
-                    await ensureWebTripDocumentRemoteBootstrap({
-                        supabase,
-                        tripId: id,
-                    })
-                }
-                await ensureWebDocumentKeyReadiness({
-                    supabase,
-                    documentId: id,
-                    role,
-                })
-                if (role === 'owner' || role === 'editor') {
-                    await flushWebBackupQueue({ supabase, documentId: id })
-                }
-                const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: role })
-                await repositories.trips.getTrip(id)
-            })().catch((error) => {
-                const reason = error instanceof Error ? error.message : 'unknown'
-                console.warn('[document key readiness failed]', reason)
-            }).finally(() => {
-                running = false
-            })
+        let unsubscribe: (() => Promise<void>) | undefined
+        const load = async () => {
+            const [snapshot, repositories] = await Promise.all([
+                getWebProductSyncSnapshot(supabase, 'trip', id),
+                createWebProductDocumentRepositories(supabase, { actorRole: 'viewer' }),
+            ])
+            const detail = await repositories.trips.getTrip(id)
+            if (disposed) return
+            setSyncSnapshot(snapshot)
+            if (detail) {
+                setTrip(tripDetailToWebTripRow(detail))
+            }
         }
-
-        run()
-        if (role !== 'owner' && role !== 'editor') return () => { disposed = true }
-
-        const intervalId = window.setInterval(() => {
-            if (!disposed) run()
-        }, 10_000)
-        const handleVisibility = () => {
-            if (document.visibilityState === 'visible') run()
-        }
-        document.addEventListener('visibilitychange', handleVisibility)
-
+        void load().catch(() => undefined)
+        void subscribeWebProductResource(supabase, 'trip', id, () => {
+            void load().catch(() => undefined)
+        }).then((next) => { unsubscribe = next })
         return () => {
             disposed = true
-            window.clearInterval(intervalId)
-            document.removeEventListener('visibilitychange', handleVisibility)
+            void unsubscribe?.()
         }
-    }, [currentUser?.id, id, isOnline, members, supabase, trip?.user_id])
-
-    useEffect(() => {
-        if (!id || !currentUser?.id || !isOnline) {
-            setBackupQueue(null)
-            return undefined
-        }
-
-        let disposed = false
-        const load = () => {
-            void getWebBackupQueueSnapshot(id).then((snapshot) => {
-                if (!disposed) setBackupQueue(snapshot)
-            }).catch(() => {
-                if (!disposed) setBackupQueue(null)
-            })
-        }
-
-        load()
-        const unsubscribe = subscribeToWebBackupQueue(id, load)
-        const intervalId = window.setInterval(load, 5_000)
-
-        return () => {
-            disposed = true
-            unsubscribe()
-            window.clearInterval(intervalId)
-        }
-    }, [currentUser?.id, id, isOnline])
+    }, [currentUser?.id, id, isOnline, supabase])
 
     if (loading) {
         return <div className={css({ w: '100%', py: '40px', textAlign: 'center', color: '#888' })}>여행 정보를 불러오는 중...</div>
@@ -350,8 +274,16 @@ export default function TripLayoutClient() {
                     alignItems: 'center',
                     pr: '4px',
                 })}>
-                    <P2PConnectionStatusBadge status={syncStatus} />
+                    <AuthoritySyncStatusBadge status={syncStatus} detail={syncSnapshot.lastError} />
                 </div>
+            </div>
+
+            <div className={css({
+                display: { base: 'flex', sm: 'none' },
+                justifyContent: 'flex-end',
+                py: '8px',
+            })}>
+                <AuthoritySyncStatusBadge status={syncStatus} detail={syncSnapshot.lastError} />
             </div>
 
             {/* 하위 컨텐츠 전환 영역 (언마운트 하지 않고 display none으로 유지하여 상태 보존 및 즉각 전환) */}
@@ -360,7 +292,7 @@ export default function TripLayoutClient() {
                     <TripClient isActive={activeTab === 'plans'} />
                 </div>
                 <div style={{ display: activeTab === 'checklist' ? 'block' : 'none' }}>
-                    <ChecklistClient isActive={activeTab === 'checklist'} p2pStatus={p2pStatus} />
+                    <ChecklistClient isActive={activeTab === 'checklist'} />
                 </div>
                 <div style={{ display: activeTab === 'map' ? 'block' : 'none' }}>
                     <RouteMapView
@@ -372,31 +304,4 @@ export default function TripLayoutClient() {
             </div>
         </div>
     )
-}
-
-function resolveVisibleSyncStatus(
-    p2pStatus: P2PConnectionStatus,
-    backupQueue: WebBackupQueueSnapshot | null,
-): P2PConnectionStatus {
-    if (p2pStatus === 'connected' || p2pStatus === 'connecting') return p2pStatus
-    if (!backupQueue || backupQueue.pendingCount === 0) {
-        return backupQueue?.status === 'synced' ? 'backup_synced' : p2pStatus
-    }
-
-    if (backupQueue.lastError === 'key_unavailable') return 'backup_waiting_for_key'
-    if (backupQueue.status === 'failed') return 'backup_failed'
-    if (backupQueue.status === 'pending' || backupQueue.status === 'uploading') return 'backup_pending'
-    return p2pStatus
-}
-
-function resolveDocumentKeyReadinessRole(input: {
-    currentUserId: string
-    ownerId: string
-    members: Array<{ user_id?: string | null; role?: string | null; status?: string | null }>
-}): 'owner' | 'editor' | 'viewer' | null {
-    if (input.currentUserId === input.ownerId) return 'owner'
-    const member = input.members.find((candidate) => candidate.user_id === input.currentUserId)
-    if (!member || member.status !== 'accepted') return null
-    if (member.role === 'owner' || member.role === 'editor' || member.role === 'viewer') return member.role
-    return null
 }

@@ -8,6 +8,7 @@ import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { analytics } from '@/services/AnalyticsService'
+import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
 
 const libraries: ("places")[] = ["places"]
 
@@ -116,18 +117,14 @@ export default function EditTripModal({ isOpen, onClose, onSuccess, trip }: Edit
         setError('')
 
         try {
-            const { error: updateError } = await supabase
-                .from('trips')
-                .update({
-                    destination,
-                    start_date: startDate,
-                    end_date: endDate,
-                    adults_count: adults,
-                    children_count: childrenCount,
-                })
-                .eq('id', trip.id)
-
-            if (updateError) throw updateError
+            const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: 'owner' })
+            await repositories.trips.updateTrip(trip.id, {
+                destination,
+                startDate,
+                endDate,
+                adultsCount: adults,
+                childrenCount,
+            })
 
             onSuccess({
                 destination,

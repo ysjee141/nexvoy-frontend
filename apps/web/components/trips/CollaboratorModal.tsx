@@ -18,6 +18,7 @@ import {
     createWebDocumentPrimaryRepositories,
     ensureWebTripDocumentRemoteBootstrap,
 } from '@/lib/local-first/documentPrimaryRepositories'
+import { isWebServerAuthorityEnabled } from '@/lib/local-first/repositoryFactory'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -151,10 +152,12 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('로그인이 필요합니다.')
 
-            await ensureWebTripDocumentRemoteBootstrap({
-                supabase,
-                tripId,
-            })
+            if (!isWebServerAuthorityEnabled()) {
+                await ensureWebTripDocumentRemoteBootstrap({
+                    supabase,
+                    tripId,
+                })
+            }
 
             const result = await CollaborationService.createInvite({
                 documentId: tripId,
@@ -219,6 +222,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     }
 
     const syncCollaboratorSnapshot = async (members: Collaborator[], actorRole: MemberRole | null) => {
+        if (isWebServerAuthorityEnabled()) return
         try {
             const repositories = await createWebDocumentPrimaryRepositories(supabase, {
                 actorRole,
@@ -234,6 +238,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     }
 
     const upsertCollaboratorSnapshot = async (member: Collaborator) => {
+        if (isWebServerAuthorityEnabled()) return
         try {
             const repositories = await createWebDocumentPrimaryRepositories(supabase, {
                 actorRole: currentMemberRole ?? null,
@@ -247,6 +252,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     }
 
     const revokeCollaboratorSnapshot = async (memberId: string) => {
+        if (isWebServerAuthorityEnabled()) return
         try {
             const repositories = await createWebDocumentPrimaryRepositories(supabase, {
                 actorRole: currentMemberRole ?? null,

@@ -13,6 +13,10 @@ import AccountLinking from '@/components/profile/AccountLinking'
 import DownloadedTripsModal from '@/components/profile/DownloadedTripsModal'
 import { AuthService } from '@/services/AuthService'
 import { CacheUtil } from '@/lib/cache'
+import {
+    createWebProductDocumentRepositories,
+    refreshWebProductList,
+} from '@/lib/local-first/repositoryFactory'
 
 function ProfileContent() {
     const supabase = createClient()
@@ -79,42 +83,12 @@ function ProfileContent() {
                 setNickname(profileData.nickname || currentUser.email?.split('@')[0] || '')
             }
 
-            // 통계 가져오기
-            const { data: trips } = await supabase
-                .from('trips')
-                .select('id, start_date, end_date')
-                .eq('user_id', currentUser.id)
-
-            const allTrips = trips || []
-            const tripIds = allTrips.map((t: any) => t.id)
-
-            let totalPlans = 0
-            let totalChecked = 0
-            let totalItems = 0
-
-            if (tripIds.length > 0) {
-                const { count: planCount } = await supabase
-                    .from('plans')
-                    .select('id', { count: 'exact', head: true })
-                    .in('trip_id', tripIds)
-                totalPlans = planCount || 0
-
-                const { data: checklists } = await supabase
-                    .from('checklists')
-                    .select('id')
-                    .in('trip_id', tripIds)
-
-                const checklistIds = checklists?.map((c: any) => c.id) || []
-                if (checklistIds.length > 0) {
-                    const { data: checkItems } = await supabase
-                        .from('checklist_items')
-                        .select('is_checked')
-                        .in('checklist_id', checklistIds)
-
-                    totalItems = checkItems?.length || 0
-                    totalChecked = checkItems?.filter((i: any) => i.is_checked).length || 0
-                }
-            }
+            await refreshWebProductList(supabase, 'trip')
+            const repositories = await createWebProductDocumentRepositories(supabase)
+            const allTrips = (await repositories.trips.listTrips(currentUser.id))
+                .filter((trip) => trip.ownerId === currentUser.id)
+            const tripDetails = await Promise.all(allTrips.map((trip) => repositories.trips.getTrip(trip.id)))
+            const totalPlans = tripDetails.reduce((sum, trip) => sum + (trip?.planCount ?? 0), 0)
 
             const today = new Date()
             today.setHours(0, 0, 0, 0)
@@ -123,9 +97,9 @@ function ProfileContent() {
             let upcomingCount = 0
             let totalDaysResult = 0
 
-            allTrips.forEach((t: any) => {
-                const start = new Date(t.start_date)
-                const end = new Date(t.end_date)
+            allTrips.forEach((trip) => {
+                const start = new Date(trip.startDate)
+                const end = new Date(trip.endDate)
                 start.setHours(0, 0, 0, 0)
                 end.setHours(23, 59, 59, 999)
 

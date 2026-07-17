@@ -13,7 +13,7 @@ import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
 import RouteMapInfoModal from '@/components/trips/RouteMapInfoModal'
 import PlanDetailModal from '@/components/trips/PlanDetailModal'
 import NewPlanModal from '@/components/trips/NewPlanModal'
-import { createWebDocumentPrimaryRepositories } from '@/lib/local-first/documentPrimaryRepositories'
+import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
 import { materializePlanTimeline } from '@nexvoy/core/local-first/materialize'
 import { planTimelineItemToWebPlanRow } from '@/lib/local-first/tripReadModelAdapters'
 import type { CreatePlanMutationInput } from '@nexvoy/core/local-first/documentMutationWriter'
@@ -197,7 +197,7 @@ export default function RouteMapView({
         let cancelled = false
 
         const fetchData = async () => {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase)
+            const repositories = await createWebProductDocumentRepositories(supabase)
             const [planRows, role] = await Promise.all([
                 repositories.plans.listPlans(tripId),
                 getDocumentPrimaryUserRole(supabase, tripId),
@@ -345,7 +345,7 @@ export default function RouteMapView({
                 if (!tripId || (userRole !== 'owner' && userRole !== 'editor')) {
                     throw new Error('일정을 수정할 권한이 없습니다.')
                 }
-                const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+                const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: userRole })
                 await repositories.plans.updatePlan(tripId, {
                     planId,
                     patch: { isVisited },
@@ -381,7 +381,7 @@ export default function RouteMapView({
     // plans 재패칭 (수정/삭제 후)
     const refetchPlans = useCallback(async () => {
         if (!tripId) return
-        const repositories = await createWebDocumentPrimaryRepositories(supabase)
+        const repositories = await createWebProductDocumentRepositories(supabase)
         const data = await repositories.plans.listPlans(tripId)
         setPlans(data.map((plan) => ({
             ...planTimelineItemToWebPlanRow(tripId, plan),
@@ -397,7 +397,7 @@ export default function RouteMapView({
         if (userRole !== 'owner' && userRole !== 'editor') {
             throw new Error('일정을 수정할 권한이 없습니다.')
         }
-        const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+        const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: userRole })
         const planId = editPlanId ?? createLocalPlanId()
         const input = toDocumentPlanInput(planId, plan)
         const result = editPlanId
@@ -438,7 +438,7 @@ export default function RouteMapView({
                 if (!tripId || (userRole !== 'owner' && userRole !== 'editor')) {
                     throw new Error('일정을 삭제할 권한이 없습니다.')
                 }
-                const repositories = await createWebDocumentPrimaryRepositories(supabase, { actorRole: userRole })
+                const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: userRole })
                 await repositories.plans.deletePlan(tripId, planId)
                 setPlans(prev => prev.filter(p => p.id !== planId))
                 setDetailPlan(null)
@@ -741,10 +741,11 @@ async function getDocumentPrimaryUserRole(
     supabase: ReturnType<typeof createClient>,
     tripId: string,
 ): Promise<'owner' | 'editor' | 'viewer' | null> {
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { session } } = await supabase.auth.getSession()
+    const user = session?.user
     if (!user) return null
 
-    const repositories = await createWebDocumentPrimaryRepositories(supabase)
+    const repositories = await createWebProductDocumentRepositories(supabase)
     const documentTrip = await repositories.trips.getTrip(tripId)
     if (documentTrip?.ownerId === user.id) return 'owner'
 

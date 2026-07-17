@@ -1,3 +1,65 @@
+# Walkthrough: TASK-050 Web Server-Authority Product Cutover
+
+## Summary
+
+Web의 여행, 일정, 준비물, 템플릿 제품 경로를 Supabase normalized row authority로 전환했다. 화면은 계정별
+IndexedDB cache를 먼저 읽고, 수정은 optimistic projection과 durable outbox에 원자 기록한다. 서버 반영은
+authenticated batch RPC로 수행하며 Realtime은 revision invalidation만 전달한다.
+
+```mermaid
+flowchart LR
+    UI["Web product UI"] --> CACHE["IndexedDB optimistic projection"]
+    UI --> OUTBOX["Transactional outbox"]
+    OUTBOX --> RPC["Authenticated command RPC"]
+    RPC --> ROWS["Normalized canonical rows"]
+    ROWS --> RT["Revision invalidation"]
+    RT --> REFRESH["Delta or full bundle refresh"]
+    REFRESH --> CANON["IndexedDB canonical bundle"]
+    CANON --> CACHE
+```
+
+## Artifacts
+
+- GitHub Issue [#354](https://github.com/ysjee141/nexvoy-frontend/issues/354)
+- Pull Request [#355](https://github.com/ysjee141/nexvoy-frontend/pull/355)
+- 브랜치: `codex/task-050-web-authority-cutover`
+- `apps/web/lib/data/authorityProductRepositories.ts`
+- `apps/web/lib/server-authority/indexedDbStore.ts`
+- `apps/web/components/trips/AuthoritySyncStatusBadge.tsx`
+- `apps/web/e2e/server-authority-product.spec.ts`
+
+## Key Changes
+
+- authority mode를 Web 기본 repository로 지정하고 환경 변수 또는 query flag로 document-primary 롤백을 유지했다.
+- 여행 생성은 client UUID의 trip과 기본 준비물 checklist command를 한 local transaction에 기록한다.
+- 여행·일정·URL·준비물·개인 체크·담당자·템플릿·공유 command를 optimistic materializer와 RPC에 연결했다.
+- canonical bundle과 optimistic projection을 분리해 remote refresh나 out-of-order ack가 미전송 변경을 덮지 않도록 했다.
+- outbox는 1초 debounce, 정확한 retry 시각, online/foreground trigger, 계정 세션 일치 검사를 사용한다.
+- active resource는 private Realtime invalidation을 구독하고 revision gap이면 full bundle로 복구한다.
+- 여행 상세에 오프라인 저장, 저장 대기, 동기화 완료, 충돌, 저장 오류 상태를 표시한다.
+- 신규 제품 경로는 document key, encrypted backup, Yjs update, WebRTC signaling을 호출하지 않는다.
+
+## Verification
+
+| 검증 | 결과 |
+| --- | --- |
+| `pnpm --filter nexvoy-web test:authority` | PASS |
+| `pnpm --filter @nexvoy/core test` | PASS |
+| `pnpm typecheck` | PASS |
+| `pnpm build:packages` | PASS |
+| `pnpm build` | PASS |
+| `pnpm build:mobile` | PASS |
+| `pnpm --filter nexvoy-web exec playwright test --list` | PASS, 14 tests |
+| TASK-050 Playwright 실제 실행 | BLOCKED, 원격 DEV cleanup 방지 안전장치 |
+
+## Remaining Work
+
+- 로컬 Supabase에 TASK-046/049 migration을 적용하고 TASK-050 다중 사용자 E2E를 실제 실행한다.
+- Mobile SQLite/cache/outbox와 제품 전환은 TASK-051/052에서 진행한다.
+- invitation의 document key 의존 제거, asset 전송, legacy runtime 삭제는 TASK-053~055 범위다.
+
+---
+
 # Walkthrough: TASK-046~049 Server Authority Sync Foundation
 
 ## Summary
