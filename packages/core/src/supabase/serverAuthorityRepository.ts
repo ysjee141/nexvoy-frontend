@@ -16,7 +16,7 @@ import {
   type CanonicalAuthorityChange,
   type CanonicalResourceBundle,
   type JsonObject,
-} from '../sync/serverAuthorityTypes'
+} from '../authority/serverAuthorityTypes'
 
 interface SupabaseRpcErrorShape {
   code?: string

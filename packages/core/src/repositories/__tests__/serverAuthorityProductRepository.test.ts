@@ -4,8 +4,8 @@ import {
   type AuthorityProductSyncSnapshot,
   type AuthorityResourceType,
   type CanonicalResourceBundle,
-} from '../../sync/serverAuthorityTypes'
-import { applyOptimisticAuthorityCommandsToBundle } from '../../sync/serverAuthorityMaterialize'
+} from '../../authority/serverAuthorityTypes'
+import { applyOptimisticAuthorityCommandsToBundle } from '../../authority/serverAuthorityMaterialize'
 import {
   createServerAuthorityProductRepositories,
   createServerAuthorityTemplate,

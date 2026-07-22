@@ -44,10 +44,10 @@ test.describe('TASK-050 Web server-authority product integration', () => {
       const detailUrl = `/trips/detail?id=${trip.id}&tab=checklist&serverAuthority=1`;
       await ownerPage.goto(detailUrl);
       await editorPage.goto(detailUrl);
-      await expect(ownerPage.getByText('TASK-050 동기화 검증', { exact: false })).toBeVisible({
+      await expect(ownerPage.getByRole('heading', { name: 'TASK-050 동기화 검증 여행', exact: true })).toBeVisible({
         timeout: 15000,
       });
-      await expect(editorPage.getByText('TASK-050 동기화 검증', { exact: false })).toBeVisible({
+      await expect(editorPage.getByRole('heading', { name: 'TASK-050 동기화 검증 여행', exact: true })).toBeVisible({
         timeout: 15000,
       });
 
@@ -57,7 +57,7 @@ test.describe('TASK-050 Web server-authority product integration', () => {
       await ownerPage.getByPlaceholder('어떤 준비물인가요?').fill(itemName);
       await ownerPage.getByRole('button', { name: '추가', exact: true }).click();
       await expect(ownerPage.getByText(itemName)).toBeVisible({ timeout: 10000 });
-      await expect(ownerPage.getByText('오프라인 저장')).toBeVisible();
+      await expect(ownerPage.getByRole('status', { name: '오프라인 저장', exact: true }).first()).toBeVisible();
       expect(await getChecklistItemByName(checklist.id, itemName)).toBeNull();
 
       await ownerContext.setOffline(false);
@@ -65,7 +65,7 @@ test.describe('TASK-050 Web server-authority product integration', () => {
         () => getChecklistItemByName(checklist.id, itemName),
         { timeout: 15000 },
       ).not.toBeNull();
-      await expect(ownerPage.getByText('동기화 완료')).toBeVisible({ timeout: 15000 });
+      await expect(ownerPage.getByRole('status', { name: '동기화 완료', exact: true }).first()).toBeVisible({ timeout: 15000 });
       await expect(editorPage.getByText(itemName)).toBeVisible({ timeout: 15000 });
       expect(legacyRequests).toEqual([]);
     } finally {
@@ -85,7 +85,7 @@ test.describe('TASK-050 Web server-authority product integration', () => {
     try {
       const page = await authenticatedContext.newPage();
       await page.goto(`/trips/detail?id=${trip.id}&tab=plans&serverAuthority=1`);
-      await expect(page.getByText('TASK-050 일정 명령 검증', { exact: false })).toBeVisible({
+      await expect(page.getByRole('heading', { name: 'TASK-050 일정 명령 검증 여행', exact: true })).toBeVisible({
         timeout: 15000,
       });
 
@@ -105,8 +105,8 @@ test.describe('TASK-050 Web server-authority product integration', () => {
         () => getPlanByTitle(trip.id, planTitle),
         { timeout: 15000 },
       ).not.toBeNull();
-      await expect(page.getByText('TASK-050 일정 명령 검증', { exact: false })).toBeVisible();
-      await expect(page.getByText('동기화 완료')).toBeVisible({ timeout: 15000 });
+      await expect(page.getByRole('heading', { name: 'TASK-050 일정 명령 검증 여행', exact: true })).toBeVisible();
+      await expect(page.getByRole('status', { name: '동기화 완료', exact: true }).first()).toBeVisible({ timeout: 15000 });
       await page.close();
     } finally {
       await cleanupTripsByUser(testUser.id);

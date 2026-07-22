@@ -1,39 +1,35 @@
 import { test, expect } from '@playwright/test';
 import {
-  createLocalFirstObservabilityEvent,
-  sanitizeLocalFirstObservabilityEvent,
+  createObservabilityEvent,
+  sanitizeObservabilityEvent,
 } from '@nexvoy/core';
 
-test.describe('Local-first observability safety', () => {
-  test('allows only product-safe metadata for Web/Mobile/P2P events', () => {
-    const event = createLocalFirstObservabilityEvent('p2p_connected', {
+test.describe('Product observability safety', () => {
+  test('allows only product-safe metadata for Web and Mobile events', () => {
+    const event = createObservabilityEvent('local_notification_scheduled', {
       platform: 'web',
       document_type: 'trip',
       entity_type: 'document',
       role: 'editor',
-      connection_type: 'direct',
-      provider: 'cloudflare',
-      has_turn: true,
-      setup_ms: 127,
+      provider: 'local',
+      status: 'completed',
     });
 
     expect(event).toEqual({
-      name: 'p2p_connected',
+      name: 'local_notification_scheduled',
       params: {
         platform: 'web',
         document_type: 'trip',
         entity_type: 'document',
         role: 'editor',
-        connection_type: 'direct',
-        provider: 'cloudflare',
-        has_turn: true,
-        setup_ms: 127,
+        provider: 'local',
+        status: 'completed',
       },
     });
   });
 
   test('rejects raw document, identity, and secret-bearing payload keys', () => {
-    const sanitized = sanitizeLocalFirstObservabilityEvent('local_first_backup_failed', {
+    const sanitized = sanitizeObservabilityEvent('local_notification_schedule_failed', {
       platform: 'ios',
       status: 'failed',
       reason: 'restore failed because user email leaked',
@@ -58,7 +54,7 @@ test.describe('Local-first observability safety', () => {
     ]);
 
     expect(() =>
-      createLocalFirstObservabilityEvent('local_first_backup_failed', {
+      createObservabilityEvent('local_notification_schedule_failed', {
         platform: 'android',
         document_key_id: 'raw-key-id',
       }),

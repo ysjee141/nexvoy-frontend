@@ -15,19 +15,18 @@ import { getCurrencyFromTimezone } from '@nexvoy/core'
 import { ExchangeService } from '@/services/ExternalApiService'
 import { CacheUtil } from '@/lib/cache'
 import { NotificationService } from '@/services/NotificationService'
-import { DownloadService } from '@/services/DownloadService'
 import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
 import TripDetailSkeleton from './TripDetailSkeleton'
 import {
     createWebProductDocumentRepositories,
     subscribeWebProductResource,
-} from '@/lib/local-first/repositoryFactory'
-import { materializePlanTimeline } from '@nexvoy/core/local-first/materialize'
+} from '@/lib/data/repositoryFactory'
+import { materializePlanTimeline } from '@nexvoy/core/product/readModels'
 import {
     planTimelineItemToWebPlanRow,
     tripDetailToWebTripRow,
-} from '@/lib/local-first/tripReadModelAdapters'
-import type { CreatePlanMutationInput } from '@nexvoy/core/local-first/documentMutationWriter'
+} from '@/lib/data/productReadModelAdapters'
+import type { CreatePlanMutationInput } from '@nexvoy/core/product/mutations'
 const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     const [isOpen, setIsOpen] = useState(false);
     const options = [
@@ -86,7 +85,7 @@ const CustomTimeDropdown = ({ timeDisplayMode, setTimeDisplayMode }: any) => {
     )
 }
 
-export default function TripPlansPage({ isActive = true, tripId: propsTripId, isOffline = false }: { isActive?: boolean; tripId?: string; isOffline?: boolean }) {
+export default function TripPlansPage({ isActive = true, tripId: propsTripId }: { isActive?: boolean; tripId?: string }) {
     const searchParams = useSearchParams()
     const tripId = propsTripId || searchParams.get('id')
 
@@ -186,27 +185,15 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
     const fetchTrip = useCallback(async () => {
         if (!tripId) return
 
-        if (isOffline) {
-            const bundle = await DownloadService.getBundle(tripId)
-            if (bundle?.trip) setTrip(bundle.trip)
-            return
-        }
         const repositories = await createWebProductDocumentRepositories(supabase)
         const data = await repositories.trips.getTrip(tripId)
         if (data) setTrip(tripDetailToWebTripRow(data))
-    }, [tripId, supabase, isOffline])
+    }, [tripId, supabase])
 
     const fetchPlans = useCallback(async () => {
         if (!tripId) return
 
         try {
-            if (isOffline) {
-                const bundle = await DownloadService.getBundle(tripId)
-                if (bundle?.plans) setPlans(bundle.plans)
-                setIsLoading(false)
-                return
-            }
-
             const repositories = await createWebProductDocumentRepositories(supabase)
             const data = (await repositories.plans.listPlans(tripId)).map((plan) =>
                 planTimelineItemToWebPlanRow(tripId, plan),
@@ -214,7 +201,6 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
 
             if (data) {
                 setPlans(data)
-                // 명시적 다운로드 정책에 따라 자동 저장은 제거하고 알림만 예약
                 NotificationService.scheduleOfflineReminders(data)
                 
             }
@@ -223,7 +209,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
         } finally {
             setIsLoading(false)
         }
-    }, [tripId, supabase, isOffline])
+    }, [tripId, supabase])
 
     const fetchUserRole = useCallback(async () => {
         if (!tripId) return
@@ -261,14 +247,14 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
     }, [isActive, fetchTrip, fetchPlans, fetchUserRole])
 
     useEffect(() => {
-        if (!tripId || isOffline) return undefined
+        if (!tripId) return undefined
         let unsubscribe: (() => Promise<void>) | undefined
         void subscribeWebProductResource(supabase, 'trip', tripId, () => {
             void fetchTrip()
             void fetchPlans()
         }).then((next) => { unsubscribe = next })
         return () => { void unsubscribe?.() }
-    }, [fetchPlans, fetchTrip, isOffline, supabase, tripId])
+    }, [fetchPlans, fetchTrip, supabase, tripId])
 
     const handleDeletePlan = async (planId: string) => {
         if (!tripId) return
@@ -366,7 +352,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
             })
             : await repositories.plans.createPlan(tripId, input)
 
-        const savedPlan = materializePlanTimeline(result.document)
+        const savedPlan = materializePlanTimeline(result.state)
             .find((candidate) => candidate.id === planId)
         if (!savedPlan) {
             throw new Error('일정 저장 결과를 문서에서 확인할 수 없습니다.')
@@ -458,8 +444,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                             <CustomTimeDropdown timeDisplayMode={timeDisplayMode} setTimeDisplayMode={setTimeDisplayMode} />
                         </div>
 
-                        {!isOffline && (
-                            <>
+                        <>
                                 <button
                                     onClick={() => setIsCollaboratorModalOpen(true)}
                                      className={css({
@@ -499,12 +484,11 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                                         <Share2 size={16} /> <span>공유</span>
                                     </button>
                                 )}
-                            </>
-                        )}
+                        </>
                     </div>
                     
                     {/* PC 전용 일정 추가 버튼 */}
-                    {(userRole === 'owner' || userRole === 'editor') && !isOffline && (
+                    {(userRole === 'owner' || userRole === 'editor') && (
                         <button
                             onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                              className={css({
@@ -538,7 +522,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     exchangeRates={exchangeRates}
                     activeDropdown={activeDropdown}
                     setActiveDropdown={setActiveDropdown}
-                    userRole={isOffline ? null : userRole}
+                    userRole={userRole}
                     timeDisplayMode={timeDisplayMode}
                     formatLocalTime={formatLocalTime}
                     formatKstTime={formatKstTime}
@@ -557,7 +541,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                     formatLocalTime={formatLocalTime}
                     formatKstTime={formatKstTime}
                     timeDisplayMode={timeDisplayMode}
-                    userRole={isOffline ? null : userRole}
+                    userRole={userRole}
                     onClose={() => setIsDetailModalOpen(false)}
                     onEdit={handleEditPlan}
                     onDelete={handleDeletePlan}
@@ -597,7 +581,7 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId, is
                 />
             )}
             {/* 모바일 전용 Sticky CTA (편집 권한 있을 때만) */}
-            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && !isOffline && (
+            {(userRole === 'owner' || userRole === 'editor') && isActive && !isModalOpen && (
                 <button
                     onClick={() => { setEditingPlan(null); setIsModalOpen(true) }}
                     className={css({

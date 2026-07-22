@@ -20,7 +20,7 @@ import {
     updateTemplateShareRole,
 } from '@nexvoy/core'
 import type { ChecklistCategory, ChecklistTemplateShareWithProfile } from '@nexvoy/types'
-import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
+import { createWebProductDocumentRepositories } from '@/lib/data/repositoryFactory'
 
 interface EditTemplateModalProps {
     isOpen: boolean

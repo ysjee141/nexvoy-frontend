@@ -1,13 +1,4 @@
 import { sendGAEvent } from '@next/third-parties/google'
-import {
-    createLocalFirstObservabilityEvent,
-    sanitizeLocalFirstObservabilityEvent,
-    type LocalFirstObservabilityEvent,
-    type LocalFirstObservabilityEventName,
-    type LocalFirstObservabilityParams,
-} from '@nexvoy/core/observability/events'
-import type { DualWriteMismatchEvent } from '@nexvoy/core/repositories/dualWriteChecklistRepository'
-import type { P2PObservabilityEvent } from '@nexvoy/core/sync/iceServers'
 
 /**
  * 서비스 개선을 위한 애널리틱스 이벤트 관리 서비스 (ADR-002)
@@ -65,57 +56,6 @@ class AnalyticsService {
         } catch (e) {
             console.error(`[Analytics] LogEvent Error (${name}):`, e);
         }
-    }
-
-    /** Local-first 공용 관측 이벤트 — core sanitizer allowlist를 통과한 params만 전송한다. */
-    public logLocalFirstEvent(
-        nameOrEvent: LocalFirstObservabilityEventName | LocalFirstObservabilityEvent,
-        params: LocalFirstObservabilityParams = {},
-    ) {
-        const event = typeof nameOrEvent === 'string'
-            ? (() => {
-                try {
-                    return createLocalFirstObservabilityEvent(nameOrEvent, {
-                        platform: 'web',
-                        ...params,
-                    })
-                } catch {
-                    return sanitizeLocalFirstObservabilityEvent(nameOrEvent, {
-                        platform: 'web',
-                        ...params,
-                    }).event
-                }
-            })()
-            : sanitizeLocalFirstObservabilityEvent(nameOrEvent.name, {
-                platform: 'web',
-                ...nameOrEvent.params,
-            }).event
-
-        this.logEvent(event.name, event.params)
-    }
-
-    /** Local-first P2P 관측 이벤트 — document content/room id/CRDT payload는 포함하지 않는다. */
-    public logP2PEvent(event: P2PObservabilityEvent) {
-        const { name, ...params } = event;
-        this.logLocalFirstEvent(name as LocalFirstObservabilityEventName, params as LocalFirstObservabilityParams);
-    }
-
-    /** Dual-write mismatch 관측 — item name/email/document payload는 포함하지 않는다. */
-    public logDualWriteMismatch(event: DualWriteMismatchEvent) {
-        this.logLocalFirstEvent('local_first_dual_write_mismatch', {
-            document_type: event.domain === 'checklist' ? 'trip' : undefined,
-            operation: event.operation.startsWith('delete')
-                ? 'deleted'
-                : event.operation.startsWith('create')
-                    ? 'created'
-                    : 'updated',
-            entity_type: 'checklist',
-            status: 'failed',
-            reason_code: event.reasonCodes.join('_'),
-            count: event.reasonCodes.length,
-            pending_count: (event.legacyChecklistCount ?? 0) + (event.legacyItemCount ?? 0),
-            queued_count: (event.localChecklistCount ?? 0) + (event.localItemCount ?? 0),
-        });
     }
 
     // --- 사전 정의된 헬퍼 메서드들 ---

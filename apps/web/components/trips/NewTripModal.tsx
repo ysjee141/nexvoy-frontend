@@ -8,7 +8,7 @@ import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useRouter } from 'next/navigation'
 import { analytics } from '@/services/AnalyticsService'
-import { createWebProductTrip } from '@/lib/local-first/repositoryFactory'
+import { createWebProductTrip } from '@/lib/data/repositoryFactory'
 
 const libraries: ("places")[] = ["places"]
 

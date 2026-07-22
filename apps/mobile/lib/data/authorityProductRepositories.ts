@@ -14,7 +14,7 @@ import {
   type ServerAuthorityActorRole,
   type ServerAuthorityProductRuntime,
 } from '@nexvoy/core'
-import type { DocumentPrimaryRepositoryBundle } from '@nexvoy/core/repositories/documentPrimaryRepository'
+import type { ProductRepositoryBundle } from '@nexvoy/core/product/repositories'
 import {
   flushMobileAuthorityOutbox,
   getMobileAuthorityRuntime,
@@ -206,7 +206,7 @@ function getRuntime(supabase: SupabaseClient): MobileAuthorityProductRuntime {
 export function createMobileAuthorityDocumentRepositories(
   supabase: SupabaseClient,
   options: { actorRole?: ServerAuthorityActorRole } = {},
-): Promise<DocumentPrimaryRepositoryBundle> {
+): Promise<ProductRepositoryBundle> {
   return createServerAuthorityProductRepositories(supabase, getRuntime(supabase), options)
 }
 

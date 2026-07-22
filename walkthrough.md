@@ -1,3 +1,61 @@
+# Walkthrough: TASK-055 Retire Yjs, P2P, and Encrypted Backup Runtime
+
+## 결과
+
+Issue [#366](https://github.com/ysjee141/nexvoy-frontend/issues/366)의 legacy runtime 정리를 구현했다.
+OnVoy 제품 데이터 경로는 Supabase normalized row authority, Web IndexedDB/Mobile SQLite
+account cache, durable command outbox, canonical RPC, Realtime revision recovery로 단일화됐다.
+
+```mermaid
+flowchart LR
+    UI["Web / Mobile"] --> Repo["Authority-only product repository"]
+    Repo --> Local["Account cache + outbox"]
+    Local --> RPC["Canonical command RPC"]
+    RPC --> Rows["Normalized rows + revision"]
+    Rows --> RT["Private invalidation"]
+    RT --> Repo
+    Rows --> Managed["Managed backup / export"]
+```
+
+## 구현
+
+- Core의 제품 모델/변경/read model/repository 계약을 `packages/core/src/product`로 분리하고,
+  authority sync를 `packages/core/src/authority`로 이동했다.
+- Core/Web/Mobile의 Yjs, WebRTC/P2P, signaling, encrypted backup, key provisioning, document-primary
+  compatibility 코드와 테스트를 삭제했다.
+- Mobile의 WebRTC/quick crypto/Yjs/native crypto dependency, Expo plugin/permission, background key task를
+  제거했고 lockfile/workspace를 정리했다.
+- Web/Mobile auth/join/share/invitation/collaboration/product CRUD를 keyless authority 경로로 고정했다.
+- 웹의 사장된 downloaded-trip bundle/offline route를 제거해 일반 상세 화면이 권위 cache/
+  outbox를 그대로 사용하게 했다.
+- 현재 authority store를 보존하는 멱등적 V1 local reset과 DEV-only remote reset script를 추가했다.
+- `20260723000001_task055_revoke_legacy_sync_runtime.sql`은 legacy API 권한과 signaling policy를
+  차단하되, Production rollback을 위해 table/function/data는 삭제하지 않는다.
+- Web/Mobile private Broadcast는 구독 전 access token을 명시적으로 설정한다. Realtime channel
+  authorization probe를 막던 `event` RLS 조건을 제거해 동행자 화면의 실시간 수렴을 복구했다.
+- 퇴역한 backup/key provisioning 성공을 검사하던 TASK-006/007/015 SQL 테스트를 제거하고,
+  legacy API 접근 차단을 검증하는 TASK-055 테스트로 교체했다.
+
+## 검증
+
+- Core/Web/Mobile authority 단위 테스트, 전체 typecheck, Mobile lint를 통과했다.
+- Web production build와 Expo Web/iOS/Android export를 통과했다.
+- TASK-046/049/053/054/055 SQL 회귀 테스트를 로컬 Supabase에서 통과했다.
+- Playwright에서 offline outbox 재연결, 편집자 Realtime 수렴, 일정 canonical 저장,
+  observability payload safety 4개 시나리오를 통과했다.
+- 활성 앱/패키지에서 Yjs, WebRTC, P2P, document key, backup queue 참조가 없음을 확인했다.
+
+## 배포
+
+1. Authority-only client를 먼저 배포하고 지원 Mobile 최소 버전을 강제한다.
+2. DEV `ivgkqzwosbjukonlpfdw`에 revoke migration과 전체 smoke를 적용한다.
+3. 관찰 후 Production `runbcaegpefqnljsswhv`에 동일 순서로 적용한다.
+4. 물리 object 삭제는 TASK-056의 export/minimum-version/zero-traffic/restore gate 승인 후 실행한다.
+
+상세 절차는 `docs/refactor/runbooks/TASK-055-legacy-runtime-retirement.md`를 따른다.
+
+---
+
 # Walkthrough: TASK-054 Direct Asset Storage and Delivery
 
 ## 결과

@@ -1,4 +1,4 @@
-import type { LocalFirstObservabilityEvent } from '../observability/events'
+import type { ObservabilityEvent } from '../observability/events'
 
 export type NotificationPermissionStatus =
   | 'granted'
@@ -47,5 +47,5 @@ export interface LocalNotificationScheduler {
 }
 
 export type LocalNotificationObservabilitySink = (
-  event: LocalFirstObservabilityEvent,
+  event: ObservabilityEvent,
 ) => void | Promise<void>

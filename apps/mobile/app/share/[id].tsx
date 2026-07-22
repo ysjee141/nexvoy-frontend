@@ -4,17 +4,15 @@
  * 라우트: `/share/[id]` — `id` 는 share_token.
  *
  * 흐름:
- *  1. trip_shares 를 share_token 으로 조회 (password_hash 등 민감 컬럼 제외).
+ *  1. document share RPC로 토큰 요약을 조회한다.
  *  2. 만료 확인.
  *  3. share_type === 'public' → 바로 여정 정보 표시.
  *     share_type === 'password' → 비밀번호 입력 UI 표시.
- *  4. 비밀번호 검증은 웹 API(/api/share/verify)에서 서버 사이드로만 수행한다.
- *     (password_hash 는 절대 클라이언트로 내려보내지 않음 — 웹과 동일 정책)
+ *  4. 비밀번호 검증은 SECURITY DEFINER RPC에서 수행한다.
  *
  * 읽기 전용 화면이며, 수정 액션은 제공하지 않는다. 하단의 "내 앱에서 참여하기"는
  * 동일 토큰이 초대 토큰이 아니므로 join 으로 직접 연결하지 않고 홈으로 안내한다.
  *
- * 환경변수: EXPO_PUBLIC_WEB_API_URL (미설정 시 기본값). 실제 URL 하드코딩 금지.
  */
 import { useEffect, useRef, useState } from 'react'
 import {
@@ -32,11 +30,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { formatDate } from '@nexvoy/core'
+import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
 import { supabase } from '@/lib/supabase'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
-
-const WEB_API_BASE =
-  process.env.EXPO_PUBLIC_WEB_API_URL ?? 'https://app.onvoy.travel'
 
 type ShareType = 'public' | 'password'
 
@@ -48,19 +44,17 @@ interface ShareTripInfo {
   children_count: number | null
 }
 
-/** trips 조인 결과는 객체 또는 배열로 올 수 있어 단일 객체로 정규화한다. */
-function normalizeTrip(value: unknown): ShareTripInfo | null {
-  if (!value) return null
-  const row = Array.isArray(value) ? value[0] : value
-  if (!row || typeof row !== 'object') return null
-  const t = row as Record<string, unknown>
+function toShareTripInfo(summary: {
+  destination: string | null
+  startDate: string | null
+  endDate: string | null
+}): ShareTripInfo {
   return {
-    destination: typeof t.destination === 'string' ? t.destination : null,
-    start_date: typeof t.start_date === 'string' ? t.start_date : null,
-    end_date: typeof t.end_date === 'string' ? t.end_date : null,
-    adults_count: typeof t.adults_count === 'number' ? t.adults_count : null,
-    children_count:
-      typeof t.children_count === 'number' ? t.children_count : null,
+    destination: summary.destination,
+    start_date: summary.startDate,
+    end_date: summary.endDate,
+    adults_count: null,
+    children_count: null,
   }
 }
 
@@ -93,35 +87,29 @@ export default function ShareDetailScreen() {
       setLoading(true)
       setError(null)
       try {
-        // password_hash 등 민감 컬럼은 select 하지 않는다.
-        const { data: share, error: shareError } = await supabase
-          .from('trip_shares')
-          .select(
-            'share_type, expires_at, trip_id, trips(destination, start_date, end_date, adults_count, children_count)'
-          )
-          .eq('share_token', id)
-          .single()
+        const share = await createInvitationRepository(supabase)
+          .getDocumentShareTokenSummary(id)
 
         if (cancelled || !isMounted.current) return
 
-        if (shareError || !share) {
+        if (!share) {
           setError('존재하지 않거나 유효하지 않은 공유 링크예요.')
           return
         }
 
         // 만료 확인
         if (
-          share.expires_at &&
-          new Date(share.expires_at).getTime() < Date.now()
+          share.expiresAt &&
+          new Date(share.expiresAt).getTime() < Date.now()
         ) {
           setError('만료된 공유 링크예요.')
           return
         }
 
-        const type: ShareType = share.share_type === 'password' ? 'password' : 'public'
+        const type: ShareType = share.shareType
         setShareType(type)
         if (type === 'public') {
-          setTripInfo(normalizeTrip(share.trips))
+          setTripInfo(toShareTripInfo(share))
         }
       } catch {
         if (!cancelled && isMounted.current) {
@@ -142,31 +130,15 @@ export default function ShareDetailScreen() {
     setVerifying(true)
     setPwError(null)
     try {
-      const res = await fetch(`${WEB_API_BASE}/api/share/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: id, password }),
+      const summary = await createInvitationRepository(supabase).verifyDocumentShareToken({
+        shareToken: id,
+        password,
       })
-      const json = await res.json().catch(() => ({ authorized: false }))
-
-      if (!res.ok || !json?.authorized) {
+      if (!summary) {
         throw new Error('비밀번호가 일치하지 않아요.')
       }
-
-      // 인증 성공 → 여정 정보를 다시 조회해 표시
-      const { data: share, error: shareError } = await supabase
-        .from('trip_shares')
-        .select(
-          'trips(destination, start_date, end_date, adults_count, children_count)'
-        )
-        .eq('share_token', id)
-        .single()
-
       if (!isMounted.current) return
-      if (shareError || !share) {
-        throw new Error('여정 정보를 불러오지 못했어요.')
-      }
-      setTripInfo(normalizeTrip(share.trips))
+      setTripInfo(toShareTripInfo(summary))
       setShareType('public') // 인증 완료 → 정보 표시 모드로 전환
     } catch (e) {
       if (isMounted.current) {
@@ -321,20 +293,22 @@ export default function ShareDetailScreen() {
               </Text>
             </View>
 
-            <View style={styles.infoRow}>
-              <Ionicons
-                name="people-outline"
-                size={18}
-                color={colors.brand.muted}
-              />
-              <Text style={styles.infoLabel}>구성원</Text>
-              <Text style={styles.infoValue} numberOfLines={1}>
-                {`성인 ${tripInfo.adults_count ?? 0}명` +
-                  (tripInfo.children_count
-                    ? `, 아동 ${tripInfo.children_count}명`
-                    : '')}
-              </Text>
-            </View>
+            {tripInfo.adults_count !== null && (
+              <View style={styles.infoRow}>
+                <Ionicons
+                  name="people-outline"
+                  size={18}
+                  color={colors.brand.muted}
+                />
+                <Text style={styles.infoLabel}>구성원</Text>
+                <Text style={styles.infoValue} numberOfLines={1}>
+                  {`성인 ${tripInfo.adults_count}명` +
+                    (tripInfo.children_count
+                      ? `, 아동 ${tripInfo.children_count}명`
+                      : '')}
+                </Text>
+              </View>
+            )}
           </View>
 
           <Pressable

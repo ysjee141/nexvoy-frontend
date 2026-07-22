@@ -1,8 +1,0 @@
-{
-  "name": "onvoy-native-crypto",
-  "version": "0.1.0",
-  "description": "OnVoy native non-exportable RSA key provider",
-  "main": "src/index.ts",
-  "types": "src/index.ts",
-  "private": true
-}

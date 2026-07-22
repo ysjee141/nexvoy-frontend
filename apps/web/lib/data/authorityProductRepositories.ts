@@ -8,7 +8,7 @@ import {
   type AuthorityResourceType,
   type CanonicalResourceBundle,
 } from '@nexvoy/core'
-import type { DocumentPrimaryRepositoryBundle } from '@nexvoy/core/repositories/documentPrimaryRepository'
+import type { ProductRepositoryBundle } from '@nexvoy/core/product/repositories'
 import {
   createServerAuthorityProductRepositories,
   createServerAuthorityTemplate,
@@ -305,7 +305,7 @@ function getRuntime(supabase: SupabaseClient): WebAuthorityProductRuntime {
 export function createWebAuthorityDocumentRepositories(
   supabase: SupabaseClient,
   options: { actorRole?: ActorRole } = {},
-): Promise<DocumentPrimaryRepositoryBundle> {
+): Promise<ProductRepositoryBundle> {
   return createServerAuthorityProductRepositories(supabase, getRuntime(supabase), options)
 }
 

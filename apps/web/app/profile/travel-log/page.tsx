@@ -12,7 +12,7 @@ import CommonListSkeleton from '@/components/common/CommonListSkeleton'
 import {
     createWebProductDocumentRepositories,
     refreshWebProductList,
-} from '@/lib/local-first/repositoryFactory'
+} from '@/lib/data/repositoryFactory'
 
 interface Trip {
     id: string

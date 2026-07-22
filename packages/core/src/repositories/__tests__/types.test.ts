@@ -47,7 +47,6 @@ const checklistRepository: ChecklistRepository = {
 const tripRepository: TripRepository = {
   listTrips: async () => [snapshot.trip!],
   getTrip: async () => snapshot.trip,
-  getTripDocument: async () => null,
   getTripWithPlans: async () => ({ trip: snapshot.trip!, plans: [] }),
   createTrip: async () => snapshot.trip!,
   updateTrip: async () => snapshot.trip!,

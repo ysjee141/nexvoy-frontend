@@ -121,29 +121,12 @@ DO $$
 DECLARE
   invite_token text;
   result jsonb;
-  provisioning_count integer;
-  key_material_count integer;
   revision bigint;
 BEGIN
   SELECT value INTO invite_token FROM task053_state WHERE key = 'member_token';
   result := public.accept_document_invitation(invite_token, NULL);
   IF result ->> 'status' <> 'accepted' OR (result ->> 'requires_key_provisioning')::boolean THEN
     RAISE EXCEPTION 'Expected keyless accepted membership, got %', result;
-  END IF;
-
-  SELECT count(*) INTO provisioning_count
-  FROM public.document_key_provisioning_requests
-  WHERE document_id = '53000000-0000-0000-0000-000000000001'
-    AND user_id = auth.uid();
-  IF provisioning_count <> 0 THEN
-    RAISE EXCEPTION 'Expected no key provisioning requests, found %', provisioning_count;
-  END IF;
-
-  SELECT count(*) INTO key_material_count
-  FROM public.user_key_materials
-  WHERE user_id = auth.uid();
-  IF key_material_count <> 0 THEN
-    RAISE EXCEPTION 'Expected no user key material rows, found %', key_material_count;
   END IF;
 
   revision := public.get_trip_authority_revision('53000000-0000-0000-0000-000000000001');
@@ -227,11 +210,16 @@ BEGIN
       NULL;
   END;
 
-  -- Membership writes bypassing the RPCs stay blocked by RLS.
-  UPDATE public.document_members
-    SET role = 'owner'
-    WHERE document_id = '53000000-0000-0000-0000-000000000001'
-      AND user_id = auth.uid();
+  -- Membership writes bypassing the RPCs stay blocked by table grants/RLS.
+  BEGIN
+    UPDATE public.document_members
+      SET role = 'owner'
+      WHERE document_id = '53000000-0000-0000-0000-000000000001'
+        AND user_id = auth.uid();
+  EXCEPTION
+    WHEN insufficient_privilege THEN
+      NULL;
+  END;
   IF EXISTS (
     SELECT 1 FROM public.document_members
     WHERE document_id = '53000000-0000-0000-0000-000000000001'

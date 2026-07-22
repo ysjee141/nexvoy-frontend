@@ -11,7 +11,7 @@ import { useSearchParams } from 'next/navigation'
 import { formatDate } from '@nexvoy/core'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { useBottomSheetDrag } from '@/hooks/useBottomSheetDrag'
-import { createWebRepositories, refreshWebProductList } from '@/lib/local-first/repositoryFactory'
+import { createWebRepositories, refreshWebProductList } from '@/lib/data/repositoryFactory'
 
 interface Trip {
     id: string

@@ -1,15 +1,10 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import {
-  getTravelStats,
-  getVisitedPlacesByUser,
-  type TripDetailReadModel,
-  type TripSummaryReadModel,
-} from '@nexvoy/core'
+import type {
+  TripDetailReadModel,
+  TripSummaryReadModel,
+} from '@nexvoy/core/product/readModels'
 import type { TravelStats, VisitedPlace } from '@nexvoy/types'
-import {
-  createMobileProductRepositories,
-  isMobileServerAuthorityEnabled,
-} from './repositoryFactory'
+import { createMobileProductRepositories } from './repositoryFactory'
 
 export interface MobileProductDeletionSummary {
   tripCount: number
@@ -20,8 +15,6 @@ export async function getMobileProductTravelStats(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<TravelStats> {
-  if (!isMobileServerAuthorityEnabled()) return getTravelStats(supabase, userId)
-
   const repositories = await createMobileProductRepositories(supabase)
   const trips = (await repositories.trips.listTrips(userId))
     .filter((trip) => trip.ownerId === userId)
@@ -32,8 +25,6 @@ export async function getMobileProductVisitedPlaces(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<VisitedPlace[]> {
-  if (!isMobileServerAuthorityEnabled()) return getVisitedPlacesByUser(supabase, userId)
-
   const trips = await listOwnedTripDetails(supabase, userId)
   const byLocation = new Map<string, VisitedPlace>()
   for (const trip of trips) {
@@ -63,14 +54,6 @@ export async function getMobileProductDeletionSummary(
   supabase: SupabaseClient,
   userId: string,
 ): Promise<MobileProductDeletionSummary> {
-  if (!isMobileServerAuthorityEnabled()) {
-    const repositories = await createMobileProductRepositories(supabase)
-    const trips = (await repositories.trips.listTrips(userId))
-      .filter((trip) => trip.ownerId === userId)
-    const details = await Promise.all(trips.map((trip) => repositories.trips.getTrip(trip.id)))
-    return summarizeDeletion(trips, details)
-  }
-
   const repositories = await createMobileProductRepositories(supabase)
   const trips = (await repositories.trips.listTrips(userId))
     .filter((trip) => trip.ownerId === userId)

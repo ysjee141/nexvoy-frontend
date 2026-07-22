@@ -1,14 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import {
-  createLocalFirstObservabilityEvent,
+  createObservabilityEvent,
   type LocalNotificationScheduleResult,
   type LocalNotificationScheduler,
   type NotificationPermissionStatus,
   type PlanAlarmScheduleInput,
   type ReconcilePlanAlarmOptions,
 } from '@nexvoy/core'
-import { logLocalFirstEvent } from '@/lib/observability'
+import { logProductEvent } from '@/lib/observability'
 
 type ExpoNotificationsModule = typeof import('expo-notifications')
 
@@ -128,7 +128,7 @@ async function emitScheduleEvent(
   status: 'completed' | 'failed' | 'skipped',
   reasonCode?: string,
 ) {
-  await logLocalFirstEvent(name, {
+  await logProductEvent(name, {
     provider: 'local',
     entity_type: 'plan',
     status,
@@ -163,14 +163,14 @@ export const localNotificationScheduler: LocalNotificationScheduler = {
     const Notifications = await loadNotificationsModule()
     if (!Notifications) return 'unsupported'
 
-    await logLocalFirstEvent('notification_permission_prompt_shown', {
+    await logProductEvent('notification_permission_prompt_shown', {
       provider: 'local',
       entity_type: 'plan',
       status: 'started',
     })
     const permission = await Notifications.requestPermissionsAsync()
     const status = normalizePermission(permission.status)
-    await logLocalFirstEvent(
+    await logProductEvent(
       status === 'granted'
         ? 'notification_permission_granted'
         : 'notification_permission_denied',
@@ -318,7 +318,7 @@ export function createSafeLocalNotificationEvent(
   status: 'completed' | 'failed' | 'skipped',
   reasonCode?: string,
 ) {
-  return createLocalFirstObservabilityEvent(name, {
+  return createObservabilityEvent(name, {
     provider: 'local',
     entity_type: 'plan',
     status,

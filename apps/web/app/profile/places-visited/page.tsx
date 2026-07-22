@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
     createWebProductDocumentRepositories,
     refreshWebProductList,
-} from '@/lib/local-first/repositoryFactory'
+} from '@/lib/data/repositoryFactory'
 import { css } from 'styled-system/css'
 import { MapPin, Search, ChevronLeft, Calendar, Footprints, Heart, Sparkles } from 'lucide-react'
 import { formatDate } from '@nexvoy/core'

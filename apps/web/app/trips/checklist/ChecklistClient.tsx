@@ -5,17 +5,14 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { analytics } from '@/services/AnalyticsService'
 import { css } from 'styled-system/css'
-import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle, LayoutGrid, List, Download, Lock } from 'lucide-react'
+import { Plus, CheckSquare, Square, Trash2, Settings, ChevronDown, Check, ListTodo, Users, User, Info, X, SortAsc, Clock, CheckCircle, LayoutGrid, List, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { motion, useAnimation, PanInfo, AnimatePresence } from 'framer-motion'
 import TemplateModal from '@/components/trips/TemplateModal'
-import { CacheUtil } from '@/lib/cache'
-import { DownloadService } from '@/services/DownloadService'
-import { useNetworkStore } from '@/stores/useNetworkStore'
 import { CATEGORIES } from '@/constants/checklist'
 import ChecklistSkeleton from './ChecklistSkeleton'
-import { createWebRepositories } from '@/lib/local-first/repositoryFactory'
-import { subscribeWebProductResource } from '@/lib/local-first/repositoryFactory'
+import { createWebRepositories } from '@/lib/data/repositoryFactory'
+import { subscribeWebProductResource } from '@/lib/data/repositoryFactory'
 
 const getMemberDisplayName = (p: any, isMe: boolean = false) => {
     if (!p) return isMe ? '나' : '동행자'
@@ -372,25 +369,16 @@ const FilterBar = ({ totalItems, isLoading, participants, currentUser, filterMod
 export default function ChecklistPage({
     isActive = true,
     tripId: propsTripId,
-    isOffline = false,
 }: {
     isActive?: boolean
     tripId?: string
-    isOffline?: boolean
 }) {
     const searchParams = useSearchParams()
     const tripId = propsTripId || searchParams.get('id')
     const supabase = useMemo(() => createClient(), [])
     const repositories = useMemo(() => createWebRepositories(supabase), [supabase])
-    const { isOnline } = useNetworkStore()
-    const isLocalFirstChecklistMode = repositories.mode === 'local-first-checklist-spike'
-        || repositories.mode === 'local-first-checklist-dual-write'
-        || repositories.mode === 'document-primary'
-        || repositories.mode === 'server-authority'
-    const canApplyTemplates = repositories.mode === 'legacy-supabase'
-        || repositories.mode === 'document-primary'
-        || repositories.mode === 'server-authority'
-    const canUseChecklistActions = (isOnline || isLocalFirstChecklistMode) && !isOffline
+    const canApplyTemplates = true
+    const canUseChecklistActions = true
 
     const [isLoading, setIsLoading] = useState(true)
     const [checklistId, setChecklistId] = useState<string | null>(null)
@@ -425,28 +413,6 @@ export default function ChecklistPage({
         if (!tripId) return
 
         try {
-            if (isOffline) {
-                const bundle = await DownloadService.getBundle(tripId)
-                if (bundle) {
-                    setItems(bundle.checklistItems || [])
-                    setUserChecks(bundle.checklistChecks || [])
-                    setMembers(bundle.members || [])
-                    setTripInfo(bundle.trip)
-                    if (bundle.trip?.user_id) {
-                        setTripOwner({ id: bundle.trip.user_id, profiles: bundle.trip.profiles, email: bundle.trip.profiles?.email })
-                    }
-                }
-                setIsLoading(false)
-                return
-            }
-
-            // 2. 네트워크 확인
-            const { isOfflineMode } = useNetworkStore.getState()
-            if (!isLocalFirstChecklistMode && (!isOnline || isOfflineMode)) {
-                setIsLoading(false)
-                return
-            }
-
             const snapshot = await repositories.checklists.getChecklist(tripId)
             setChecklistId(snapshot.checklistId)
             setItems(snapshot.items)
@@ -470,7 +436,7 @@ export default function ChecklistPage({
         } finally {
             setIsLoading(false)
         }
-    }, [tripId, repositories, isOnline])
+    }, [tripId, repositories])
 
     useEffect(() => {
         if (isActive) {
@@ -483,13 +449,13 @@ export default function ChecklistPage({
     }, [isActive, fetchChecklist])
 
     useEffect(() => {
-        if (!tripId || !isLocalFirstChecklistMode) return
+        if (!tripId) return
         let unsubscribe: (() => Promise<void>) | undefined
         void subscribeWebProductResource(supabase, 'trip', tripId, () => {
             void fetchChecklist()
         }).then((next) => { unsubscribe = next })
         return () => { void unsubscribe?.() }
-    }, [fetchChecklist, isLocalFirstChecklistMode, supabase, tripId])
+    }, [fetchChecklist, supabase, tripId])
 
     const toggleItem = async (itemId: string, currentStatus: boolean) => {
         const item = items.find(i => i.id === itemId)

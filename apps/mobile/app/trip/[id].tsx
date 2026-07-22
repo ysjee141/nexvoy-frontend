@@ -14,10 +14,8 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  AccessibilityInfo,
   ActivityIndicator,
   Alert,
-  AppState,
   Image,
   KeyboardAvoidingView,
   Linking,
@@ -45,19 +43,12 @@ import { AuthoritySyncStatusBadge } from '@/components/trip/AuthoritySyncStatusB
 import {
   getChecklistCategories,
   getChecklistItemStatus,
-  inviteTripMember,
-  getOrCreateTripShareLink,
   createChecklistCategory,
   formatDate,
   formatCurrency,
   getCurrencyFromTimezone,
   type AuthorityProductSyncSnapshot,
 } from '@nexvoy/core'
-import {
-  canAttemptP2PReconnect,
-  getP2PReconnectDelayMs,
-  normalizeP2PReconnectPolicy,
-} from '@nexvoy/core/sync/p2pLifecycle'
 import {
   createInvitationRepository,
   type CreatedDocumentInvitation,
@@ -96,7 +87,6 @@ import { useAuth } from '@/lib/auth-context'
 import {
   createMobileProductRepositories,
   getMobileProductSyncSnapshot,
-  isMobileServerAuthorityEnabled,
   subscribeMobileProductResource,
 } from '@/lib/data/repositoryFactory'
 import {
@@ -106,16 +96,7 @@ import {
   toTemplatePreviewRow,
   toTripMemberRows,
   toTripRow,
-} from '@/lib/local-first/documentPrimaryAdapters'
-import { bindMobileP2PLifecycle } from '@/lib/local-first/p2pLifecycle.native'
-import {
-  connectMobileP2PPeer,
-  type MobileP2PConnection,
-} from '@/lib/local-first/webP2PConnection'
-import { flushMobileBackupQueue } from '@/lib/local-first/mobileBackupSyncService'
-import { runMobileForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
-import type { MobileRestoreOutcome } from '@/lib/local-first/mobileSnapshotRestoreService'
-import { logLocalFirstEvent } from '@/lib/observability'
+} from '@/lib/data/productAdapters'
 import {
   cancelDocumentAlarms,
   cancelPlanAlarm,
@@ -136,16 +117,6 @@ type PlanSheetStep = 'place' | 'details'
 type TimeDisplayMode = 'local' | 'kst' | 'both'
 type ShareType = DocumentShareType
 type PlanLocalAlarmUiStatus = LocalNotificationScheduleStatus | 'unknown'
-type MobileP2PStatus = 'idle' | 'connecting' | 'connected' | 'reconnecting' | 'unavailable'
-
-const MOBILE_P2P_CONNECTION_TIMEOUT_MS = 15_000
-const MOBILE_P2P_RECONNECT_POLICY = normalizeP2PReconnectPolicy({
-  maxAttempts: 3,
-  initialDelayMs: 1_000,
-  maxDelayMs: 8_000,
-  multiplier: 2,
-})
-
 type GeneratedInvite = Pick<CreatedDocumentInvitation, 'id' | 'role' | 'inviteCode' | 'expiresAt'> & {
   inviteUrl: string
 }
@@ -542,7 +513,7 @@ async function storePlanPlacePhoto({
   if (!originalBuffer) return null
 
   const hash8 = placeIdHash8(placeId)
-  const uploads: Array<{ buffer: ArrayBuffer; width: PlacePhotoWidth }> = [
+  const uploads: { buffer: ArrayBuffer; width: PlacePhotoWidth }[] = [
     { buffer: originalBuffer, width: PLACE_PHOTO_ORIGINAL_WIDTH },
   ]
   if (thumbBuffer) uploads.push({ buffer: thumbBuffer, width: PLACE_PHOTO_THUMB_WIDTH })
@@ -694,67 +665,6 @@ function confirmNotificationPermissionPrompt(): Promise<boolean> {
   })
 }
 
-type RestoreStatusTone = 'progress' | 'success' | 'partial' | 'error'
-
-interface RestoreStatusDisplay {
-  tone: RestoreStatusTone
-  text: string
-  // progress는 아이콘 없음(ActivityIndicator로 대체)
-  icon?: 'checkmark-circle-outline' | 'time-outline' | 'alert-circle-outline'
-}
-
-const MOBILE_RESTORE_PROGRESS_STATUS: RestoreStatusDisplay = {
-  tone: 'progress',
-  text: '여정 데이터를 복구하고 있어요…',
-}
-
-// MobileRestoreOutcome → RestoreStatusDisplay 매핑. skipped는 상태 슬롯을 건드리지
-// 않기 위해 null을 반환한다(01b_ux_design.md §1.3, §3, §8 참고).
-function mapMobileRestoreOutcomeToStatus(outcome: MobileRestoreOutcome): RestoreStatusDisplay | null {
-  if (outcome.status === 'restored') {
-    if (outcome.snapshotKind === 'mobile_marker') {
-      return {
-        tone: 'success',
-        text: '이 기기에서 여정 데이터 준비를 마쳤어요. 최신 내용을 볼 수 있어요.',
-        icon: 'checkmark-circle-outline',
-      }
-    }
-    // opaque(Yjs snapshot): decrypt+hash 검증만 성공, 콘텐츠는 아직 미반영.
-    // "복구"/"동기화" 단어를 쓰지 않는 중립 카피 — brand.error/success 톤이 아닌 muted.
-    return {
-      tone: 'partial',
-      text: '여정 데이터 확인이 끝났어요. 최신 내용은 곧 이 기기에도 반영돼요.',
-      icon: 'time-outline',
-    }
-  }
-  if (outcome.status === 'failed') {
-    // hash_mismatch/decrypt_failed/unknown 모두 동일한 generic 카피로 통합.
-    return {
-      tone: 'error',
-      text: '데이터 복구 중 문제가 발생했어요. 다시 시도해 주세요.',
-      icon: 'alert-circle-outline',
-    }
-  }
-  // skipped(no_snapshot/key_unavailable): UI 미노출.
-  return null
-}
-
-// 01b_ux_design.md §3/§6 — 아이콘 색상과 본문 텍스트 색상이 tone마다 다르다
-// (success는 아이콘만 success, 본문은 ink; progress는 아이콘 없이 spinner만 primary).
-const MOBILE_RESTORE_ICON_COLOR: Record<RestoreStatusTone, string> = {
-  progress: colors.brand.primary,
-  success: colors.brand.success,
-  partial: colors.brand.muted,
-  error: colors.brand.error,
-}
-
-const MOBILE_RESTORE_TEXT_COLOR: Record<RestoreStatusTone, string> = {
-  progress: colors.brand.muted,
-  success: colors.brand.ink,
-  partial: colors.brand.muted,
-  error: colors.brand.error,
-}
-
 function createEntityId(prefix: string): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -762,37 +672,6 @@ function createEntityId(prefix: string): string {
 
 function normalizeDocumentRole(role: string | null): 'owner' | 'editor' | 'viewer' | null {
   return role === 'owner' || role === 'editor' || role === 'viewer' ? role : null
-}
-
-function getMobileP2PStatusLabel(status: MobileP2PStatus): string {
-  if (status === 'connected') return '실시간 연결됨'
-  if (status === 'connecting') return '실시간 연결 중'
-  if (status === 'reconnecting') return '실시간 재연결 중'
-  if (status === 'unavailable') return '로컬 저장 중'
-  return '로컬 저장'
-}
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms)
-  })
-}
-
-function attachMobileP2PConnectionStateListener(
-  connection: MobileP2PConnection,
-  onDisconnected: (reason: string) => void,
-): void {
-  const peerConnection = connection.peerConnection as unknown as {
-    addEventListener?: (eventName: 'connectionstatechange', listener: () => void) => void
-    connectionState?: string
-  }
-
-  peerConnection.addEventListener?.('connectionstatechange', () => {
-    const state = peerConnection.connectionState
-    if (state === 'failed' || state === 'disconnected' || state === 'closed') {
-      onDisconnected(state)
-    }
-  })
 }
 
 async function syncPlanUrls(
@@ -827,12 +706,7 @@ export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const { session } = useAuth()
   const insets = useSafeAreaInsets()
-  const mobileAuthorityEnabled = isMobileServerAuthorityEnabled()
   const isMounted = useRef(true)
-  const keyProvisioningInFlight = useRef(false)
-  const mobileRestoreStatusRef = useRef<RestoreStatusDisplay | null>(null)
-  const p2pConnectionRef = useRef<MobileP2PConnection | null>(null)
-  const p2pConnectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const scrollRef = useRef<ScrollView>(null)
   const detailTopHeightRef = useRef(0)
   const scrollOffsetRef = useRef(0)
@@ -883,19 +757,12 @@ export default function TripDetailScreen() {
   const [shareLoading, setShareLoading] = useState(false)
   const [inviteLoading, setInviteLoading] = useState(false)
   const [generatedInvite, setGeneratedInvite] = useState<GeneratedInvite | null>(null)
-  const [keyProvisioningBusy, setKeyProvisioningBusy] = useState(false)
-  const [keyProvisioningMessage, setKeyProvisioningMessage] = useState<string | null>(null)
-  // restoreMobileEncryptedSnapshot 결과 전용 상태. keyProvisioningMessage("이 기기가
-  // *다른 멤버*의 키 요청을 처리한 결과")와 의미가 다르므로 절대 병합하지 않는다
-  // (01b_ux_design.md §2.1/§5 근거 — 슬롯을 공유하면 마지막 쓰기가 이전 정보를 덮어씀).
-  const [mobileRestoreStatus, setMobileRestoreStatus] = useState<RestoreStatusDisplay | null>(null)
-  const [p2pStatus, setP2PStatus] = useState<MobileP2PStatus>('idle')
   const [authoritySync, setAuthoritySync] = useState<AuthorityProductSyncSnapshot>({
     status: 'pending',
     pendingCount: 0,
     lastError: null,
   })
-  const authorityServerReady = !mobileAuthorityEnabled || authoritySync.status === 'synced'
+  const authorityServerReady = authoritySync.status === 'synced'
 
   useEffect(() => {
     isMounted.current = true
@@ -903,10 +770,6 @@ export default function TripDetailScreen() {
       isMounted.current = false
     }
   }, [])
-
-  useEffect(() => {
-    mobileRestoreStatusRef.current = mobileRestoreStatus
-  }, [mobileRestoreStatus])
 
   useEffect(() => {
     setGeneratedInvite(null)
@@ -970,7 +833,7 @@ export default function TripDetailScreen() {
   }, [id, session?.user.id])
 
   const refreshAuthoritySync = useCallback(async () => {
-    if (!mobileAuthorityEnabled || !id) return
+    if (!id) return
     try {
       const snapshot = await getMobileProductSyncSnapshot(supabase, 'trip', id)
       if (isMounted.current) setAuthoritySync(snapshot)
@@ -979,7 +842,7 @@ export default function TripDetailScreen() {
         setAuthoritySync({ status: 'error', pendingCount: 0, lastError: 'sync_state_failed' })
       }
     }
-  }, [id, mobileAuthorityEnabled])
+  }, [id])
 
   useEffect(() => {
     void loadTrip()
@@ -988,190 +851,6 @@ export default function TripDetailScreen() {
   useEffect(() => {
     loadTripList()
   }, [loadTripList])
-
-  const runTripKeyProvisioning = useCallback(async (source: 'auto' | 'sheet' = 'auto') => {
-    if (mobileAuthorityEnabled || !id || !canEditContent || keyProvisioningInFlight.current) return
-    keyProvisioningInFlight.current = true
-    setKeyProvisioningBusy(true)
-    // restore 상태 슬롯은 keyProvisioningMessage와 독립적으로 진행 → 최종 상태로 전이한다
-    // (01b_ux_design.md §1.3/§5 — 두 슬롯을 공유하면 마지막에 쓰는 쪽이 이겨 정보가 유실됨).
-    const previousRestoreStatus = mobileRestoreStatusRef.current
-    setMobileRestoreStatus(MOBILE_RESTORE_PROGRESS_STATUS)
-    try {
-      const result = await runMobileForegroundKeyProvisioning({
-        supabase,
-        documentId: id,
-        limit: 25,
-      })
-      if (!isMounted.current) return
-      if (result.completed > 0) {
-        setKeyProvisioningMessage(`${result.completed}명의 여정 데이터 준비를 완료했어요.`)
-      } else if (result.errorCode === 'owner_device_key_unavailable' && source === 'sheet') {
-        setKeyProvisioningMessage('이 기기 데이터 준비 중이에요. 다른 기기 또는 Web에서 먼저 열어주세요.')
-      } else if (result.skipped > 0 && source === 'sheet') {
-        setKeyProvisioningMessage('이 기기 데이터 준비 요청을 등록했어요. Web 또는 이미 준비된 기기에서 완료할 수 있어요.')
-      } else if (result.failed > 0) {
-        setKeyProvisioningMessage('일부 데이터 준비를 완료하지 못했어요. 잠시 후 다시 시도해 주세요.')
-      } else if (source === 'sheet') {
-        setKeyProvisioningMessage('처리할 데이터 준비 요청이 없어요.')
-      }
-
-      const mappedRestoreStatus = result.restoreOutcome
-        ? mapMobileRestoreOutcomeToStatus(result.restoreOutcome)
-        : null
-      if (mappedRestoreStatus) {
-        setMobileRestoreStatus(mappedRestoreStatus)
-        if (mappedRestoreStatus.tone === 'error' || mappedRestoreStatus.tone === 'partial') {
-          AccessibilityInfo.announceForAccessibility(mappedRestoreStatus.text)
-        }
-      } else {
-        // skipped(no_snapshot/key_unavailable): 상태 슬롯을 건드리지 않고 progress 진입 이전으로 원복.
-        setMobileRestoreStatus(previousRestoreStatus)
-      }
-    } catch {
-      if (isMounted.current) {
-        setMobileRestoreStatus(previousRestoreStatus)
-        if (source === 'sheet') {
-          setKeyProvisioningMessage('데이터 준비 상태를 확인하지 못했어요.')
-        }
-      }
-    } finally {
-      keyProvisioningInFlight.current = false
-      if (isMounted.current) setKeyProvisioningBusy(false)
-    }
-  }, [canEditContent, id, mobileAuthorityEnabled])
-
-  useEffect(() => {
-    if (!mobileAuthorityEnabled && canEditContent && id) {
-      void runTripKeyProvisioning('auto')
-      void flushMobileBackupQueue({ supabase, documentId: id })
-    }
-  }, [canEditContent, id, mobileAuthorityEnabled, runTripKeyProvisioning])
-
-  useEffect(() => {
-    if (mobileAuthorityEnabled || !canEditContent || !id) return undefined
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') {
-        void runTripKeyProvisioning('auto')
-        void flushMobileBackupQueue({ supabase, documentId: id })
-      }
-    })
-    return () => subscription.remove()
-  }, [canEditContent, id, mobileAuthorityEnabled, runTripKeyProvisioning])
-
-  const clearP2PConnectionTimeout = useCallback(() => {
-    if (!p2pConnectionTimeoutRef.current) return
-    clearTimeout(p2pConnectionTimeoutRef.current)
-    p2pConnectionTimeoutRef.current = null
-  }, [])
-
-  const reconnectP2P = useCallback(async (status: MobileP2PStatus = 'connecting') => {
-    if (mobileAuthorityEnabled || !id || !session?.user.id || !canEditContent) return
-    clearP2PConnectionTimeout()
-    const previousConnection = p2pConnectionRef.current
-    p2pConnectionRef.current = null
-    await previousConnection?.close().catch(() => undefined)
-    setP2PStatus(status)
-
-    for (let attempt = 1; canAttemptP2PReconnect(attempt, MOBILE_P2P_RECONNECT_POLICY); attempt += 1) {
-      if (!isMounted.current) return
-      if (attempt > 1) {
-        const delayMs = getP2PReconnectDelayMs(attempt, MOBILE_P2P_RECONNECT_POLICY)
-        await logLocalFirstEvent('p2p_reconnect_scheduled', {
-          document_type: 'trip',
-          reason: 'connect_failed',
-          count: attempt,
-        })
-        setP2PStatus('reconnecting')
-        await delay(delayMs)
-        await logLocalFirstEvent('p2p_reconnect_attempted', {
-          document_type: 'trip',
-          count: attempt,
-        })
-      }
-
-      try {
-        let handshakeCompleted = false
-        const connection = await connectMobileP2PPeer({
-          documentId: id,
-          userId: session.user.id,
-          membership: {
-            role: normalizeDocumentRole(userRole),
-            status: 'accepted',
-          },
-          isInitiator: userRole === 'owner',
-          onHandshakeComplete: () => {
-            handshakeCompleted = true
-            clearP2PConnectionTimeout()
-            if (isMounted.current) setP2PStatus('connected')
-          },
-          onUpdateApplied: () => {
-            if (isMounted.current) {
-              void loadTrip()
-              setChecklistLoaded(false)
-            }
-          },
-        })
-        p2pConnectionRef.current = connection
-        attachMobileP2PConnectionStateListener(connection, (reason) => {
-          if (!isMounted.current) return
-          if (p2pConnectionRef.current !== connection) return
-          void logLocalFirstEvent('p2p_connection_failed', {
-            document_type: 'trip',
-            reason,
-          })
-          void reconnectP2P('reconnecting')
-        })
-        p2pConnectionTimeoutRef.current = setTimeout(() => {
-          if (handshakeCompleted || !isMounted.current) return
-          void logLocalFirstEvent('p2p_reconnect_scheduled', {
-            document_type: 'trip',
-            reason: 'timeout',
-          })
-          void reconnectP2P('reconnecting')
-        }, MOBILE_P2P_CONNECTION_TIMEOUT_MS)
-        return
-      } catch {
-        await p2pConnectionRef.current?.close().catch(() => undefined)
-        p2pConnectionRef.current = null
-      }
-    }
-
-    await logLocalFirstEvent('p2p_reconnect_exhausted', {
-      document_type: 'trip',
-      reason: 'connect_failed',
-    })
-    if (isMounted.current) setP2PStatus('unavailable')
-  }, [canEditContent, clearP2PConnectionTimeout, id, loadTrip, mobileAuthorityEnabled, session?.user.id, userRole])
-
-  useEffect(() => {
-    if (mobileAuthorityEnabled || !id || !session?.user.id || !canEditContent) {
-      setP2PStatus('idle')
-      return undefined
-    }
-
-    void reconnectP2P('connecting')
-    const unbindLifecycle = bindMobileP2PLifecycle({
-      closeActiveConnection: async () => {
-        clearP2PConnectionTimeout()
-        const connection = p2pConnectionRef.current
-        p2pConnectionRef.current = null
-        await connection?.close().catch(() => undefined)
-        if (isMounted.current) setP2PStatus('idle')
-      },
-      reconnectActiveConnection: () => {
-        void reconnectP2P('reconnecting')
-      },
-    })
-
-    return () => {
-      unbindLifecycle()
-      clearP2PConnectionTimeout()
-      const connection = p2pConnectionRef.current
-      p2pConnectionRef.current = null
-      void connection?.close().catch(() => undefined)
-    }
-  }, [canEditContent, clearP2PConnectionTimeout, id, mobileAuthorityEnabled, reconnectP2P, session?.user.id])
 
   useEffect(() => {
     setChecklist(null)
@@ -1219,7 +898,7 @@ export default function TripDetailScreen() {
       id: checklistId,
       title: '준비물',
     })
-    const snapshot = toChecklistSnapshotRows(await repositories.checklists.getChecklist(result.document.trip.id), id)
+    const snapshot = toChecklistSnapshotRows(await repositories.checklists.getChecklist(result.state.trip.id), id)
     setChecklist(snapshot.checklist)
     return snapshot.checklist
   }, [checklist, id, userRole])
@@ -1232,7 +911,7 @@ export default function TripDetailScreen() {
   }, [activeTab, checklistLoaded, checklistLoading, loadChecklist])
 
   useEffect(() => {
-    if (!mobileAuthorityEnabled || !id) return undefined
+    if (!id) return undefined
     let disposed = false
     let unsubscribe: (() => Promise<void>) | null = null
     const onChange = () => {
@@ -1250,7 +929,7 @@ export default function TripDetailScreen() {
       disposed = true
       if (unsubscribe) void unsubscribe()
     }
-  }, [checklistLoaded, id, loadChecklist, loadTrip, mobileAuthorityEnabled, refreshAuthoritySync])
+  }, [checklistLoaded, id, loadChecklist, loadTrip, refreshAuthoritySync])
 
   // 방문 여부 토글 (낙관적 업데이트 + 롤백)
   const handleToggleVisited = useCallback(async (plan: PlanWithUrls) => {
@@ -1377,10 +1056,6 @@ export default function TripDetailScreen() {
     },
     [trip, userRole]
   )
-
-  const handleOfflineSave = useCallback(() => {
-    Alert.alert('준비 중', '오프라인 저장 기능은 곧 제공될 예정이에요.')
-  }, [])
 
   const handleDeleteTrip = useCallback(async () => {
     if (!id || !session?.user.id || deletingTrip) return
@@ -1672,26 +1347,14 @@ export default function TripDetailScreen() {
       Alert.alert('비밀번호 필요', '공유용 비밀번호를 입력해 주세요.')
       return null
     }
-    try {
-      const documentShare = await createInvitationRepository(supabase).createDocumentShareToken({
-        documentId: id,
-        shareType: type,
-        password: type === 'password' ? password.trim() : null,
-      })
-      const nextInfo = { shareToken: documentShare.shareToken, shareType: documentShare.shareType }
-      setShareInfo(nextInfo)
-      return nextInfo
-    } catch {
-      const legacyShare = await getOrCreateTripShareLink(
-        supabase,
-        id,
-        type,
-        type === 'password' ? password.trim() : undefined
-      )
-      const nextInfo = { shareToken: legacyShare.share_token, shareType: legacyShare.share_type as ShareType }
-      setShareInfo(nextInfo)
-      return nextInfo
-    }
+    const documentShare = await createInvitationRepository(supabase).createDocumentShareToken({
+      documentId: id,
+      shareType: type,
+      password: type === 'password' ? password.trim() : null,
+    })
+    const nextInfo = { shareToken: documentShare.shareToken, shareType: documentShare.shareType }
+    setShareInfo(nextInfo)
+    return nextInfo
   }
 
   const handleSwitchTrip = (tripId: string) => {
@@ -1778,16 +1441,37 @@ export default function TripDetailScreen() {
     if (!id || !trip) return
     setInviteLoading(true)
     try {
-      await inviteTripMember(supabase, id, email.trim(), role)
-      try {
-        await fetch(`${WEB_APP_BASE.replace(/\/$/, '')}/api/invite`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tripId: id, email: email.trim(), tripTitle: trip.destination }),
-        })
-      } catch {
-        // 이메일 발송은 best-effort. 멤버 초대 생성이 성공했으면 사용자 흐름은 유지한다.
+      if (!session?.access_token) throw new Error('로그인이 필요합니다.')
+      const response = await fetch(`${WEB_APP_BASE.replace(/\/$/, '')}/api/invite`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          documentId: id,
+          email: email.trim(),
+          destination: trip.destination,
+          startDate: trip.start_date,
+          endDate: trip.end_date,
+          role,
+        }),
+      })
+      const result = await response.json() as {
+        error?: string
+        invitation?: CreatedDocumentInvitation
+        inviteUrl?: string
       }
+      if (!response.ok || !result.invitation || !result.inviteUrl) {
+        throw new Error(result.error ?? '초대에 실패했어요.')
+      }
+      setGeneratedInvite({
+        id: result.invitation.id,
+        role: result.invitation.role,
+        inviteCode: result.invitation.inviteCode,
+        expiresAt: result.invitation.expiresAt,
+        inviteUrl: result.inviteUrl,
+      })
       await loadMembers()
       Alert.alert('완료', `${email.trim()}님을 초대했어요.`)
     } catch (e) {
@@ -1982,16 +1666,6 @@ export default function TripDetailScreen() {
                     {trip.destination} 여행
                   </Text>
                   <View style={styles.tripIconActions}>
-                    {!mobileAuthorityEnabled ? (
-                      <Pressable
-                        onPress={handleOfflineSave}
-                        accessibilityRole="button"
-                        accessibilityLabel="오프라인 저장"
-                        style={({ pressed }) => [styles.tripIconAction, pressed && styles.pressedFade]}
-                      >
-                        <Ionicons name="cloud-download-outline" size={18} color={colors.brand.muted} />
-                      </Pressable>
-                    ) : null}
                     {canEditTrip ? (
                       <>
                       <Pressable
@@ -2036,20 +1710,7 @@ export default function TripDetailScreen() {
                     </View>
                   ) : null}
                   {canEditContent ? (
-                    mobileAuthorityEnabled ? (
-                      <AuthoritySyncStatusBadge snapshot={authoritySync} />
-                    ) : (
-                      <View style={styles.tripMetaItem}>
-                        <Ionicons
-                          name={p2pStatus === 'connected' ? 'radio-outline' : 'cloud-outline'}
-                          size={14}
-                          color={p2pStatus === 'connected' ? colors.brand.success : colors.brand.muted}
-                        />
-                        <Text style={styles.tripMetaText} numberOfLines={1}>
-                          {getMobileP2PStatusLabel(p2pStatus)}
-                        </Text>
-                      </View>
-                    )
+                    <AuthoritySyncStatusBadge snapshot={authoritySync} />
                   ) : null}
                 </View>
               </View>
@@ -2294,14 +1955,6 @@ export default function TripDetailScreen() {
             onRevokeInviteLink={handleRevokeInviteLink}
             onUpdateRole={handleUpdateMemberRole}
             onRemove={handleRemoveMember}
-            canEditContent={canEditContent}
-            showLegacyProvisioning={!mobileAuthorityEnabled}
-            keyProvisioningBusy={keyProvisioningBusy}
-            keyProvisioningMessage={keyProvisioningMessage}
-            mobileRestoreStatus={mobileRestoreStatus}
-            onRunKeyProvisioning={() => {
-              void runTripKeyProvisioning('sheet')
-            }}
             onClose={() => setIsCollaboratorSheetOpen(false)}
           />
         </>
@@ -2659,12 +2312,6 @@ function CollaboratorSheet({
   onRevokeInviteLink,
   onUpdateRole,
   onRemove,
-  canEditContent,
-  showLegacyProvisioning,
-  keyProvisioningBusy,
-  keyProvisioningMessage,
-  mobileRestoreStatus,
-  onRunKeyProvisioning,
   onClose,
 }: {
   visible: boolean
@@ -2684,12 +2331,6 @@ function CollaboratorSheet({
   onRevokeInviteLink: () => void
   onUpdateRole: (memberId: string, role: 'editor' | 'viewer') => void
   onRemove: (member: TripMember) => void
-  canEditContent: boolean
-  showLegacyProvisioning: boolean
-  keyProvisioningBusy: boolean
-  keyProvisioningMessage: string | null
-  mobileRestoreStatus: RestoreStatusDisplay | null
-  onRunKeyProvisioning: () => void
   onClose: () => void
 }) {
   const [email, setEmail] = useState('')
@@ -2830,77 +2471,6 @@ function CollaboratorSheet({
               </Pressable>
             )}
           </View>
-        </View>
-      ) : null}
-
-      {showLegacyProvisioning && canEditContent && mobileRestoreStatus ? (
-        <View style={styles.mobileRestoreNotice}>
-          <View style={styles.mobileRestoreNoticeRow}>
-            {mobileRestoreStatus.tone === 'progress' || !mobileRestoreStatus.icon ? (
-              <ActivityIndicator size="small" color={colors.brand.primary} />
-            ) : (
-              <Ionicons
-                name={mobileRestoreStatus.icon}
-                size={18}
-                color={MOBILE_RESTORE_ICON_COLOR[mobileRestoreStatus.tone]}
-              />
-            )}
-            <Text
-              style={[
-                styles.mobileRestoreNoticeText,
-                { color: MOBILE_RESTORE_TEXT_COLOR[mobileRestoreStatus.tone] },
-              ]}
-            >
-              {mobileRestoreStatus.text}
-            </Text>
-          </View>
-          {mobileRestoreStatus.tone === 'error' ? (
-            <Pressable
-              onPress={onRunKeyProvisioning}
-              disabled={keyProvisioningBusy}
-              accessibilityRole="button"
-              accessibilityLabel="데이터 복구 다시 시도"
-              accessibilityState={{ busy: keyProvisioningBusy, disabled: keyProvisioningBusy }}
-              style={({ pressed }) => [
-                styles.mobileRestoreRetryButton,
-                keyProvisioningBusy && styles.buttonDisabled,
-                pressed && !keyProvisioningBusy && styles.pressedFade,
-              ]}
-            >
-              {keyProvisioningBusy ? <ActivityIndicator color={colors.brand.error} /> : null}
-              <Text style={styles.mobileRestoreRetryButtonText}>
-                {keyProvisioningBusy ? '확인 중...' : '다시 시도'}
-              </Text>
-            </Pressable>
-          ) : null}
-        </View>
-      ) : null}
-
-      {showLegacyProvisioning && canManage ? (
-        <View style={styles.mobileProvisioningNotice}>
-          <Text style={styles.mobileProvisioningNoticeTitle}>여정 데이터 준비 안내</Text>
-          <Text style={styles.mobileProvisioningNoticeText}>
-            이 기기가 여정 데이터를 열 수 있으면 참여자의 데이터 준비를 처리해요. 처음 생성 기기라면 자동으로 암호화 준비를 시작합니다.
-          </Text>
-          {keyProvisioningMessage ? (
-            <Text style={styles.mobileProvisioningNoticeMeta}>{keyProvisioningMessage}</Text>
-          ) : null}
-          <Pressable
-            onPress={onRunKeyProvisioning}
-            disabled={keyProvisioningBusy}
-            accessibilityRole="button"
-            accessibilityState={{ busy: keyProvisioningBusy, disabled: keyProvisioningBusy }}
-            style={({ pressed }) => [
-              styles.mobileProvisioningButton,
-              keyProvisioningBusy && styles.buttonDisabled,
-              pressed && !keyProvisioningBusy && styles.pressedFade,
-            ]}
-          >
-            {keyProvisioningBusy ? <ActivityIndicator color={colors.brand.primary} /> : null}
-            <Text style={styles.mobileProvisioningButtonText}>
-              {keyProvisioningBusy ? '확인 중...' : '데이터 준비 확인'}
-            </Text>
-          </Pressable>
         </View>
       ) : null}
 
@@ -5925,82 +5495,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.base,
     borderTopWidth: 1,
     borderTopColor: colors.brand.hairline,
-  },
-  mobileProvisioningNotice: {
-    marginTop: spacing.base,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.brand.hairline,
-    backgroundColor: colors.bg.surfaceSoft,
-    gap: spacing.xs,
-  },
-  mobileProvisioningNoticeTitle: {
-    color: colors.brand.ink,
-    fontSize: fontSizes.sm,
-    fontWeight: fontWeights.bold,
-  },
-  mobileProvisioningNoticeText: {
-    color: colors.brand.muted,
-    fontSize: fontSizes.sm,
-    lineHeight: 20,
-  },
-  mobileProvisioningNoticeMeta: {
-    color: colors.brand.primary,
-    fontSize: fontSizes.xs,
-    fontWeight: fontWeights.semibold,
-    lineHeight: 18,
-  },
-  mobileProvisioningButton: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.brand.primary,
-    backgroundColor: colors.bg.canvas,
-  },
-  mobileProvisioningButtonText: {
-    color: colors.brand.primary,
-    fontSize: fontSizes.sm,
-    fontWeight: fontWeights.bold,
-  },
-  mobileRestoreNotice: {
-    marginTop: spacing.base,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: colors.brand.hairline,
-    backgroundColor: colors.bg.surfaceSoft,
-    gap: spacing.xs,
-  },
-  mobileRestoreNoticeRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
-  },
-  mobileRestoreNoticeText: {
-    flex: 1,
-    fontSize: fontSizes.sm,
-    lineHeight: 20,
-  },
-  mobileRestoreRetryButton: {
-    minHeight: 42,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.brand.error,
-    backgroundColor: colors.bg.canvas,
-  },
-  mobileRestoreRetryButtonText: {
-    color: colors.brand.error,
-    fontSize: fontSizes.sm,
-    fontWeight: fontWeights.bold,
   },
   inviteLinkCreateButton: {
     minHeight: 48,

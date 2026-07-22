@@ -6,7 +6,7 @@ import type {
   AuthorityResourceSummary,
   AuthorityResourceType,
   CanonicalResourceBundle,
-} from '../sync/serverAuthorityTypes'
+} from '../authority/serverAuthorityTypes'
 
 export interface ServerAuthorityRepository {
   applyCommands(input: ApplyAuthorityCommandsInput): Promise<AuthorityApplyResult>

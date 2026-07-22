@@ -1,11 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { AuthorityProductSyncSnapshot, AuthorityResourceType } from '@nexvoy/core'
-import type { DocumentPrimaryRepositoryBundle } from '@nexvoy/core/repositories/documentPrimaryRepository'
-import {
-  createMobileDocumentPrimaryRepositories,
-  createMobileTemplateDocument,
-  createMobileTripDocument,
-} from '@/lib/local-first/documentPrimaryRepositories'
+import type { ProductRepositoryBundle } from '@nexvoy/core/product/repositories'
 import {
   createMobileAuthorityDocumentRepositories,
   createMobileAuthorityTemplate,
@@ -16,25 +11,11 @@ import {
   subscribeMobileAuthorityResource,
 } from './authorityProductRepositories'
 
-export type MobileRepositoryMode = 'server-authority' | 'document-primary'
-
-export function resolveMobileRepositoryMode(): MobileRepositoryMode {
-  return process.env.EXPO_PUBLIC_MOBILE_SERVER_AUTHORITY === '0'
-    ? 'document-primary'
-    : 'server-authority'
-}
-
-export function isMobileServerAuthorityEnabled(): boolean {
-  return resolveMobileRepositoryMode() === 'server-authority'
-}
-
 export function createMobileProductRepositories(
   supabase: SupabaseClient,
   options: { actorRole?: 'owner' | 'editor' | 'viewer' | null } = {},
-): Promise<DocumentPrimaryRepositoryBundle> {
-  return isMobileServerAuthorityEnabled()
-    ? createMobileAuthorityDocumentRepositories(supabase, options)
-    : createMobileDocumentPrimaryRepositories(supabase, options)
+): Promise<ProductRepositoryBundle> {
+  return createMobileAuthorityDocumentRepositories(supabase, options)
 }
 
 export function createMobileProductTrip(input: {
@@ -45,9 +26,7 @@ export function createMobileProductTrip(input: {
   adultsCount: number
   childrenCount: number
 }): Promise<string> {
-  return isMobileServerAuthorityEnabled()
-    ? createMobileAuthorityTrip(input)
-    : createMobileTripDocument(input)
+  return createMobileAuthorityTrip(input)
 }
 
 export function createMobileProductTemplate(input: {
@@ -55,9 +34,7 @@ export function createMobileProductTemplate(input: {
   title: string
   items: Array<{ item_name: string; category: string; is_private?: boolean }>
 }): Promise<string> {
-  return isMobileServerAuthorityEnabled()
-    ? createMobileAuthorityTemplate(input)
-    : createMobileTemplateDocument(input)
+  return createMobileAuthorityTemplate(input)
 }
 
 export function subscribeMobileProductResource(
@@ -66,9 +43,7 @@ export function subscribeMobileProductResource(
   resourceId: string,
   listener: () => void,
 ): Promise<() => Promise<void>> {
-  return isMobileServerAuthorityEnabled()
-    ? subscribeMobileAuthorityResource(supabase, resourceType, resourceId, listener)
-    : Promise.resolve(async () => undefined)
+  return subscribeMobileAuthorityResource(supabase, resourceType, resourceId, listener)
 }
 
 export function subscribeMobileProductAccount(
@@ -76,18 +51,14 @@ export function subscribeMobileProductAccount(
   resourceType: AuthorityResourceType,
   listener: () => void,
 ): Promise<() => void> {
-  return isMobileServerAuthorityEnabled()
-    ? subscribeMobileAuthorityAccount(supabase, resourceType, listener)
-    : Promise.resolve(() => undefined)
+  return subscribeMobileAuthorityAccount(supabase, resourceType, listener)
 }
 
 export function refreshMobileProductList(
   supabase: SupabaseClient,
   resourceType: AuthorityResourceType,
 ): Promise<unknown> {
-  return isMobileServerAuthorityEnabled()
-    ? refreshMobileAuthorityList(supabase, resourceType)
-    : Promise.resolve([])
+  return refreshMobileAuthorityList(supabase, resourceType)
 }
 
 export function getMobileProductSyncSnapshot(
@@ -95,7 +66,5 @@ export function getMobileProductSyncSnapshot(
   resourceType: AuthorityResourceType,
   resourceId: string,
 ): Promise<AuthorityProductSyncSnapshot> {
-  return isMobileServerAuthorityEnabled()
-    ? getMobileAuthoritySyncSnapshot(supabase, resourceType, resourceId)
-    : Promise.resolve({ status: 'synced', pendingCount: 0, lastError: null })
+  return getMobileAuthoritySyncSnapshot(supabase, resourceType, resourceId)
 }

@@ -8,7 +8,6 @@ const PUBLIC_PATHS = [
   '/auth',
   '/share',
   '/api',
-  '/offline',
   '/_next',
 ]
 

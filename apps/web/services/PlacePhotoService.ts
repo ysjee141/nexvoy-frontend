@@ -15,7 +15,6 @@ export interface StorePhotoParams {
     tripId: string
     placeId?: string | null
     photoReference?: string | null
-    documentPrimary?: boolean
 }
 
 export interface StorePhotoResult {
@@ -72,7 +71,7 @@ export async function storePhoto(
     | { ok: true; imageUrl: string }
     | { ok: false; reason: 'invalid' | 'cooldown' | 'expired' | 'transient' }
 > {
-    const { planId, tripId, placeId, photoReference, documentPrimary } = params
+    const { planId, tripId, placeId, photoReference } = params
 
     // photoReference는 optional — 서버가 placeId로 Places Details fallback 수행
     if (!planId || !tripId || !placeId) {
@@ -94,7 +93,6 @@ export async function storePhoto(
             tripId,
             placeId,
             photoReference: normalizedPhotoReference,
-            documentPrimary: documentPrimary === true,
         })
 
         let status = 0

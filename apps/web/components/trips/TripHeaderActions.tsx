@@ -8,7 +8,7 @@ import { Calendar, Users, Pencil, Trash2, Wallet, Loader2 } from 'lucide-react'
 import { getCurrencyFromTimezone, formatKRW, formatDate } from '@nexvoy/core'
 import { ExchangeService } from '@/services/ExternalApiService'
 import EditTripModal from './EditTripModal'
-import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
+import { createWebProductDocumentRepositories } from '@/lib/data/repositoryFactory'
 
 interface TripHeaderActionsProps {
     trip: {
@@ -21,10 +21,9 @@ interface TripHeaderActionsProps {
         user_id: string
     }
     onUpdate?: (updatedFields: Partial<TripHeaderActionsProps['trip']>) => void
-    isOffline?: boolean
 }
 
-export default function TripHeaderActions({ trip, onUpdate, isOffline = false }: TripHeaderActionsProps) {
+export default function TripHeaderActions({ trip, onUpdate }: TripHeaderActionsProps) {
     const router = useRouter()
     const supabase = createClient()
 
@@ -46,10 +45,6 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
 
     useEffect(() => {
         const checkOwner = async () => {
-            if (isOffline) {
-                setIsOwner(false)
-                return
-            }
             const { data: { session } } = await supabase.auth.getSession()
             const user = session?.user
             if (user && user.id === trip.user_id) {
@@ -57,15 +52,11 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
             }
         }
         checkOwner()
-    }, [supabase, trip.user_id, isOffline])
+    }, [supabase, trip.user_id])
 
     // 플랜 비용 합산
     useEffect(() => {
         const fetchCostSummary = async () => {
-            if (isOffline) {
-                setCostSummary({ totalKrw: 0, byCurrency: [], loading: false })
-                return
-            }
             const repositories = await createWebProductDocumentRepositories(supabase, { actorRole: 'viewer' })
             const plans = (await repositories.plans.listPlans(trip.id)).filter((plan) => plan.cost > 0)
 
@@ -120,7 +111,7 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
             })
         }
         fetchCostSummary()
-    }, [supabase, trip.id, isOffline])
+    }, [supabase, trip.id])
 
     const handleDelete = async () => {
         setDeleting(true)
@@ -150,8 +141,7 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
                         {trip.destination} 여행
                     </h1>
 
-                    {!isOffline && (
-                        <div className={css({ display: 'flex', gap: '8px', flexShrink: 0 })}>
+                    <div className={css({ display: 'flex', gap: '8px', flexShrink: 0 })}>
                             {isOwner && (
                                 <>
                                     <button
@@ -180,8 +170,7 @@ export default function TripHeaderActions({ trip, onUpdate, isOffline = false }:
                                     </button>
                                 </>
                             )}
-                        </div>
-                    )}
+                    </div>
                 </div>
 
                 <div className={css({ 

@@ -18,9 +18,6 @@ export function createWebAuthorityTripRepository(supabase: SupabaseClient): Trip
       const detail = await repositories.trips.getTrip(tripId)
       return detail ? toTripRow(detail, detail.updatedAt) : null
     },
-    async getTripDocument(tripId) {
-      return (await createWebAuthorityDocumentRepositories(supabase)).trips.getTripDocument(tripId)
-    },
     async getTripWithPlans(tripId) {
       const repositories = await createWebAuthorityDocumentRepositories(supabase)
       const [trip, plans] = await Promise.all([
@@ -82,14 +79,14 @@ export function createWebAuthorityTripRepository(supabase: SupabaseClient): Trip
         childrenCount: input.children_count,
       })
       return toTripRow({
-        id: result.document.trip.id,
-        ownerId: result.document.trip.ownerId,
-        destination: result.document.trip.destination,
-        startDate: result.document.trip.startDate,
-        endDate: result.document.trip.endDate,
-        adultsCount: result.document.trip.adultsCount,
-        childrenCount: result.document.trip.childrenCount,
-      }, result.document.trip.updatedAt)
+        id: result.state.trip.id,
+        ownerId: result.state.trip.ownerId,
+        destination: result.state.trip.destination,
+        startDate: result.state.trip.startDate,
+        endDate: result.state.trip.endDate,
+        adultsCount: result.state.trip.adultsCount,
+        childrenCount: result.state.trip.childrenCount,
+      }, result.state.trip.updatedAt)
     },
     async deleteTrip(tripId) {
       const repositories = await createWebAuthorityDocumentRepositories(supabase, { actorRole: 'owner' })

@@ -32,7 +32,7 @@ import {
   refreshMobileProductList,
   subscribeMobileProductAccount,
 } from '@/lib/data/repositoryFactory'
-import { toTemplatePreviewRow } from '@/lib/local-first/documentPrimaryAdapters'
+import { toTemplatePreviewRow } from '@/lib/data/productAdapters'
 import { colors, fontSizes, fontWeights, radii, spacing, shadows } from '@/theme'
 
 /**

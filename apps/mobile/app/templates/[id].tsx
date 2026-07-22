@@ -39,7 +39,7 @@ import {
   toTemplateItemRows,
   toTemplateShareRows,
   toTemplateWithAccessRow,
-} from '@/lib/local-first/documentPrimaryAdapters'
+} from '@/lib/data/productAdapters'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 const TITLE_MAX = 50

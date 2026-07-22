@@ -15,6 +15,7 @@
 - 여행, 일정, 준비물, 템플릿, invitation, asset 전체 E2E
 - protocol bytes, RPC batch, Realtime, DB/Storage egress 관측
 - DEV rollout, Production migration/rollback runbook
+- legacy sync object 물리 삭제 go/no-go와 별도 destructive migration
 - Initial/Growth/Scale trigger와 운영 dashboard
 
 제외:
@@ -71,6 +72,8 @@
 5. DEV migration/reset/rollback rehearsal을 수행한다.
 6. Production 적용 migration, client release, feature flag, monitoring, rollback 순서를 runbook으로 고정한다.
 7. Initial go/no-go 결과와 Growth trigger를 기록한다.
+8. 최소 지원 버전과 legacy traffic 0 관찰 기간을 확인한 뒤, 물리 삭제 migration을
+   DEV rehearsal과 별도 승인으로 Production에 적용한다.
 
 ## Growth 재평가 Trigger
 
@@ -91,3 +94,4 @@
 - 데이터 손실, 권한 누출, 계정 cache 혼합이 없다.
 - 통신량과 운영비가 Initial 목표 안에 있음을 실측한다.
 - Production rollout 및 rollback 담당자가 실행 가능한 runbook이 완성된다.
+- legacy object 물리 삭제 여부가 명시적으로 승인되고 실행/유예 결과가 기록된다.

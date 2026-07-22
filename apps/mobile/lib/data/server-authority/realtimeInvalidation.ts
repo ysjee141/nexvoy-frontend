@@ -42,6 +42,11 @@ interface SubscribeMobileAuthorityInvalidationInput {
 export async function subscribeMobileAuthorityInvalidation(
   input: SubscribeMobileAuthorityInvalidationInput,
 ): Promise<MobileAuthorityInvalidationSubscription> {
+  const { data, error } = await input.supabase.auth.getSession()
+  if (error) throw error
+  if (!data.session?.access_token) throw new Error('authority_realtime_session_required')
+  await input.supabase.realtime.setAuth(data.session.access_token)
+
   const topic = `${input.resourceType}:${input.resourceId}`
   const channel = input.supabase.channel(topic, {
     config: { private: true, broadcast: { self: false, ack: false } },
