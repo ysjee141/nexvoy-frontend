@@ -7,7 +7,7 @@ import { X, Sparkles } from 'lucide-react'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useRouter } from 'next/navigation'
 import TemplateForm, { TemplateItemInput } from './TemplateForm'
-import { createWebProductTemplate } from '@/lib/local-first/repositoryFactory'
+import { createWebProductTemplate } from '@/lib/data/repositoryFactory'
 import {
     createChecklistCategory,
     deleteChecklistCategory,

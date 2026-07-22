@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createServerClient } from '@/lib/supabase/server'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '@nexvoy/types'
 
 interface InviteRequestBody {
   documentId?: unknown
@@ -27,7 +29,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '초대 정보를 확인해 주세요.' }, { status: 400 })
     }
 
-    const supabase = await createClient()
+    const supabase = await createRequestClient(req)
     const { data: { user }, error: authError } = await supabase.auth.getUser()
     if (authError || !user) {
       return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     if (invitationId) {
       try {
-        const supabase = await createClient()
+        const supabase = await createRequestClient(req)
         await createInvitationRepository(supabase).revokeDocumentInvitationLink(invitationId)
       } catch {
         // The original failure remains the actionable error.
@@ -93,6 +95,20 @@ export async function POST(req: NextRequest) {
     const status = message === '권한이 없습니다.' ? 403 : 500
     return NextResponse.json({ error: message }, { status })
   }
+}
+
+async function createRequestClient(req: NextRequest) {
+  const authorization = req.headers.get('authorization')
+  if (!authorization?.startsWith('Bearer ')) return createServerClient()
+
+  return createSupabaseClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      auth: { autoRefreshToken: false, persistSession: false },
+      global: { headers: { Authorization: authorization } },
+    },
+  )
 }
 
 function createInviteEmailHtml(input: {

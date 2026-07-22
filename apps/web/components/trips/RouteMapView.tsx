@@ -13,10 +13,10 @@ import { PlanPhotoStorageService } from '@/services/PlanPhotoStorageService'
 import RouteMapInfoModal from '@/components/trips/RouteMapInfoModal'
 import PlanDetailModal from '@/components/trips/PlanDetailModal'
 import NewPlanModal from '@/components/trips/NewPlanModal'
-import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
-import { materializePlanTimeline } from '@nexvoy/core/local-first/materialize'
-import { planTimelineItemToWebPlanRow } from '@/lib/local-first/tripReadModelAdapters'
-import type { CreatePlanMutationInput } from '@nexvoy/core/local-first/documentMutationWriter'
+import { createWebProductDocumentRepositories } from '@/lib/data/repositoryFactory'
+import { materializePlanTimeline } from '@nexvoy/core/product/readModels'
+import { planTimelineItemToWebPlanRow } from '@/lib/data/productReadModelAdapters'
+import type { CreatePlanMutationInput } from '@nexvoy/core/product/mutations'
 
 const GOOGLE_MAPS_LIBRARIES: ('places')[] = ['places']
 
@@ -70,7 +70,6 @@ interface RouteMapViewProps {
     tripEndDate: string
     isActive: boolean
     externalPlans?: any[]
-    isOffline?: boolean
 }
 
 function formatLocalTime(dateString: string): string {
@@ -145,7 +144,6 @@ export default function RouteMapView({
     tripEndDate,
     isActive,
     externalPlans,
-    isOffline = false,
 }: RouteMapViewProps) {
     const searchParams = useSearchParams()
     const tripId = searchParams.get('id')
@@ -183,11 +181,8 @@ export default function RouteMapView({
 
         if (!isActive || !tripId) return
         
-        // 오프라인이거나 외부 데이터가 있는 경우 fetch 생략
-        if (isOffline || externalPlans) {
-            if (externalPlans) {
-                setPlans(externalPlans)
-            }
+        if (externalPlans) {
+            setPlans(externalPlans)
             setDataLoaded(true)
             return
         }
@@ -407,7 +402,7 @@ export default function RouteMapView({
             })
             : await repositories.plans.createPlan(tripId, input)
 
-        const savedPlan = materializePlanTimeline(result.document)
+        const savedPlan = materializePlanTimeline(result.state)
             .find((candidate) => candidate.id === planId)
         if (!savedPlan) {
             throw new Error('일정 저장 결과를 문서에서 확인할 수 없습니다.')

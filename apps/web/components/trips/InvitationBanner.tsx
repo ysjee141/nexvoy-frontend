@@ -9,7 +9,6 @@ import {
     type PendingDocumentInvitation,
 } from '@nexvoy/core/supabase/invitationRepository'
 import { createClient } from '@/lib/supabase/client'
-import { isWebServerAuthorityEnabled } from '@/lib/local-first/repositoryFactory'
 
 export default function InvitationBanner() {
     const [invitations, setInvitations] = useState<PendingDocumentInvitation[]>([])
@@ -40,11 +39,7 @@ export default function InvitationBanner() {
             const repository = createInvitationRepository(createClient())
             if (action === 'accept') {
                 const result = await repository.acceptMyDocumentInvitation(id)
-                if (isWebServerAuthorityEnabled()) {
-                    router.push(`/trips/detail?id=${encodeURIComponent(result.documentId)}`)
-                } else {
-                    router.push(`/join?acceptedDocumentId=${encodeURIComponent(result.documentId)}`)
-                }
+                router.push(`/trips/detail?id=${encodeURIComponent(result.documentId)}`)
             } else {
                 await repository.declineMyDocumentInvitation(id)
             }

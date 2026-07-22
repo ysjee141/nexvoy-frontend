@@ -10,12 +10,6 @@ export type NotificationOperation = 'created' | 'updated' | 'deleted' | 'restore
 export type NotificationEntityType = 'document' | 'plan' | 'checklist' | 'member'
 export type NotificationActorRole = 'owner' | 'editor' | 'viewer'
 export type NotificationPlatform = 'web' | 'ios' | 'android' | 'unknown'
-export type KeyProvisioningNotificationReasonCode =
-  | 'key_provisioning_waiting_for_material'
-  | 'key_provisioning_pending'
-  | 'key_provisioning_completed'
-  | 'key_provisioning_failed'
-
 export interface NotificationMetadata {
   document_type?: NotificationDocumentType
   operation?: NotificationOperation
@@ -36,13 +30,6 @@ export interface CollaborationNotificationInput {
   clientBatchId?: string
   changeCount?: number
   reasonCode?: string
-}
-
-export interface KeyProvisioningNotificationInput {
-  documentType: NotificationDocumentType
-  actorRole?: NotificationActorRole
-  platform?: NotificationPlatform
-  reasonCode: KeyProvisioningNotificationReasonCode
 }
 
 export interface SanitizedNotificationMetadata {
@@ -92,20 +79,6 @@ export function createCollaborationNotificationMetadata(
   }
 
   return sanitized.metadata
-}
-
-export function createKeyProvisioningNotificationMetadata(
-  input: KeyProvisioningNotificationInput,
-): NotificationMetadata {
-  return createCollaborationNotificationMetadata({
-    documentType: input.documentType,
-    operation: 'updated',
-    entityType: 'member',
-    actorRole: input.actorRole,
-    platform: input.platform,
-    changeCount: 1,
-    reasonCode: input.reasonCode,
-  })
 }
 
 export function sanitizeNotificationMetadata(input: unknown): SanitizedNotificationMetadata {

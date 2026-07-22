@@ -3,13 +3,10 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { css } from 'styled-system/css'
-import { Home, UserCircle, ListTodo, WifiOff } from 'lucide-react'
-import { useNetworkStore } from '@/stores/useNetworkStore'
+import { Home, UserCircle, ListTodo } from 'lucide-react'
 
 export default function BottomNavbar() {
     const pathname = usePathname()
-    const { isOfflineMode } = useNetworkStore()
-
     const navItems = [
         { icon: Home, label: '홈', href: '/' },
         { icon: ListTodo, label: '템플릿', href: '/templates' },
@@ -40,31 +37,7 @@ export default function BottomNavbar() {
                     justifyContent: 'space-around',
                 })}
             >
-                {isOfflineMode ? (
-                    <Link
-                        href="/offline"
-                        className={css({
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px',
-                            flex: 1,
-                            color: pathname === '/offline' ? 'brand.primary' : 'brand.muted',
-                            transition: 'all 0.2s',
-                            _active: { transform: 'scale(0.92)' }
-                        })}
-                    >
-                        <WifiOff size={24} strokeWidth={pathname === '/offline' ? 2.8 : 2} />
-                        <span className={css({
-                            fontSize: '10px',
-                            fontWeight: pathname === '/offline' ? '700' : '500',
-                        })}>
-                            오프라인 홈
-                        </span>
-                    </Link>
-                ) : (
-                    navItems.map((item) => {
+                {navItems.map((item) => {
                         const isActive = item.href === '/' 
                             ? pathname === '/' 
                             : pathname.startsWith(item.href)
@@ -95,8 +68,7 @@ export default function BottomNavbar() {
                                 </span>
                             </Link>
                         )
-                    })
-                )}
+                    })}
             </div>
         </nav>
     )

@@ -16,7 +16,7 @@ import {
     createWebProductDocumentRepositories,
     refreshWebProductList,
     subscribeWebProductAccount,
-} from '@/lib/local-first/repositoryFactory'
+} from '@/lib/data/repositoryFactory'
 
 export default function TemplatesPage() {
     const supabase = createClient()

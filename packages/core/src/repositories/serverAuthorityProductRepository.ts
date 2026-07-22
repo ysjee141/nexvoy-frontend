@@ -5,31 +5,29 @@ import {
   materializePlanTimeline,
   materializeTripDetail,
   materializeTripSummary,
-} from '../local-first/materialize'
+} from '../product/readModels'
 import type {
   CreateChecklistItemMutationInput,
   CreateChecklistMutationInput,
   CreatePlanMutationInput,
-  DocumentMutationChangedEntity,
-  DocumentMutationOperation,
-  DocumentMutationResult,
+  ProductChangedEntity,
+  ProductMutationOperation,
+  ProductMutationResult,
   ReplaceTemplateItemsMutationInput,
   ToggleChecklistItemMutationInput,
   UpdateChecklistItemMutationInput,
   UpdatePlanMutationInput,
-  UpsertMemberMutationInput,
   UpsertPlanUrlMutationInput,
   UpsertTemplateShareMutationInput,
-} from '../local-first/documentMutationWriter'
-import type { TripDocumentV1 } from '../local-first/documentModel'
-import type { TemplateDocumentV1 } from '../local-first/templateDocument'
-import type { DocumentPrimaryRepositoryBundle } from './documentPrimaryRepository'
+} from '../product/mutations'
+import type { TemplateProductState, TripProductState } from '../product/models'
+import type { ProductRepositoryBundle } from '../product/repositories'
 import type {
   AuthorityCommand,
   AuthorityProductSyncSnapshot,
   AuthorityResourceType,
   CanonicalResourceBundle,
-} from '../sync/serverAuthorityTypes'
+} from '../authority/serverAuthorityTypes'
 import { createInvitationRepository, type DocumentCollaborator } from '../supabase/invitationRepository'
 
 type Tables = Database['public']['Tables']
@@ -61,15 +59,15 @@ export async function createServerAuthorityProductRepositories(
   supabase: SupabaseClient,
   runtime: ServerAuthorityProductRuntime,
   options: { actorRole?: ServerAuthorityActorRole } = {},
-): Promise<DocumentPrimaryRepositoryBundle> {
+): Promise<ProductRepositoryBundle> {
   const actorRole = options.actorRole ?? 'viewer'
 
-  const repositories: DocumentPrimaryRepositoryBundle = {
+  const repositories: ProductRepositoryBundle = {
     trips: {
       async listTrips() {
         const local = await runtime.listLocal('trip')
         return local.flatMap((bundle) => {
-          const document = tripDocumentFromBundle(bundle, [])
+          const document = tripStateFromBundle(bundle, [])
           return document && !asObject(bundle.data.trip).deleted_at
             ? [materializeTripSummary(document)]
             : []
@@ -91,29 +89,9 @@ export async function createServerAuthorityProductRepositories(
         const members = cachedBundle
           ? withCachedActorMember(cachedBundle, collaborators, accountId)
           : collaborators
-        const document = cachedBundle ? tripDocumentFromBundle(cachedBundle, members) : null
+        const document = cachedBundle ? tripStateFromBundle(cachedBundle, members) : null
         return document
           ? materializeTripDetail(document, { currentUserId: accountId })
-          : null
-      },
-      async getTripDocument(tripId) {
-        const [bundle, collaborators, accountId] = await Promise.all([
-          runtime.getBundle('trip', tripId),
-          listTripCollaborators(supabase, runtime, tripId),
-          runtime.accountId(),
-        ])
-        const cachedBundle = bundle
-          ? await runtime.cacheRole(
-              accountId,
-              bundle,
-              resolveTripActorRole(bundle, collaborators, accountId),
-            )
-          : null
-        return cachedBundle
-          ? tripDocumentFromBundle(
-              cachedBundle,
-              withCachedActorMember(cachedBundle, collaborators, accountId),
-            )
           : null
       },
       async updateTrip(tripId, patch) {
@@ -258,7 +236,7 @@ export async function createServerAuthorityProductRepositories(
       async listTemplates() {
         const local = await runtime.listLocal('template')
         return local.flatMap((bundle) => {
-          const document = templateDocumentFromBundle(bundle)
+          const document = templateStateFromBundle(bundle)
           if (!document || asObject(bundle.data.template).deleted_at) return []
           return [templateSummary(document)]
         })
@@ -268,15 +246,8 @@ export async function createServerAuthorityProductRepositories(
           runtime.getBundle('template', templateId),
           runtime.accountId(),
         ])
-        const document = bundle ? templateDocumentFromBundle(bundle, accountId) : null
+        const document = bundle ? templateStateFromBundle(bundle, accountId) : null
         return document ? templateDetail(document) : null
-      },
-      async getTemplateDocument(templateId) {
-        const [bundle, accountId] = await Promise.all([
-          runtime.getBundle('template', templateId),
-          runtime.accountId(),
-        ])
-        return bundle ? templateDocumentFromBundle(bundle, accountId) : null
       },
       async updateTemplate(templateId, patch) {
         assertWritable(actorRole)
@@ -338,18 +309,12 @@ export async function createServerAuthorityProductRepositories(
           listTripCollaborators(supabase, runtime, tripId),
           runtime.accountId(),
         ])
-        return materializeTripDetail(tripDocumentFromBundle(
+        return materializeTripDetail(tripStateFromBundle(
           bundle,
           withCachedActorMember(bundle, collaborators, accountId),
         ), {
           currentUserId: accountId,
         }).members
-      },
-      async upsertMember(tripId, input: UpsertMemberMutationInput) {
-        throw new Error(`Membership mutation for ${tripId}:${input.member.id} is handled by invitation authority.`)
-      },
-      async revokeMember(tripId, memberId) {
-        throw new Error(`Membership mutation for ${tripId}:${memberId} is handled by invitation authority.`)
       },
     },
   }
@@ -474,36 +439,34 @@ async function requireBundle(
 }
 
 function tripMutationResult(
-  operation: DocumentMutationOperation,
+  operation: ProductMutationOperation,
   bundle: CanonicalResourceBundle,
-  entities: DocumentMutationChangedEntity[],
-): DocumentMutationResult<TripDocumentV1> {
+  entities: ProductChangedEntity[],
+): ProductMutationResult<TripProductState> {
   return {
-    documentType: 'trip',
-    documentId: bundle.resourceId,
+    resourceType: 'trip',
+    resourceId: bundle.resourceId,
     operation,
-    document: tripDocumentFromBundle(bundle, []),
-    update: new Uint8Array(),
+    state: tripStateFromBundle(bundle, []),
     changedEntities: entities,
   }
 }
 
 function templateMutationResult(
-  operation: DocumentMutationOperation,
+  operation: ProductMutationOperation,
   bundle: CanonicalResourceBundle,
-  entities: DocumentMutationChangedEntity[],
-): DocumentMutationResult<TemplateDocumentV1> {
+  entities: ProductChangedEntity[],
+): ProductMutationResult<TemplateProductState> {
   return {
-    documentType: 'template',
-    documentId: bundle.resourceId,
+    resourceType: 'template',
+    resourceId: bundle.resourceId,
     operation,
-    document: templateDocumentFromBundle(bundle),
-    update: new Uint8Array(),
+    state: templateStateFromBundle(bundle),
     changedEntities: entities,
   }
 }
 
-function changedEntities(commands: AuthorityCommand[]): DocumentMutationChangedEntity[] {
+function changedEntities(commands: AuthorityCommand[]): ProductChangedEntity[] {
   return commands.map((command) => ({
     entityType: authorityEntityToDocumentEntity(command.entityType),
     entityId: command.entityId,
@@ -525,10 +488,10 @@ function authorityEntityToDocumentEntity(entityType: AuthorityCommand['entityTyp
   } as const)[entityType]
 }
 
-function tripDocumentFromBundle(
+function tripStateFromBundle(
   bundle: CanonicalResourceBundle,
   collaborators: DocumentCollaborator[],
-): TripDocumentV1 {
+): TripProductState {
   const trip = asRow<TripRow>(bundle.data.trip, 'trip')
   const planRows = rows<PlanRow>(bundle, 'plans')
   const urlRows = rows<PlanUrlRow>(bundle, 'plan_urls')
@@ -537,7 +500,6 @@ function tripDocumentFromBundle(
   const assigneeRows = rows<ChecklistItemAssigneeRow>(bundle, 'checklist_item_assignees')
   const checkRows = rows<ChecklistItemUserCheckRow>(bundle, 'checklist_item_user_checks')
   return {
-    schemaVersion: 1,
     trip: {
       id: trip.id,
       ownerId: trip.user_id,
@@ -599,7 +561,6 @@ function tripDocumentFromBundle(
       createdAt: item.created_at,
       updatedAt: item.updated_at,
     }])),
-    checklistCategories: {},
     checklistItemAssignees: Object.fromEntries(assigneeRows.map((row) => [row.id, {
       id: row.id,
       itemId: row.item_id,
@@ -623,18 +584,14 @@ function tripDocumentFromBundle(
       createdAt: member.createdAt,
       updatedAt: member.updatedAt,
     }])),
-    shares: {},
-    invitationLinks: {},
     assets: {},
-    tombstones: {},
-    meta: {},
   }
 }
 
-function templateDocumentFromBundle(
+function templateStateFromBundle(
   bundle: CanonicalResourceBundle,
   currentUserId?: string,
-): TemplateDocumentV1 {
+): TemplateProductState {
   const template = asRow<TemplateRow>(bundle.data.template, 'template')
   const itemRows = rows<TemplateItemRow>(bundle, 'items')
   const shareRows = rows<TemplateShareRow>(bundle, 'shares')
@@ -665,7 +622,6 @@ function templateDocumentFromBundle(
     }
   }
   return {
-    schemaVersion: 1,
     template: {
       id: template.id,
       ownerId: template.user_id,
@@ -685,20 +641,18 @@ function templateDocumentFromBundle(
       updatedAt: item.updated_at,
     }])),
     shares,
-    tombstones: {},
-    meta: {},
   }
 }
 
 function planReadModels(bundle: CanonicalResourceBundle) {
-  return materializePlanTimeline(tripDocumentFromBundle(bundle, []))
+  return materializePlanTimeline(tripStateFromBundle(bundle, []))
 }
 
 function checklistReadModels(bundle: CanonicalResourceBundle) {
-  return materializeChecklists(tripDocumentFromBundle(bundle, []))
+  return materializeChecklists(tripStateFromBundle(bundle, []))
 }
 
-function templateSummary(document: TemplateDocumentV1) {
+function templateSummary(document: TemplateProductState) {
   const items = Object.values(document.items).sort((left, right) => left.sortOrder - right.sortOrder)
   return {
     id: document.template.id,
@@ -711,7 +665,7 @@ function templateSummary(document: TemplateDocumentV1) {
   }
 }
 
-function templateDetail(document: TemplateDocumentV1) {
+function templateDetail(document: TemplateProductState) {
   return {
     ...templateSummary(document),
     items: Object.values(document.items).sort((left, right) => left.sortOrder - right.sortOrder),
@@ -764,7 +718,7 @@ function planPatchPayload(input: UpdatePlanMutationInput): Record<string, Json |
   return payload
 }
 
-function tripPatchPayload(patch: Partial<TripDocumentV1['trip']>): Record<string, Json | undefined> {
+function tripPatchPayload(patch: Partial<TripProductState['trip']>): Record<string, Json | undefined> {
   const payload: Record<string, Json | undefined> = {}
   assign(payload, 'destination', patch.destination)
   assign(payload, 'start_date', patch.startDate)

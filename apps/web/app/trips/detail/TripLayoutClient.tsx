@@ -19,8 +19,8 @@ import {
     createWebProductDocumentRepositories,
     getWebProductSyncSnapshot,
     subscribeWebProductResource,
-} from '@/lib/local-first/repositoryFactory'
-import { tripDetailToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
+} from '@/lib/data/repositoryFactory'
+import { tripDetailToWebTripRow } from '@/lib/data/productReadModelAdapters'
 import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
 import type { AuthorityProductSyncSnapshot } from '@nexvoy/core'
 import AuthoritySyncStatusBadge from '@/components/trips/AuthoritySyncStatusBadge'

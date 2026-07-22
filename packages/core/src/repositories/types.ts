@@ -12,12 +12,10 @@ import type {
   CreateTripInput,
   UpdateTripInput,
 } from '../supabase/queries'
-import type { TripDocumentV1 } from '../local-first/documentModel'
 
 export interface TripRepository {
   listTrips(userId: string): Promise<Trip[]>
   getTrip(tripId: string): Promise<Trip | null>
-  getTripDocument(tripId: string): Promise<TripDocumentV1 | null>
   getTripWithPlans(tripId: string): Promise<{ trip: Trip; plans: Plan[] }>
   createTrip(input: CreateTripInput): Promise<Trip>
   updateTrip(tripId: string, input: UpdateTripInput): Promise<Trip>

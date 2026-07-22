@@ -13,7 +13,6 @@ interface StoreRequestBody {
     tripId?: string
     placeId?: string
     photoReference?: string | null
-    documentPrimary?: boolean
 }
 
 const STORAGE_BUCKET = 'place-photos'
@@ -108,7 +107,6 @@ export async function POST(request: NextRequest) {
         }
 
         const { planId, tripId, placeId } = body
-        const isDocumentPrimary = body.documentPrimary === true
         // photoReference는 optional. 누락 시 placeId 기반 fallback으로 조회.
         let photoReference: string | null | undefined = body.photoReference
         if (!planId || !tripId || !placeId) {
@@ -129,59 +127,20 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        // 3) 멤버십 검증
-        //    Legacy row plan은 plans row로 trip 소속을 확인한다.
-        //    Local-first/server-authority plan은 plans row가 아직 보이지 않을 수 있으므로
-        //    trip-level owner/editor 권한만 확인한다.
-        if (!isDocumentPrimary) {
-            const { data: planRow, error: planLookupError } = await supabase
-                .from('plans')
-                .select('id, trip_id')
-                .eq('id', planId)
-                .maybeSingle()
-
-            if (planLookupError) {
-                console.error('[places/photo/store] plan lookup failed:', planLookupError.message)
-                return NextResponse.json({ error: 'Plan lookup failed' }, { status: 500 })
-            }
-            if (!planRow) {
-                return NextResponse.json({ error: 'Plan not found' }, { status: 404 })
-            }
-            if (planRow.trip_id !== tripId) {
-                return NextResponse.json({ error: 'Trip mismatch' }, { status: 400 })
-            }
+        // 3) Canonical authority membership validation.
+        const authorityWrite = await supabase.rpc('check_can_write_authority_trip', {
+            p_trip_id: tripId,
+            p_user_id: user.id,
+        })
+        if (authorityWrite.error) {
+            console.error(
+                '[places/photo/store] check_can_write_authority_trip failed:',
+                authorityWrite.error.message
+            )
+            return NextResponse.json({ error: 'Permission lookup failed' }, { status: 500 })
         }
-
-        if (isDocumentPrimary) {
-            const authorityWrite = await supabase.rpc('check_can_write_authority_trip', {
-                p_trip_id: tripId,
-                p_user_id: user.id,
-            })
-            if (authorityWrite.error) {
-                console.error(
-                    '[places/photo/store] check_can_write_authority_trip failed:',
-                    authorityWrite.error.message
-                )
-                return NextResponse.json({ error: 'Permission lookup failed' }, { status: 500 })
-            }
-            if (authorityWrite.data !== true) {
-                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-            }
-        } else {
-            // Legacy rows use trip owner/trip_members editor authority.
-            const [ownerResp, editorResp] = await Promise.all([
-                supabase.rpc('check_is_trip_owner', { _trip_id: tripId, _user_id: user.id }),
-                supabase.rpc('check_is_trip_editor', { _trip_id: tripId, _user_id: user.id }),
-            ])
-            if (ownerResp.error) {
-                console.error('[places/photo/store] check_is_trip_owner failed:', ownerResp.error.message)
-            }
-            if (editorResp.error) {
-                console.error('[places/photo/store] check_is_trip_editor failed:', editorResp.error.message)
-            }
-            if (ownerResp.data !== true && editorResp.data !== true) {
-                return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-            }
+        if (authorityWrite.data !== true) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
 
         // 4) Google Maps API Key (서버 보유)
@@ -279,20 +238,6 @@ export async function POST(request: NextRequest) {
         if (!publicUrl) {
             console.error('[places/photo/store] getPublicUrl returned empty for plan', planId)
             return NextResponse.json({ error: 'Public URL generation failed' }, { status: 500 })
-        }
-
-        // 8) Legacy row plans UPDATE { image_url, photo_reference }.
-        //    Document-primary callers update the Yjs document from the returned URL.
-        if (!isDocumentPrimary) {
-            const { error: updateError } = await supabase
-                .from('plans')
-                .update({ image_url: publicUrl, photo_reference: photoReference })
-                .eq('id', planId)
-
-            if (updateError) {
-                console.error('[places/photo/store] plans UPDATE failed:', updateError.message)
-                return NextResponse.json({ error: 'Plan update failed' }, { status: 500 })
-            }
         }
 
         return NextResponse.json({ imageUrl: publicUrl, thumbUrl }, { status: 200 })

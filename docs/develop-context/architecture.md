@@ -46,10 +46,10 @@
 - **Principles**: `auth.uid()`를 기반으로 사용자 본인의 데이터에만 접근할 수 있도록 설계되었으며, 공유 기능은 관계형 체크 테이블을 통해 확장됩니다.
 
 ### 2-3. API Communication
-- **Shared Core**: 플랫폼 독립 데이터 접근은 `@nexvoy/core/supabase/queries`에 둡니다. 각 앱은 Supabase client를 생성해 첫 인자로 주입합니다.
+- **Shared Core**: 플랫폼 독립 제품 계약은 `@nexvoy/core/product/*`, 권위 동기화는 `@nexvoy/core/authority/*`에 둡니다.
 - **Web Client**: `apps/web/lib/supabase/{server,client,middleware}.ts`를 용도별로 구분합니다.
 - **Mobile Client**: `apps/mobile/lib/supabase.ts`에서 RN/Expo용 Supabase client를 구성합니다.
-- **Pattern**: 화면 컴포넌트에 임의의 중복 query를 늘리지 말고, 공유 가능한 로직은 `packages/core`로 끌어올립니다.
+- **Pattern**: 제품 화면은 Web/Mobile repository factory만 호출합니다. 정규화 제품 row를 REST로 직접 변경하거나 로컬 DB/outbox를 화면에서 직접 조작하지 않습니다.
 
 ### 2-4. Offline-Capable Server Authority (Refactor Target)
 
@@ -63,7 +63,7 @@ optimistic edit, offline command outbox를 담당한다.
 - **Recovery**: foreground/reconnect/detail enter에서 revision을 비교하고 canonical bundle을 refresh
 - **Security**: Supabase Auth, RLS, TLS, provider-managed encryption
 - **Assets**: client-to-Storage 직접 upload와 CDN/thumbnail
-- **Removed target**: Yjs CRDT, WebRTC/P2P, STUN/TURN, app-layer E2EE, encrypted document backup
+- **Retired**: Yjs CRDT, WebRTC/P2P, STUN/TURN, app-layer E2EE, encrypted document backup
 
 전환 순서:
 
@@ -73,7 +73,7 @@ optimistic edit, offline command outbox를 담당한다.
 4. Realtime invalidation과 revision recovery
 5. Web/Mobile 제품 경로 전환
 6. invitation/key 및 asset 경로 단순화
-7. legacy Yjs/P2P/backup runtime 제거
+7. legacy Yjs/P2P/backup runtime 제거 (`TASK-055`)
 8. Initial Production data integrity/cost gate
 
 구현 기준 문서:
@@ -125,7 +125,7 @@ optimistic edit, offline command outbox를 담당한다.
 1.  **View**: `apps/web/app`, `apps/web/components`, `apps/mobile/app`, `apps/mobile/components`.
 2.  **Shared Domain**: `packages/core`, `packages/types`, `packages/design-tokens`.
 3.  **Platform Client**: `apps/web/lib/supabase/*`, `apps/mobile/lib/supabase.ts`.
-4.  **Transition Repository Boundary**: local-first 전환 작업은 UI와 data source 사이에 Repository interface를 둔다. UI는 Supabase query, Yjs document, WebRTC provider를 직접 호출하지 않는다.
+4.  **Product Repository Boundary**: UI와 data source 사이에 Repository interface를 둔다. UI는 canonical RPC, IndexedDB, SQLite, Realtime transport를 직접 조립하지 않는다.
 
 > [!IMPORTANT]
 > AI는 컴포넌트(View) 내에 플랫폼별 중복 비즈니스 로직을 늘리지 마십시오. 웹/앱에서 공유 가능한 데이터 접근과 도메인 규칙은 `@nexvoy/core`로 이동합니다.

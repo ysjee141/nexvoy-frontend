@@ -8,7 +8,7 @@ import { css } from 'styled-system/css'
 import { Plus, ArrowLeft, ChevronLeft, Minus } from 'lucide-react'
 import { useLoadScript, Autocomplete } from '@react-google-maps/api'
 import { CacheUtil } from '@/lib/cache'
-import { createWebProductTrip } from '@/lib/local-first/repositoryFactory'
+import { createWebProductTrip } from '@/lib/data/repositoryFactory'
 
 const libraries: ("places")[] = ["places"]
 

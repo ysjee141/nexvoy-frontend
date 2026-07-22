@@ -14,8 +14,8 @@ import {
   createWebProductDocumentRepositories,
   refreshWebProductList,
   subscribeWebProductAccount,
-} from '@/lib/local-first/repositoryFactory'
-import { tripSummaryToWebTripRow } from '@/lib/local-first/tripReadModelAdapters'
+} from '@/lib/data/repositoryFactory'
+import { tripSummaryToWebTripRow } from '@/lib/data/productReadModelAdapters'
 import {
   Map, CheckSquare, Globe, Wallet,
   Link2, ChevronDown, ChevronUp, ArrowRight,

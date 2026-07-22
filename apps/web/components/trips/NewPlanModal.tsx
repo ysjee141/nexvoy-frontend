@@ -371,7 +371,6 @@ export default function NewPlanModal({
                             tripId,
                             placeId: selectedPlace.googlePlaceId,
                             photoReference: selectedPlace.photoReference,
-                            documentPrimary: true,
                         },
                         (imageUrl) => {
                             // Zustand store가 plan-level에 없어, 부모에게 콜백으로 통지

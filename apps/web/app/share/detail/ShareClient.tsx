@@ -107,49 +107,24 @@ export default function SharePage() {
         try {
             if (!shareToken) throw new Error('missing token')
 
-            try {
-                const documentSummary = await createInvitationRepository(supabase).getDocumentShareTokenSummary(shareToken)
-                if (documentSummary) {
-                    const documentShareInfo = {
-                        id: '',
-                        share_token: shareToken,
-                        share_type: documentSummary.shareType,
-                        trip_id: documentSummary.documentId,
-                        expires_at: documentSummary.expiresAt,
-                        source: 'document',
-                    }
-                    setShareInfo(documentShareInfo)
-                    const { data: tripData } = await supabase.from('trips').select('*').eq('id', documentSummary.documentId).maybeSingle()
-                    setTrip(tripData ?? {
-                        id: documentSummary.documentId,
-                        destination: documentSummary.destination,
-                        start_date: documentSummary.startDate,
-                        end_date: documentSummary.endDate,
-                    })
-                    if (documentSummary.shareType === 'public' || isAuthorized) {
-                        setIsAuthorized(true)
-                        await fetchDocumentSharePlans(shareToken)
-                    }
-                    return
-                }
-            } catch {
-                // Document registry miss or unavailable: keep legacy share links working.
-            }
-
-            const shareData = await fetchLegacyShareInfo(shareToken)
-            if (!shareData) throw new Error('invalid token')
-            setShareInfo({ ...shareData, source: 'legacy' })
-
-            let currentTrip: any = shareData.trips
-            if (!currentTrip) {
-                const { data: tripData } = await supabase.from('trips').select('*').eq('id', shareData.trip_id).single()
-                currentTrip = tripData
-            }
-            setTrip(currentTrip)
-
-            if (shareData.share_type === 'public' || isAuthorized) {
+            const documentSummary = await createInvitationRepository(supabase).getDocumentShareTokenSummary(shareToken)
+            if (!documentSummary) throw new Error('invalid token')
+            setShareInfo({
+                id: '',
+                share_token: shareToken,
+                share_type: documentSummary.shareType,
+                trip_id: documentSummary.documentId,
+                expires_at: documentSummary.expiresAt,
+            })
+            setTrip({
+                id: documentSummary.documentId,
+                destination: documentSummary.destination,
+                start_date: documentSummary.startDate,
+                end_date: documentSummary.endDate,
+            })
+            if (documentSummary.shareType === 'public' || isAuthorized) {
                 setIsAuthorized(true)
-                await fetchPlans(shareData.trip_id)
+                await fetchDocumentSharePlans(shareToken)
             }
         } catch {
             setError('유효하지 않거나 만료된 공유 링크입니다.')
@@ -157,27 +132,6 @@ export default function SharePage() {
             setLoading(false)
         }
     }, [shareToken, supabase])
-
-    const fetchLegacyShareInfo = async (token: string) => {
-        const { data, error } = await supabase
-            .from('trip_shares')
-            .select('id, share_token, share_type, trip_id, expires_at, trips(*)')
-            .eq('share_token', token)
-            .single()
-
-        if (error || !data) return null
-        return data
-    }
-
-    const fetchPlans = async (tripId: string) => {
-        const { data } = await supabase
-            .from('plans')
-            .select('*, plan_urls(*)')
-            .eq('trip_id', tripId)
-            .order('start_datetime_local', { ascending: true })
-
-        if (data) setPlans(data)
-    }
 
     const fetchDocumentSharePlans = async (token: string, password?: string) => {
         const data = await createInvitationRepository(supabase).getDocumentShareTokenPlans({
@@ -189,39 +143,19 @@ export default function SharePage() {
 
     const handlePasswordSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (shareInfo?.source === 'document') {
-            try {
-                const summary = await createInvitationRepository(supabase).verifyDocumentShareToken({
-                    shareToken: shareToken ?? '',
-                    password: passwordInput,
-                })
-                if (!summary) {
-                    alert('비밀번호가 일치하지 않습니다.')
-                    return
-                }
-                setIsAuthorized(true)
-                await fetchDocumentSharePlans(shareToken ?? '', passwordInput)
-            } catch {
-                alert('비밀번호가 일치하지 않습니다.')
-            }
-            return
-        }
-        // 비밀번호 검증은 서버 라우트에서 수행 (password_hash는 클라이언트로 노출되지 않음)
         try {
-            const res = await fetch('/api/share/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: shareToken, password: passwordInput }),
+            const summary = await createInvitationRepository(supabase).verifyDocumentShareToken({
+                shareToken: shareToken ?? '',
+                password: passwordInput,
             })
-            const result = await res.json().catch(() => ({ authorized: false }))
-            if (res.ok && result.authorized) {
-                setIsAuthorized(true)
-                await fetchPlans(shareInfo.trip_id)
-            } else {
+            if (!summary) {
                 alert('비밀번호가 일치하지 않습니다.')
+                return
             }
+            setIsAuthorized(true)
+            await fetchDocumentSharePlans(shareToken ?? '', passwordInput)
         } catch {
-            alert('비밀번호 확인 중 오류가 발생했습니다.')
+            alert('비밀번호가 일치하지 않습니다.')
         }
     }
 

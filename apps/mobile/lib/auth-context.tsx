@@ -17,13 +17,8 @@ import { AppState } from 'react-native'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { cancelAllLocalNotifications } from './notifications'
-import { logLocalFirstEvent } from './observability'
+import { logProductEvent } from './observability'
 import { setMobileBackgroundWorkPaused } from './backgroundTaskCoordinator'
-import { revokeAndClearCurrentMobileKeyMaterial } from './local-first/keyProvisioningService'
-import {
-  registerMobileProvisioningBackgroundTask,
-  unregisterMobileProvisioningBackgroundTask,
-} from './local-first/provisioningBackgroundTask'
 import {
   registerMobileAuthorityBackgroundTask,
   unregisterMobileAuthorityBackgroundTask,
@@ -32,7 +27,7 @@ import {
   startMobileAuthoritySync,
   stopMobileAuthoritySync,
 } from './data/server-authority/syncService'
-import { isMobileServerAuthorityEnabled } from './data/repositoryFactory'
+import { resetLegacyMobileV1Storage } from './data/legacyV1Reset'
 
 interface AuthContextValue {
   session: Session | null
@@ -51,6 +46,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    void resetLegacyMobileV1Storage().catch((error) => {
+      console.warn('[legacy V1 reset deferred]', error)
+    })
+
     // 초기 세션 로드 (SecureStore에 저장된 세션 복원)
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
@@ -85,19 +84,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const accountId = session?.user.id
     if (accountId) {
       setMobileBackgroundWorkPaused(false)
-      if (isMobileServerAuthorityEnabled()) {
-        void unregisterMobileProvisioningBackgroundTask()
-        void registerMobileAuthorityBackgroundTask()
-        void startMobileAuthoritySync(accountId)
-      } else {
-        void registerMobileProvisioningBackgroundTask()
-        void unregisterMobileAuthorityBackgroundTask()
-        void stopMobileAuthoritySync()
-      }
+      void registerMobileAuthorityBackgroundTask()
+      void startMobileAuthoritySync(accountId)
       return
     }
     setMobileBackgroundWorkPaused(true)
-    void unregisterMobileProvisioningBackgroundTask()
     void unregisterMobileAuthorityBackgroundTask()
     void stopMobileAuthoritySync()
   }, [isLoading, session?.user.id])
@@ -105,7 +96,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     setMobileBackgroundWorkPaused(true)
     await Promise.all([
-      unregisterMobileProvisioningBackgroundTask(),
       unregisterMobileAuthorityBackgroundTask(),
       stopMobileAuthoritySync(),
     ])
@@ -114,21 +104,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // 알림 정리 실패가 로그아웃을 막으면 계정 전환 시 더 위험하다.
     }
-    if (!isMobileServerAuthorityEnabled()) {
-      try {
-        await revokeAndClearCurrentMobileKeyMaterial(supabase)
-      } catch {
-        // 서버/로컬 키 정리 실패도 로그아웃 자체를 막지 않는다.
-      }
-    }
     try {
       await supabase.rpc('cleanup_current_user_push_tokens')
-      await logLocalFirstEvent('push_token_revoked', {
+      await logProductEvent('push_token_revoked', {
         provider: 'fcm',
         status: 'completed',
       })
     } catch {
-      await logLocalFirstEvent('push_token_revoked', {
+      await logProductEvent('push_token_revoked', {
         provider: 'fcm',
         status: 'failed',
         reason_code: 'cleanup_failed',

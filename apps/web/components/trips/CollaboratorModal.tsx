@@ -7,18 +7,6 @@ import { X, UserPlus, Mail, Shield, Eye, Pencil, Trash2, Loader2, CheckCircle2, 
 import { CollaborationService } from '@/services/ExternalApiService'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { createInvitationRepository, type DocumentPendingInvitation } from '@nexvoy/core/supabase/invitationRepository'
-import type { DocumentKeyProvisioningRequest } from '@nexvoy/core/sync/keyProvisioning'
-import {
-    DocumentKeyProvisioningStatusBadge,
-    DocumentKeyProvisioningStatusCard,
-    type DocumentKeyProvisioningStatus,
-} from './DocumentKeyProvisioningStatus'
-import { ensureWebDeviceKeyMaterial, runWebForegroundKeyProvisioning } from '@/lib/local-first/keyProvisioningService'
-import {
-    createWebDocumentPrimaryRepositories,
-    ensureWebTripDocumentRemoteBootstrap,
-} from '@/lib/local-first/documentPrimaryRepositories'
-import { isWebServerAuthorityEnabled } from '@/lib/local-first/repositoryFactory'
 
 interface CollaboratorModalProps {
     isOpen: boolean
@@ -73,9 +61,6 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
     const [currentUserId, setCurrentUserId] = useState<string | null>(null)
     const [generatedInvite, setGeneratedInvite] = useState<GeneratedInvitationState | null>(null)
     const [revokingInvite, setRevokingInvite] = useState(false)
-    const [keyProvisioningRequests, setKeyProvisioningRequests] = useState<DocumentKeyProvisioningRequest[]>([])
-    const [keyProvisioningBusy, setKeyProvisioningBusy] = useState(false)
-    const [keyProvisioningMessage, setKeyProvisioningMessage] = useState<string | null>(null)
 
     useScrollLock(isOpen)
 
@@ -99,17 +84,6 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         ? 'owner'
         : collaborators.find(member => member.userId === currentUserId)?.role
     const canInvite = currentMemberRole === 'owner' || currentMemberRole === 'editor'
-    const pendingProvisioningCount = keyProvisioningRequests.length
-
-    useEffect(() => {
-        if (isOpen && canInvite && !isWebServerAuthorityEnabled()) {
-            void fetchKeyProvisioningRequests()
-        } else if (!isOpen) {
-            setKeyProvisioningRequests([])
-            setKeyProvisioningMessage(null)
-        }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, canInvite, tripId])
 
     const fetchCollaborators = async () => {
         try {
@@ -129,11 +103,6 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             }))
             setCollaborators(formatted)
             setPendingInvitations(pending)
-            const { data: { user } } = await supabase.auth.getUser()
-            const actorRole = user?.id === ownerId
-                ? 'owner'
-                : formatted.find((member) => member.userId === user?.id)?.role ?? null
-            await syncCollaboratorSnapshot(formatted, actorRole)
         } catch (fetchError) {
             console.error('Error fetching collaborators:', fetchError)
             setError('동행자 목록을 불러오지 못했습니다.')
@@ -151,13 +120,6 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         try {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) throw new Error('로그인이 필요합니다.')
-
-            if (!isWebServerAuthorityEnabled()) {
-                await ensureWebTripDocumentRemoteBootstrap({
-                    supabase,
-                    tripId,
-                })
-            }
 
             const result = await CollaborationService.createInvite({
                 documentId: tripId,
@@ -193,10 +155,6 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             setCollaborators(prev =>
                 prev.map(m => m.memberId === memberId ? { ...m, role: newRole } : m)
             )
-            const member = collaborators.find((candidate) => candidate.memberId === memberId)
-            if (member) {
-                await upsertCollaboratorSnapshot({ ...member, role: newRole })
-            }
         } catch (roleError) {
             alert('권한 변경 실패: ' + formatErrorMessage(roleError))
         }
@@ -209,57 +167,13 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
         try {
             await createInvitationRepository(supabase).revokeDocumentMember(memberId)
             if (isSelf) {
-                await revokeCollaboratorSnapshot(memberId)
                 onClose()
                 window.location.href = '/'
             } else {
-                await revokeCollaboratorSnapshot(memberId)
                 fetchCollaborators()
             }
         } catch (removeError) {
             alert((isSelf ? '나가기 실패: ' : '멤버 삭제 실패: ') + formatErrorMessage(removeError))
-        }
-    }
-
-    const syncCollaboratorSnapshot = async (members: Collaborator[], actorRole: MemberRole | null) => {
-        if (isWebServerAuthorityEnabled()) return
-        try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase, {
-                actorRole,
-            })
-            await Promise.all(members.map((member) =>
-                repositories.members.upsertMember(tripId, {
-                    member: toTripMemberNode(member),
-                }),
-            ))
-        } catch (err) {
-            console.warn('[CollaboratorModal] member snapshot sync failed', err)
-        }
-    }
-
-    const upsertCollaboratorSnapshot = async (member: Collaborator) => {
-        if (isWebServerAuthorityEnabled()) return
-        try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase, {
-                actorRole: currentMemberRole ?? null,
-            })
-            await repositories.members.upsertMember(tripId, {
-                member: toTripMemberNode(member),
-            })
-        } catch (err) {
-            console.warn('[CollaboratorModal] member snapshot upsert failed', err)
-        }
-    }
-
-    const revokeCollaboratorSnapshot = async (memberId: string) => {
-        if (isWebServerAuthorityEnabled()) return
-        try {
-            const repositories = await createWebDocumentPrimaryRepositories(supabase, {
-                actorRole: currentMemberRole ?? null,
-            })
-            await repositories.members.revokeMember(tripId, memberId)
-        } catch (err) {
-            console.warn('[CollaboratorModal] member snapshot revoke failed', err)
         }
     }
 
@@ -304,46 +218,6 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
             setError(err.message || '초대 폐기 중 오류가 발생했습니다.')
         } finally {
             setRevokingInvite(false)
-        }
-    }
-
-    const fetchKeyProvisioningRequests = async () => {
-        try {
-            const requests = await createInvitationRepository(supabase).listPendingDocumentKeyProvisioningRequests({
-                documentId: tripId,
-                limit: 25,
-            })
-            setKeyProvisioningRequests(requests)
-        } catch {
-            setKeyProvisioningMessage('데이터 준비 상태를 불러오지 못했습니다.')
-        }
-    }
-
-    const handleRunKeyProvisioning = async () => {
-        if (keyProvisioningBusy || isWebServerAuthorityEnabled()) return
-        setKeyProvisioningBusy(true)
-        setKeyProvisioningMessage(null)
-        try {
-            await ensureWebDeviceKeyMaterial(supabase)
-            const result = await runWebForegroundKeyProvisioning({
-                supabase,
-                documentId: tripId,
-                limit: 25,
-            })
-            if (result.completed > 0) {
-                setKeyProvisioningMessage(`${result.completed}명의 여정 데이터 준비를 완료했습니다.`)
-            } else if (result.skipped > 0) {
-                setKeyProvisioningMessage('이 기기에서는 데이터 준비를 완료할 수 없습니다. 여정을 열었던 Web 기기에서 다시 시도해 주세요.')
-            } else if (result.failed > 0) {
-                setKeyProvisioningMessage('일부 데이터 준비를 완료하지 못했습니다. 잠시 후 다시 시도해 주세요.')
-            } else {
-                setKeyProvisioningMessage('처리할 데이터 준비 요청이 없습니다.')
-            }
-            await fetchKeyProvisioningRequests()
-        } catch {
-            setKeyProvisioningMessage('데이터 준비를 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.')
-        } finally {
-            setKeyProvisioningBusy(false)
         }
     }
 
@@ -547,21 +421,6 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                     </div>
                     )}
 
-                    {canInvite && (pendingProvisioningCount > 0 || keyProvisioningMessage) ? (
-                        <DocumentKeyProvisioningStatusCard
-                            status={pendingProvisioningCount > 0 ? 'pending' : 'completed'}
-                            pendingCount={pendingProvisioningCount || undefined}
-                            primaryActionLabel={pendingProvisioningCount > 0 ? '데이터 준비 다시 시도' : '상태 다시 확인'}
-                            primaryActionBusy={keyProvisioningBusy}
-                            onPrimaryAction={pendingProvisioningCount > 0 ? handleRunKeyProvisioning : fetchKeyProvisioningRequests}
-                            footer={keyProvisioningMessage ? (
-                                <p className={css({ color: 'brand.muted', fontSize: '12px', lineHeight: 1.5 })}>
-                                    {keyProvisioningMessage}
-                                </p>
-                            ) : null}
-                        />
-                    ) : null}
-
                     {canInvite && pendingInvitations.length > 0 ? (
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px' })}>
                             <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.ink' })}>수락 대기 ({pendingInvitations.length})</h3>
@@ -592,13 +451,6 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                                             {member.nickname && member.email ? member.email : ''}
                                             {member.status === 'pending' && (member.nickname && member.email ? ' • ' : '') + '수락 대기 중'}
                                         </span>
-                                        {getMemberKeyProvisioningStatus(member.userId, keyProvisioningRequests) ? (
-                                            <div className={css({ mt: '6px' })}>
-                                                <DocumentKeyProvisioningStatusBadge
-                                                    status={getMemberKeyProvisioningStatus(member.userId, keyProvisioningRequests)!}
-                                                />
-                                            </div>
-                                        ) : null}
                                     </div>
                                     {member.role !== 'owner' && (
                                         <div className={css({ display: 'flex', alignItems: 'center', gap: '4px', ml: '8px', flexShrink: 0 })}>
@@ -681,36 +533,4 @@ function formatErrorMessage(error: unknown): string {
     if (typeof error === 'string') return error
     if (error instanceof Error) return error.message
     return '잠시 후 다시 시도해 주세요.'
-}
-
-function toTripMemberNode(member: Collaborator) {
-    const now = new Date().toISOString()
-    return {
-        id: member.memberId,
-        userId: member.userId,
-        invitedEmail: member.userId ? null : member.email,
-        role: member.role,
-        status: member.status === 'revoked'
-            ? 'revoked' as const
-            : member.status === 'pending'
-                ? 'pending' as const
-                : 'accepted' as const,
-        nickname: member.nickname,
-        email: member.email,
-        createdAt: member.joined_at || now,
-        updatedAt: now,
-    }
-}
-
-function getMemberKeyProvisioningStatus(
-    userId: string | null,
-    requests: DocumentKeyProvisioningRequest[],
-): DocumentKeyProvisioningStatus | null {
-    if (!userId) return null
-    const request = requests.find((entry) => entry.userId === userId)
-    if (!request) return null
-    if (request.status === 'pending' || request.status === 'processing' || request.status === 'failed') {
-        return request.status
-    }
-    return null
 }

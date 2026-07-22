@@ -3,15 +3,11 @@ import { analytics } from '@/services/AnalyticsService'
 
 interface NetworkState {
     isOnline: boolean
-    isOfflineMode: boolean
     initializeNetworkListener: () => void
-    setOfflineMode: (mode: boolean) => void
 }
 
 export const useNetworkStore = create<NetworkState>((set) => ({
     isOnline: true,
-    isOfflineMode: false,
-    setOfflineMode: (mode: boolean) => set({ isOfflineMode: mode }),
     initializeNetworkListener: () => {
         if (typeof window === 'undefined') return
 

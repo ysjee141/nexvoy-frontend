@@ -8,7 +8,7 @@
  * toDateString() 으로 YYYY-MM-DD 문자열을 만든다. `toISOString()` 은 UTC 변환으로
  * TZ 왜곡 위험이 있어 금지 — 로컬 연/월/일을 직접 조합한다.
  *
- * document-primary bootstrap으로 여행을 생성하고 상세 화면으로 이동한다. 화면은 폼 UI/검증/상태만 담당.
+ * authority bootstrap으로 여행을 생성하고 상세 화면으로 이동한다. 화면은 폼 UI/검증/상태만 담당.
  */
 import { useEffect, useRef, useState } from 'react'
 import {

@@ -30,3 +30,10 @@
 - `docs/refactor/tasks/TASK-052-mobile-server-authority-product-cutover.md`
 - `docs/refactor/runbooks/TASK-052-mobile-authority-product-smoke.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
+- `docs/refactor/runbooks/TASK-055-legacy-runtime-retirement.md`
+
+## 현재 아키텍처
+
+`TASK-055` 이후 제품 런타임은 Supabase normalized row authority, 계정별 Web IndexedDB/
+Mobile SQLite cache, durable command outbox, Realtime revision invalidation만 사용한다. Yjs, WebRTC,
+document key, encrypted backup, 별도 다운로드 여행 번들은 새 구현에서 사용하지 않는다.

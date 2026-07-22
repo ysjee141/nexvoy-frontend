@@ -7,7 +7,7 @@ import { ChevronLeft, AlertTriangle } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { CacheUtil } from '@/lib/cache'
-import { clearAllLocalFirstDocuments } from '@/lib/local-first/localDocumentCleanup'
+import { WebAuthorityIndexedDbStore } from '@/lib/server-authority/indexedDbStore'
 
 export default function WithdrawalPage() {
     const router = useRouter()
@@ -67,11 +67,9 @@ export default function WithdrawalPage() {
             return
         }
 
-        // 2. Sign out locally
+        // 2. Remove this account's device cache/outbox, then sign out locally.
+        await new WebAuthorityIndexedDbStore().purgeAccount(user.id)
         await supabase.auth.signOut()
-        
-        // 3. Clear local-first documents and local storage cache
-        await clearAllLocalFirstDocuments()
         await CacheUtil.clear()
 
         router.push('/')
@@ -112,11 +110,11 @@ export default function WithdrawalPage() {
                         
                         {(stats.totalTrips > 0 || stats.totalItems > 0) ? (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
-                                지금 떠나시면 그동안 함께 했던 <strong className={css({ color: '#3B82F6' })}>{stats.totalTrips}개의 소중한 여행 일정</strong>과 <strong className={css({ color: '#2563EB' })}>{stats.totalItems}개의 짐 챙기기 기록</strong>, 이 기기에 남아 있는 로컬 준비물 문서가 모두 삭제되며, 영구적으로 복구할 수 없습니다. 계속 함께해 주시면 안 될까요?
+                                지금 떠나시면 그동안 함께 했던 <strong className={css({ color: '#3B82F6' })}>{stats.totalTrips}개의 소중한 여행 일정</strong>과 <strong className={css({ color: '#2563EB' })}>{stats.totalItems}개의 짐 챙기기 기록</strong>이 모두 삭제되며, 영구적으로 복구할 수 없습니다. 계속 함께해 주시면 안 될까요?
                             </p>
                         ) : (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
-                                탈퇴 시 계정 정보, 클라우드 백업, 이 기기에 남아 있는 로컬 문서가 영구적으로 삭제되어 복구할 수 없게 돼요. 온여정과 함께 멋진 여행을 다시 스케치해 보는 건 어떨까요?
+                                탈퇴 시 계정 정보와 여행 데이터가 영구적으로 삭제되어 복구할 수 없게 돼요. 온여정과 함께 멋진 여행을 다시 스케치해 보는 건 어떨까요?
                             </p>
                         )}
                         
@@ -134,7 +132,7 @@ export default function WithdrawalPage() {
                         <div className={css({ display: 'flex', alignItems: 'flex-start', gap: '12px', mb: '24px', p: '16px', bg: '#fef2f2', borderRadius: '12px', color: '#dc2626' })}>
                             <AlertTriangle size={20} className={css({ flexShrink: 0, mt: '2px' })} />
                             <p className={css({ fontSize: '14px', lineHeight: 1.5, wordBreak: 'keep-all', m: 0 })}>
-                                <strong>잠깐만요! 💡</strong> 계정 삭제 시 등록된 연락처, 여행 일정, 템플릿, 클라우드 백업, 기기 내 로컬 문서가 즉시 파기되며 복구할 수 없어요.
+                                <strong>잠깐만요! 💡</strong> 계정 삭제 시 등록된 연락처, 여행 일정, 템플릿과 이 기기의 계정 캐시가 즉시 파기되며 복구할 수 없어요.
                             </p>
                         </div>
                         

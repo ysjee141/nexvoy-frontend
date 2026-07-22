@@ -26,7 +26,7 @@ import {
   refreshMobileProductList,
   subscribeMobileProductAccount,
 } from '@/lib/data/repositoryFactory'
-import { toTripRow } from '@/lib/local-first/documentPrimaryAdapters'
+import { toTripRow } from '@/lib/data/productAdapters'
 import { colors, fontSizes, fontWeights, radii, spacing, shadows } from '@/theme'
 
 type TripStatus = 'ongoing' | 'upcoming' | 'past'

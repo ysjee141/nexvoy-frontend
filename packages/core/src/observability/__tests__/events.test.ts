@@ -1,26 +1,25 @@
 import {
-  createLocalFirstObservabilityEvent,
-  sanitizeLocalFirstObservabilityEvent,
+  createObservabilityEvent,
+  sanitizeObservabilityEvent,
 } from '../events'
 
-const event = createLocalFirstObservabilityEvent('p2p_connected', {
+const event = createObservabilityEvent('local_notification_scheduled', {
   platform: 'web',
-  provider: 'cloudflare',
-  connection_type: 'relay',
-  setup_ms: 1200,
-  has_turn: true,
+  provider: 'local',
+  status: 'completed',
+  count: 1,
 })
 
 if (
-  event.name !== 'p2p_connected' ||
+  event.name !== 'local_notification_scheduled' ||
   event.params.platform !== 'web' ||
-  event.params.connection_type !== 'relay' ||
-  event.params.setup_ms !== 1200
+  event.params.provider !== 'local' ||
+  event.params.count !== 1
 ) {
-  throw new Error('Observability event should preserve allowlisted quality/cost params.')
+  throw new Error('Observability event should preserve allowlisted product params.')
 }
 
-const unsafe = sanitizeLocalFirstObservabilityEvent('collaboration_push_enqueued', {
+const unsafe = sanitizeObservabilityEvent('collaboration_push_enqueued', {
   platform: 'android',
   queued_count: 2,
   document_id: 'raw-document-id',
@@ -44,7 +43,7 @@ for (const key of ['document_id', 'trip_id', 'title', 'fcm_token', 'nested']) {
 
 let rejected = false
 try {
-  createLocalFirstObservabilityEvent('local_first_backup_failed', {
+  createObservabilityEvent('local_notification_schedule_failed', {
     reason_code: 'network_error',
     raw_key: 'secret',
   })

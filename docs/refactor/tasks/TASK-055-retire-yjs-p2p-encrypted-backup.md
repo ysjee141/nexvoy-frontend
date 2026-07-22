@@ -1,6 +1,6 @@
 # TASK-055: Retire Yjs, P2P, and Encrypted Backup Runtime
 
-- 상태: 대기
+- 상태: 구현 완료 (Issue #366)
 
 ## 목적
 
@@ -79,3 +79,31 @@ document update backup, key provisioning runtime을 제거한다. 중복 네트�
 - 제품과 build dependency에서 Yjs/P2P/app E2EE/custom backup runtime이 제거된다.
 - V1 document/backup 데이터가 새 제품 경로에 영향을 주지 않는다.
 - Supabase managed row authority, Realtime invalidation, Storage만 원격 데이터 계층으로 남는다.
+
+## 구현 결과
+
+- Core 제품 계약을 `packages/core/src/product`, authority sync를 `packages/core/src/authority`로
+  분리하고 V1 document/Yjs/P2P/encryption/backup/key 런타임과 test/export를 제거했다.
+- Web/Mobile repository, join, invitation, collaborator, auth, trip/template/checklist/asset 경로를
+  authority-only로 고정했다. 웹의 별도 downloaded-trip bundle도 권위 cache와 중복되어 제거했다.
+- Mobile WebRTC/Yjs/quick crypto/native crypto 패키지, Expo plugin/permission, provisioning background
+  entrypoint를 제거했다.
+- Web/Mobile에 서로의 현재 authority DB를 건드리지 않는 idempotent V1 local reset을 추가했다.
+- `20260723000001_task055_revoke_legacy_sync_runtime.sql`로 legacy table/RPC/signaling 권한을
+  revoke하되 object/data는 rollback을 위해 유지했다. DEV reset은 별도 guarded script로 분리했다.
+- private Broadcast 구독 전 access token을 Realtime에 설정하고, 권한 probe를 차단하던
+  event 조건을 제거해 accepted collaborator invalidation을 복구했다.
+- 퇴역한 backup/key provisioning 동작을 성공 조건으로 삼던 TASK-006/007/015 SQL 테스트를
+  제거하고 TASK-055 revoke 회귀 테스트로 대체했다.
+- Production 물리 삭제는 지원 client 버전, export, 관찰, restore rehearsal 후 TASK-056에서
+  승인한다.
+
+## 검증 결과
+
+- `pnpm typecheck`, `pnpm lint:mobile`, `pnpm build:packages`, `pnpm build`,
+  `pnpm build:mobile` 통과
+- Core/Web/Mobile authority 단위 테스트 통과
+- TASK-046/049/053/054/055 로컬 Supabase SQL 회귀 테스트 통과
+- Web Playwright 통과: offline outbox 재연결, 편집자 Realtime 수렴, 일정 canonical 저장,
+  observability payload safety
+- package/runtime import 감사 결과 Yjs, WebRTC, P2P, document key, backup queue 실행 참조 없음

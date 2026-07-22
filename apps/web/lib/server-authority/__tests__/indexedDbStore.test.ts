@@ -9,6 +9,7 @@ import {
   WebAuthorityIndexedDbStore,
   deleteWebAuthorityDatabase,
 } from '../indexedDbStore'
+import { getLegacyWebStorageKeys } from '../../data/legacyV1Reset'
 
 const databaseName = `onvoy-server-authority-test-${Date.now()}`
 const now = '2026-07-17T01:00:00.000Z'
@@ -45,6 +46,20 @@ function command(operationId: string, destination = '전주'): AuthorityCommand 
 }
 
 async function run(): Promise<void> {
+  assert.deepEqual(getLegacyWebStorageKeys([
+    'onvoy.localFirst.webDeviceId',
+    'onvoy.localFirst.promotion.trip-1',
+    'downloaded_trip_registry',
+    'trip_bundle_trip-1',
+    'onvoy.task055.v1ResetCompleted',
+    'rememberedEmail',
+  ]), [
+    'onvoy.localFirst.webDeviceId',
+    'onvoy.localFirst.promotion.trip-1',
+    'downloaded_trip_registry',
+    'trip_bundle_trip-1',
+  ])
+
   const store = new WebAuthorityIndexedDbStore({ databaseName })
   const firstOperation = '48000000-0000-0000-0000-000000000011'
   await store.commitOptimisticMutation({
@@ -314,6 +329,11 @@ async function run(): Promise<void> {
   assert.equal(await store.getResource('guest:device-1', 'trip', tripId), null)
   assert.equal((await store.getResource('account-c', 'trip', tripId))?.revision, 2)
   assert.equal((await store.listReadyOutbox('account-c', now, 10))[0]?.operationId, guestOperation)
+
+  await store.purgeAccount('account-batch')
+  assert.deepEqual(await store.listResources('account-batch'), [])
+  assert.deepEqual(await store.listReadyOutbox('account-batch', now, 10), [])
+  assert.notEqual(await store.getResource('account-a', 'trip', tripId), null)
 
   store.close()
   await deleteWebAuthorityDatabase(indexedDB, databaseName)

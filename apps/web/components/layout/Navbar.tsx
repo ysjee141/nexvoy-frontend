@@ -51,8 +51,8 @@ export default function Navbar() {
         isVisible: isBugReportVisible 
     } = useBugReport()
 
-    const { isOnline, isOfflineMode } = useNetworkStore()
-    const isOffline = !isOnline || isOfflineMode
+    const { isOnline } = useNetworkStore()
+    const isOffline = !isOnline
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -146,7 +146,7 @@ export default function Navbar() {
                             display: 'flex', 
                             alignItems: 'center', 
                             gap: '4px', 
-                            bg: isOfflineMode ? 'brand.secondary' : 'brand.error', 
+                            bg: 'brand.error',
                             color: 'white', 
                             px: '10px', 
                             py: '4px', 
@@ -155,7 +155,7 @@ export default function Navbar() {
                             fontWeight: '700' 
                         })}>
                             <WifiOff size={12} />
-                            {isOfflineMode ? '오프라인 모드' : '연결 끊김'}
+                            연결 끊김
                         </div>
                     )}
                 </div>
@@ -265,7 +265,7 @@ export default function Navbar() {
                                 display: 'flex', 
                                 alignItems: 'center', 
                                 gap: '4px', 
-                                bg: isOfflineMode ? 'brand.secondary' : 'brand.error', 
+                                bg: 'brand.error',
                                 color: 'white', 
                                 px: '8px', 
                                 py: '3px', 
@@ -275,7 +275,7 @@ export default function Navbar() {
                                 ml: '4px'
                             })}>
                                 <WifiOff size={10} />
-                                {isOfflineMode ? '오프라인' : '연결 끊김'}
+                                연결 끊김
                             </div>
                         )}
                     </div>

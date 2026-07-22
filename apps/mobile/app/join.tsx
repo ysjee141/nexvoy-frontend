@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -14,47 +14,14 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
-  acceptInvitationWithLegacyFallback,
-  getInvitationSummaryWithLegacyFallback,
+  createInvitationRepository,
   type DocumentInvitationSummary,
-  type LegacyTripInvitationSummary,
 } from '@nexvoy/core/supabase/invitationRepository'
-import type { DocumentKeyProvisioningStatusRecord } from '@nexvoy/core/sync/keyProvisioning'
-import {
-  DocumentKeyProvisioningStatusCard,
-  type DocumentKeyProvisioningStatus,
-} from '@/components/trip/DocumentKeyProvisioningStatusCard'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
-import { isMobileServerAuthorityEnabled } from '@/lib/data/repositoryFactory'
-import {
-  ensureMobileDeviceKeyMaterial,
-  loadOrRequestMobileProvisioningStatus,
-} from '@/lib/local-first/keyProvisioningService'
-import { restoreMobileEncryptedSnapshot } from '@/lib/local-first/mobileSnapshotRestoreService'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 type JoinInput = { token?: string; inviteCode?: string }
-
-type JoinSummary =
-  | {
-      source: 'document'
-      tripId: string
-      destination: string | null
-      startDate: string | null
-      endDate: string | null
-      ownerNickname: string | null
-      role: 'editor' | 'viewer'
-    }
-  | {
-      source: 'legacy'
-      tripId: string
-      destination: string
-      startDate: string
-      endDate: string
-      ownerNickname: string | null
-      role: 'editor'
-    }
 
 const INVALID_INVITE_COPY = '유효하지 않거나 만료된 초대입니다.'
 
@@ -67,26 +34,18 @@ export default function JoinScreen() {
 
   const [loading, setLoading] = useState(false)
   const [accepting, setAccepting] = useState(false)
-  const [summary, setSummary] = useState<JoinSummary | null>(null)
+  const [summary, setSummary] = useState<DocumentInvitationSummary | null>(null)
   const [activeInput, setActiveInput] = useState<JoinInput | null>(null)
   const [codeInput, setCodeInput] = useState('')
   const [message, setMessage] = useState<string | null>(null)
-  const [provisioningRequired, setProvisioningRequired] = useState(false)
-  const [acceptedDocumentId, setAcceptedDocumentId] = useState<string | null>(null)
-  const [provisioningStatus, setProvisioningStatus] = useState<DocumentKeyProvisioningStatusRecord | null>(null)
-  const [statusChecking, setStatusChecking] = useState(false)
-  const readinessInFlight = useRef(false)
 
   const resolveInvitation = async (input: JoinInput) => {
     setLoading(true)
     setMessage(null)
-    setProvisioningRequired(false)
-    setAcceptedDocumentId(null)
-    setProvisioningStatus(null)
     try {
-      const result = await getInvitationSummaryWithLegacyFallback(supabase, input)
-      if (!result.summary) throw new Error(INVALID_INVITE_COPY)
-      setSummary(normalizeSummary(result.source, result.summary))
+      const result = await createInvitationRepository(supabase).getDocumentInvitationSummary(input)
+      if (!result) throw new Error(INVALID_INVITE_COPY)
+      setSummary(result)
       setActiveInput(input)
     } catch {
       setSummary(null)
@@ -124,41 +83,9 @@ export default function JoinScreen() {
 
     setAccepting(true)
     setMessage(null)
-    setProvisioningRequired(false)
     try {
-      const result = await acceptInvitationWithLegacyFallback(supabase, activeInput)
-      if (result.source === 'document') {
-        if (isMobileServerAuthorityEnabled()) {
-          router.replace({ pathname: '/trip/[id]', params: { id: result.result.documentId } })
-          return
-        }
-        const { deviceId } = await ensureMobileDeviceKeyMaterial(supabase)
-        const status = await loadOrRequestMobileProvisioningStatus({
-          supabase,
-          documentId: result.result.documentId,
-          deviceId,
-        })
-        if (!status.hasActiveKey && status.status !== 'completed') {
-          setAcceptedDocumentId(result.result.documentId)
-          setProvisioningStatus(status)
-          setProvisioningRequired(true)
-          return
-        }
-        const restore = await restoreMobileEncryptedSnapshot({
-          supabase,
-          documentId: result.result.documentId,
-        })
-        if (restore.status === 'restored') {
-          router.replace({ pathname: '/trip/[id]', params: { id: result.result.documentId } })
-          return
-        }
-        setAcceptedDocumentId(result.result.documentId)
-        setProvisioningStatus(status)
-        setProvisioningRequired(true)
-        setMessage('참여는 완료됐습니다. 최신 여정 데이터를 준비하고 있어요.')
-        return
-      }
-      router.replace({ pathname: '/trip/[id]', params: { id: result.tripId ?? summary.tripId } })
+      const result = await createInvitationRepository(supabase).acceptDocumentInvitation(activeInput)
+      router.replace({ pathname: '/trip/[id]', params: { id: result.documentId } })
     } catch (error) {
       const detail = (error as { message?: string } | null)?.message ?? ''
       setMessage(detail.includes('다른 계정')
@@ -168,50 +95,6 @@ export default function JoinScreen() {
       setAccepting(false)
     }
   }
-
-  const handleProvisioningRetry = async () => {
-    const documentId = acceptedDocumentId ?? (summary?.source === 'document' ? summary.tripId : null)
-    if (!documentId || readinessInFlight.current) return
-
-    readinessInFlight.current = true
-    setStatusChecking(true)
-    setMessage(null)
-    try {
-      const { deviceId } = await ensureMobileDeviceKeyMaterial(supabase)
-      const status = await loadOrRequestMobileProvisioningStatus({
-        supabase,
-        documentId,
-        deviceId,
-      })
-      setAcceptedDocumentId(documentId)
-      setProvisioningStatus(status)
-      setProvisioningRequired(!status.hasActiveKey && status.status !== 'completed')
-      if (status.hasActiveKey || status.status === 'completed') {
-        const restore = await restoreMobileEncryptedSnapshot({ supabase, documentId })
-        if (restore.status === 'restored') {
-          router.replace({ pathname: '/trip/[id]', params: { id: documentId } })
-          return
-        }
-        setProvisioningRequired(true)
-        setMessage('참여는 완료됐습니다. 최신 여정 데이터를 준비하고 있어요.')
-      }
-    } catch {
-      setMessage('여정 데이터 준비 상태를 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.')
-    } finally {
-      readinessInFlight.current = false
-      setStatusChecking(false)
-    }
-  }
-
-  useEffect(() => {
-    if (!provisioningRequired || !acceptedDocumentId) return undefined
-    const interval = setInterval(() => {
-      void handleProvisioningRetry()
-    }, 5000)
-    return () => clearInterval(interval)
-  // The retry handler intentionally reads the latest screen state on each render.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [acceptedDocumentId, provisioningRequired])
 
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
@@ -260,24 +143,6 @@ export default function JoinScreen() {
               </View>
             ) : null}
 
-            {provisioningRequired ? (
-              <DocumentKeyProvisioningStatusCard
-                status={toDisplayProvisioningStatus(provisioningStatus?.status ?? 'pending')}
-                errorCode={provisioningStatus?.errorCode}
-                primaryActionLabel={provisioningStatus?.hasActiveKey || provisioningStatus?.status === 'completed'
-                  ? '여정 열기'
-                  : '준비 상태 다시 확인'}
-                primaryActionBusy={statusChecking}
-                onPrimaryAction={handleProvisioningRetry}
-                style={styles.provisioningCard}
-                footer={
-                  <Text style={styles.noticeText}>
-                    이 기기 정보를 등록했습니다. 관리자 또는 편집자가 여정 데이터 준비를 완료하면 다시 시도할 수 있어요.
-                  </Text>
-                }
-              />
-            ) : null}
-
             {message ? (
               <View style={styles.messageBox}>
                 <Text style={styles.messageText}>{message}</Text>
@@ -286,20 +151,20 @@ export default function JoinScreen() {
 
             {summary ? (
               <Pressable
-                onPress={provisioningRequired ? handleProvisioningRetry : handleAccept}
-                disabled={accepting || loading || statusChecking}
+                onPress={handleAccept}
+                disabled={accepting || loading}
                 accessibilityRole="button"
                 style={({ pressed }) => [
                   styles.primaryButton,
-                  (accepting || loading || statusChecking) && styles.buttonDisabled,
-                  pressed && !accepting && !loading && !statusChecking && styles.pressedSoft,
+                  (accepting || loading) && styles.buttonDisabled,
+                  pressed && !accepting && !loading && styles.pressedSoft,
                 ]}
               >
-                {accepting || statusChecking ? (
+                {accepting ? (
                   <ActivityIndicator color={colors.bg.canvas} />
                 ) : (
                   <Text style={styles.primaryButtonText}>
-                    {session ? (provisioningRequired ? '다시 시도' : '여정에 참여하기') : '로그인 후 참여하기'}
+                    {session ? '여정에 참여하기' : '로그인 후 참여하기'}
                   </Text>
                 )}
               </Pressable>
@@ -336,35 +201,6 @@ export default function JoinScreen() {
   )
 }
 
-function normalizeSummary(
-  source: 'document' | 'legacy',
-  value: DocumentInvitationSummary | LegacyTripInvitationSummary,
-): JoinSummary {
-  if (source === 'document') {
-    const summary = value as DocumentInvitationSummary
-    return {
-      source,
-      tripId: summary.documentId,
-      destination: summary.destination,
-      startDate: summary.startDate,
-      endDate: summary.endDate,
-      ownerNickname: summary.ownerNickname,
-      role: summary.role,
-    }
-  }
-
-  const summary = value as LegacyTripInvitationSummary
-  return {
-    source,
-    tripId: summary.trip_id,
-    destination: summary.destination,
-    startDate: summary.start_date,
-    endDate: summary.end_date,
-    ownerNickname: summary.owner_nickname,
-    role: 'editor',
-  }
-}
-
 function singleParam(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value
 }
@@ -381,19 +217,6 @@ function sanitizeInviteCode(value: string): string {
 
 function formatInviteCode(value: string): string {
   return sanitizeInviteCode(value).replace(/(.{4})(?=.)/g, '$1-')
-}
-
-function toDisplayProvisioningStatus(status: DocumentKeyProvisioningStatusRecord['status']): DocumentKeyProvisioningStatus {
-  if (
-    status === 'waiting_for_material'
-    || status === 'pending'
-    || status === 'processing'
-    || status === 'failed'
-    || status === 'completed'
-  ) {
-    return status
-  }
-  return status === 'none' ? 'pending' : 'failed'
 }
 
 const styles = StyleSheet.create({

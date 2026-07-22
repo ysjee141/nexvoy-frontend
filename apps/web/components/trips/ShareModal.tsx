@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { css } from 'styled-system/css'
 import { X, Share2, Copy, Mail, Lock, Globe, Check, Loader2 } from 'lucide-react'
 import { analytics } from '@/services/AnalyticsService'
-import { collaboration } from '@/lib/collaboration'
 import { useModalBackButton } from '@/hooks/useModalBackButton'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { createClient } from '@/lib/supabase/client'
@@ -40,16 +39,7 @@ export default function ShareModal({ tripId, isOpen, onClose, tripTitle }: Share
             })
             setShareToken(documentShare.shareToken)
         } catch {
-            try {
-                const { data, error } = await collaboration.getOrCreateShareLink(tripId, type, type === 'password' ? password : undefined)
-                if (data) {
-                    setShareToken(data.share_token)
-                } else if (error) {
-                    setMessage({ type: 'error', text: '공유 링크 생성에 실패했습니다.' })
-                }
-            } catch {
-                setMessage({ type: 'error', text: '공유 링크 생성에 실패했습니다.' })
-            }
+            setMessage({ type: 'error', text: '공유 링크 생성에 실패했습니다.' })
         } finally {
             setLoading(false)
         }

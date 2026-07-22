@@ -18,6 +18,22 @@
 신규 실행 계획은 `TASK-046`~`TASK-056`이다. 아래 TASK-001~045 내용은 이전 Local-first 시도의 구현
 이력으로 유지하며 신규 설계 지침으로 사용하지 않는다.
 
+## 2026-07-23 TASK-055 구현 완료
+
+- Web/Mobile/Core에서 Yjs, WebRTC/P2P, signaling, app-layer encryption, document update backup,
+  device/document key provisioning 런타임과 dependency를 제거했다.
+- Web과 Mobile 제품 경로는 authority-only repository, 계정별 cache/outbox, canonical RPC,
+  Realtime revision recovery만 사용한다.
+- 웹의 별도 downloaded-trip bundle/offline mode를 제거하고 일반 제품 화면이 authority cache와
+  outbox를 온라인/오프라인에서 동일하게 사용하도록 단일화했다.
+- V1 local storage reset은 현재 Web authority IndexedDB/Mobile SQLite를 건드리지 않고 명시된
+  legacy namespace만 멱등적으로 삭제한다.
+- Supabase migration은 legacy API-role 접근을 revoke하되 object/data는 rollback window 동안
+  보존한다. DEV V1 reset은 project-ID guarded maintenance script로 분리했다.
+- 현재 명세와 rollout/rollback 순서를 `TECHNICAL-SPEC.md`와 TASK-055 runbook에 반영했다.
+- 다음 작업은 Web/Mobile/다중 계정 정합성과 비용, Production 물리 cleanup을 판정하는
+  `TASK-056` Production gate다.
+
 ## 2026-07-17 TASK-046~049 완료
 
 - 정규화 행에 version/tombstone metadata를 추가하고 `apply_trip_commands` / `apply_template_commands`를 authority write 경계로 만들었다.

@@ -4,14 +4,13 @@ import Navbar from '@/components/layout/Navbar'
 import BottomNavbar from '@/components/layout/BottomNavbar'
 import NotificationBanner from '@/components/layout/NotificationBanner'
 import OfflineBanner from '@/components/common/OfflineBanner'
-import OfflinePromptModal from '@/components/common/OfflinePromptModal'
-import OnlinePromptModal from '@/components/common/OnlinePromptModal'
 import { css } from 'styled-system/css'
 import { GoogleAnalytics } from '@next/third-parties/google'
 import { SpeedInsights } from '@vercel/speed-insights/next'
 import BugReportFAB from '@/components/layout/BugReportFAB'
 import GlobalModals from '@/components/layout/GlobalModals'
 import ToastContainer from '@/components/common/ToastContainer'
+import LegacyV1Reset from '@/components/system/LegacyV1Reset'
 
 export const metadata: Metadata = {
   title: '온여정 - 당신의 따뜻한 여행 동반자',
@@ -43,9 +42,8 @@ export default function RootLayout({
         })}
       >
         <SpeedInsights />
+        <LegacyV1Reset />
         <OfflineBanner />
-        <OfflinePromptModal />
-        <OnlinePromptModal />
         <Navbar />
         <NotificationBanner />
         <main

@@ -6,7 +6,7 @@ import { X, Copy, Loader2 } from 'lucide-react'
 import { useScrollLock } from '@/hooks/useScrollLock'
 import { analytics } from '@/services/AnalyticsService'
 import { createClient } from '@/lib/supabase/client'
-import { createWebProductDocumentRepositories } from '@/lib/local-first/repositoryFactory'
+import { createWebProductDocumentRepositories } from '@/lib/data/repositoryFactory'
 
 interface TemplateModalProps {
     isOpen: boolean
@@ -67,7 +67,7 @@ export default function TemplateModal({ isOpen, onClose, checklistId, tripId, cu
             )
             const insertedItems = result.changedEntities
                 .filter((entity) => entity.entityType === 'checklistItem')
-                .map((entity) => result.document.checklistItems[entity.entityId])
+                .map((entity) => result.state.checklistItems[entity.entityId])
                 .filter(Boolean)
                 .map((item) => ({
                     id: item.id,
