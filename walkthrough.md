@@ -5,6 +5,7 @@
 Issue [#366](https://github.com/ysjee141/nexvoy-frontend/issues/366)의 legacy runtime 정리를 구현했다.
 OnVoy 제품 데이터 경로는 Supabase normalized row authority, Web IndexedDB/Mobile SQLite
 account cache, durable command outbox, canonical RPC, Realtime revision recovery로 단일화됐다.
+Pull Request: [#367](https://github.com/ysjee141/nexvoy-frontend/pull/367)
 
 ```mermaid
 flowchart LR

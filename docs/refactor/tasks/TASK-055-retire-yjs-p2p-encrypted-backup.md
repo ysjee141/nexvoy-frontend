@@ -1,6 +1,6 @@
 # TASK-055: Retire Yjs, P2P, and Encrypted Backup Runtime
 
-- 상태: 구현 완료 (Issue #366)
+- 상태: 구현 완료 (Issue #366, PR #367)
 
 ## 목적
 
