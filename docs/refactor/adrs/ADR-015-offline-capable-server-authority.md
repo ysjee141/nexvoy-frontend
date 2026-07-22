@@ -89,7 +89,8 @@ flowchart LR
 ## 전환 및 데이터 처리
 
 - 현재 V1 Yjs document와 encrypted backup은 새 authority로 자동 migration하지 않는다.
-- 신규 server-authority 데이터 경로가 검증될 때까지 기존 runtime은 feature flag 뒤에 유지한다.
+- TASK-055 이후 제품 runtime은 authority-only다. 롤백은 retired runtime feature flag가 아니라
+  직전의 검증된 authority-only client와 비파괴 schema/function 복원으로 수행한다.
 - Web/Mobile cutover 이후 DEV에서 V1 local/remote 데이터를 reset한다.
 - Production destructive cleanup은 export, 지원 client 버전 확인, rollback gate를 통과한 뒤 실행한다.
 - 기존 관계형 table은 schema/RLS를 감사한 뒤 canonical authority로 재사용한다.
@@ -127,3 +128,15 @@ flowchart LR
 
 구현 순서는 `TASK-046`부터 `TASK-056`까지 따른다. legacy runtime 제거는 Web/Mobile cutover와 통합 검증보다
 먼저 수행하지 않는다.
+
+## TASK-056 충돌 및 운영 결정
+
+- 일반 entity upsert/delete는 row `version`을 optimistic concurrency token으로 사용한다.
+- stale resource revision이라도 command가 다른 entity의 현재 version과 일치하면 server가 현재
+  revision으로 재기준화한다.
+- 같은 entity의 version이 바뀌었으면 자동 last-write-wins를 하지 않는다. 사용자가 server 최신
+  내용 유지 또는 local 변경 재적용을 선택한다.
+- per-user checklist check는 actor-scoped deterministic set이라 stale rebase를 허용한다.
+- assignee whole-set은 aggregate version이 없으므로 resource conflict를 유지한다.
+- Initial 관측은 GA4/Firebase aggregate event와 Supabase dashboard를 사용한다. 유료 Log Drain과
+  PITR은 runbook의 사용량/RPO trigger에서 도입한다.

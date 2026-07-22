@@ -1,8 +1,11 @@
 import {
   applyCanonicalChangesToBundle,
   applyOptimisticAuthorityCommandsToBundle,
+  rebaseAuthorityConflictCommands,
   type AuthorityApplyResult,
   type AuthorityCommand,
+  type AuthorityConflict,
+  type AuthorityConflictResolution,
   type AuthorityLocalStore,
   type AuthorityOutboxRecord,
   type AuthorityOutboxStatus,
@@ -267,7 +270,12 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
       row.status === 'pending' || row.status === 'sending' || row.status === 'retryable',
     )
     if (conflict) {
-      return { status: 'conflict', pendingCount: rows.length, lastError: conflict.lastError }
+      return {
+        status: 'conflict',
+        pendingCount: rows.length,
+        lastError: conflict.lastError,
+        conflict: conflict.conflict ?? null,
+      }
     }
     if (rejected) {
       return { status: 'error', pendingCount: rows.length, lastError: rejected.lastError }
@@ -454,6 +462,7 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
     accountId: string,
     operationIds: string[],
     bundle: CanonicalResourceBundle | null,
+    conflict: AuthorityConflict,
     now: string,
   ): Promise<void> {
     const database = await this.open()
@@ -473,7 +482,8 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
         outbox.put({
           ...row,
           status: 'conflict',
-          lastError: 'authority_revision_conflict',
+          lastError: conflict.code,
+          conflict,
           nextAttemptAt: null,
           updatedAt: now,
         } satisfies AuthorityOutboxRecord)
@@ -481,6 +491,61 @@ export class WebAuthorityIndexedDbStore implements AuthorityLocalStore {
     }
     await transactionComplete(transaction)
     emitStoreChange(this.databaseName, { accountId })
+  }
+
+  async resolveConflict(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+    resolution: AuthorityConflictResolution,
+    now: string,
+  ): Promise<void> {
+    const database = await this.open()
+    const transaction = database.transaction([RESOURCE_STORE, OUTBOX_STORE], 'readwrite')
+    const resources = transaction.objectStore(RESOURCE_STORE)
+    const outbox = transaction.objectStore(OUTBOX_STORE)
+    const stored = await requestValue<StoredAuthorityResource | undefined>(
+      resources.get(resourceKey(accountId, resourceType, resourceId)),
+    )
+    const rows = (await requestValue<AuthorityOutboxRecord[]>(
+      outbox.index(ACCOUNT_RESOURCE_INDEX).getAll([accountId, resourceType, resourceId]),
+    )).filter((row) => row.status === 'conflict').sort(compareOutbox)
+
+    if (!stored || rows.length === 0) {
+      await transactionComplete(transaction)
+      return
+    }
+
+    const canonical = stored.canonicalBundle ?? stored.bundle
+    if (resolution === 'keep_server') {
+      rows.forEach((row) => outbox.delete(row.operationId))
+      resources.put(toStoredResource(accountId, canonical, now, canonical))
+    } else {
+      const conflict = rows[0]?.conflict ?? legacyConflict(rows[0]?.lastError)
+      const commands = rebaseAuthorityConflictCommands(
+        canonical,
+        rows.map((row) => row.command),
+        conflict,
+      )
+      rows.forEach((row, index) => {
+        outbox.put({
+          ...row,
+          baseRevision: canonical.revision,
+          command: commands[index] ?? row.command,
+          status: 'pending',
+          attempts: 0,
+          nextAttemptAt: null,
+          lastError: null,
+          conflict: null,
+          updatedAt: now,
+        } satisfies AuthorityOutboxRecord)
+      })
+      const projection = applyOptimisticAuthorityCommandsToBundle(canonical, commands, now)
+      resources.put(toStoredResource(accountId, projection, now, canonical))
+    }
+
+    await transactionComplete(transaction)
+    emitStoreChange(this.databaseName, { accountId, resourceType, resourceId })
   }
 
   async recoverStaleSending(
@@ -811,6 +876,12 @@ function compareOutbox(left: AuthorityOutboxRecord, right: AuthorityOutboxRecord
 
 function normalizePromotedStatus(status: AuthorityOutboxStatus): AuthorityOutboxStatus {
   return status === 'sending' ? 'retryable' : status
+}
+
+function legacyConflict(lastError: string | null | undefined): AuthorityConflict {
+  return lastError === 'authority_row_version_conflict'
+    ? { kind: 'entity_version', code: lastError }
+    : { kind: 'resource_revision', code: lastError ?? 'authority_revision_conflict' }
 }
 
 function emitStoreChange(databaseName: string, change: WebAuthorityStoreChange): void {

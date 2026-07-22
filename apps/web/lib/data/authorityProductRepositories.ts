@@ -3,7 +3,9 @@ import {
   ServerAuthoritySyncCoordinator,
   applyOptimisticAuthorityCommandsToBundle,
   createServerAuthorityRepository,
+  versionAuthorityCommandsForBundle,
   type AuthorityCommand,
+  type AuthorityConflictResolution,
   type AuthorityProductSyncSnapshot,
   type AuthorityResourceType,
   type CanonicalResourceBundle,
@@ -21,6 +23,7 @@ import {
   subscribeWebAuthorityInvalidation,
   type WebAuthorityInvalidationSubscription,
 } from '@/lib/server-authority/realtimeInvalidation'
+import { analytics } from '@/services/AnalyticsService'
 
 type ActorRole = ServerAuthorityActorRole
 const AUTHORITY_FLUSH_DEBOUNCE_MS = 1_000
@@ -44,6 +47,7 @@ class WebAuthorityProductRuntime implements ServerAuthorityProductRuntime {
     this.coordinator = new ServerAuthoritySyncCoordinator({
       repository: this.remote,
       store: this.store,
+      metricSink: (metric) => analytics.logAuthoritySyncMetric(metric),
     })
     if (typeof window !== 'undefined') {
       window.addEventListener('online', () => { void this.flushCurrentAccount() })
@@ -157,12 +161,13 @@ class WebAuthorityProductRuntime implements ServerAuthorityProductRuntime {
   ): Promise<CanonicalResourceBundle> {
     const accountId = await this.accountId()
     const now = new Date().toISOString()
-    const optimistic = applyOptimisticAuthorityCommandsToBundle(bundle, commands, now)
+    const versionedCommands = versionAuthorityCommandsForBundle(bundle, commands)
+    const optimistic = applyOptimisticAuthorityCommandsToBundle(bundle, versionedCommands, now)
     await this.store.commitOptimisticMutations({
       accountId,
       baseBundle: bundle,
       bundle: optimistic,
-      commands,
+      commands: versionedCommands,
       now,
     })
     this.kickFlush(accountId)
@@ -179,6 +184,22 @@ class WebAuthorityProductRuntime implements ServerAuthorityProductRuntime {
       resourceId,
       isBrowserOnline(),
     )
+  }
+
+  async resolveConflict(
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+    resolution: AuthorityConflictResolution,
+  ): Promise<void> {
+    const accountId = await this.accountId()
+    await this.store.resolveConflict(
+      accountId,
+      resourceType,
+      resourceId,
+      resolution,
+      new Date().toISOString(),
+    )
+    if (resolution === 'retry_local') await this.flushAccount(accountId)
   }
 
   async cacheRole(
@@ -218,6 +239,7 @@ class WebAuthorityProductRuntime implements ServerAuthorityProductRuntime {
       resourceId,
       store: this.store,
       coordinator: this.coordinator,
+      onMetric: (metric) => analytics.logAuthorityRealtimeMetric(metric),
     })
     this.watchedResources.set(key, { count: 1, subscription })
     try {
@@ -373,6 +395,15 @@ export function getWebAuthoritySyncSnapshot(
   resourceId: string,
 ): Promise<AuthorityProductSyncSnapshot> {
   return getRuntime(supabase).syncSnapshot(resourceType, resourceId)
+}
+
+export function resolveWebAuthorityConflict(
+  supabase: SupabaseClient,
+  resourceType: AuthorityResourceType,
+  resourceId: string,
+  resolution: AuthorityConflictResolution,
+): Promise<void> {
+  return getRuntime(supabase).resolveConflict(resourceType, resourceId, resolution)
 }
 
 export function refreshWebAuthorityList(

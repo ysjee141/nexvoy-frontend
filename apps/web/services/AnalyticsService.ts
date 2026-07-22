@@ -1,4 +1,10 @@
 import { sendGAEvent } from '@next/third-parties/google'
+import {
+    authorityRealtimeMetricToObservabilityEvent,
+    authoritySyncMetricToObservabilityEvent,
+    type AuthorityRealtimeMetric,
+    type AuthoritySyncMetric,
+} from '@nexvoy/core'
 
 /**
  * 서비스 개선을 위한 애널리틱스 이벤트 관리 서비스 (ADR-002)
@@ -56,6 +62,16 @@ class AnalyticsService {
         } catch (e) {
             console.error(`[Analytics] LogEvent Error (${name}):`, e);
         }
+    }
+
+    public logAuthoritySyncMetric(metric: AuthoritySyncMetric) {
+        const event = authoritySyncMetricToObservabilityEvent(metric, 'web')
+        void this.logEvent(event.name, { ...event.params })
+    }
+
+    public logAuthorityRealtimeMetric(metric: AuthorityRealtimeMetric) {
+        const event = authorityRealtimeMetricToObservabilityEvent(metric, 'web')
+        void this.logEvent(event.name, { ...event.params })
     }
 
     // --- 사전 정의된 헬퍼 메서드들 ---

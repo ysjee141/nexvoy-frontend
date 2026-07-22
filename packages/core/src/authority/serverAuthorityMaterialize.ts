@@ -1,6 +1,7 @@
 import type { Json } from '@nexvoy/types'
 import type {
   AuthorityCommand,
+  AuthorityConflict,
   AuthorityApplyResult,
   CanonicalAuthorityChange,
   CanonicalResourceBundle,
@@ -63,12 +64,62 @@ export function applyOptimisticAuthorityCommandsToBundle(
   return { ...current, serverUpdatedAt: now, data }
 }
 
+export function versionAuthorityCommandsForBundle(
+  current: CanonicalResourceBundle,
+  commands: AuthorityCommand[],
+): AuthorityCommand[] {
+  const data = cloneJsonObject(current.data)
+  return commands.map((command) => {
+    if (
+      command.resourceId !== current.resourceId ||
+      (command.entityType.startsWith('template') ? 'template' : 'trip') !== current.resourceType
+    ) {
+      throw new Error('Authority command does not match the resource bundle.')
+    }
+
+    const versioned = {
+      ...command,
+      expectedVersion: expectedVersionForCommand(data, command),
+    } as AuthorityCommand
+    applyOptimisticCommand(data, versioned, command.createdAt)
+    return versioned
+  })
+}
+
+export function rebaseAuthorityConflictCommands(
+  current: CanonicalResourceBundle,
+  commands: AuthorityCommand[],
+  conflict: AuthorityConflict,
+): AuthorityCommand[] {
+  let projected = current
+  return commands.map((command) => {
+    const shouldRebase =
+      conflict.kind === 'entity_version' &&
+      (!conflict.entityType || command.entityType === conflict.entityType) &&
+      (!conflict.entityId || command.entityId === conflict.entityId)
+    const next = shouldRebase
+      ? versionAuthorityCommandsForBundle(projected, [command])[0] ?? command
+      : command
+    projected = applyOptimisticAuthorityCommandsToBundle(
+      projected,
+      [next],
+      command.createdAt,
+    )
+    return next
+  })
+}
+
 function applyOptimisticCommand(data: JsonObject, command: AuthorityCommand, now: string): void {
   const payload = asObject(command.payload)
   if (command.entityType === 'trip' || command.entityType === 'template') {
     const existing = asObject(data[command.entityType])
     data[command.entityType] = command.action === 'delete'
-      ? { ...existing, deleted_at: now, updated_at: now }
+      ? {
+          ...existing,
+          deleted_at: now,
+          updated_at: now,
+          version: nextAuthorityVersion(existing.version),
+        }
       : optimisticRow(existing, payload, command.entityId, now)
     return
   }
@@ -110,7 +161,7 @@ function applyOptimisticCommand(data: JsonObject, command: AuthorityCommand, now
         created_at: now,
         updated_at: now,
         deleted_at: null,
-        version: 0,
+        version: 1,
       })
     }
     data.checklist_item_user_checks = existing
@@ -144,8 +195,48 @@ function optimisticRow(
     created_at: existing.created_at ?? now,
     updated_at: now,
     deleted_at: null,
-    version: existing.version ?? 0,
+    version: nextAuthorityVersion(existing.version),
   }
+}
+
+function expectedVersionForCommand(
+  data: JsonObject,
+  command: AuthorityCommand,
+): number | undefined {
+  if (command.entityType === 'trip' || command.entityType === 'template') {
+    return authorityVersion(asObject(data[command.entityType]))
+  }
+
+  if (command.entityType === 'checklist_item_assignees') {
+    // This command replaces the whole assignee set. Until the server exposes
+    // an aggregate set version, stale assignee edits must use resource conflict
+    // recovery instead of pretending the parent row version protects the set.
+    return undefined
+  }
+
+  if (command.entityType === 'checklist_item_user_check') {
+    // A user check is a deterministic set operation scoped to (item, actor).
+    // Tombstones are intentionally absent from bundles, so a row version cannot
+    // be reconstructed safely after a quick uncheck/check sequence.
+    return undefined
+  }
+
+  const collectionKey = collectionKeyByEntity[command.entityType]
+  const row = jsonArray(data[collectionKey])
+    .map(asObject)
+    .find((candidate) => stringValue(candidate.id) === command.entityId)
+  return row ? authorityVersion(row) : undefined
+}
+
+function authorityVersion(row: JsonObject): number | undefined {
+  const value = row.version
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
+    ? value
+    : undefined
+}
+
+function nextAuthorityVersion(value: Json | undefined): number {
+  return (typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 0) + 1
 }
 
 function applyCanonicalChange(data: JsonObject, change: CanonicalAuthorityChange): void {

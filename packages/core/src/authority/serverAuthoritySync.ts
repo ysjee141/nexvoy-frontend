@@ -8,6 +8,7 @@ import {
   type AuthorityInvalidation,
 } from './serverAuthorityInvalidation'
 import type {
+  AuthorityConflict,
   AuthorityLocalStore,
   AuthorityOutboxRecord,
   AuthorityResourceType,
@@ -94,11 +95,13 @@ export class ServerAuthoritySyncCoordinator {
     resourceType: AuthorityResourceType,
     resourceId: string,
     minimumRevision = 0,
+    reasonCode = 'revision_check',
   ): Promise<CanonicalResourceBundle | null> {
     const local = await this.store.getResource(accountId, resourceType, resourceId)
     if (local && local.revision >= minimumRevision) return local
 
     let remote: CanonicalResourceBundle | null
+    const startedAt = this.now()
     try {
       remote = await this.repository.getBundle(resourceType, resourceId)
     } catch (error) {
@@ -108,6 +111,14 @@ export class ServerAuthoritySyncCoordinator {
       throw error
     }
     if (remote) await this.store.putResource(accountId, remote)
+    this.metricSink?.({
+      name: 'authority_full_refresh',
+      accountId,
+      resourceType,
+      resourceId,
+      reasonCode,
+      durationMs: elapsedMs(startedAt, this.now()),
+    })
     return remote
   }
 
@@ -141,13 +152,22 @@ export class ServerAuthoritySyncCoordinator {
         invalidation.resourceType,
         invalidation.resourceId,
         Number.MAX_SAFE_INTEGER,
+        'missing_local',
       )
     }
 
     const decision = decideAuthorityInvalidation(local.revision, invalidation.revision)
     if (decision.action === 'ignore') return local
+    if (decision.revisionGap) {
+      return this.refreshResource(
+        accountId,
+        invalidation.resourceType,
+        invalidation.resourceId,
+        Number.MAX_SAFE_INTEGER,
+        'revision_gap',
+      )
+    }
     if (
-      decision.revisionGap ||
       invalidation.changedEntities.length === 0 ||
       invalidation.changeCount !== invalidation.changedEntities.length
     ) {
@@ -156,6 +176,7 @@ export class ServerAuthoritySyncCoordinator {
         invalidation.resourceType,
         invalidation.resourceId,
         Number.MAX_SAFE_INTEGER,
+        'invalidation_incomplete',
       )
     }
 
@@ -171,6 +192,7 @@ export class ServerAuthoritySyncCoordinator {
         invalidation.resourceType,
         invalidation.resourceId,
         Number.MAX_SAFE_INTEGER,
+        'change_fetch_gap',
       )
     }
 
@@ -226,7 +248,7 @@ export class ServerAuthoritySyncCoordinator {
       commandCount: ready.length,
       queueOldestAgeMs: calculateOldestQueueAgeMs(ready, startedAt),
       estimatedBytes: ready.reduce(
-        (total, record) => total + JSON.stringify(record.command).length,
+        (total, record) => total + utf8JsonByteLength(record.command),
         0,
       ),
     })
@@ -246,6 +268,7 @@ export class ServerAuthoritySyncCoordinator {
       if (blockedResources.has(resourceKey)) continue
       const rebasedRevision = latestRevisions.get(resourceKey) ?? batch.baseRevision
       const operationIds = batch.records.map((record) => record.operationId)
+      const batchStartedAt = this.now()
       const now = this.now().toISOString()
       await this.store.markSending(accountId, operationIds, now)
 
@@ -258,10 +281,15 @@ export class ServerAuthoritySyncCoordinator {
         })
 
         if (result.status === 'conflict') {
+          const conflict: AuthorityConflict = result.conflict ?? {
+            kind: 'resource_revision',
+            code: 'authority_revision_conflict',
+          }
           await this.store.markConflict(
             accountId,
             operationIds,
             result.bundle ?? null,
+            conflict,
             this.now().toISOString(),
           )
           totals.conflicted += operationIds.length
@@ -272,6 +300,8 @@ export class ServerAuthoritySyncCoordinator {
             resourceType: batch.resourceType,
             resourceId: batch.resourceId,
             commandCount: operationIds.length,
+            errorCode: conflict.code,
+            durationMs: elapsedMs(batchStartedAt, this.now()),
           })
           continue
         }
@@ -286,6 +316,7 @@ export class ServerAuthoritySyncCoordinator {
           resourceId: batch.resourceId,
           commandCount: operationIds.length,
           revision: result.revision,
+          durationMs: elapsedMs(batchStartedAt, this.now()),
         })
       } catch (error) {
         const classified = classifyAuthoritySyncError(error)
@@ -308,6 +339,7 @@ export class ServerAuthoritySyncCoordinator {
             resourceId: batch.resourceId,
             commandCount: operationIds.length,
             errorCode: classified.code,
+            durationMs: elapsedMs(batchStartedAt, this.now()),
           })
         } else {
           await this.store.markRejected(
@@ -325,6 +357,7 @@ export class ServerAuthoritySyncCoordinator {
             resourceId: batch.resourceId,
             commandCount: operationIds.length,
             errorCode: classified.code,
+            durationMs: elapsedMs(batchStartedAt, this.now()),
           })
           if (isAuthorityMembershipDeniedError(error)) {
             await this.handleMembershipRevoked(accountId, batch.resourceType, batch.resourceId)
@@ -375,6 +408,26 @@ export function computeAuthorityRetryDelayMs(attempt: number, randomValue: numbe
   return baseDelay + jitter
 }
 
+export function utf8JsonByteLength(value: unknown): number {
+  const text = JSON.stringify(value) ?? ''
+  let bytes = 0
+  for (let index = 0; index < text.length; index += 1) {
+    const code = text.charCodeAt(index)
+    if (code < 0x80) bytes += 1
+    else if (code < 0x800) bytes += 2
+    else if (code >= 0xd800 && code <= 0xdbff && index + 1 < text.length) {
+      const next = text.charCodeAt(index + 1)
+      if (next >= 0xdc00 && next <= 0xdfff) {
+        bytes += 4
+        index += 1
+      } else {
+        bytes += 3
+      }
+    } else bytes += 3
+  }
+  return bytes
+}
+
 // 42501 covers command/resource mismatch errors too — only the explicit
 // authority forbidden messages mean the caller lost membership.
 const AUTHORITY_MEMBERSHIP_DENIED_MESSAGE = /^authority_(trip|template)_(create_|write_)?forbidden$/
@@ -405,4 +458,8 @@ function calculateOldestQueueAgeMs(records: AuthorityOutboxRecord[], now: Date):
     return Number.isFinite(timestamp) ? Math.min(oldest, timestamp) : oldest
   }, Number.POSITIVE_INFINITY)
   return Number.isFinite(oldestTimestamp) ? Math.max(0, now.getTime() - oldestTimestamp) : 0
+}
+
+function elapsedMs(startedAt: Date, endedAt: Date): number {
+  return Math.max(0, endedAt.getTime() - startedAt.getTime())
 }

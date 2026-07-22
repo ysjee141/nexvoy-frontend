@@ -1,6 +1,6 @@
 # Data Architecture Refactor Progress
 
-작성일: 2026-07-17
+작성일: 2026-07-23
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
 
@@ -33,6 +33,18 @@
 - 현재 명세와 rollout/rollback 순서를 `TECHNICAL-SPEC.md`와 TASK-055 runbook에 반영했다.
 - 다음 작업은 Web/Mobile/다중 계정 정합성과 비용, Production 물리 cleanup을 판정하는
   `TASK-056` Production gate다.
+
+## 2026-07-23 TASK-056 구현 완료 / 운영 gate 대기
+
+- entity version 기반 stale rebase로 서로 다른 entity 동시 편집은 수렴시키고 동일 entity는
+  사용자 선택이 필요한 충돌로 분리했다.
+- Web/Mobile 충돌 해결 UI와 IndexedDB/SQLite 재기준화 transaction을 구현하고 자동 검증했다.
+- queue age, payload bytes, RPC latency, conflict/retry/reject, revision gap, full refresh를
+  식별자 없는 GA4/Firebase event로 연결했다.
+- 여행/템플릿 SQL gate, Web 실제 동시 충돌 E2E, protocol budget test를 통과했다.
+- Initial Production 비용 baseline과 rollout/rollback/DB+Storage restore runbook을 작성했다.
+- 코드 gate는 PASS다. DEV migration ledger repair, 실기기 matrix, 7일 관찰, restore rehearsal이
+  남아 DEV/Production과 legacy 물리 삭제는 NO-GO다.
 
 ## 2026-07-17 TASK-046~049 완료
 

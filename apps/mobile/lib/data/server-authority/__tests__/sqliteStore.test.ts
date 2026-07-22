@@ -150,6 +150,72 @@ test('guest promotion moves cache and recovers interrupted sending work', async 
   assert.equal((await store.listReadyOutbox(ACCOUNT_A, T2, 10))[0]?.status, 'retryable')
 })
 
+test('entity conflict can keep canonical data or rebase the local command', async () => {
+  const retryDatabase = new FakeMobileAuthorityDatabase()
+  const retryStore = new MobileAuthoritySqliteStore(retryDatabase)
+  const base = tripBundleWithPlan(1, T0, 'server v1', 1)
+  const local = {
+    ...planCommand('operation-conflict-retry', 'plan-1', T1),
+    payload: { title: 'local retry' },
+    expectedVersion: 1,
+  }
+  await retryStore.commitOptimisticMutation({
+    accountId: ACCOUNT_A,
+    baseBundle: base,
+    bundle: applyOptimisticAuthorityCommandsToBundle(base, [local], T1),
+    command: local,
+    now: T1,
+  })
+  const canonical = tripBundleWithPlan(2, T2, 'remote v2', 2)
+  await retryStore.markConflict(
+    ACCOUNT_A,
+    [local.operationId],
+    canonical,
+    {
+      kind: 'entity_version',
+      code: 'authority_plan_version_conflict',
+      entityType: 'plan',
+      entityId: 'plan-1',
+    },
+    T2,
+  )
+  assert.equal((await retryStore.getSyncSnapshot(ACCOUNT_A, 'trip', TRIP_ID)).conflict?.entityId, 'plan-1')
+
+  await retryStore.resolveConflict(ACCOUNT_A, 'trip', TRIP_ID, 'retry_local', T2)
+  const retry = (await retryStore.listReadyOutbox(ACCOUNT_A, T2, 10))[0]
+  assert.equal(retry?.baseRevision, 2)
+  assert.equal(retry?.command.expectedVersion, 2)
+  assert.equal(retry?.conflict, null)
+  assert.equal(
+    ((await retryStore.getResource(ACCOUNT_A, 'trip', TRIP_ID))?.data.plans as Array<{ title: string }>)[0]?.title,
+    'local retry',
+  )
+
+  const keepDatabase = new FakeMobileAuthorityDatabase()
+  const keepStore = new MobileAuthoritySqliteStore(keepDatabase)
+  const keep = { ...local, operationId: 'operation-conflict-keep' }
+  await keepStore.commitOptimisticMutation({
+    accountId: ACCOUNT_A,
+    baseBundle: base,
+    bundle: applyOptimisticAuthorityCommandsToBundle(base, [keep], T1),
+    command: keep,
+    now: T1,
+  })
+  await keepStore.markConflict(
+    ACCOUNT_A,
+    [keep.operationId],
+    canonical,
+    { kind: 'entity_version', code: 'authority_plan_version_conflict', entityType: 'plan', entityId: 'plan-1' },
+    T2,
+  )
+  await keepStore.resolveConflict(ACCOUNT_A, 'trip', TRIP_ID, 'keep_server', T2)
+  assert.deepEqual(await keepStore.listReadyOutbox(ACCOUNT_A, T2, 10), [])
+  assert.equal(
+    ((await keepStore.getResource(ACCOUNT_A, 'trip', TRIP_ID))?.data.plans as Array<{ title: string }>)[0]?.title,
+    'remote v2',
+  )
+})
+
 function tripBundle(revision: number, updatedAt: string): CanonicalResourceBundle {
   return {
     resourceType: 'trip',
@@ -160,6 +226,21 @@ function tripBundle(revision: number, updatedAt: string): CanonicalResourceBundl
       _role: 'owner',
       trip: { id: TRIP_ID, destination: 'Seoul', version: revision },
       plans: [],
+    },
+  }
+}
+
+function tripBundleWithPlan(
+  revision: number,
+  updatedAt: string,
+  title: string,
+  planVersion: number,
+): CanonicalResourceBundle {
+  return {
+    ...tripBundle(revision, updatedAt),
+    data: {
+      ...tripBundle(revision, updatedAt).data,
+      plans: [{ id: 'plan-1', title, version: planVersion, deleted_at: null }],
     },
   }
 }

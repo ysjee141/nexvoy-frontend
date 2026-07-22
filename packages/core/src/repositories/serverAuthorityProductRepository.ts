@@ -24,6 +24,7 @@ import type { TemplateProductState, TripProductState } from '../product/models'
 import type { ProductRepositoryBundle } from '../product/repositories'
 import type {
   AuthorityCommand,
+  AuthorityConflictResolution,
   AuthorityProductSyncSnapshot,
   AuthorityResourceType,
   CanonicalResourceBundle,
@@ -53,6 +54,11 @@ export interface ServerAuthorityProductRuntime {
   commit(bundle: CanonicalResourceBundle, commands: AuthorityCommand[]): Promise<CanonicalResourceBundle>
   cacheRole(accountId: string, bundle: CanonicalResourceBundle, role: ServerAuthorityActorRole): Promise<CanonicalResourceBundle>
   syncSnapshot(resourceType: AuthorityResourceType, resourceId: string): Promise<AuthorityProductSyncSnapshot>
+  resolveConflict(
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+    resolution: AuthorityConflictResolution,
+  ): Promise<void>
 }
 
 export async function createServerAuthorityProductRepositories(

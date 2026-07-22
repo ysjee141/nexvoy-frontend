@@ -16,6 +16,10 @@ import {
   subscribeMobileAuthorityInvalidation,
   type MobileAuthorityInvalidationSubscription,
 } from './realtimeInvalidation'
+import {
+  logAuthorityRealtimeMetric,
+  logAuthoritySyncMetric,
+} from '@/lib/observability'
 
 export interface MobileAuthorityRuntime {
   store: MobileAuthoritySqliteStore
@@ -109,6 +113,7 @@ export async function watchMobileAuthorityResource(
     resourceId,
     store: runtime.store,
     coordinator: runtime.coordinator,
+    onMetric: logAuthorityRealtimeMetric,
     onError: reportAuthoritySyncError,
   })
   const tracked: MobileAuthorityInvalidationSubscription = {
@@ -172,6 +177,7 @@ async function getRuntime(): Promise<MobileAuthorityRuntime> {
         coordinator: new ServerAuthoritySyncCoordinator({
           repository: createServerAuthorityRepository(supabase),
           store,
+          metricSink: logAuthoritySyncMetric,
           onMembershipRevoked: (_revokedAccountId, resourceType, resourceId) => {
             const topic = `${resourceType}:${resourceId}`
             const matchingSubscriptions = [...activeRealtimeSubscriptions]

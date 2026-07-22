@@ -13,7 +13,7 @@ import type {
 } from './database'
 
 export const MOBILE_AUTHORITY_DATABASE_NAME = 'onvoy-server-authority.db'
-export const MOBILE_AUTHORITY_SCHEMA_VERSION = 1
+export const MOBILE_AUTHORITY_SCHEMA_VERSION = 2
 
 interface SqlExecutor {
   runAsync(source: string, params: (string | number | null)[]): Promise<unknown>
@@ -41,6 +41,7 @@ interface OutboxRow {
   attempts: number
   next_attempt_at: string | null
   last_error: string | null
+  conflict_json: string | null
   created_at: string
   updated_at: string
 }
@@ -197,6 +198,12 @@ async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
         PRAGMA user_version = 1;
       `)
     }
+    if (currentVersion < 2) {
+      await transaction.execAsync(`
+        ALTER TABLE authority_outbox ADD COLUMN conflict_json TEXT;
+        PRAGMA user_version = 2;
+      `)
+    }
   })
 }
 
@@ -318,8 +325,9 @@ function createDatabaseTransaction(executor: SqlExecutor): MobileAuthorityDataba
       await executor.runAsync(
         `INSERT INTO authority_outbox (
            operation_id, account_id, resource_type, resource_id, base_revision,
-           command_json, status, attempts, next_attempt_at, last_error, created_at, updated_at
-         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           command_json, status, attempts, next_attempt_at, last_error, conflict_json,
+           created_at, updated_at
+         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT (operation_id) DO UPDATE SET
            account_id = excluded.account_id,
            resource_type = excluded.resource_type,
@@ -330,6 +338,7 @@ function createDatabaseTransaction(executor: SqlExecutor): MobileAuthorityDataba
            attempts = excluded.attempts,
            next_attempt_at = excluded.next_attempt_at,
            last_error = excluded.last_error,
+           conflict_json = excluded.conflict_json,
            created_at = excluded.created_at,
            updated_at = excluded.updated_at`,
         [
@@ -343,6 +352,7 @@ function createDatabaseTransaction(executor: SqlExecutor): MobileAuthorityDataba
           record.attempts,
           record.nextAttemptAt,
           record.lastError,
+          record.conflict ? JSON.stringify(record.conflict) : null,
           record.createdAt,
           record.updatedAt,
         ],
@@ -430,6 +440,9 @@ function parseOutboxRow(row: OutboxRow): AuthorityOutboxRecord {
     attempts: row.attempts,
     nextAttemptAt: row.next_attempt_at,
     lastError: row.last_error,
+    conflict: row.conflict_json
+      ? parseJson<NonNullable<AuthorityOutboxRecord['conflict']>>(row.conflict_json)
+      : null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }

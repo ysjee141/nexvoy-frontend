@@ -1,6 +1,7 @@
 # TASK-056: Production Data Integrity and Cost Gate
 
-- 상태: 대기
+- 상태: 구현 완료 (DEV/Production 운영 gate NO-GO)
+- Issue: [#368](https://github.com/ysjee141/nexvoy-frontend/issues/368)
 
 ## 목적
 
@@ -70,7 +71,7 @@
 3. representative workload로 command, full refresh, Realtime, image bytes를 측정한다.
 4. queue age, conflict rate, rejected command, revision gap, full refresh, egress dashboard를 만든다.
 5. DEV migration/reset/rollback rehearsal을 수행한다.
-6. Production 적용 migration, client release, feature flag, monitoring, rollback 순서를 runbook으로 고정한다.
+6. Production 적용 migration, authority-only client release, monitoring, release rollback 순서를 runbook으로 고정한다.
 7. Initial go/no-go 결과와 Growth trigger를 기록한다.
 8. 최소 지원 버전과 legacy traffic 0 관찰 기간을 확인한 뒤, 물리 삭제 migration을
    DEV rehearsal과 별도 승인으로 Production에 적용한다.
@@ -84,7 +85,7 @@
 
 ## 롤백 방법
 
-- authority feature flag를 이전 안정 release로 전환한다.
+- 쓰기를 동결하고 이전 안정 authority-only release로 client를 롤백한다.
 - destructive DB migration 전에는 revoke-only object를 복구한다.
 - Production 데이터는 managed backup/off-site export와 migration rollback script로 복구한다.
 
@@ -95,3 +96,19 @@
 - 통신량과 운영비가 Initial 목표 안에 있음을 실측한다.
 - Production rollout 및 rollback 담당자가 실행 가능한 runbook이 완성된다.
 - legacy object 물리 삭제 여부가 명시적으로 승인되고 실행/유예 결과가 기록된다.
+
+## 구현 결과
+
+- entity version 기반 stale rebase를 도입해 서로 다른 entity 변경은 수렴시키고 동일 entity
+  변경은 명시적 충돌로 중단한다. aggregate whole-set은 안전한 version 계약 전까지 보수적
+  resource conflict를 유지한다.
+- Web/Mobile 충돌 배지와 해결 UI, IndexedDB/SQLite 충돌 보존·폐기·재적용 transaction을 구현했다.
+- queue age, payload bytes, RPC latency, conflict/retry/reject, revision gap, full refresh를
+  GA4/Firebase에 식별자 없이 기록한다.
+- 여행/템플릿 SQL concurrency gate, Web 동시 편집 E2E, storage conflict tests, UTF-8 protocol
+  byte budget tests를 추가했다.
+- Production rollout/recovery runbook, Initial 비용 baseline, go/no 판정서를 작성했다.
+
+자동화 가능한 코드 gate는 PASS다. 원격 DEV migration history repair, TASK-056 migration 배포,
+실기기 matrix, 7일 지표, DB+Storage restore rehearsal은 운영 증적이 없으므로 DEV와 Production은
+NO-GO로 유지한다. Legacy object 물리 삭제도 별도 destructive migration 승인 전까지 유예한다.

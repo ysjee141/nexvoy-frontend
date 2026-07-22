@@ -3,25 +3,13 @@ import {
   decideAuthorityInvalidation,
   parseAuthorityInvalidation,
   type AuthorityLocalStore,
+  type AuthorityRealtimeMetric,
   type AuthorityResourceType,
   type ServerAuthoritySyncCoordinator,
 } from '@nexvoy/core'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
-export type MobileAuthorityRealtimeMetric =
-  | {
-      name: 'authority_invalidation_received' | 'authority_invalidation_ignored'
-      resourceType: AuthorityResourceType
-      resourceId: string
-      revision: number
-    }
-  | {
-      name: 'authority_invalidation_gap' | 'authority_reconnect_refresh'
-      resourceType: AuthorityResourceType
-      resourceId: string
-      localRevision: number
-      remoteRevision: number
-    }
+export type MobileAuthorityRealtimeMetric = AuthorityRealtimeMetric
 
 export interface MobileAuthorityInvalidationSubscription {
   topic: string

@@ -304,6 +304,106 @@ async function run(): Promise<void> {
   )
   assert.equal((await store.listReadyOutbox('account-a', now, 10)).length, 0)
 
+  const conflictPlanId = '48000000-0000-0000-0000-000000000201'
+  const conflictBase: CanonicalResourceBundle = {
+    ...bundle('충돌 테스트', 1),
+    data: {
+      ...bundle('충돌 테스트', 1).data,
+      plans: [{ id: conflictPlanId, title: '공통 일정', version: 1, deleted_at: null }],
+    },
+  }
+  const localConflictCommand: AuthorityCommand = {
+    operationId: '48000000-0000-0000-0000-000000000202',
+    resourceId: tripId,
+    entityType: 'plan',
+    entityId: conflictPlanId,
+    action: 'upsert',
+    payload: { title: '이 기기 일정' },
+    expectedVersion: 1,
+    createdAt: now,
+  }
+  const conflictCanonical: CanonicalResourceBundle = {
+    ...conflictBase,
+    revision: 2,
+    serverUpdatedAt: '2026-07-17T01:06:00.000Z',
+    data: {
+      ...conflictBase.data,
+      plans: [{ id: conflictPlanId, title: '다른 기기 일정', version: 2, deleted_at: null }],
+    },
+  }
+  await store.commitOptimisticMutation({
+    accountId: 'account-conflict-retry',
+    baseBundle: conflictBase,
+    bundle: conflictBase,
+    command: localConflictCommand,
+    now,
+  })
+  await store.markConflict(
+    'account-conflict-retry',
+    [localConflictCommand.operationId],
+    conflictCanonical,
+    {
+      kind: 'entity_version',
+      code: 'authority_plan_version_conflict',
+      entityType: 'plan',
+      entityId: conflictPlanId,
+    },
+    '2026-07-17T01:06:00.000Z',
+  )
+  assert.deepEqual(await store.getSyncSnapshot('account-conflict-retry', 'trip', tripId, true), {
+    status: 'conflict',
+    pendingCount: 1,
+    lastError: 'authority_plan_version_conflict',
+    conflict: {
+      kind: 'entity_version',
+      code: 'authority_plan_version_conflict',
+      entityType: 'plan',
+      entityId: conflictPlanId,
+    },
+  })
+  await store.resolveConflict(
+    'account-conflict-retry',
+    'trip',
+    tripId,
+    'retry_local',
+    '2026-07-17T01:07:00.000Z',
+  )
+  const retriedConflict = await store.listReadyOutbox('account-conflict-retry', now, 10)
+  assert.equal(retriedConflict[0]?.baseRevision, 2)
+  assert.equal(retriedConflict[0]?.command.expectedVersion, 2)
+  assert.equal(retriedConflict[0]?.conflict, null)
+  assert.equal(
+    ((await store.getResource('account-conflict-retry', 'trip', tripId))?.data.plans as Array<{ title: string }>)[0]?.title,
+    '이 기기 일정',
+  )
+
+  await store.commitOptimisticMutation({
+    accountId: 'account-conflict-keep',
+    baseBundle: conflictBase,
+    bundle: conflictBase,
+    command: { ...localConflictCommand, operationId: '48000000-0000-0000-0000-000000000203' },
+    now,
+  })
+  await store.markConflict(
+    'account-conflict-keep',
+    ['48000000-0000-0000-0000-000000000203'],
+    conflictCanonical,
+    { kind: 'entity_version', code: 'authority_plan_version_conflict', entityType: 'plan', entityId: conflictPlanId },
+    '2026-07-17T01:06:00.000Z',
+  )
+  await store.resolveConflict(
+    'account-conflict-keep',
+    'trip',
+    tripId,
+    'keep_server',
+    '2026-07-17T01:07:00.000Z',
+  )
+  assert.equal((await store.listReadyOutbox('account-conflict-keep', now, 10)).length, 0)
+  assert.equal(
+    ((await store.getResource('account-conflict-keep', 'trip', tripId))?.data.plans as Array<{ title: string }>)[0]?.title,
+    '다른 기기 일정',
+  )
+
   await assert.rejects(
     store.commitOptimisticMutation({
       accountId: 'account-a',
