@@ -18,7 +18,7 @@ Repository로 전환한다. Web과 같은 canonical row와 conflict 정책을 �
 - 템플릿 전체 기능
 - collaborator 목록의 canonical membership read
 - foreground/reconnect/background opportunity sync UX
-- Mobile feature flag, integration test, 실기기 smoke
+- authority-only release rollback, integration test, 실기기 smoke
 
 제외:
 
@@ -40,7 +40,7 @@ Repository로 전환한다. Web과 같은 canonical row와 conflict 정책을 �
 
 ## 구현 단계
 
-1. Mobile repository factory를 신규 authority adapter로 전환하는 feature flag를 추가한다.
+1. Mobile repository factory를 authority adapter로 전환한다.
 2. 홈/상세는 SQLite cache를 먼저 렌더하고 server summary/revision을 background 갱신한다.
 3. 모든 mutation을 SQLite transaction과 command outbox로 교체한다.
 4. Realtime invalidation과 foreground/reconnect revision recovery를 화면 lifecycle에 연결한다.
@@ -68,8 +68,10 @@ Repository로 전환한다. Web과 같은 canonical row와 conflict 정책을 �
 
 ## 롤백 방법
 
-- Mobile authority feature flag를 끄고 기존 document-primary adapter를 사용한다.
-- SQLite DB는 유지하되 이전 runtime에서 읽지 않는다.
+- TASK-055 이후 기존 document-primary adapter와 feature flag는 제거됐다. 직전의 검증된
+  authority-only Mobile binary로 롤백한다.
+- SQLite DB는 schema version과 outbox 호환성을 확인한 뒤 유지한다. canonical row를 legacy
+  runtime으로 되돌리지 않는다.
 
 ## 완료 조건
 
@@ -85,7 +87,8 @@ Repository로 전환한다. Web과 같은 canonical row와 conflict 정책을 �
 - mutation은 SQLite optimistic transaction과 durable command outbox를 사용하고, 1초 debounce와 lifecycle trigger로 flush한다.
 - 신규 resource의 server ack 전에는 초대와 이미지 업로드를 제한하며, sync badge로 offline/pending/synced/conflict/error를 구분한다.
 - authority mode에서는 legacy key provisioning, encrypted backup, WebRTC/P2P runtime을 시작하지 않는다.
-- 롤백 플래그 `EXPO_PUBLIC_MOBILE_SERVER_AUTHORITY=0`을 유지했다.
+- 당시 롤백 플래그를 유지했으나 TASK-055에서 legacy runtime과 함께 제거했다. 현재 롤백은
+  authority-only binary release 단위로 수행한다.
 - DB migration이나 신규 RPC는 없으며 TASK-046~051 authority 계약을 재사용한다.
 
 자동 unit/typecheck/lint/Web build/Expo export/Android native build를 수행했다. 실제 기기의 계정 전환, 비행기 모드, Web/Mobile 교차 동기화는

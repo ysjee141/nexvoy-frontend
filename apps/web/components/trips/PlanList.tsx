@@ -287,12 +287,14 @@ function PlanCard({
                             <div className={css({ display: 'flex', gap: '2px' })}>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onEdit(plan) }}
+                                    aria-label={`일정 수정: ${plan.title}`}
                                     className={css({ p: '4px', color: 'brand.muted', bg: 'transparent', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s', _hover: { color: 'brand.primary', bg: 'bg.softCotton' } })}
                                 >
                                     <Edit3 size={14} />
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); onDelete(plan.id) }}
+                                    aria-label={`일정 삭제: ${plan.title}`}
                                     className={css({ p: '4px', color: 'brand.muted', bg: 'transparent', border: 'none', borderRadius: '6px', cursor: 'pointer', transition: 'all 0.2s', _hover: { color: 'brand.error', bg: 'bg.softCotton' } })}
                                 >
                                     <Trash2 size={14} />

@@ -13,6 +13,8 @@ import {
 import { applyOptimisticAuthorityCommandsToBundle } from '../serverAuthorityMaterialize'
 import type {
   AuthorityApplyResult,
+  AuthorityConflict,
+  AuthorityConflictResolution,
   AuthorityLocalStore,
   AuthorityOutboxRecord,
   AuthorityResourceType,
@@ -127,11 +129,26 @@ class FakeStore implements AuthorityLocalStore {
     accountId: string,
     operationIds: string[],
     bundle: CanonicalResourceBundle | null,
+    conflict: AuthorityConflict,
     updatedAt: string,
   ): Promise<void> {
-    this.update(operationIds, (item) => ({ ...item, status: 'conflict', updatedAt }))
+    this.update(operationIds, (item) => ({
+      ...item,
+      status: 'conflict',
+      conflict,
+      lastError: conflict.code,
+      updatedAt,
+    }))
     if (bundle) await this.putResource(accountId, bundle)
   }
+
+  async resolveConflict(
+    _accountId: string,
+    _resourceType: AuthorityResourceType,
+    _resourceId: string,
+    _resolution: AuthorityConflictResolution,
+    _updatedAt: string,
+  ): Promise<void> {}
 
   async recoverStaleSending(): Promise<number> {
     return this.recovered
@@ -387,6 +404,12 @@ async function run(): Promise<void> {
       revision: 8,
       acknowledgedOperationIds: [],
       changes: [],
+      conflict: {
+        kind: 'entity_version',
+        code: 'authority_trip_version_conflict',
+        entityType: 'trip',
+        entityId: input.resourceId,
+      },
       bundle: conflictBundle,
     })),
     now: () => new Date(now),
@@ -394,6 +417,12 @@ async function run(): Promise<void> {
   const conflict = await conflictCoordinator.flush('account-1')
   assert.equal(conflict.conflicted, 1)
   assert.equal(conflictStore.records[0]?.status, 'conflict')
+  assert.deepEqual(conflictStore.records[0]?.conflict, {
+    kind: 'entity_version',
+    code: 'authority_trip_version_conflict',
+    entityType: 'trip',
+    entityId: conflictBundle.resourceId,
+  })
   assert.equal(
     (await conflictStore.getResource('account-1', 'trip', conflictBundle.resourceId))?.revision,
     8,

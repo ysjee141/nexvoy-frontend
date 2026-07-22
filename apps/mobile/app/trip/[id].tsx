@@ -40,6 +40,7 @@ import * as Clipboard from 'expo-clipboard'
 import * as WebBrowser from 'expo-web-browser'
 import { NativeMapView, NativeMarker } from '@/components/map/NativeMap'
 import { AuthoritySyncStatusBadge } from '@/components/trip/AuthoritySyncStatusBadge'
+import { AuthorityConflictModal } from '@/components/trip/AuthorityConflictModal'
 import {
   getChecklistCategories,
   getChecklistItemStatus,
@@ -47,6 +48,7 @@ import {
   formatDate,
   formatCurrency,
   getCurrencyFromTimezone,
+  type AuthorityConflictResolution,
   type AuthorityProductSyncSnapshot,
 } from '@nexvoy/core'
 import {
@@ -87,6 +89,7 @@ import { useAuth } from '@/lib/auth-context'
 import {
   createMobileProductRepositories,
   getMobileProductSyncSnapshot,
+  resolveMobileProductConflict,
   subscribeMobileProductResource,
 } from '@/lib/data/repositoryFactory'
 import {
@@ -762,6 +765,9 @@ export default function TripDetailScreen() {
     pendingCount: 0,
     lastError: null,
   })
+  const [isConflictOpen, setIsConflictOpen] = useState(false)
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false)
+  const [conflictError, setConflictError] = useState<string | null>(null)
   const authorityServerReady = authoritySync.status === 'synced'
 
   useEffect(() => {
@@ -833,14 +839,16 @@ export default function TripDetailScreen() {
   }, [id, session?.user.id])
 
   const refreshAuthoritySync = useCallback(async () => {
-    if (!id) return
+    if (!id) return null
     try {
       const snapshot = await getMobileProductSyncSnapshot(supabase, 'trip', id)
       if (isMounted.current) setAuthoritySync(snapshot)
+      return snapshot
     } catch {
       if (isMounted.current) {
         setAuthoritySync({ status: 'error', pendingCount: 0, lastError: 'sync_state_failed' })
       }
+      return null
     }
   }, [id])
 
@@ -902,6 +910,33 @@ export default function TripDetailScreen() {
     setChecklist(snapshot.checklist)
     return snapshot.checklist
   }, [checklist, id, userRole])
+
+  const handleResolveAuthorityConflict = useCallback(async (resolution: AuthorityConflictResolution) => {
+    if (!id || isResolvingConflict) return
+    setIsResolvingConflict(true)
+    setConflictError(null)
+    try {
+      await resolveMobileProductConflict(supabase, 'trip', id, resolution)
+      const [, , snapshot] = await Promise.all([
+        loadTrip(false),
+        checklistLoaded ? loadChecklist(false) : Promise.resolve(),
+        refreshAuthoritySync(),
+      ])
+      if (isMounted.current) {
+        if (snapshot?.status === 'conflict') {
+          setConflictError('다른 변경이 먼저 저장되었습니다. 해결 방법을 다시 선택해 주세요.')
+        } else {
+          setIsConflictOpen(false)
+        }
+      }
+    } catch {
+      if (isMounted.current) {
+        setConflictError('충돌을 해결하지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.')
+      }
+    } finally {
+      if (isMounted.current) setIsResolvingConflict(false)
+    }
+  }, [checklistLoaded, id, isResolvingConflict, loadChecklist, loadTrip, refreshAuthoritySync])
 
   // 준비물 탭 최초 진입 시 1회 lazy load
   useEffect(() => {
@@ -1710,7 +1745,10 @@ export default function TripDetailScreen() {
                     </View>
                   ) : null}
                   {canEditContent ? (
-                    <AuthoritySyncStatusBadge snapshot={authoritySync} />
+                    <AuthoritySyncStatusBadge
+                      snapshot={authoritySync}
+                      onConflictPress={() => setIsConflictOpen(true)}
+                    />
                   ) : null}
                 </View>
               </View>
@@ -1956,6 +1994,18 @@ export default function TripDetailScreen() {
             onUpdateRole={handleUpdateMemberRole}
             onRemove={handleRemoveMember}
             onClose={() => setIsCollaboratorSheetOpen(false)}
+          />
+          <AuthorityConflictModal
+            visible={isConflictOpen}
+            pendingCount={authoritySync.pendingCount}
+            resolving={isResolvingConflict}
+            error={conflictError}
+            bottomInset={insets.bottom}
+            onClose={() => {
+              setConflictError(null)
+              setIsConflictOpen(false)
+            }}
+            onResolve={(resolution) => { void handleResolveAuthorityConflict(resolution) }}
           />
         </>
       )}

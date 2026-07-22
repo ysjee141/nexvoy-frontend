@@ -124,7 +124,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-053-membership-invitation-without-document-keys.md` | 구현 완료 | keyless invitation accept, role/revoke revision 전파, revoke cache/outbox purge, Issue #362, PR [#363](https://github.com/ysjee141/nexvoy-frontend/pull/363) |
 | `TASK-054-direct-asset-storage-and-delivery.md` | 구현 완료 | width suffix immutable path, list thumbnail, asset metadata registry, orphan cleanup, Issue #364, PR [#365](https://github.com/ysjee141/nexvoy-frontend/pull/365) |
 | `TASK-055-retire-yjs-p2p-encrypted-backup.md` | 구현 완료 | Yjs/P2P/key/custom backup runtime 제거와 V1 reset, Issue #366, PR #367 |
-| `TASK-056-production-data-integrity-and-cost-gate.md` | 대기 | Production 정합성·권한·비용 gate와 rollout runbook |
+| `TASK-056-production-data-integrity-and-cost-gate.md` | 구현 완료, 운영 gate 대기 | 코드 gate PASS; DEV/Production/legacy 삭제 NO-GO |
 
 ## 이전 단계 이력
 
@@ -221,7 +221,7 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-053-membership-invitation-without-document-keys.md`: keyless membership/invitation 전환
 - [x] `TASK-054-direct-asset-storage-and-delivery.md`: asset 직접 전송과 egress 최적화
 - [x] `TASK-055-retire-yjs-p2p-encrypted-backup.md`: legacy runtime 제거와 데이터 reset
-- [ ] `TASK-056-production-data-integrity-and-cost-gate.md`: Production gate와 rollout
+- [x] `TASK-056-production-data-integrity-and-cost-gate.md`: Production 코드 gate와 rollout 문서 (운영 증적 대기)
 
 ## 권장 시작 순서
 

@@ -18,12 +18,14 @@ import { useNetworkStore } from '@/stores/useNetworkStore'
 import {
     createWebProductDocumentRepositories,
     getWebProductSyncSnapshot,
+    resolveWebProductConflict,
     subscribeWebProductResource,
 } from '@/lib/data/repositoryFactory'
 import { tripDetailToWebTripRow } from '@/lib/data/productReadModelAdapters'
 import { createInvitationRepository } from '@nexvoy/core/supabase/invitationRepository'
-import type { AuthorityProductSyncSnapshot } from '@nexvoy/core'
+import type { AuthorityConflictResolution, AuthorityProductSyncSnapshot } from '@nexvoy/core'
 import AuthoritySyncStatusBadge from '@/components/trips/AuthoritySyncStatusBadge'
+import AuthorityConflictDialog from '@/components/trips/AuthorityConflictDialog'
 
 export default function TripLayoutClient() {
     const searchParams = useSearchParams()
@@ -44,10 +46,38 @@ export default function TripLayoutClient() {
         lastError: null,
     })
     const [loading, setLoading] = useState(true)
+    const [isConflictOpen, setIsConflictOpen] = useState(false)
+    const [isResolvingConflict, setIsResolvingConflict] = useState(false)
+    const [conflictError, setConflictError] = useState<string | null>(null)
     const [activeTab, setActiveTab] = useState<'plans' | 'checklist' | 'map'>(initialTab)
     const { setMobileTitle } = useUIStore()
     const { isOnline } = useNetworkStore()
     const syncStatus = syncSnapshot.status
+
+    const handleResolveConflict = async (resolution: AuthorityConflictResolution) => {
+        if (!id || isResolvingConflict) return
+        setIsResolvingConflict(true)
+        setConflictError(null)
+        try {
+            await resolveWebProductConflict(supabase, 'trip', id, resolution)
+            const [snapshot, repositories] = await Promise.all([
+                getWebProductSyncSnapshot(supabase, 'trip', id),
+                createWebProductDocumentRepositories(supabase, { actorRole: 'viewer' }),
+            ])
+            const detail = await repositories.trips.getTrip(id)
+            setSyncSnapshot(snapshot)
+            if (detail) setTrip(tripDetailToWebTripRow(detail))
+            if (snapshot.status === 'conflict') {
+                setConflictError('다른 변경이 먼저 저장되었습니다. 해결 방법을 다시 선택해 주세요.')
+            } else {
+                setIsConflictOpen(false)
+            }
+        } catch {
+            setConflictError('충돌을 해결하지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.')
+        } finally {
+            setIsResolvingConflict(false)
+        }
+    }
 
     useEffect(() => {
         const urlTab = searchParams.get('tab')
@@ -274,7 +304,12 @@ export default function TripLayoutClient() {
                     alignItems: 'center',
                     pr: '4px',
                 })}>
-                    <AuthoritySyncStatusBadge status={syncStatus} detail={syncSnapshot.lastError} />
+                    <AuthoritySyncStatusBadge
+                        status={syncStatus}
+                        detail={syncSnapshot.lastError}
+                        pendingCount={syncSnapshot.pendingCount}
+                        onConflictClick={() => setIsConflictOpen(true)}
+                    />
                 </div>
             </div>
 
@@ -283,7 +318,12 @@ export default function TripLayoutClient() {
                 justifyContent: 'flex-end',
                 py: '8px',
             })}>
-                <AuthoritySyncStatusBadge status={syncStatus} detail={syncSnapshot.lastError} />
+                <AuthoritySyncStatusBadge
+                    status={syncStatus}
+                    detail={syncSnapshot.lastError}
+                    pendingCount={syncSnapshot.pendingCount}
+                    onConflictClick={() => setIsConflictOpen(true)}
+                />
             </div>
 
             {/* 하위 컨텐츠 전환 영역 (언마운트 하지 않고 display none으로 유지하여 상태 보존 및 즉각 전환) */}
@@ -302,6 +342,17 @@ export default function TripLayoutClient() {
                     />
                 </div>
             </div>
+            <AuthorityConflictDialog
+                isOpen={isConflictOpen}
+                pendingCount={syncSnapshot.pendingCount}
+                resolving={isResolvingConflict}
+                error={conflictError}
+                onClose={() => {
+                    setConflictError(null)
+                    setIsConflictOpen(false)
+                }}
+                onResolve={(resolution) => { void handleResolveConflict(resolution) }}
+            />
         </div>
     )
 }

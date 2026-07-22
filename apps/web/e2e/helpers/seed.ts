@@ -164,6 +164,48 @@ export async function seedAuthorityDocumentMember(
   if (error) throw new Error(`seedAuthorityDocumentMember 실패: ${error.message}`);
 }
 
+export async function seedAuthorityPlan(
+  owner: TestUser,
+  trip: SeededTrip,
+  title: string,
+): Promise<{ id: string; title: string }> {
+  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const anonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  assertLocalSupabaseUrl(url);
+  const client = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${owner.accessToken}` } },
+  });
+  const planId = randomUUID();
+  const { data: revision, error: revisionError } = await client.rpc(
+    'get_trip_authority_revision',
+    { p_trip_id: trip.id },
+  );
+  if (revisionError) throw new Error(`seedAuthorityPlan revision 실패: ${revisionError.message}`);
+
+  const { error } = await client.rpc('apply_trip_commands', {
+    p_trip_id: trip.id,
+    p_commands: [{
+      operation_id: randomUUID(),
+      entity_type: 'plan',
+      entity_id: planId,
+      action: 'upsert',
+      payload: {
+        title,
+        location: 'E2E 장소',
+        address: 'E2E 주소',
+        start_datetime_local: `${trip.start_date}T10:00:00`,
+        end_datetime_local: `${trip.start_date}T11:00:00`,
+        timezone_string: 'Asia/Seoul',
+      },
+      created_at: new Date().toISOString(),
+    }],
+    p_base_revision: revision,
+  });
+  if (error) throw new Error(`seedAuthorityPlan 실패: ${error.message}`);
+  return { id: planId, title };
+}
+
 export interface SeededTripMember {
   id: string;
   trip_id: string;
@@ -347,6 +389,19 @@ export async function getPlanByTitle(
 
   if (error) throw new Error(`getPlanByTitle 실패: ${error.message}`);
   return (data as { id: string; title: string } | null) ?? null;
+}
+
+export async function getPlanById(
+  planId: string,
+): Promise<{ id: string; title: string; version: number } | null> {
+  const client = getServiceClient();
+  const { data, error } = await client
+    .from('plans')
+    .select('id, title, version')
+    .eq('id', planId)
+    .maybeSingle();
+  if (error) throw new Error(`getPlanById 실패: ${error.message}`);
+  return (data as { id: string; title: string; version: number } | null) ?? null;
 }
 
 /**

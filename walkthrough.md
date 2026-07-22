@@ -1,3 +1,43 @@
+# Walkthrough: TASK-056 Production Integrity and Cost Gate
+
+## 결과
+
+Issue [#368](https://github.com/ysjee141/nexvoy-frontend/issues/368)의 자동화 가능한 Production
+gate를 구현했다. 서로 다른 entity의 stale 변경은 row version으로 안전하게 재기준화하고, 같은
+entity 충돌은 Web/Mobile 사용자에게 server 최신본 유지 또는 local 변경 재적용을 선택하게 한다.
+
+```mermaid
+flowchart LR
+    Edit["Local optimistic edit"] --> Outbox["Account outbox + expected version"]
+    Outbox --> RPC["Atomic authority RPC"]
+    RPC -->|"different entity"| Rebase["Rebase on current revision"]
+    RPC -->|"same entity"| Conflict["Explicit conflict choice"]
+    Rebase --> Canonical["Canonical rows + invalidation"]
+    Conflict -->|"keep server / retry local"| Canonical
+```
+
+## 구현
+
+- Core/Web/Mobile command path에 entity versioning과 conflict metadata/resolution을 연결했다.
+- SQL wrapper는 stale batch의 모든 신규 command가 entity-level 검증 가능할 때만 현재 revision으로
+  rebase한다. per-user check는 허용하고 assignee whole-set은 보수적 conflict를 유지한다.
+- Web dialog와 Mobile modal에서 대기 건수와 두 해결 선택을 제공한다.
+- GA4/Firebase에 queue age, bytes, duration, conflict/retry/reject, gap/full refresh를 전송하되
+  account/resource ID와 사용자 콘텐츠는 Core allowlist에서 제거한다.
+- UTF-8 command/invalidation budget과 여행/템플릿 concurrency를 자동 gate로 고정했다.
+
+## 검증 및 판정
+
+- Core/Web/Mobile authority tests, typecheck, TASK-056 SQL test를 통과했다.
+- 두 Web context의 offline outbox를 동시에 reconnect해 동일 entity 충돌과 server 선택 후 수렴을
+  Playwright로 검증했다.
+- 코드 gate는 PASS지만 DEV migration ledger gap, 실기기 matrix, 7일 관찰, DB+Storage restore
+  rehearsal이 남아 DEV/Production과 legacy 물리 삭제는 NO-GO다.
+- 실행 순서는 `TASK-056-production-rollout-and-recovery.md`, 판정은
+  `TASK-056-production-go-no-go.md`를 따른다.
+
+---
+
 # Walkthrough: TASK-055 Retire Yjs, P2P, and Encrypted Backup Runtime
 
 ## 결과

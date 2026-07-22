@@ -2,6 +2,10 @@ import {
   createObservabilityEvent,
   sanitizeObservabilityEvent,
 } from '../events'
+import {
+  authorityRealtimeMetricToObservabilityEvent,
+  authoritySyncMetricToObservabilityEvent,
+} from '../authorityEvents'
 
 const event = createObservabilityEvent('local_notification_scheduled', {
   platform: 'web',
@@ -53,4 +57,39 @@ try {
 
 if (!rejected) {
   throw new Error('Observability event creator should reject secret-like params.')
+}
+
+const syncEvent = authoritySyncMetricToObservabilityEvent({
+  name: 'authority_batch_conflict',
+  accountId: 'raw-account-id',
+  resourceType: 'trip',
+  resourceId: 'raw-trip-id',
+  commandCount: 2,
+  errorCode: 'authority_plan_version_conflict',
+  durationMs: 37,
+}, 'web')
+if (
+  syncEvent.params.document_type !== 'trip' ||
+  syncEvent.params.count !== 2 ||
+  syncEvent.params.duration_ms !== 37
+) {
+  throw new Error('Authority sync metrics should preserve only aggregate operational fields.')
+}
+const serializedSyncEvent = JSON.stringify(syncEvent)
+if (serializedSyncEvent.includes('raw-account-id') || serializedSyncEvent.includes('raw-trip-id')) {
+  throw new Error('Authority observability must not include account or resource identifiers.')
+}
+
+const realtimeEvent = authorityRealtimeMetricToObservabilityEvent({
+  name: 'authority_invalidation_gap',
+  resourceType: 'template',
+  resourceId: 'raw-template-id',
+  localRevision: 3,
+  remoteRevision: 8,
+}, 'android')
+if (realtimeEvent.params.revision_gap !== 5) {
+  throw new Error('Authority realtime metrics should report a revision delta.')
+}
+if (JSON.stringify(realtimeEvent).includes('raw-template-id')) {
+  throw new Error('Realtime observability must not include resource identifiers.')
 }

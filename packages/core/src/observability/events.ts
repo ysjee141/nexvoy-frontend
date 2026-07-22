@@ -11,6 +11,18 @@ export type ObservabilityEventName =
   | 'push_token_registered'
   | 'push_token_revoked'
   | 'document_permission_denied'
+  | 'authority_flush_started'
+  | 'authority_batch_applied'
+  | 'authority_batch_conflict'
+  | 'authority_batch_retryable'
+  | 'authority_batch_rejected'
+  | 'authority_sending_recovered'
+  | 'authority_membership_revoked'
+  | 'authority_invalidation_received'
+  | 'authority_invalidation_ignored'
+  | 'authority_invalidation_gap'
+  | 'authority_reconnect_refresh'
+  | 'authority_full_refresh'
 
 export type ObservabilityPlatform = 'web' | 'ios' | 'android' | 'unknown'
 
@@ -29,6 +41,10 @@ export type ObservabilityParams = Partial<{
   batch_window_ms: number
   provider: 'fcm' | 'expo' | 'firebase' | 'ga4' | 'local'
   ttl_seconds: number
+  queue_age_ms: number
+  payload_bytes: number
+  duration_ms: number
+  revision_gap: number
 }>
 
 export interface ObservabilityEvent {
@@ -56,6 +72,10 @@ const ALLOWED_EVENT_PARAM_KEYS = new Set<keyof ObservabilityParams>([
   'batch_window_ms',
   'provider',
   'ttl_seconds',
+  'queue_age_ms',
+  'payload_bytes',
+  'duration_ms',
+  'revision_gap',
 ])
 
 const FORBIDDEN_OBSERVABILITY_KEY_PATTERN =
@@ -83,6 +103,10 @@ export function sanitizeObservabilityEvent(
     safeParams.queued_count = sanitizeNonNegativeInteger(params.queued_count)
     safeParams.batch_window_ms = sanitizeNonNegativeInteger(params.batch_window_ms)
     safeParams.ttl_seconds = sanitizeNonNegativeInteger(params.ttl_seconds)
+    safeParams.queue_age_ms = sanitizeNonNegativeInteger(params.queue_age_ms)
+    safeParams.payload_bytes = sanitizeNonNegativeInteger(params.payload_bytes)
+    safeParams.duration_ms = sanitizeNonNegativeInteger(params.duration_ms)
+    safeParams.revision_gap = sanitizeNonNegativeInteger(params.revision_gap)
   }
 
   return {

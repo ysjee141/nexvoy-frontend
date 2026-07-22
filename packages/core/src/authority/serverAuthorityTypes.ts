@@ -138,6 +138,7 @@ export interface AuthorityOutboxRecord {
   attempts: number
   nextAttemptAt: string | null
   lastError: string | null
+  conflict?: AuthorityConflict | null
   createdAt: string
   updatedAt: string
 }
@@ -169,7 +170,10 @@ export interface AuthorityProductSyncSnapshot {
   status: AuthorityProductSyncStatus
   pendingCount: number
   lastError: string | null
+  conflict?: AuthorityConflict | null
 }
+
+export type AuthorityConflictResolution = 'keep_server' | 'retry_local'
 
 export interface AuthorityLocalStore {
   getResource(
@@ -204,6 +208,14 @@ export interface AuthorityLocalStore {
     accountId: string,
     operationIds: string[],
     bundle: CanonicalResourceBundle | null,
+    conflict: AuthorityConflict,
+    now: string,
+  ): Promise<void>
+  resolveConflict(
+    accountId: string,
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+    resolution: AuthorityConflictResolution,
     now: string,
   ): Promise<void>
   recoverStaleSending(accountId: string, staleBefore: string, now: string): Promise<number>
@@ -230,6 +242,7 @@ export type AuthoritySyncMetric =
       resourceId: string
       commandCount: number
       revision: number
+      durationMs: number
     }
   | {
       name: 'authority_batch_conflict' | 'authority_batch_retryable' | 'authority_batch_rejected'
@@ -238,6 +251,7 @@ export type AuthoritySyncMetric =
       resourceId: string
       commandCount: number
       errorCode?: string
+      durationMs: number
     }
   | {
       name: 'authority_sending_recovered'
@@ -250,8 +264,31 @@ export type AuthoritySyncMetric =
       resourceType: AuthorityResourceType
       resourceId: string
     }
+  | {
+      name: 'authority_full_refresh'
+      accountId: string
+      resourceType: AuthorityResourceType
+      resourceId: string
+      reasonCode: string
+      durationMs: number
+    }
 
 export type AuthoritySyncMetricSink = (metric: AuthoritySyncMetric) => void
+
+export type AuthorityRealtimeMetric =
+  | {
+      name: 'authority_invalidation_received' | 'authority_invalidation_ignored'
+      resourceType: AuthorityResourceType
+      resourceId: string
+      revision: number
+    }
+  | {
+      name: 'authority_invalidation_gap' | 'authority_reconnect_refresh'
+      resourceType: AuthorityResourceType
+      resourceId: string
+      localRevision: number
+      remoteRevision: number
+    }
 
 export function authorityResourceTypeForCommand(command: AuthorityCommand): AuthorityResourceType {
   return command.entityType.startsWith('template') ? 'template' : 'trip'

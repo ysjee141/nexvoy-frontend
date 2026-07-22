@@ -1,7 +1,11 @@
 import { Platform } from 'react-native'
 import {
   createObservabilityEvent,
+  authorityRealtimeMetricToObservabilityEvent,
+  authoritySyncMetricToObservabilityEvent,
   sanitizeObservabilityEvent,
+  type AuthorityRealtimeMetric,
+  type AuthoritySyncMetric,
   type ObservabilityEvent,
   type ObservabilityEventName,
   type ObservabilityParams,
@@ -40,4 +44,12 @@ export async function logProductEvent(
     })
     await sendFirebaseEvent(sanitized.event)
   }
+}
+
+export function logAuthoritySyncMetric(metric: AuthoritySyncMetric): void {
+  void sendFirebaseEvent(authoritySyncMetricToObservabilityEvent(metric, currentPlatform()))
+}
+
+export function logAuthorityRealtimeMetric(metric: AuthorityRealtimeMetric): void {
+  void sendFirebaseEvent(authorityRealtimeMetricToObservabilityEvent(metric, currentPlatform()))
 }

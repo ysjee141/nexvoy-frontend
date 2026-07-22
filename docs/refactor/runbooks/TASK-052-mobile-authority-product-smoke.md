@@ -4,7 +4,7 @@
 
 1. 최신 Android/iOS development build와 DEV Supabase를 사용한다.
 2. 동일 여행의 owner 계정 A, collaborator 계정 B, Web 브라우저를 준비한다.
-3. 기본 authority mode에서 시작한다. 롤백 검증 때만 `EXPO_PUBLIC_MOBILE_SERVER_AUTHORITY=0`을 사용한다.
+3. 현재 제품은 authority-only다. 롤백 검증에는 직전 authority-only development build를 사용한다.
 
 ## 자동 검증
 
@@ -29,7 +29,8 @@ EAS_BUILD_DISABLE_EXPO_DOCTOR_STEP=1 pnpm --filter nexvoy-app build:development:
 5. Mobile에서 새 여행을 만든 직후 첫 ack까지 초대와 이미지 업로드가 비활성화되고, ack 이후 정상 활성화되는지 확인한다.
 6. 로그아웃 후 계정 B로 로그인한다. 계정 A cache/outbox가 노출되지 않아야 한다. 계정 A 재로그인 시 보존된 cache가 복구되어야 한다.
 7. authority mode 제품 동작 중 document key, encrypted backup, Yjs signaling 요청이나 반복 오류가 없어야 한다.
-8. `EXPO_PUBLIC_MOBILE_SERVER_AUTHORITY=0` build에서 기존 document-primary adapter로 롤백되는지 확인한다.
+8. 직전 authority-only build로 downgrade해 SQLite schema/outbox가 안전하게 열리고 canonical
+   데이터가 유지되는지 확인한다.
 
 ## 합격 기준
 

@@ -7,7 +7,9 @@ import {
   createServerAuthorityRepository,
   createServerAuthorityTemplate,
   createServerAuthorityTrip,
+  versionAuthorityCommandsForBundle,
   type AuthorityCommand,
+  type AuthorityConflictResolution,
   type AuthorityProductSyncSnapshot,
   type AuthorityResourceType,
   type CanonicalResourceBundle,
@@ -146,12 +148,13 @@ class MobileAuthorityProductRuntime implements ServerAuthorityProductRuntime {
       getMobileAuthorityRuntime(),
     ])
     const now = new Date().toISOString()
-    const optimistic = applyOptimisticAuthorityCommandsToBundle(bundle, commands, now)
+    const versionedCommands = versionAuthorityCommandsForBundle(bundle, commands)
+    const optimistic = applyOptimisticAuthorityCommandsToBundle(bundle, versionedCommands, now)
     await runtime.store.commitOptimisticMutations({
       accountId,
       baseBundle: bundle,
       bundle: optimistic,
-      commands,
+      commands: versionedCommands,
       now,
     })
     this.kickFlush()
@@ -182,6 +185,25 @@ class MobileAuthorityProductRuntime implements ServerAuthorityProductRuntime {
       this.isOnline(),
     ])
     return runtime.store.getSyncSnapshot(accountId, resourceType, resourceId, online)
+  }
+
+  async resolveConflict(
+    resourceType: AuthorityResourceType,
+    resourceId: string,
+    resolution: AuthorityConflictResolution,
+  ): Promise<void> {
+    const [accountId, runtime] = await Promise.all([
+      this.accountId(),
+      getMobileAuthorityRuntime(),
+    ])
+    await runtime.store.resolveConflict(
+      accountId,
+      resourceType,
+      resourceId,
+      resolution,
+      new Date().toISOString(),
+    )
+    if (resolution === 'retry_local') await flushMobileAuthorityOutbox()
   }
 
   private kickFlush(): void {
@@ -310,6 +332,15 @@ export function getMobileAuthoritySyncSnapshot(
   resourceId: string,
 ): Promise<AuthorityProductSyncSnapshot> {
   return getRuntime(supabase).syncSnapshot(resourceType, resourceId)
+}
+
+export function resolveMobileAuthorityConflict(
+  supabase: SupabaseClient,
+  resourceType: AuthorityResourceType,
+  resourceId: string,
+  resolution: AuthorityConflictResolution,
+): Promise<void> {
+  return getRuntime(supabase).resolveConflict(resourceType, resourceId, resolution)
 }
 
 export function refreshMobileAuthorityList(

@@ -6,6 +6,7 @@ import {
   type CanonicalResourceBundle,
 } from '../../authority/serverAuthorityTypes'
 import { applyOptimisticAuthorityCommandsToBundle } from '../../authority/serverAuthorityMaterialize'
+import { versionAuthorityCommandsForBundle } from '../../authority/serverAuthorityMaterialize'
 import {
   createServerAuthorityProductRepositories,
   createServerAuthorityTemplate,
@@ -43,13 +44,14 @@ class MemoryAuthorityRuntime implements ServerAuthorityProductRuntime {
     bundle: CanonicalResourceBundle,
     commands: AuthorityCommand[],
   ): Promise<CanonicalResourceBundle> {
+    const versionedCommands = versionAuthorityCommandsForBundle(bundle, commands)
     const optimistic = applyOptimisticAuthorityCommandsToBundle(
       bundle,
-      commands,
+      versionedCommands,
       '2026-07-17T00:00:00.000Z',
     )
     this.bundles.set(`${bundle.resourceType}:${bundle.resourceId}`, optimistic)
-    this.commits.push(commands)
+    this.commits.push(versionedCommands)
     return Promise.resolve(optimistic)
   }
 
@@ -65,6 +67,10 @@ class MemoryAuthorityRuntime implements ServerAuthorityProductRuntime {
 
   syncSnapshot(): Promise<AuthorityProductSyncSnapshot> {
     return Promise.resolve({ status: 'synced', pendingCount: 0, lastError: null })
+  }
+
+  resolveConflict(): Promise<void> {
+    return Promise.resolve()
   }
 }
 

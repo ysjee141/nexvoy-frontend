@@ -1,5 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { AuthorityProductSyncSnapshot, AuthorityResourceType } from '@nexvoy/core'
+import type {
+  AuthorityConflictResolution,
+  AuthorityProductSyncSnapshot,
+  AuthorityResourceType,
+} from '@nexvoy/core'
 import type { ChecklistRepository, TripRepository } from '@nexvoy/core/repositories/types'
 import type { ProductRepositoryBundle } from '@nexvoy/core/product/repositories'
 import {
@@ -8,6 +12,7 @@ import {
   createWebAuthorityTrip,
   getWebAuthoritySyncSnapshot,
   refreshWebAuthorityList,
+  resolveWebAuthorityConflict,
   subscribeWebAuthorityAccount,
   subscribeWebAuthorityResource,
 } from './authorityProductRepositories'
@@ -82,4 +87,13 @@ export function getWebProductSyncSnapshot(
   resourceId: string,
 ): Promise<AuthorityProductSyncSnapshot> {
   return getWebAuthoritySyncSnapshot(supabase, resourceType, resourceId)
+}
+
+export function resolveWebProductConflict(
+  supabase: SupabaseClient,
+  resourceType: AuthorityResourceType,
+  resourceId: string,
+  resolution: AuthorityConflictResolution,
+): Promise<void> {
+  return resolveWebAuthorityConflict(supabase, resourceType, resourceId, resolution)
 }
