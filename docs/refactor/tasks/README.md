@@ -123,7 +123,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-052-mobile-server-authority-product-cutover.md` | 구현 완료 | Mobile 전체 기능 server-authority 제품 경로 전환, 실기기 smoke 대기 |
 | `TASK-053-membership-invitation-without-document-keys.md` | 구현 완료 | keyless invitation accept, role/revoke revision 전파, revoke cache/outbox purge, Issue #362, PR [#363](https://github.com/ysjee141/nexvoy-frontend/pull/363) |
 | `TASK-054-direct-asset-storage-and-delivery.md` | 구현 완료 | width suffix immutable path, list thumbnail, asset metadata registry, orphan cleanup, Issue #364, PR [#365](https://github.com/ysjee141/nexvoy-frontend/pull/365) |
-| `TASK-055-retire-yjs-p2p-encrypted-backup.md` | 구현 완료 | Yjs/P2P/key/custom backup runtime 제거와 V1 reset, Issue #366 |
+| `TASK-055-retire-yjs-p2p-encrypted-backup.md` | 구현 완료 | Yjs/P2P/key/custom backup runtime 제거와 V1 reset, Issue #366, PR #367 |
 | `TASK-056-production-data-integrity-and-cost-gate.md` | 대기 | Production 정합성·권한·비용 gate와 rollout runbook |
 
 ## 이전 단계 이력
