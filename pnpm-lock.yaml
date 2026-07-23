@@ -141,6 +141,9 @@ importers:
       '@react-native/metro-config':
         specifier: 0.81.5
         version: 0.81.5(@babel/core@7.29.0)
+      '@types/node':
+        specifier: ^20.19.35
+        version: 20.19.35
       '@types/react':
         specifier: ~19.1.17
         version: 19.1.17
