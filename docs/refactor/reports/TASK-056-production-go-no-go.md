@@ -1,40 +1,55 @@
-# TASK-056 Production Go/No-Go
+# TASK-056 Production 출시 판정
 
 - 평가일: 2026-07-23
-- 코드 게이트: PASS
-- DEV 배포 게이트: NO-GO
-- Production 배포 게이트: NO-GO
-- Legacy 물리 삭제: NO-GO
+- 코드 Gate: **PASS**
+- DEV 배포 Gate: **NO-GO**
+- Production 배포 Gate: **NO-GO**
+- Legacy 물리 삭제: **NO-GO**
+- 후속 실행: [TASK-057 Production 최종 검증 계획](TASK-057-production-final-validation-plan.md)
+
+## 결론
+
+코드와 로컬 자동화는 통과했다. 원격 migration, 실기기 통합 테스트, 7일 관측, DB와 Storage 복구,
+Production preflight 증적이 없으므로 출시할 수 없다. TASK-058~063을 실행해 TASK-057의 `G0`~`G7`을
+모두 통과해야 Production Gate를 GO로 변경한다.
 
 ## 통과한 근거
 
-- Entity version을 모든 일반 upsert/delete command에 부여하고, stale revision은 다른 entity일
-  때만 재기준화한다. 동일 entity는 `entity_version` 충돌로 중단한다.
-- Web/Mobile에서 충돌 원인과 대기 건수를 보존하며 `서버 최신 내용 사용` 또는
-  `이 기기 변경 다시 적용`을 명시적으로 선택한다.
-- SQL에서 여행/템플릿의 다른 entity 수렴, 동일 entity 충돌, per-user set, 보수적 whole-set,
-  duplicate exactly-once를 검증했다.
-- Web 동시 편집 E2E에서 두 offline outbox를 동시에 reconnect해 실제 충돌을 만들고 canonical
-  선택 후 양쪽 화면이 수렴했다.
-- Web IndexedDB와 Mobile SQLite에서 계정 격리, atomic outbox, ack rebase, 두 충돌 해결 경로를
-  검증했다.
-- 관측 이벤트는 queue age, payload bytes, RPC duration, conflict/retry/reject, revision gap,
-  full refresh를 기록하며 계정/resource ID와 콘텐츠를 제거한다.
-- 대표 command 2 KiB, invalidation 1 KiB 예산을 UTF-8 실제 byte 기준으로 자동 검증한다.
+- 일반 entity command에 row `version`을 부여하고 다른 entity의 stale revision만 자동 재기준화한다.
+- 같은 entity의 stale 변경은 자동 덮어쓰기 대신 명시적 충돌로 중단한다.
+- Web/Mobile에서 `서버 최신 내용 사용`과 `이 기기 변경 다시 적용`을 제공한다.
+- 여행/템플릿의 entity 수렴, 충돌, per-user set, whole-set 보수적 충돌, exactly-once를 SQL로 검증했다.
+- Web 동시 편집 E2E에서 두 offline outbox의 충돌과 canonical 수렴을 검증했다.
+- IndexedDB와 SQLite에서 계정 격리, atomic outbox, ack rebase, 충돌 해결을 검증했다.
+- 관측 event는 queue age, payload byte, RPC duration, conflict/retry/reject, revision gap, full refresh를
+  식별자와 사용자 콘텐츠 없이 기록한다.
+- 대표 command 2KiB와 invalidation 1KiB 예산을 UTF-8 byte 기준으로 검증한다.
 
 ## 남은 차단 항목
 
-- [ ] DEV의 9개 historical migration ledger gap을 schema fingerprint 후 repair한다.
-- [ ] DEV에 `20260723000002`를 정상 migration으로 적용하고 전체 SQL/E2E를 재실행한다.
-- [ ] Web/Mobile, Mobile/Mobile 실기기에서 airplane mode, 강제 종료, 계정 전환, role revoke,
-  asset upload/download를 검증한다.
-- [ ] DEV에서 7일간 queue/conflict/reject/gap/full-refresh/egress 지표를 수집한다.
-- [ ] 별도 복구 프로젝트에서 DB export와 `place-photos` Storage export를 함께 복구한다.
-- [ ] Production migration history를 독립 감사하고 pre-deploy backup을 만든다.
-- [ ] 최소 Mobile 지원 버전과 단계적 traffic rollout 책임자를 지정한다.
+| ID | 차단 항목 | 현재 상태 | 실행 문서 |
+|---|---|---|---|
+| B-01 | DEV historical migration 9건 fingerprint와 ledger repair | 미실행 | [TASK-057 Runbook](../runbooks/TASK-057-production-validation-runbook.md#2단계-dev-migration-ledger-정합화) |
+| B-02 | DEV에 `20260723000002` 정상 적용과 원격 안전 smoke | 미실행 | 같은 Runbook 3단계 |
+| B-03 | 초대·권한·계정·템플릿·asset P0 자동화 공백 보완 | 미구현 | [통합 테스트 케이스](../test-plans/TASK-057-production-integration-test-cases.md#추가할-자동-테스트) |
+| B-04 | Web/Mobile·Mobile/Mobile 실기기 매트릭스 | 미실행 | 같은 테스트 문서의 필수 플랫폼 매트릭스 |
+| B-05 | DEV 7일 운영 지표 | 미실행 | TASK-057 Runbook 5단계 |
+| B-06 | DB와 `place-photos` Storage 복구 rehearsal | 미실행 | TASK-057 Runbook 6단계 |
+| B-07 | Production migration history 독립 감사와 backup | 미실행 | TASK-057 Runbook 7단계 |
+| B-08 | 최소 Mobile 버전, rollout, on-call 책임자 | 미지정 | [마스터 계획](TASK-057-production-final-validation-plan.md#역할과-책임) |
+| B-09 | 환경변수·OAuth·이메일·push·법무·alert 운영 준비 | 미완료 | TASK-057 Runbook 7단계 |
+| B-10 | 내부→5%→25%→100% 단계적 rollout | 미실행 | TASK-057 Runbook 8단계 |
+| B-11 | asset cleanup scheduler·secret, 경로 일치, thumbnail network 검증 | 미완료 | `TASK-058`, `TASK-060`, `TASK-063` |
 
 ## 판정 규칙
 
-모든 차단 항목에 실행자, 시각, project ref, release SHA, 원시 결과 링크가 기록되어야 DEV
-GO로 바뀐다. DEV 7일 관찰 후 오류율 기준을 모두 만족해야 Production GO로 바뀐다. Legacy
-삭제는 별도 승인 대상이며 Production GO와 자동으로 연동되지 않는다.
+- 각 항목에는 실행자, 검토자, 시각, project ref, release SHA, 원시 결과 링크가 필요하다.
+- 데이터 손실, 계정 간 노출, 권한 우회, duplicate canonical row, 복구 실패는 한 건도 허용하지 않는다.
+- 필수 자동 테스트와 수동 P0/P1은 100% PASS여야 한다.
+- DEV 7일 관측에서 임계치를 넘으면 수정 release로 기간을 다시 시작한다.
+- Legacy 삭제는 Production GO와 별개이며 별도 destructive migration과 승인이 필요하다.
+
+## 상태 변경 권한
+
+Release manager와 DB operator가 증적을 함께 검토한 뒤에만 Gate 상태를 변경한다. Production migration
+실행자 한 명이 단독으로 GO를 선언할 수 없다.

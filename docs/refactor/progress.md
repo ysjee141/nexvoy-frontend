@@ -4,6 +4,21 @@
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
 
+## 2026-07-23 TASK-057 Production 최종 검증 문서화 완료
+
+- TASK-056의 남은 차단 항목을 `G0`~`G7`과 `B-01`~`B-11`로 재구성했다.
+- 현재 자동화와 초대·role/revoke·계정 격리·템플릿·asset의 P0 자동화 공백을 구분했다.
+- Web/Web, Web/Mobile, Mobile/Mobile과 동일 계정 새 기기의 필수 플랫폼 매트릭스를 정의했다.
+- 인증, 전체 도메인 CRUD, 초대·권한, offline·Realtime·충돌, asset, Mobile lifecycle의 수동 케이스와
+  정량 합격 기준을 작성했다.
+- Local 전용 service-role E2E와 DEV authenticated smoke의 실행 경계를 분리했다.
+- DEV migration ledger, 7일 관측, DB+Storage 복구, Production preflight, 단계적 rollout과 증적 Runbook을 작성했다.
+- TASK-056 비용·Go/No-Go·rollout 문서와 `docs/production-readiness.md`를 현재 authority-only 기준의 한글 문서로 정리했다.
+- asset cleanup scheduler·secret, Web/Mobile path 일치, thumbnail network 확인을 별도 차단 항목으로 승격했다.
+- 실행 범위를 `TASK-058` 자동화, `TASK-059` DEV migration, `TASK-060` 실기기, `TASK-061` 관측,
+  `TASK-062` 복구, `TASK-063` Production 출시로 분리했다.
+- 현재 상태는 코드 Gate PASS, DEV/Production NO-GO다. 다음 단계는 `TASK-058`이다.
+
 ## 2026-07-17 아키텍처 재결정
 
 `PRODUCT-DATA-TRANSPORT-COST-EVALUATION.md`의 권장 결정을 승인하고 `ADR-015`를 채택했다.

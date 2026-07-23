@@ -1,90 +1,131 @@
-# Closed Beta Production Readiness
+# OnVoy Production 출시 준비
 
 ## 결론
 
-온여정(OnVoy) Closed Beta는 **Web production, Expo/EAS internal distribution, Supabase Local-first backend, monitoring, legal, rollback**이 모두 준비된 뒤 시작한다. 이 문서는 실제 배포 실행서가 아니라 go/no-go 판단 기준이다. 값이 들어간 secret은 문서에 기록하지 않고 `docs/runbooks/secret-inventory.md`의 위치/소유자 기준으로만 관리한다.
+현재 OnVoy는 **Production NO-GO**다. Authority-only 제품 코드와 로컬 자동 Gate는 통과했지만 원격
+migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 관측, DB와 Storage 복구, 운영·법무·출시
+책임 증적이 남아 있다. 최종 판정은 [TASK-057 마스터 계획](refactor/reports/TASK-057-production-final-validation-plan.md)의
+`G0`~`G7`을 따른다.
 
-## Go/No-Go Gate
+## 기준 문서
 
-| Gate | Go 기준 | Evidence |
-| --- | --- | --- |
-| Product path | document-primary Web/Mobile smoke PASS | `docs/qa/local-first-integration-runbook.md` 결과 표 |
-| Web | Vercel Preview와 Production env가 일치하고 `pnpm build` PASS | PR/배포 로그 |
-| Mobile | Android Internal Testing 또는 iOS TestFlight 설치 smoke PASS | EAS build URL, 기기/OS 기록 |
-| Supabase | migration list 확인, RLS/RPC smoke PASS, 배포 전 backup snapshot 생성 | Supabase dashboard/export 기록 |
-| Monitoring | Sentry/GA/Firebase/Discord/Supabase/Vercel alert test PASS | alert test 로그 |
-| Legal | 약관/개인정보 처리방침 URL, store privacy label 초안 준비 | URL, store console draft |
-| Rollback | Web/Mobile/Supabase/Local-first rollback owner와 절차 확인 | `docs/runbooks/deployment-rollback.md` |
+| 목적 | 문서 |
+|---|---|
+| 현재 Go/No-Go | [TASK-056 Production 출시 판정](refactor/reports/TASK-056-production-go-no-go.md) |
+| 전체 실행 계획 | [TASK-057 Production 최종 검증 계획](refactor/reports/TASK-057-production-final-validation-plan.md) |
+| 테스트 케이스 | [TASK-057 Production 통합 테스트](refactor/test-plans/TASK-057-production-integration-test-cases.md) |
+| 실행·증적·출시 | [TASK-057 Runbook](refactor/runbooks/TASK-057-production-validation-runbook.md) |
+| 비용 기준 | [TASK-056 초기 Production 비용](refactor/reports/TASK-056-initial-production-cost-baseline.md) |
 
-## Required Verification
+실제 실행은 `TASK-058` 자동화, `TASK-059` DEV migration, `TASK-060` 실기기, `TASK-061` 관측,
+`TASK-062` 복구, `TASK-063` Production 출시 순서로 진행한다.
 
-| 명령/절차 | 목적 |
-| --- | --- |
-| `pnpm --filter @nexvoy/core test` | Local-first, sync, permission 순수 로직 |
-| `pnpm typecheck` | shared packages + mobile 타입 정합성 |
-| `pnpm build` | Vercel production build |
-| `pnpm build:mobile` | Expo export/Metro bundle 정합성 |
-| `pnpm --filter nexvoy-web test:e2e -- observability-safety.spec.ts` | 관측 payload 안전성 |
-| `pnpm --filter nexvoy-web test:e2e -- local-first-product.spec.ts` | 로컬 Supabase 기반 Web 권한/reload E2E |
-| `docs/qa/local-first-integration-runbook.md` | Web/Web, Web/Mobile, Mobile/Mobile, backup restore, offline reconnect |
+## 목표 아키텍처
 
-## Web/Vercel Checklist
+- Supabase normalized row가 committed data의 최종 권위다.
+- Web IndexedDB와 Mobile SQLite는 account-scoped cache와 durable outbox를 제공한다.
+- Remote write는 authenticated batch RPC를 사용한다.
+- Realtime은 작은 revision invalidation만 전달한다.
+- Asset은 Storage/CDN으로 직접 전달하고 command에는 metadata만 포함한다.
+- WebRTC/P2P, Yjs, document key, encrypted backup은 Production 제품 경로에 없다.
 
-| 항목 | 기준 |
-| --- | --- |
-| Build | `vercel.json`의 `pnpm --filter nexvoy-web build`, output `apps/web/.next` 유지 |
-| Env | `NEXT_PUBLIC_APP_URL`, Supabase, Kakao, Google Maps, GA/Sentry, Resend, Discord 설정 |
-| Domain | production domain SSL, Kakao OAuth redirect, Supabase Auth redirect URL 일치 |
-| Preview | PR preview에서 login, trip create, invite, document-primary smoke 확인 |
-| API hardening | `/api/invite`, `/api/feedback`, `/api/places/photo/store` rate limiting은 Closed Beta risk item으로 추적 |
+## 출시 Gate
 
-## Mobile/EAS Checklist
+| Gate | GO 기준 | 현재 상태 |
+|---|---|---|
+| G0 문서·책임 | 문서 버전과 Release/DB/QA/Web/Mobile/on-call 담당자 지정 | NO-GO |
+| G1 로컬 자동화 | P0 자동화 공백 보완, 전체 test/typecheck/build PASS | 부분 PASS |
+| G2 DEV schema | migration ledger drift 0, TASK-056 migration 정상 적용 | NO-GO |
+| G3 DEV 제품 | 수동 P0/P1과 필수 플랫폼 조합 100% PASS | NO-GO |
+| G4 관측 | 연속 7일 무사고와 지표 임계치 충족 | NO-GO |
+| G5 복구 | DB+Storage 격리 복구와 RTO/RPO 검증 | NO-GO |
+| G6 Production preflight | 독립 history 감사, backup, 환경·법무·alert 승인 | NO-GO |
+| G7 Rollout | 내부→5%→25%→100% 단계별 Hold 통과 | NO-GO |
 
-| 항목 | 기준 |
-| --- | --- |
-| App identity | `apps/mobile/app.json` name `온여정`, scheme `onvoy`, id `xyz.nexvoy.app` |
-| Build profiles | `apps/mobile/eas.json`의 `development`, `preview`, `production` 사용 |
-| Android | Play Console Internal Testing draft, package `xyz.nexvoy.app`, permission disclosure 작성 |
-| iOS | TestFlight draft, bundle id `xyz.nexvoy.app`, background processing/privacy disclosure 작성 |
-| Firebase | `google-services.json`/`GoogleService-Info.plist`는 local secret 파일로만 관리 |
-| Maps | `EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`가 app config에 주입되는지 EAS build log에서 확인 |
+## Web/Vercel 준비
 
-## Supabase Checklist
+| 항목 | GO 기준 | 증적 |
+|---|---|---|
+| Build | `pnpm build` PASS, warning 검토 | CI/build log |
+| Environment | Production env inventory와 owner 확인 | 값이 아닌 key·소유자 목록 |
+| Domain | SSL, canonical URL, redirect URL 일치 | 브라우저와 provider 설정 |
+| OAuth | Supabase, Google, Kakao callback 검증 | 전용 계정 로그인 영상 |
+| API | invite, feedback, photo, timezone, exchange의 auth/rate limit/error 처리 | API smoke와 log |
+| Browser | 지원 Chrome/Safari와 mobile browser 핵심 smoke | 플랫폼 결과표 |
+| Rollback | 직전 authority-only Vercel deployment 전환 가능 | rehearsal 기록 |
 
-| 항목 | 기준 |
-| --- | --- |
-| Migration inventory | `supabase/migrations/` 적용 목록과 운영 DB 목록 비교 |
-| Legacy patch SQL | migration 밖 `supabase/fix_*.sql`, `consolidated_patch.sql` 적용 여부 별도 기록 |
-| Backup | 운영 migration 전 Supabase backup snapshot 생성 |
-| RLS/RPC smoke | document registry, members, keys, backup updates, signaling topic RPC 검증 |
-| Edge Functions | `handle-kakao-oauth`, `ice-servers`, push/notification functions secret 설정 |
+## Mobile/EAS 준비
 
-## Monitoring & Incident Readiness
+| 항목 | GO 기준 | 증적 |
+|---|---|---|
+| App identity | 이름 `온여정`, scheme `onvoy`, package/bundle `xyz.nexvoy.app` | build metadata |
+| Build | Android/iOS Production profile 성공 | EAS build URL |
+| Preview | Metro 없이 실제 기기 실행 | 설치 영상, Logcat/device log |
+| Environment | Supabase, Maps, Firebase가 build time에 정확히 주입 | secret 없는 build 검토 기록 |
+| Deep link | OAuth와 invitation link가 앱으로 연결 | Android/iOS 영상 |
+| Upgrade | SQLite schema와 cache/outbox 보존 | upgrade case 결과 |
+| Store | Internal/TestFlight, privacy label, 권한 설명, 심사 metadata 준비 | Console draft |
+| 최소 버전 | 직전 안정 authority-only build 이상을 강제 | 정책과 적용 화면 |
 
-| 채널 | 확인 |
-| --- | --- |
-| Sentry | Web/Mobile DSN, release/environment tag, critical alert route |
-| GA4/Firebase | beta funnel, app open, auth, trip create, invite/share, local-first events |
-| Discord | `/api/feedback` webhook delivery test |
-| Supabase | DB CPU, connection count, auth error, storage usage 확인 |
-| Vercel/EAS | deploy/build failure notification 수신자 지정 |
+## Supabase 준비
 
-## Legal & Store Readiness
+| 항목 | GO 기준 | 증적 |
+|---|---|---|
+| Project | DEV/Production ref 교차 확인 | Release ticket |
+| Migration | local/remote history 일치, dry-run 대상 0건 | 전·후 migration list |
+| RLS/RPC | owner/editor/viewer/revoked/outsider 정책 PASS | SQL과 제품 smoke |
+| Realtime | private invalidation과 gap recovery PASS | Supabase report와 client log |
+| Storage | 플랫폼 공통 path, RLS, thumbnail, orphan cleanup scheduler PASS | object manifest, scheduler와 network log |
+| Backup | Managed DB backup과 별도 Storage export | 위치·시각·checksum |
+| Recovery | 격리 프로젝트 복구와 앱 smoke PASS | RTO/RPO 보고서 |
+| Capacity | Usage/Realtime/egress 월 예상 70% 미만 | 7일 관측 보고서 |
 
-| 항목 | 기준 |
-| --- | --- |
-| Terms/Privacy | `ONVOY_TERMS_DOCUMENT`이 Web/Mobile signup/profile에서 접근 가능 |
-| Public URL | store console에 넣을 약관/개인정보 URL 준비 |
-| Data safety | Auth email, nickname, trip content, analytics, crash logs, push token, photos 수집 여부 정리 |
-| Age rating | 만 14세 미만 이용 제한 정책 결정 |
-| Third parties | Supabase, Vercel, Google, Firebase, Sentry, Resend, Discord 위탁/제3자 항목 확인 |
+## 외부 연동과 운영 관측
 
-## Release Decision
+| 영역 | GO 기준 |
+|---|---|
+| 이메일 | Resend 발신 domain, invitation delivery, bounce/error 확인 |
+| Push/알림 | Android/iOS token, 일정 알림 예약·취소, 권한 거부 UX 확인 |
+| 지도/장소 | Google Maps/Places key 제한과 quota, 오류 fallback 확인 |
+| Analytics | GA4/Firebase event 수신, raw ID·콘텐츠·secret 0건 |
+| Crash | Web/Mobile release/environment tag와 critical alert 수신 확인 |
+| Feedback | Discord 또는 지원 채널 delivery와 개인정보 마스킹 확인 |
+| Supabase | DB CPU, connection, Auth error, Storage, Realtime alert owner 지정 |
+| Vercel/EAS | deploy/build failure 알림 수신자 지정 |
 
-Closed Beta를 시작하려면 다음을 모두 만족해야 한다.
+## 보안·개인정보·법무
 
-1. 이 문서의 Go/No-Go Gate가 모두 Go다.
-2. `docs/runbooks/closed-beta-runbook.md`의 daily operation owner가 지정됐다.
-3. `docs/runbooks/deployment-rollback.md`의 rollback owner와 연락 경로가 지정됐다.
-4. unresolved Critical/Major bug가 없다.
-5. unresolved legal/store blocker가 없다.
+| 항목 | GO 기준 |
+|---|---|
+| 약관/개인정보 | Web/Mobile과 store에서 접근 가능한 Production URL |
+| 수집 항목 | 이메일, 닉네임, 여행 내용, 사진, push token, analytics, crash log 명시 |
+| 제3자/위탁 | Supabase, Vercel, Google, Firebase, Resend, Discord 등 반영 |
+| 탈퇴/삭제 | 계정 탈퇴, canonical row 처리, local namespace 삭제 정책 검증 |
+| 연령 정책 | 만 14세 미만 처리와 store age rating 결정 |
+| Secret | 값은 문서·git·log에 없고 위치·owner·rotation만 관리 |
+| 권한 검토 | RLS/RPC/Storage policy와 service role 사용 경계 검토 |
+| Incident | 신고, triage, 사용자 통지, rollback 책임과 연락망 준비 |
+
+## 운영 준비
+
+- Support 문의 접수와 P0/P1 escalation 경로를 정한다.
+- Release manager와 on-call 담당자가 단계별 GO/NO-GO 회의 시간을 정한다.
+- 데이터 incident 발생 시 쓰기 동결, 영향 범위 확인, backup 보호, 사용자 통지 순서를 rehearsal한다.
+- 월별 비용·quota와 주간 sync 품질 지표 검토 owner를 지정한다.
+- PITR 도입 조건과 legacy 물리 삭제 조건을 별도 Gate로 유지한다.
+
+## 즉시 NO-GO 조건
+
+1. 데이터 손실·변질 또는 duplicate canonical row가 발생한다.
+2. 계정 간 cache, row, Realtime, asset이 노출된다.
+3. viewer, revoked, outsider가 허용되지 않은 작업을 수행한다.
+4. migration history drift 또는 미승인 object 변경이 있다.
+5. DB와 Storage 복구가 같은 기준 시점으로 완료되지 않는다.
+6. 미해결 P0/P1 결함이 있다.
+7. Rollback과 on-call 담당자가 지정되지 않았다.
+8. 약관·개인정보·store 필수 항목이 승인되지 않았다.
+
+## 최종 승인
+
+Release manager, DB operator, QA, Web, Mobile, Security/Privacy, on-call 담당자가 각 Gate의 증적을 확인한다.
+Production migration 실행자와 최종 GO 승인자는 분리한다. 모든 Gate가 GO일 때만 100% rollout을 승인한다.

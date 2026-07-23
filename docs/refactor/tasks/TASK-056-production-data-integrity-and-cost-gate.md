@@ -1,4 +1,4 @@
-# TASK-056: Production Data Integrity and Cost Gate
+# TASK-056: Production 데이터 정합성 및 비용 Gate
 
 - 상태: 구현 완료 (DEV/Production 운영 gate NO-GO)
 - Issue: [#368](https://github.com/ysjee141/nexvoy-frontend/issues/368)

@@ -1,4 +1,47 @@
-# Walkthrough: TASK-056 Production Integrity and Cost Gate
+# Walkthrough: TASK-057 Production 최종 검증 계획
+
+## 결과
+
+Issue [#370](https://github.com/ysjee141/nexvoy-frontend/issues/370)에 따라 TASK-056 이후 남은 작업을
+Production 출시 Gate, 통합 테스트, 증적, 배포·복구 Runbook으로 재구성했다. 현재 판정은 코드 Gate
+PASS, DEV/Production NO-GO이며, 실제 실행은 `TASK-058`~`TASK-063`으로 분리했다.
+
+```mermaid
+flowchart LR
+    Local["G1 로컬 자동화"] --> Dev["G2 DEV migration"]
+    Dev --> Matrix["G3 실기기 통합"]
+    Matrix --> Observe["G4 7일 관측"]
+    Observe --> Restore["G5 DB+Storage 복구"]
+    Restore --> Preflight["G6 Production 사전 점검"]
+    Preflight --> Rollout["G7 내부→5%→25%→100%"]
+```
+
+## 작성 문서
+
+- `TASK-057-production-final-validation-plan.md`: 차단 항목, 역할, Gate, 정량 GO/NO-GO 기준
+- `TASK-057-production-integration-test-cases.md`: 현재·추가 자동화, 플랫폼 매트릭스, 수동 P0/P1 케이스
+- `TASK-057-production-validation-runbook.md`: Local/DEV/Recovery/Production 실행 순서와 증적 템플릿
+- `docs/production-readiness.md`: Web, Mobile, Supabase, 외부 연동, 보안·법무·운영을 포함한 상위 출시 기준
+
+## 핵심 결정
+
+- 현재 Playwright와 SQL smoke는 Local 전용으로 유지한다. Service role guard를 우회해 DEV에 실행하지 않는다.
+- DEV 원격 검증은 authenticated test account와 자체 `QA-` fixture만 사용하는 안전한 smoke로 분리한다.
+- 초대, role/revoke, 계정 격리, 템플릿, asset 권한 자동화를 P0로 추가한 뒤 실기기 Gate를 시작한다.
+- asset cleanup scheduler와 Web/Mobile object path 불일치를 Production 차단 항목으로 관리한다.
+- DB managed backup과 logical export는 Storage object byte를 포함하지 않으므로 `place-photos`를 별도 복구한다.
+- TASK-055 이후 롤백은 직전 authority-only client와 비파괴 function 복원만 사용한다.
+
+## 다음 작업
+
+1. `TASK-058`에서 `NEW-A01`~`NEW-A13` P0 자동 테스트를 구현한다.
+2. `TASK-059`에서 DEV historical migration 9건을 fingerprint하고 ledger를 정합화한다.
+3. `TASK-060`에서 TASK-059로 적용된 schema를 기준으로 전체 실기기·asset 매트릭스를 실행한다.
+4. `TASK-061`·`TASK-062`의 7일 관측과 복구 후 `TASK-063` Production preflight를 진행한다.
+
+---
+
+# Walkthrough: TASK-056 Production 데이터 정합성 및 비용 Gate
 
 ## 결과
 

@@ -124,7 +124,14 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-053-membership-invitation-without-document-keys.md` | 구현 완료 | keyless invitation accept, role/revoke revision 전파, revoke cache/outbox purge, Issue #362, PR [#363](https://github.com/ysjee141/nexvoy-frontend/pull/363) |
 | `TASK-054-direct-asset-storage-and-delivery.md` | 구현 완료 | width suffix immutable path, list thumbnail, asset metadata registry, orphan cleanup, Issue #364, PR [#365](https://github.com/ysjee141/nexvoy-frontend/pull/365) |
 | `TASK-055-retire-yjs-p2p-encrypted-backup.md` | 구현 완료 | Yjs/P2P/key/custom backup runtime 제거와 V1 reset, Issue #366, PR #367 |
-| `TASK-056-production-data-integrity-and-cost-gate.md` | 구현 완료, 운영 gate 대기 | 코드 gate PASS; DEV/Production/legacy 삭제 NO-GO |
+| `TASK-056-production-data-integrity-and-cost-gate.md` | 구현 완료, 운영 gate 대기 | 코드 gate PASS; DEV/Production/legacy 삭제 NO-GO, PR [#369](https://github.com/ysjee141/nexvoy-frontend/pull/369) |
+| `TASK-057-production-final-validation.md` | 문서화 완료 | Production 마스터 Gate, 자동·수동 통합 테스트, 증적·출시 Runbook, Issue [#370](https://github.com/ysjee141/nexvoy-frontend/issues/370) |
+| `TASK-058-production-p0-integration-automation.md` | 대기 | 초대·권한·계정·템플릿·asset·재시도 P0 자동화 |
+| `TASK-059-dev-migration-production-gate.md` | 대기 | DEV migration ledger 정합화, TASK-056 정상 적용, remote-safe smoke |
+| `TASK-060-cross-platform-device-validation.md` | 대기 | Web·Android·iOS 실기기, 다중 계정, asset 전체 회귀 |
+| `TASK-061-dev-stability-cost-soak.md` | 대기 | DEV 연속 7일 안정성·비용 관측 |
+| `TASK-062-disaster-recovery-rehearsal.md` | 대기 | DB·Storage 격리 복구와 RTO/RPO 검증 |
+| `TASK-063-production-preflight-and-rollout.md` | 대기 | Production 사전 점검과 내부→5%→25%→100% 출시 |
 
 ## 이전 단계 이력
 
@@ -222,6 +229,16 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-054-direct-asset-storage-and-delivery.md`: asset 직접 전송과 egress 최적화
 - [x] `TASK-055-retire-yjs-p2p-encrypted-backup.md`: legacy runtime 제거와 데이터 reset
 - [x] `TASK-056-production-data-integrity-and-cost-gate.md`: Production 코드 gate와 rollout 문서 (운영 증적 대기)
+- [x] `TASK-057-production-final-validation.md`: Production 최종 검증 기준, 테스트 명세, Runbook 문서화
+
+### Phase 10: Production Final Validation
+
+- [ ] `TASK-058-production-p0-integration-automation.md`: Production P0 통합 테스트 자동화
+- [ ] `TASK-059-dev-migration-production-gate.md`: DEV migration 정합화와 원격 Gate
+- [ ] `TASK-060-cross-platform-device-validation.md`: Web·Mobile 실기기 통합 검증
+- [ ] `TASK-061-dev-stability-cost-soak.md`: DEV 안정성·비용 7일 관측
+- [ ] `TASK-062-disaster-recovery-rehearsal.md`: DB·Storage 재해 복구 rehearsal
+- [ ] `TASK-063-production-preflight-and-rollout.md`: Production 사전 점검과 단계적 출시
 
 ## 권장 시작 순서
 
@@ -239,7 +256,15 @@ flowchart TD
     T52 --> T54
     T53 --> T55["TASK-055 legacy retirement"]
     T54 --> T55
-    T55 --> T56["TASK-056 Production gate"]
+    T55 --> T56["TASK-056 Production 코드 gate"]
+    T56 --> T57["TASK-057 최종 검증 문서화"]
+    T57 --> T58["TASK-058 P0 자동화"]
+    T58 --> T59["TASK-059 DEV migration"]
+    T59 --> T60["TASK-060 실기기 통합"]
+    T60 --> T61["TASK-061 7일 관측"]
+    T60 --> T62["TASK-062 복구 rehearsal"]
+    T61 --> T63["TASK-063 Production 출시"]
+    T62 --> T63
 ```
 
 1. `TASK-046`과 `TASK-047`로 server와 shared contract를 먼저 고정한다.
@@ -248,3 +273,6 @@ flowchart TD
 4. `TASK-053`과 `TASK-054`는 두 플랫폼 cutover 이후 병렬 진행할 수 있다.
 5. `TASK-055`는 신규 경로 검증 전 실행하지 않는다.
 6. `TASK-056`에서 Initial Production go/no-go를 판정한다.
+7. `TASK-057`에서 최종 검증 기준과 Runbook을 확정한다.
+8. `TASK-058`~`TASK-060`에서 자동화, DEV migration, 실기기 Gate를 순서대로 통과한다.
+9. `TASK-061` 관측과 `TASK-062` 복구를 병렬 완료한 뒤 `TASK-063`에서 단계적 출시를 승인한다.
