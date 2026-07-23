@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import {
   applyOptimisticAuthorityCommandsToBundle,
+  type AuthorityApplyResult,
   type AuthorityCommand,
   type AuthorityOutboxRecord,
   type AuthorityResourceType,
@@ -80,32 +81,40 @@ test('canonical acknowledgement removes acked commands and rebases pending proje
     now: T2,
   })
   await store.markSending(ACCOUNT_A, [first.operationId], T2)
-  await store.applyAcknowledgement(
-    ACCOUNT_A,
-    {
-      status: 'applied',
-      resourceType: 'trip',
-      resourceId: TRIP_ID,
-      revision: 2,
-      serverUpdatedAt: T2,
-      acknowledgedOperationIds: [first.operationId],
-      changes: [{
-        operationId: first.operationId,
-        entityType: 'plan',
-        entityId: first.entityId,
-        action: 'upsert',
-        row: { id: first.entityId, title: 'canonical', version: 1, updated_at: T2 },
-      }],
-    },
-    T2,
-  )
+  const acknowledgement: AuthorityApplyResult = {
+    status: 'applied',
+    resourceType: 'trip',
+    resourceId: TRIP_ID,
+    revision: 2,
+    serverUpdatedAt: T2,
+    acknowledgedOperationIds: [first.operationId],
+    changes: [{
+      operationId: first.operationId,
+      entityType: 'plan',
+      entityId: first.entityId,
+      action: 'upsert',
+      row: { id: first.entityId, title: 'canonical', version: 1, updated_at: T2 },
+    }],
+  }
+  await store.applyAcknowledgement(ACCOUNT_A, acknowledgement, T2)
 
-  const outbox = await store.listReadyOutbox(ACCOUNT_A, T2, 10)
+  let outbox = await store.listReadyOutbox(ACCOUNT_A, T2, 10)
   assert.equal(outbox.length, 1)
   assert.equal(outbox[0]?.operationId, second.operationId)
   assert.equal(outbox[0]?.baseRevision, 2)
-  const bundle = await store.getResource(ACCOUNT_A, 'trip', TRIP_ID)
+  let bundle = await store.getResource(ACCOUNT_A, 'trip', TRIP_ID)
   assert.equal(bundle?.revision, 2)
+  assert.deepEqual(
+    (bundle?.data.plans as Array<{ id: string }>).map((plan) => plan.id).sort(),
+    ['plan-1', 'plan-2'],
+  )
+
+  await store.applyAcknowledgement(ACCOUNT_A, acknowledgement, T2)
+  outbox = await store.listReadyOutbox(ACCOUNT_A, T2, 10)
+  bundle = await store.getResource(ACCOUNT_A, 'trip', TRIP_ID)
+  assert.equal(outbox.length, 1)
+  assert.equal(outbox[0]?.operationId, second.operationId)
+  assert.equal(outbox[0]?.baseRevision, 2)
   assert.deepEqual(
     (bundle?.data.plans as Array<{ id: string }>).map((plan) => plan.id).sort(),
     ['plan-1', 'plan-2'],

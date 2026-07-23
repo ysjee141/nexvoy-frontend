@@ -14,6 +14,8 @@
     "start": "pnpm --filter nexvoy-web start",
     "lint:mobile": "pnpm --filter nexvoy-app lint",
     "typecheck": "pnpm --filter @nexvoy/types typecheck && pnpm --filter @nexvoy/design-tokens typecheck && pnpm --filter @nexvoy/core typecheck && pnpm --filter nexvoy-app typecheck",
+    "test:production:p0": "bash scripts/test-production-p0-local.sh",
+    "test:sql:local": "bash scripts/test-local-supabase-sql.sh",
     "test:e2e": "pnpm --filter nexvoy-web test:e2e",
     "test:e2e:ui": "pnpm --filter nexvoy-web test:e2e:ui",
     "test:e2e:report": "pnpm --filter nexvoy-web exec playwright show-report"

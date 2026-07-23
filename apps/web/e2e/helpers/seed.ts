@@ -39,6 +39,16 @@ function getServiceClient(): SupabaseClient {
   return cachedClient;
 }
 
+export function createAuthenticatedTestClient(user: TestUser): SupabaseClient {
+  const url = getEnv('NEXT_PUBLIC_SUPABASE_URL');
+  const anonKey = getEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  assertLocalSupabaseUrl(url);
+  return createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${user.accessToken}` } },
+  });
+}
+
 /** YYYY-MM-DD 형식으로 오늘 기준 offset일 후 날짜를 반환 */
 function dateOffset(days: number): string {
   const d = new Date();
@@ -151,17 +161,118 @@ export async function seedAuthorityDocumentMember(
   documentId: string,
   user: TestUser,
   role: 'editor' | 'viewer',
-): Promise<void> {
+): Promise<{ id: string }> {
   const client = getServiceClient();
-  const { error } = await client.from('document_members').upsert({
-    document_id: documentId,
-    user_id: user.id,
-    invited_email: user.email,
-    role,
-    status: 'accepted',
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'document_id,user_id' });
-  if (error) throw new Error(`seedAuthorityDocumentMember 실패: ${error.message}`);
+  const { data, error } = await client
+    .from('document_members')
+    .upsert({
+      document_id: documentId,
+      user_id: user.id,
+      invited_email: user.email,
+      role,
+      status: 'accepted',
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'document_id,user_id' })
+    .select('id')
+    .single();
+  if (error || !data) {
+    throw new Error(`seedAuthorityDocumentMember 실패: ${error?.message ?? '데이터 없음'}`);
+  }
+  return { id: data.id as string };
+}
+
+export interface SeededAuthorityInvitation {
+  id: string;
+  token: string;
+  inviteCode: string;
+}
+
+export async function createAuthorityInvitation(
+  owner: TestUser,
+  documentId: string,
+  input: {
+    role?: 'editor' | 'viewer';
+    targetEmail?: string | null;
+    expiresAt?: string | null;
+    maxUses?: number | null;
+  } = {},
+): Promise<SeededAuthorityInvitation> {
+  const client = createAuthenticatedTestClient(owner);
+  const { data, error } = await client.rpc('create_document_invitation_link', {
+    p_document_id: documentId,
+    p_role: input.role ?? 'editor',
+    p_expires_at: input.expiresAt ?? null,
+    p_max_uses: input.maxUses ?? 1,
+    p_target_email: input.targetEmail ?? null,
+    p_destination: 'TASK-058 초대 검증',
+    p_start_date: dateOffset(1),
+    p_end_date: dateOffset(2),
+  });
+  if (error) throw new Error(`createAuthorityInvitation 실패: ${error.message}`);
+  const row = data as { id?: unknown; token?: unknown; invite_code?: unknown } | null;
+  if (
+    !row ||
+    typeof row.id !== 'string' ||
+    typeof row.token !== 'string' ||
+    typeof row.invite_code !== 'string'
+  ) {
+    throw new Error('createAuthorityInvitation 응답 형식이 올바르지 않습니다.');
+  }
+  return { id: row.id, token: row.token, inviteCode: row.invite_code };
+}
+
+export async function setAuthorityDocumentMemberRole(
+  owner: TestUser,
+  memberId: string,
+  role: 'editor' | 'viewer',
+): Promise<void> {
+  const { error } = await createAuthenticatedTestClient(owner).rpc('set_document_member_role', {
+    p_member_id: memberId,
+    p_role: role,
+  });
+  if (error) throw new Error(`setAuthorityDocumentMemberRole 실패: ${error.message}`);
+}
+
+export async function revokeAuthorityDocumentMember(
+  owner: TestUser,
+  memberId: string,
+): Promise<void> {
+  const { error } = await createAuthenticatedTestClient(owner).rpc('revoke_document_member', {
+    p_member_id: memberId,
+  });
+  if (error) throw new Error(`revokeAuthorityDocumentMember 실패: ${error.message}`);
+}
+
+export async function getAuthorityDocumentMember(
+  documentId: string,
+  userId: string,
+): Promise<{ id: string; role: string; status: string } | null> {
+  const { data, error } = await getServiceClient()
+    .from('document_members')
+    .select('id, role, status')
+    .eq('document_id', documentId)
+    .eq('user_id', userId)
+    .maybeSingle();
+  if (error) throw new Error(`getAuthorityDocumentMember 실패: ${error.message}`);
+  return (data as { id: string; role: string; status: string } | null) ?? null;
+}
+
+export async function cleanupPlacePhotoAssets(objectPaths: string[]): Promise<void> {
+  if (objectPaths.length === 0) return;
+  const client = getServiceClient();
+  const { error: storageError } = await client.storage
+    .from('place-photos')
+    .remove(objectPaths);
+  if (storageError) {
+    throw new Error(`cleanupPlacePhotoAssets storage 정리 실패: ${storageError.message}`);
+  }
+  const { error: registryError } = await client
+    .from('trip_asset_objects')
+    .delete()
+    .in('object_path', objectPaths);
+  if (registryError) {
+    throw new Error(`cleanupPlacePhotoAssets registry 정리 실패: ${registryError.message}`);
+  }
 }
 
 export async function seedAuthorityPlan(

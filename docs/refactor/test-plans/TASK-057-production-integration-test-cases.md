@@ -124,9 +124,9 @@ docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d po
   < supabase/tests/task056_production_gate.sql
 ```
 
-## 추가할 자동 테스트
+## 자동화 테스트 목록
 
-다음 테스트는 별도 구현 PR로 추가한다. P0를 닫기 전 `G1`은 GO가 아니다.
+`NEW-A01`~`NEW-A13`은 TASK-058에서 구현했다. PR CI artifact까지 PASS해야 `G1`을 닫을 수 있다.
 
 | ID | 우선순위 | 제안 위치 | 시나리오 | 핵심 검증 |
 |---|---|---|---|---|
@@ -137,7 +137,7 @@ docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d po
 | NEW-A05 | P0 | 같은 파일 | offline editor revoke 후 reconnect | stale outbox 거부, cache/outbox purge, 재시도 중단 |
 | NEW-A06 | P0 | `account-isolation.spec.ts` | A 로그아웃→B 로그인→A 재로그인 | A/B cache와 목록 교차 노출 0건 |
 | NEW-A07 | P0 | `template-authority.spec.ts` | 템플릿 CRUD·항목 교체·여행 적용 | template revision과 생성된 준비물 정합성 |
-| NEW-A08 | P0 | `asset-authority.spec.ts` + SQL | owner/editor/viewer/revoked asset 접근 | upload/download/delete RLS와 path 검증 |
+| NEW-A08 | P0 | `asset-authority.spec.ts` + SQL | owner/editor/viewer/revoked 장소 사진 접근 | write/delete·metadata RLS, public provider cache 분류, path 검증 |
 | NEW-A09 | P0 | `server-authority-product.spec.ts` | local 변경 재적용 선택 | 새 expected version으로 exactly-once 수렴 |
 | NEW-A10 | P0 | Core/store tests | flush 중 종료와 stale `sending` 복구 | 중복 row 없이 `retryable` 회수 |
 | NEW-A11 | P0 | SQL | command/resource ID 변조와 outsider RPC | 모든 direct/RPC 우회 차단 |
@@ -233,7 +233,7 @@ docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d po
 |---|---|---|---|
 | MAN-X01 | P0 | owner/editor가 사진 업로드 | binary가 command/RPC body를 통과하지 않고 Storage 직접 저장 |
 | MAN-X02 | P1 | 목록과 상세에서 같은 사진 확인 | 목록은 thumbnail, 상세는 필요한 크기만 요청 |
-| MAN-X03 | P0 | viewer/revoked/D가 upload/download/delete 시도 | 정책에 맞지 않는 모든 작업 차단 |
+| MAN-X03 | P0 | viewer/revoked/D가 upload/delete와 metadata 조회 시도 | write와 trip metadata 차단; public 장소 사진 byte는 공개 분류 유지 |
 | MAN-X04 | P1 | 업로드 취소·사진 교체·여행 삭제 후 cleanup | retention 전 사용 object 유지, orphan만 삭제 |
 | MAN-X05 | P1 | 일정 알림 생성·수정·삭제, 앱 재시작 | OS 알림 예약/취소와 일정 상태 일치 |
 | MAN-X06 | P1 | 초대 이메일 전송과 링크 열기 | DEV 발신 설정, redirect, 만료 UI 정상 |

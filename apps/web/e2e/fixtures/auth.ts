@@ -14,6 +14,8 @@ export type AuthFixtures = {
     owner: TestUser;
     editor: TestUser;
     viewer: TestUser;
+    outsider: TestUser;
+    inviteMismatch: TestUser;
   };
   createAuthenticatedContextFor: (user: TestUser) => Promise<BrowserContext>;
 };
@@ -92,7 +94,9 @@ export const test = base.extend<AuthFixtures>({
     const owner = await createTestUser(`e2e-owner-${runId}@onvoy.local`, MULTI_USER_PASSWORD);
     const editor = await createTestUser(`e2e-editor-${runId}@onvoy.local`, MULTI_USER_PASSWORD);
     const viewer = await createTestUser(`e2e-viewer-${runId}@onvoy.local`, MULTI_USER_PASSWORD);
-    await use({ owner, editor, viewer });
+    const outsider = await createTestUser(`e2e-outsider-${runId}@onvoy.local`, MULTI_USER_PASSWORD);
+    const inviteMismatch = await createTestUser(`e2e-mismatch-${runId}@onvoy.local`, MULTI_USER_PASSWORD);
+    await use({ owner, editor, viewer, outsider, inviteMismatch });
   },
 
   createAuthenticatedContextFor: async ({ browser }, use) => {

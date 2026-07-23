@@ -61,6 +61,7 @@ import {
   PLACE_PHOTO_ORIGINAL_WIDTH,
   PLACE_PHOTO_THUMB_WIDTH,
   derivePlacePhotoThumbUrl,
+  placeIdHash8,
   placePhotoObjectPath,
   type PlacePhotoWidth,
 } from '@nexvoy/core/supabase/storagePaths'
@@ -391,15 +392,6 @@ function PlanCardThumbnailImage({ imageUrl, title }: { imageUrl: string; title: 
       }}
     />
   )
-}
-
-function placeIdHash8(placeId: string): string {
-  let hash = 5381
-  for (let i = 0; i < placeId.length; i += 1) {
-    hash = ((hash << 5) + hash) + placeId.charCodeAt(i)
-    hash |= 0
-  }
-  return Math.abs(hash).toString(16).padStart(8, '0').slice(0, 8)
 }
 
 function decodeHtmlEntity(value: string): string {

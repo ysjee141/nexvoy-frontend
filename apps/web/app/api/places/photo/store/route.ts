@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createHash } from 'crypto'
 import {
   PLACE_PHOTO_ORIGINAL_WIDTH,
   PLACE_PHOTO_THUMB_WIDTH,
+  placeIdHash8,
   placePhotoObjectPath,
   type PlacePhotoWidth,
 } from '@nexvoy/core/supabase/storagePaths'
@@ -60,10 +60,6 @@ async function fetchPhotoReferenceByPlaceId(
         console.error('[photo/store] Places Details fetch failed:', message)
         return null
     }
-}
-
-function placeIdHash8(placeId: string): string {
-    return createHash('sha256').update(placeId).digest('hex').slice(0, 8)
 }
 
 interface FetchedPhoto {

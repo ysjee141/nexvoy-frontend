@@ -57,7 +57,7 @@ flowchart TD
 |---|---|---|---|---|
 | B-01 | DEV historical version 9건 history 미등록 | 각 migration object fingerprint 일치 후 version별 history repair, 최종 drift 0 | 전·후 migration list, function/policy/trigger 정의, 실행자 | G2 |
 | B-02 | TASK-056 객체·grant·history 상태 미확정 | authority helper/internal/wrapper의 `anon` 실행 권한 제거, 전체 fingerprint 일치, `20260723000002` history 등록, authenticated smoke PASS | schema dump, 익명 호출 차단 SQL test, grant 비교, repair 로그, smoke 결과 | G2 |
-| B-03 | 제품 E2E 자동화 공백 | P0 자동화 케이스 전부 구현·PASS | CI URL, 리포트, 실패 재현 링크 | G1 |
+| B-03 | 제품 E2E 자동화 공백 | TASK-058 구현·로컬 PASS, PR CI 증적 대기 | CI URL, 리포트, 실패 재현 링크 | G1 |
 | B-04 | 실기기·다중 플랫폼 미검증 | 필수 플랫폼 조합과 수동 P0/P1 케이스 100% PASS | 기기/OS/build, 영상·스크린샷, network/Logcat | G3 |
 | B-05 | 7일 운영 지표 없음 | 연속 7일 동안 임계치와 무사고 기준 충족 | GA4/Firebase/Supabase 대시보드 export | G4 |
 | B-06 | DB+Storage 복구 미검증 | 격리 프로젝트에서 동일 기준 시점 데이터와 object 복구 검증 | dump/checksum, object manifest, row count, RTO/RPO | G5 |
@@ -65,7 +65,7 @@ flowchart TD
 | B-08 | Mobile 최소 버전·출시 책임 미확정 | 최소 지원 버전과 강제 업데이트 정책, 배포·on-call 담당자 승인 | release ticket, 연락망, store 설정 | G6 |
 | B-09 | 제품 운영 준비 미확정 | 환경변수, OAuth, 이메일, push, 도메인, 약관·개인정보, alert test PASS | 설정 inventory와 각 검증 링크 | G6 |
 | B-10 | 단계적 rollout 미실행 | 내부→5%→25%→100% 각 hold 구간 통과 | 단계별 지표와 GO 승인 | G7 |
-| B-11 | asset 운영 수명주기 미완료 | cleanup scheduler·secret 설정, Web/Mobile canonical path 일치, DEV thumbnail network 검증 PASS | scheduler 실행 로그, path fixture, network log, orphan 보존·삭제 결과 | G3/G6 |
+| B-11 | asset 운영 수명주기 미완료 | canonical path/write RLS는 TASK-058 완료; cleanup scheduler·secret 설정과 DEV thumbnail network 검증 PASS 필요 | scheduler 실행 로그, path fixture, network log, orphan 보존·삭제 결과 | G3/G6 |
 
 ## 후속 작업 분리
 

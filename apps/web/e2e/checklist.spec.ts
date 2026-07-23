@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures/auth'
 import {
-  seedTrip,
+  seedAuthorityTrip,
   getOrCreateChecklist,
   getChecklistItemByName,
   getChecklistItem,
@@ -20,7 +20,7 @@ test.describe('체크리스트 핵심 플로우', () => {
     authenticatedContext,
     testUser,
   }) => {
-    const trip = await seedTrip(testUser.id)
+    const trip = await seedAuthorityTrip(testUser)
     await getOrCreateChecklist(trip.id)
 
     const page = await authenticatedContext.newPage()
@@ -40,7 +40,7 @@ test.describe('체크리스트 핵심 플로우', () => {
     authenticatedContext,
     testUser,
   }) => {
-    const trip = await seedTrip(testUser.id)
+    const trip = await seedAuthorityTrip(testUser)
     await getOrCreateChecklist(trip.id)
 
     const page = await authenticatedContext.newPage()

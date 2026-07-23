@@ -37,6 +37,7 @@
   },
   "dependencies": {
     "@nexvoy/types": "workspace:*",
+    "@noble/hashes": "^1.8.0",
     "date-fns": "^4.0.0"
   },
   "devDependencies": {

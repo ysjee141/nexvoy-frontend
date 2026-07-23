@@ -3,6 +3,7 @@ import {
   PLACE_PHOTO_ORIGINAL_WIDTH,
   PLACE_PHOTO_THUMB_WIDTH,
   derivePlacePhotoThumbUrl,
+  placeIdHash8,
   placePhotoObjectPath,
 } from '../storagePaths'
 
@@ -10,13 +11,17 @@ const userId = '00000000-0000-0000-0000-000000000001'
 const tripId = '00000000-0000-0000-0000-000000000002'
 const planId = '00000000-0000-0000-0000-000000000003'
 
+assert.equal(placeIdHash8('ChIJN1t_tDeuEmsRUsoyG83frY4'), '52791f4b')
+assert.equal(placeIdHash8('온여정-place-1'), '4a75843f')
+
+const placeHash = placeIdHash8('ChIJN1t_tDeuEmsRUsoyG83frY4')
 assert.equal(
-  placePhotoObjectPath(userId, tripId, planId, 'abcd1234', PLACE_PHOTO_ORIGINAL_WIDTH),
-  `${userId}/${tripId}/${planId}_abcd1234_w800.jpg`,
+  placePhotoObjectPath(userId, tripId, planId, placeHash, PLACE_PHOTO_ORIGINAL_WIDTH),
+  `${userId}/${tripId}/${planId}_52791f4b_w800.jpg`,
 )
 assert.equal(
-  placePhotoObjectPath(userId, tripId, planId, 'abcd1234', PLACE_PHOTO_THUMB_WIDTH),
-  `${userId}/${tripId}/${planId}_abcd1234_w240.jpg`,
+  placePhotoObjectPath(userId, tripId, planId, placeHash, PLACE_PHOTO_THUMB_WIDTH),
+  `${userId}/${tripId}/${planId}_52791f4b_w240.jpg`,
 )
 
 const publicUrl =

@@ -1708,6 +1708,10 @@ export type Database = {
         Args: { p_trip_id: string; p_user_id: string }
         Returns: boolean
       }
+      check_can_write_place_photo_object: {
+        Args: { p_object_name: string; p_user_id: string }
+        Returns: boolean
+      }
       check_is_document_editor: {
         Args: { _document_id: string; _user_id: string }
         Returns: boolean
@@ -2057,6 +2061,14 @@ export type Database = {
         Args: { p_role: string; p_trip_member_id: string }
         Returns: undefined
       }
+      template_authority_stale_batch_is_rebasable: {
+        Args: { p_commands: Json; p_template_id: string }
+        Returns: boolean
+      }
+      trip_authority_stale_batch_is_rebasable: {
+        Args: { p_commands: Json; p_trip_id: string }
+        Returns: boolean
+      }
       upsert_key_provisioning_requests_for_user: {
         Args: {
           p_document_id: string
@@ -2216,4 +2228,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-

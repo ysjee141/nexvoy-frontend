@@ -267,6 +267,17 @@ async function run(): Promise<void> {
     '전주 후속 변경',
   )
 
+  await store.applyAcknowledgement('account-a', acknowledgement, '2026-07-17T01:04:01.000Z')
+  const duplicateAcknowledgementOutbox = await store.listReadyOutbox('account-a', now, 10)
+  assert.equal(duplicateAcknowledgementOutbox.length, 1)
+  assert.equal(duplicateAcknowledgementOutbox[0]?.operationId, secondOperation)
+  assert.equal(duplicateAcknowledgementOutbox[0]?.baseRevision, 1)
+  assert.equal(
+    ((await store.getResource('account-a', 'trip', tripId))?.data.trip as { destination?: string })
+      .destination,
+    '전주 후속 변경',
+  )
+
   await store.putResource('account-role', {
     ...bundle('role cache', 1),
     data: { ...bundle('role cache', 1).data, _role: 'editor' },

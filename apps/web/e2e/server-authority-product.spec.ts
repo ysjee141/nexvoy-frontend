@@ -180,4 +180,65 @@ test.describe('TASK-050 Web server-authority product integration', () => {
       await cleanupTripsByUser(multiUsers.owner.id);
     }
   });
+
+  test('NEW-A09 retrying the local conflict rebases once and converges', async ({
+    createAuthenticatedContextFor,
+    multiUsers,
+  }) => {
+    await cleanupTripsByUser(multiUsers.owner.id);
+    const trip = await seedAuthorityTrip(multiUsers.owner, {
+      destination: 'TASK-058 로컬 충돌 재적용',
+    });
+    await seedAuthorityDocumentMember(trip.id, multiUsers.editor, 'editor');
+    const plan = await seedAuthorityPlan(multiUsers.owner, trip, '재적용 공통 일정');
+
+    try {
+      const ownerContext = await createAuthenticatedContextFor(multiUsers.owner);
+      const editorContext = await createAuthenticatedContextFor(multiUsers.editor);
+      const ownerPage = await ownerContext.newPage();
+      const editorPage = await editorContext.newPage();
+      const detailUrl = `/trips/detail?id=${trip.id}&tab=plans&serverAuthority=1`;
+      await Promise.all([ownerPage.goto(detailUrl), editorPage.goto(detailUrl)]);
+      await Promise.all([
+        expect(ownerPage.getByText(plan.title, { exact: true })).toBeVisible({ timeout: 15000 }),
+        expect(editorPage.getByText(plan.title, { exact: true })).toBeVisible({ timeout: 15000 }),
+      ]);
+
+      const ownerTitle = '소유자 로컬 재적용';
+      const editorTitle = '편집자 로컬 재적용';
+      for (const [page, nextTitle] of [
+        [ownerPage, ownerTitle],
+        [editorPage, editorTitle],
+      ] as const) {
+        await page.getByRole('button', { name: `일정 수정: ${plan.title}`, exact: true }).click();
+        await page.getByPlaceholder('예: 근사한 저녁 식사, 박물관 투어').fill(nextTitle);
+      }
+
+      await Promise.all([ownerContext.setOffline(true), editorContext.setOffline(true)]);
+      await Promise.all([
+        ownerPage.getByRole('button', { name: '수정 완료', exact: true }).click(),
+        editorPage.getByRole('button', { name: '수정 완료', exact: true }).click(),
+      ]);
+      await Promise.all([ownerContext.setOffline(false), editorContext.setOffline(false)]);
+
+      await expect.poll(async () => (
+        await ownerPage.getByRole('button', { name: /해결 방법 선택/ }).count() +
+        await editorPage.getByRole('button', { name: /해결 방법 선택/ }).count()
+      ), { timeout: 15000 }).toBe(1);
+
+      const ownerHasConflict = await ownerPage.getByRole('button', { name: /해결 방법 선택/ }).count() > 0;
+      const conflictPage = ownerHasConflict ? ownerPage : editorPage;
+      const retriedTitle = ownerHasConflict ? ownerTitle : editorTitle;
+      await conflictPage.getByRole('button', { name: /해결 방법 선택/ }).click();
+      await conflictPage.getByRole('button', { name: '이 기기 변경 다시 적용', exact: true }).click();
+
+      await expect.poll(async () => await getPlanById(plan.id), {
+        timeout: 15000,
+      }).toMatchObject({ id: plan.id, title: retriedTitle, version: 3 });
+      await expect(ownerPage.getByText(retriedTitle, { exact: true })).toBeVisible({ timeout: 15000 });
+      await expect(editorPage.getByText(retriedTitle, { exact: true })).toBeVisible({ timeout: 15000 });
+    } finally {
+      await cleanupTripsByUser(multiUsers.owner.id);
+    }
+  });
 });
