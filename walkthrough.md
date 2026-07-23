@@ -1,3 +1,46 @@
+# Walkthrough: TASK-058 Production P0 통합 테스트 자동화
+
+## 요약
+
+Issue [#374](https://github.com/ysjee141/nexvoy-frontend/issues/374)에 따라 Production G1을 막던
+`NEW-A01`~`NEW-A13`을 로컬 Supabase 기반 자동 Gate로 구현했다. 원격 DEV/Production service role
+seed는 사용하지 않으며, URL guard가 원격 endpoint에서 즉시 실패한다.
+
+## 주요 변경
+
+- 초대, role 하향/revoke, 계정 전환, 템플릿 적용, 충돌 재적용을 실제 제품 UI와 canonical row로 검증한다.
+- Web IndexedDB와 Mobile SQLite에서 stale `sending` 회수와 중복 ACK 멱등성을 검증한다.
+- SQL에서 cross-trip entity ID 변조, outsider RPC, 초대 수락과 revoke 직후 read/write/Realtime 차단을 검증한다.
+- 장소 사진 hash를 공통 Core SHA-256으로 통일하고 Storage write와 metadata를 trip authority에 결합했다.
+- Realtime role 변경 시 일정 화면의 `userRole`도 다시 읽도록 제품 결함을 수정했다.
+- legacy direct trip E2E fixture를 authority command seed로 교체했다.
+- CI가 고정 Supabase CLI와 로컬 스택에서 `pnpm test:production:p0`를 실행하고 SHA별 artifact를 남긴다.
+
+## Asset 보안 경계
+
+`place-photos` byte는 Google 장소 사진 public cache다. owner/editor만 canonical
+`{user}/{trip}/{plan}_{sha256-8}_w{240|800}.jpg` path를 쓸 수 있고 viewer/outsider/revoked는
+write/delete와 `trip_asset_objects` metadata에 접근할 수 없다. 향후 비공개 사용자 미디어는 이
+bucket을 재사용하지 않고 private bucket과 인증 delivery endpoint로 분리한다.
+
+## 검증
+
+- `pnpm test:production:p0` PASS
+  - Core, Web IndexedDB, Mobile SQLite authority 테스트
+  - TASK-046~058 SQL smoke 7개
+  - `NEW-A01`~`NEW-A13`을 포함한 Playwright 23건
+- `pnpm typecheck`, `pnpm build:packages`, `pnpm build` PASS
+- `pnpm lint:mobile`, `pnpm build:mobile` PASS
+- PR CI 결과는 동일 release SHA의 GitHub Actions 증적으로 남긴다.
+
+## 배포 주의
+
+`20260723000003_task058_place_photo_write_policy.sql`은 로컬 reset에서 검증했다. TASK-058에서는 원격
+migration을 적용하지 않으며, TASK-059가 DEV/Production fingerprint와 history를 확인한 뒤 forward
+migration으로 적용한다. Production GO는 TASK-059~063 완료 전 선언하지 않는다.
+
+---
+
 # Walkthrough: TASK-057 Migration Ledger 판정 정정
 
 ## 결과

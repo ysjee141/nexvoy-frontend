@@ -1,3 +1,6 @@
+import { sha256 } from '@noble/hashes/sha256'
+import { bytesToHex, utf8ToBytes } from '@noble/hashes/utils'
+
 // Storage 경로 규칙 — domain.md 기준
 // object path는 bucket 내부 경로다: [user_id]/[trip_id]/[filename]
 // place photo는 place 식별 hash + width suffix로 immutable content path를 만든다.
@@ -10,6 +13,10 @@ export const PLACE_PHOTO_THUMB_WIDTH = 240
 export type PlacePhotoWidth =
   | typeof PLACE_PHOTO_ORIGINAL_WIDTH
   | typeof PLACE_PHOTO_THUMB_WIDTH
+
+export function placeIdHash8(placeId: string): string {
+  return bytesToHex(sha256(utf8ToBytes(placeId))).slice(0, 8)
+}
 
 export function placePhotoObjectPath(
   userId: string,

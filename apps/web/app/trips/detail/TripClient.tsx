@@ -252,9 +252,10 @@ export default function TripPlansPage({ isActive = true, tripId: propsTripId }: 
         void subscribeWebProductResource(supabase, 'trip', tripId, () => {
             void fetchTrip()
             void fetchPlans()
+            void fetchUserRole()
         }).then((next) => { unsubscribe = next })
         return () => { void unsubscribe?.() }
-    }, [fetchPlans, fetchTrip, supabase, tripId])
+    }, [fetchPlans, fetchTrip, fetchUserRole, supabase, tripId])
 
     const handleDeletePlan = async (planId: string) => {
         if (!tripId) return

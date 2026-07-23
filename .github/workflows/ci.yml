@@ -2,9 +2,9 @@ name: CI Quality Gates
 
 on:
   pull_request:
-    branches: [develop, main]
+    branches: [refactoring/local-first-architecture, develop, main]
   push:
-    branches: [develop]
+    branches: [refactoring/local-first-architecture, develop]
   workflow_dispatch:
 
 permissions:

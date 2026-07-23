@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures/auth';
 import {
-  seedTrip,
+  seedAuthorityTrip,
   getOrCreateChecklist,
   getChecklistItem,
   getChecklistItemByName,
@@ -47,7 +47,7 @@ test.describe('여행 생성 및 체크리스트 플로우', () => {
 
   test('체크리스트 항목 추가 → 체크(완료 처리)', async ({ authenticatedContext, testUser }) => {
     // UI 생성에 의존하지 않고 독립적으로 여행을 시드해 테스트 격리를 보장한다.
-    const trip = await seedTrip(testUser.id);
+    const trip = await seedAuthorityTrip(testUser);
     // 앱이 페이지 마운트 시 체크리스트를 concurrent하게 생성하면 race condition으로
     // 두 개의 checklist가 생성되고 setItems가 덮어쓰이는 문제가 발생한다.
     // 미리 checklist를 생성해 앱이 기존 row를 조회하도록 한다.

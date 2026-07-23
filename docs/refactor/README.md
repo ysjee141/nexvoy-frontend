@@ -28,6 +28,7 @@
 - `docs/refactor/tasks/TASK-051-mobile-sqlite-cache-outbox.md`
 - `docs/refactor/runbooks/TASK-051-mobile-sqlite-authority-smoke.md`
 - `docs/refactor/tasks/TASK-052-mobile-server-authority-product-cutover.md`
+- `docs/refactor/tasks/TASK-058-production-p0-integration-automation.md`
 - `docs/refactor/runbooks/TASK-052-mobile-authority-product-smoke.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
 - `docs/refactor/runbooks/TASK-055-legacy-runtime-retirement.md`
@@ -37,3 +38,7 @@
 `TASK-055` 이후 제품 런타임은 Supabase normalized row authority, 계정별 Web IndexedDB/
 Mobile SQLite cache, durable command outbox, Realtime revision invalidation만 사용한다. Yjs, WebRTC,
 document key, encrypted backup, 별도 다운로드 여행 번들은 새 구현에서 사용하지 않는다.
+
+Production P0 자동 Gate는 로컬 Supabase를 시작한 뒤 `pnpm test:production:p0`로 실행한다. 원격
+DEV/Production에는 테스트 service role seed를 실행하지 않는다. 다음 작업 기준은 `TASK-059`의 DEV
+schema fingerprint와 migration history 정합화다.
