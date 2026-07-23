@@ -2,14 +2,15 @@
 
 - 상태: 문서화 완료, 후속 실행 작업 대기
 - Issue: [#370](https://github.com/ysjee141/nexvoy-frontend/issues/370)
+- Migration 판정 정정: [#372](https://github.com/ysjee141/nexvoy-frontend/issues/372)
 - 선행 작업: `TASK-046`~`TASK-056`
 
 ## 결론
 
 TASK-057은 TASK-056의 코드 게이트 이후 필요한 검증 기준, 테스트 케이스, 실행 Runbook을 확정한다.
 현재 상태는 **Production NO-GO**다. 실제 검증과 출시는 `TASK-058`~`TASK-063`에서 단계적으로 수행하며,
-원격 migration, 실기기 통합 테스트, 7일 관측, DB와 Storage 복구, 출시 책임자 지정이 모두 끝나야
-GO로 전환한다.
+원격 객체와 migration history 정합화, 실기기 통합 테스트, 7일 관측, DB와 Storage 복구, 출시 책임자
+지정이 모두 끝나야 GO로 전환한다.
 
 ## 산출물
 
@@ -25,7 +26,7 @@ GO로 전환한다.
 - 여행, 일정, 준비물, 템플릿, 초대, 권한, asset 전체 제품 회귀
 - Web/Web, Web/Mobile, Mobile/Mobile 및 동일 계정 새 기기 검증
 - offline, 강제 종료, reconnect, Realtime 유실, 충돌, revoke 검증
-- DEV migration ledger 정합화와 TASK-056 migration 적용
+- DEV 객체 fingerprint와 migration history 정합화
 - 7일 운영 지표 관찰과 비용 기준 확인
 - DB와 `place-photos` Storage의 분리 백업·복구 rehearsal
 - Production preflight, canary, 단계적 확대, 중단과 롤백
@@ -40,7 +41,7 @@ GO로 전환한다.
 ## 실행 단계
 
 1. `TASK-058`에서 P0 제품 통합 테스트 자동화를 보완한다.
-2. `TASK-059`에서 DEV schema fingerprint, migration ledger, TASK-056 migration을 검증한다.
+2. `TASK-059`에서 DEV schema fingerprint와 migration history를 정합화한다.
 3. `TASK-060`에서 원격 안전 smoke와 전체 실기기 매트릭스를 실행한다.
 4. `TASK-061`에서 7일 안정성·비용 지표를 수집한다.
 5. `TASK-062`에서 DB+Storage 복구 rehearsal을 통과한다.

@@ -13,7 +13,7 @@
 - [0단계: 실행 기록 생성](#0단계-실행-기록-생성)
 - [1단계: 로컬 Gate](#1단계-로컬-gate)
 - [2단계: DEV migration ledger 정합화](#2단계-dev-migration-ledger-정합화)
-- [3단계: DEV migration과 원격 안전 검증](#3단계-dev-migration과-원격-안전-검증)
+- [3단계: DEV history 정합화와 원격 안전 검증](#3단계-dev-history-정합화와-원격-안전-검증)
 - [4단계: 실기기 통합 테스트](#4단계-실기기-통합-테스트)
 - [5단계: 7일 관측](#5단계-7일-관측)
 - [6단계: DB와 Storage 복구 Rehearsal](#6단계-db와-storage-복구-rehearsal)
@@ -132,6 +132,19 @@ supabase db push --linked --dry-run --include-all
 | `20260718000001` | keyless membership | invitation/role/revoke function |
 | `20260718000002` | asset registry | asset table, function, Storage policy |
 | `20260723000001` | legacy revoke | revoked function/grant 상태 |
+| `20260723000002` | entity version rebase | helper, command wrapper, grant |
+
+2026-07-23 read-only schema dump에서 TASK-055/056의 핵심 결과는 DEV와 Production 모두 확인됐다.
+
+- TASK-055: `revoke_document_member`, legacy grant 회수, signaling policy 제거, authority invalidation policy
+- TASK-056: 두 stale-batch helper와 이를 호출하는 trip/template command wrapper
+
+이 확인은 SQL 전체 fingerprint를 대체하지 않는다. migration history에는 두 version이 모두 등록되지 않았다.
+
+추가로 양쪽 schema dump에서 `trip_authority_stale_batch_is_rebasable`,
+`template_authority_stale_batch_is_rebasable`, command wrapper와 일부 internal authority function에
+명시적인 `anon` 실행 grant가 확인됐다. 내부 함수의 `auth.uid()` 검사가 익명 쓰기를 차단하더라도
+`SECURITY DEFINER` 함수의 목표 노출 범위와 다르므로 B-02는 실패 상태다.
 
 ### 2.2 Object fingerprint
 
@@ -171,36 +184,45 @@ order by routine_name, grantee;
 
 ### 2.3 History repair
 
-모든 fingerprint가 일치한 version만 한 번에 repair한다. 하나라도 object가 누락되면 중단한다.
+전체 fingerprint가 일치한 version만 하나씩 repair한다. `$VERIFIED_VERSION`에는 검토자 승인이 끝난
+version 하나만 넣는다.
 
 ```bash
-supabase migration repair --linked --status applied \
-  20260712000001 20260713000001 20260714000001 \
-  20260716000003 20260717000001 20260717000002 \
-  20260718000001 20260718000002 20260723000001
+VERIFIED_VERSION="승인된_14자리_version"
+supabase migration repair --linked --status applied "$VERIFIED_VERSION"
 supabase migration list
 supabase db push --linked --dry-run
 ```
 
-`20260723000002`는 repair 목록에 넣지 않는다. 이 migration은 정상 migration 경로로 적용한다.
+TASK-055/056을 포함해 이미 수동 실행된 SQL을 다시 실행하지 않는다. 일부 statement가 다르면 그 version을
+repair하지 않고 차이를 분류한다. 필요한 변경은 새 version의 forward reconciliation migration으로
+작성하고, 원래 version history 처리에는 별도 승인을 남긴다.
 
-## 3단계: DEV migration과 원격 안전 검증
+Grant hardening migration은 최소한 다음을 검증한다.
 
-### 3.1 적용 전
+- `anon`: stale-batch helper, internal apply function, write wrapper 실행 불가
+- `authenticated`: `apply_trip_commands`, `apply_template_commands`만 실행 가능
+- 내부 helper/apply function: API role 직접 실행 불가
+- 익명 호출 차단과 authenticated owner/editor 성공을 SQL 회귀 테스트로 고정
+
+## 3단계: DEV history 정합화와 원격 안전 검증
+
+### 3.1 정합화 전
 
 - DB managed backup 또는 지원되는 snapshot을 생성한다.
 - `place-photos` object manifest를 별도로 저장한다.
-- `db push --dry-run`이 `20260723000002`만 표시되는지 두 사람이 확인한다.
+- 10개 version의 fingerprint와 repair 근거를 두 사람이 확인한다.
+- `db push --dry-run` 결과에 미검증 migration이 남아 있으면 중단한다.
 
-### 3.2 적용
+### 3.2 History 확인
 
 ```bash
-supabase db push --linked
 supabase migration list
 supabase db push --linked --dry-run
 ```
 
-최종 dry-run에는 적용 대상이 없어야 한다.
+최종 dry-run에는 적용 대상이 없어야 한다. 새 reconciliation migration이 필요한 경우에는 별도 PR,
+backup, dry-run 승인을 거쳐 적용하며 이 Runbook의 history repair와 섞지 않는다.
 
 ### 3.3 원격 안전 검증
 
@@ -332,13 +354,18 @@ where bucket_id = 'place-photos';
 
 1. Production으로 다시 link하고 project ref를 두 사람이 확인한다.
 2. DEV와 독립적으로 migration history와 object fingerprint를 감사한다.
-3. `db push --dry-run` 결과를 release ticket에 저장한다.
-4. managed DB backup, logical export, Storage manifest/object export를 만든다.
-5. Web/Mobile env, OAuth redirect, 이메일 발신, push, Maps, analytics, alert를 검증한다.
-6. `ASSET_CLEANUP_SECRET`을 secret store에 등록하고 scheduler의 인증 header, 주기, timeout, 실패 alert를 검증한다.
-7. 약관·개인정보 처리방침 URL과 store privacy/data safety 정보를 검토한다.
-8. 최소 Mobile 버전, 강제 업데이트, Web rollback, on-call 담당자를 승인한다.
-9. 최종 GO 회의에서 Release manager와 DB operator가 각각 서명한다.
+3. 원격 history에만 있는 `20260403070821`, `20260423112332`, `20260427021704`,
+   `20260427023948`의 출처와 실제 객체를 보존·분류한다.
+4. Production 전용 `app_versions`, `delete_user()`, `profiles.kakao_id`, push 함수·정책 등 `public`
+   schema 차이가 의도된 운영 차이인지 누락된 migration인지 판정한다.
+5. 원격 전용 version을 삭제하거나 local version 전체를 일괄 repair하지 않는다.
+6. 승인된 정합화 이후 `db push --dry-run` 결과를 release ticket에 저장한다.
+7. managed DB backup, logical export, Storage manifest/object export를 만든다.
+8. Web/Mobile env, OAuth redirect, 이메일 발신, push, Maps, analytics, alert를 검증한다.
+9. `ASSET_CLEANUP_SECRET`을 secret store에 등록하고 scheduler의 인증 header, 주기, timeout, 실패 alert를 검증한다.
+10. 약관·개인정보 처리방침 URL과 store privacy/data safety 정보를 검토한다.
+11. 최소 Mobile 버전, 강제 업데이트, Web rollback, on-call 담당자를 승인한다.
+12. 최종 GO 회의에서 Release manager와 DB operator가 각각 서명한다.
 
 Production preflight에서는 고객 row를 수정하는 테스트를 하지 않는다. 승인된 내부 계정 smoke는 migration과
 client 배포 후 내부 rollout 단계에서 수행한다.
