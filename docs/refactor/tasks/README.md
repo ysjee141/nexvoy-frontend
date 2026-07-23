@@ -127,7 +127,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-056-production-data-integrity-and-cost-gate.md` | 구현 완료, 운영 gate 대기 | 코드 gate PASS; DEV/Production/legacy 삭제 NO-GO, PR [#369](https://github.com/ysjee141/nexvoy-frontend/pull/369) |
 | `TASK-057-production-final-validation.md` | 문서화 완료 | Production 마스터 Gate, 자동·수동 통합 테스트, 증적·출시 Runbook, Issue [#370](https://github.com/ysjee141/nexvoy-frontend/issues/370) |
 | `TASK-058-production-p0-integration-automation.md` | 대기 | 초대·권한·계정·템플릿·asset·재시도 P0 자동화 |
-| `TASK-059-dev-migration-production-gate.md` | 대기 | DEV migration ledger 정합화, TASK-056 정상 적용, remote-safe smoke |
+| `TASK-059-dev-migration-production-gate.md` | 대기 | DEV 객체 fingerprint, migration history 정합화, remote-safe smoke |
 | `TASK-060-cross-platform-device-validation.md` | 대기 | Web·Android·iOS 실기기, 다중 계정, asset 전체 회귀 |
 | `TASK-061-dev-stability-cost-soak.md` | 대기 | DEV 연속 7일 안정성·비용 관측 |
 | `TASK-062-disaster-recovery-rehearsal.md` | 대기 | DB·Storage 격리 복구와 RTO/RPO 검증 |
@@ -234,7 +234,7 @@ rotating room secret 보안 하드닝을 완료했다.
 ### Phase 10: Production Final Validation
 
 - [ ] `TASK-058-production-p0-integration-automation.md`: Production P0 통합 테스트 자동화
-- [ ] `TASK-059-dev-migration-production-gate.md`: DEV migration 정합화와 원격 Gate
+- [ ] `TASK-059-dev-migration-production-gate.md`: DEV 객체·migration history 정합화와 원격 Gate
 - [ ] `TASK-060-cross-platform-device-validation.md`: Web·Mobile 실기기 통합 검증
 - [ ] `TASK-061-dev-stability-cost-soak.md`: DEV 안정성·비용 7일 관측
 - [ ] `TASK-062-disaster-recovery-rehearsal.md`: DB·Storage 재해 복구 rehearsal
@@ -259,7 +259,7 @@ flowchart TD
     T55 --> T56["TASK-056 Production 코드 gate"]
     T56 --> T57["TASK-057 최종 검증 문서화"]
     T57 --> T58["TASK-058 P0 자동화"]
-    T58 --> T59["TASK-059 DEV migration"]
+    T58 --> T59["TASK-059 DEV schema/history"]
     T59 --> T60["TASK-060 실기기 통합"]
     T60 --> T61["TASK-061 7일 관측"]
     T60 --> T62["TASK-062 복구 rehearsal"]
@@ -274,5 +274,5 @@ flowchart TD
 5. `TASK-055`는 신규 경로 검증 전 실행하지 않는다.
 6. `TASK-056`에서 Initial Production go/no-go를 판정한다.
 7. `TASK-057`에서 최종 검증 기준과 Runbook을 확정한다.
-8. `TASK-058`~`TASK-060`에서 자동화, DEV migration, 실기기 Gate를 순서대로 통과한다.
+8. `TASK-058`~`TASK-060`에서 자동화, DEV schema/history, 실기기 Gate를 순서대로 통과한다.
 9. `TASK-061` 관측과 `TASK-062` 복구를 병렬 완료한 뒤 `TASK-063`에서 단계적 출시를 승인한다.

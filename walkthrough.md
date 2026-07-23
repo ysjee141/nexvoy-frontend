@@ -1,3 +1,34 @@
+# Walkthrough: TASK-057 Migration Ledger 판정 정정
+
+## 결과
+
+Issue [#372](https://github.com/ysjee141/nexvoy-frontend/issues/372)에서 SQL Editor 수동 실행으로 생성된
+실제 객체와 Supabase migration history를 분리해 판정하도록 TASK-057·TASK-059 문서를 정정했다.
+
+| 환경 | 객체 확인 | History 상태 |
+|---|---|---|
+| DEV `ivgkqzwosbjukonlpfdw` | TASK-055/056 핵심 함수·정책 확인 | historical 9건과 TASK-056 미등록 |
+| Production `runbcaegpefqnljsswhv` | TASK-055/056 핵심 함수·정책 확인 | 로컬 version 대부분 미등록, 원격 전용 4건 |
+
+## 핵심 결정
+
+- TASK-055/056 원본 SQL은 다시 실행하지 않는다.
+- 핵심 객체 존재만으로 완료 처리하지 않고 migration 전체 statement를 fingerprint한다.
+- 양쪽 환경에 남은 authority helper·wrapper의 `anon` 실행 grant는 forward migration과 SQL test로
+  회수한다.
+- 일치하는 version만 하나씩 `migration repair --status applied`로 history에 등록한다.
+- 부분 적용 또는 실제 정의 차이는 새 forward reconciliation migration으로 정리한다.
+- Production의 원격 전용 history와 `public` schema 차이는 삭제·일괄 repair하지 않고 TASK-063에서
+  독립적으로 분류·승인한다.
+
+## 검증
+
+- DEV와 Production의 `supabase migration list`를 읽기 전용으로 확인했다.
+- 양쪽 `public,realtime` schema dump에서 TASK-055/056 핵심 결과를 확인했다.
+- Supabase 연결은 확인 후 DEV로 복원했다.
+
+---
+
 # Walkthrough: TASK-057 Production 최종 검증 계획
 
 ## 결과
@@ -8,7 +39,7 @@ PASS, DEV/Production NO-GO이며, 실제 실행은 `TASK-058`~`TASK-063`으로 �
 
 ```mermaid
 flowchart LR
-    Local["G1 로컬 자동화"] --> Dev["G2 DEV migration"]
+    Local["G1 로컬 자동화"] --> Dev["G2 DEV schema/history"]
     Dev --> Matrix["G3 실기기 통합"]
     Matrix --> Observe["G4 7일 관측"]
     Observe --> Restore["G5 DB+Storage 복구"]
@@ -35,8 +66,8 @@ flowchart LR
 ## 다음 작업
 
 1. `TASK-058`에서 `NEW-A01`~`NEW-A13` P0 자동 테스트를 구현한다.
-2. `TASK-059`에서 DEV historical migration 9건을 fingerprint하고 ledger를 정합화한다.
-3. `TASK-060`에서 TASK-059로 적용된 schema를 기준으로 전체 실기기·asset 매트릭스를 실행한다.
+2. `TASK-059`에서 DEV historical 9건과 TASK-056 전체를 fingerprint하고 history를 정합화한다.
+3. `TASK-060`에서 TASK-059에서 정합화한 schema를 기준으로 전체 실기기·asset 매트릭스를 실행한다.
 4. `TASK-061`·`TASK-062`의 7일 관측과 복구 후 `TASK-063` Production preflight를 진행한다.
 
 ---

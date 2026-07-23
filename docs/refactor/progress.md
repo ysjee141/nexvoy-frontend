@@ -4,6 +4,17 @@
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
 
+## 2026-07-23 TASK-057 Migration 판정 정정
+
+- Issue #372에서 SQL 객체 적용과 `supabase_migrations.schema_migrations` history 등록을 분리했다.
+- DEV는 historical version 9건과 TASK-056이 history에 없지만 TASK-055/056 핵심 객체는 확인됐다.
+- Production도 TASK-055/056 핵심 객체가 확인됐으나 로컬 version 대부분이 미등록이고 원격 전용
+  version 4건과 `public` schema 차이가 존재한다.
+- 양쪽 환경의 일부 `SECURITY DEFINER` authority helper·wrapper에 예상 밖 `anon` 실행 grant가 확인돼
+  TASK-059 grant hardening과 익명 호출 회귀 테스트로 분리했다.
+- TASK-055/056 원본 SQL 재실행을 금지하고 전체 fingerprint가 일치하는 version만 하나씩 repair한다.
+- TASK-059는 신규 원격 적용이 아니라 DEV object/history 정합화와 Production 감사 입력 작성으로 정정했다.
+
 ## 2026-07-23 TASK-057 Production 최종 검증 문서화 완료
 
 - TASK-056의 남은 차단 항목을 `G0`~`G7`과 `B-01`~`B-11`로 재구성했다.

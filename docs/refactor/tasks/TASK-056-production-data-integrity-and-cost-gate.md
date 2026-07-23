@@ -109,6 +109,7 @@
   byte budget tests를 추가했다.
 - Production rollout/recovery runbook, Initial 비용 baseline, go/no 판정서를 작성했다.
 
-자동화 가능한 코드 gate는 PASS다. 원격 DEV migration history repair, TASK-056 migration 배포,
-실기기 matrix, 7일 지표, DB+Storage restore rehearsal은 운영 증적이 없으므로 DEV와 Production은
-NO-GO로 유지한다. Legacy object 물리 삭제도 별도 destructive migration 승인 전까지 유예한다.
+자동화 가능한 코드 gate는 PASS다. TASK-055/056 핵심 객체는 DEV와 Production에서 확인됐지만
+migration history와 전체 schema fingerprint, 실기기 matrix, 7일 지표, DB+Storage restore rehearsal은
+운영 증적이 없으므로 DEV와 Production은 NO-GO로 유지한다. Legacy object 물리 삭제도 별도 destructive
+migration 승인 전까지 유예한다.

@@ -35,7 +35,7 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 |---|---|---|
 | G0 문서·책임 | 문서 버전과 Release/DB/QA/Web/Mobile/on-call 담당자 지정 | NO-GO |
 | G1 로컬 자동화 | P0 자동화 공백 보완, 전체 test/typecheck/build PASS | 부분 PASS |
-| G2 DEV schema | migration ledger drift 0, TASK-056 migration 정상 적용 | NO-GO |
+| G2 DEV schema | historical 9건+TASK-056 전체 fingerprint, migration history drift 0 | NO-GO |
 | G3 DEV 제품 | 수동 P0/P1과 필수 플랫폼 조합 100% PASS | NO-GO |
 | G4 관측 | 연속 7일 무사고와 지표 임계치 충족 | NO-GO |
 | G5 복구 | DB+Storage 격리 복구와 RTO/RPO 검증 | NO-GO |
@@ -72,7 +72,7 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 | 항목 | GO 기준 | 증적 |
 |---|---|---|
 | Project | DEV/Production ref 교차 확인 | Release ticket |
-| Migration | local/remote history 일치, dry-run 대상 0건 | 전·후 migration list |
+| Migration | 객체 적용과 history 등록을 분리 감사, local/remote history 일치, dry-run 대상 0건 | schema diff와 전·후 migration list |
 | RLS/RPC | owner/editor/viewer/revoked/outsider 정책 PASS | SQL과 제품 smoke |
 | Realtime | private invalidation과 gap recovery PASS | Supabase report와 client log |
 | Storage | 플랫폼 공통 path, RLS, thumbnail, orphan cleanup scheduler PASS | object manifest, scheduler와 network log |
@@ -119,7 +119,7 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 1. 데이터 손실·변질 또는 duplicate canonical row가 발생한다.
 2. 계정 간 cache, row, Realtime, asset이 노출된다.
 3. viewer, revoked, outsider가 허용되지 않은 작업을 수행한다.
-4. migration history drift 또는 미승인 object 변경이 있다.
+4. migration history drift, 원격 전용 version 미분류 또는 미승인 object 변경이 있다.
 5. DB와 Storage 복구가 같은 기준 시점으로 완료되지 않는다.
 6. 미해결 P0/P1 결함이 있다.
 7. Rollback과 on-call 담당자가 지정되지 않았다.
