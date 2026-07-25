@@ -126,7 +126,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-055-retire-yjs-p2p-encrypted-backup.md` | 구현 완료 | Yjs/P2P/key/custom backup runtime 제거와 V1 reset, Issue #366, PR #367 |
 | `TASK-056-production-data-integrity-and-cost-gate.md` | 구현 완료, 운영 gate 대기 | 코드 gate PASS; DEV/Production/legacy 삭제 NO-GO, PR [#369](https://github.com/ysjee141/nexvoy-frontend/pull/369) |
 | `TASK-057-production-final-validation.md` | 문서화 완료 | Production 마스터 Gate, 자동·수동 통합 테스트, 증적·출시 Runbook, Issue [#370](https://github.com/ysjee141/nexvoy-frontend/issues/370) |
-| `TASK-058-production-p0-integration-automation.md` | 구현 완료, PR CI 검증 대기 | `NEW-A01`~`A13`, 로컬 Supabase 단일 Gate, asset write/path hardening, Issue [#374](https://github.com/ysjee141/nexvoy-frontend/issues/374) |
+| `TASK-058-production-p0-integration-automation.md` | 완료 | `NEW-A01`~`A13`, 로컬 Supabase 단일 Gate, asset write/path hardening, Issue [#374](https://github.com/ysjee141/nexvoy-frontend/issues/374), PR [#375](https://github.com/ysjee141/nexvoy-frontend/pull/375) |
 | `TASK-059-dev-migration-production-gate.md` | 대기 | DEV 객체 fingerprint, migration history 정합화, remote-safe smoke |
 | `TASK-060-cross-platform-device-validation.md` | 대기 | Web·Android·iOS 실기기, 다중 계정, asset 전체 회귀 |
 | `TASK-061-dev-stability-cost-soak.md` | 대기 | DEV 연속 7일 안정성·비용 관측 |

@@ -1,7 +1,8 @@
 # TASK-058: Production P0 통합 테스트 자동화
 
-- 상태: 구현 완료, PR CI 검증 대기
+- 상태: 완료
 - Issue: [#374](https://github.com/ysjee141/nexvoy-frontend/issues/374)
+- PR: [#375](https://github.com/ysjee141/nexvoy-frontend/pull/375)
 - 선행 작업: `TASK-057`
 - 해소 대상: `B-03`, `B-11` 계약 부분
 
@@ -76,7 +77,7 @@ TASK-059의 fingerprint·history 절차에서 forward migration으로 적용한�
 - `pnpm typecheck`, `pnpm build:packages`, `pnpm build`: PASS
 - `pnpm lint:mobile`, `pnpm build:mobile`: PASS
 
-PR CI가 같은 release SHA에서 통과하면 TASK-058을 완료 처리한다.
+PR CI에서 Quality, E2E, Vercel이 같은 release SHA로 모두 PASS했다.
 
 ## 제외 범위
 
