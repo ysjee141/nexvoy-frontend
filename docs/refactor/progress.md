@@ -4,7 +4,7 @@
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
 
-## 2026-07-23 TASK-058 구현 완료 / PR CI 검증 대기
+## 2026-07-23 TASK-058 완료
 
 - `NEW-A01`~`NEW-A13`을 초대, 권한 전이/revoke, 계정 격리, 템플릿, asset, 충돌 재적용,
   stale sending, SQL 우회 차단, Web/Mobile path 계약 자동 테스트로 구현했다.
@@ -15,6 +15,8 @@
   차단한다. 장소 사진 byte는 public provider cache 분류를 유지한다.
 - `pnpm test:production:p0` 단일 명령으로 Core, Web/Mobile store, SQL 7개, 전체 Playwright를
   로컬 Supabase에서 실행하도록 CI를 구성했다.
+- PR [#375](https://github.com/ysjee141/nexvoy-frontend/pull/375)의 Quality, E2E, Vercel 검증이
+  동일 release SHA에서 모두 PASS했다.
 - 신규 forward migration의 DEV/Production 적용과 history 관리는 TASK-059에서 수행한다.
 
 ## 2026-07-23 TASK-057 Migration 판정 정정

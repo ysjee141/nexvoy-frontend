@@ -31,7 +31,8 @@ bucket을 재사용하지 않고 private bucket과 인증 delivery endpoint로 �
   - `NEW-A01`~`NEW-A13`을 포함한 Playwright 23건
 - `pnpm typecheck`, `pnpm build:packages`, `pnpm build` PASS
 - `pnpm lint:mobile`, `pnpm build:mobile` PASS
-- PR CI 결과는 동일 release SHA의 GitHub Actions 증적으로 남긴다.
+- PR [#375](https://github.com/ysjee141/nexvoy-frontend/pull/375)의 Quality, E2E, Vercel이 동일
+  release SHA에서 모두 PASS했다.
 
 ## 배포 주의
 
