@@ -20,6 +20,7 @@ DEV `ivgkqzwosbjukonlpfdw`의 migration history와 실제 DB object를 일치시
 - service role 없는 authenticated remote-safe smoke
 - 전·후 migration list, 실행자, 시간, SQL 결과 증적
 - Production 원격 전용 version 4건과 실제 `public` schema 차이를 TASK-063 입력으로 정리
+- 사용자 추가 승인에 따른 Production TASK-058/059 target-only migration 적용과 익명 차단 smoke
 
 ## 완료 조건
 
@@ -34,7 +35,7 @@ DEV `ivgkqzwosbjukonlpfdw`의 migration history와 실제 DB object를 일치시
 
 ## 제외 범위
 
-- Production migration
+- Production 전체 migration ledger repair와 단계적 rollout
 - 실제 사용자 데이터 cleanup
 - legacy table·function 물리 삭제
 
@@ -51,6 +52,10 @@ DEV `ivgkqzwosbjukonlpfdw`의 migration history와 실제 DB object를 일치시
 - 사용자 승인 후 DEV의 검증된 historical version 10건을 `repair --status applied`로 등록하고,
   dry-run에 실제 미적용 TASK-058/059만 남는 것을 확인한 뒤 두 forward migration을 적용했다.
 - 적용 후 migration drift는 0이며, strict fingerprint는 12/12 version과 185/185 객체가 일치한다.
-- Production에는 변경을 수행하지 않았다.
 - DEV에 임시 owner/editor/viewer/outsider Auth 계정을 생성해 service role 없는 authenticated
   remote-safe smoke를 실행했다. 모든 검사가 PASS했고 QA 여행은 soft-delete, 계정은 4/4 삭제됐다.
+- 사용자 추가 승인 후 Production의 기존 원격 history 4건을 보존하는 격리 workspace에서
+  TASK-058/059만 적용했다. target-only dry-run은 0건이고 anonymous wrapper/internal RPC 차단이
+  PASS했다.
+- Production fingerprint는 적용 전 116/185에서 183/185로 개선됐다. 남은 두 checklist
+  `is_private NOT NULL` 차이와 전체 ledger 정합화·출시는 TASK-063 범위다.

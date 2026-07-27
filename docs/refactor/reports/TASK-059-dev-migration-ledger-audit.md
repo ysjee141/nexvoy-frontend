@@ -79,18 +79,33 @@ Supabase의 기본 함수 권한 때문에 `REVOKE ... FROM PUBLIC`만 사용한
 
 `task059_authority_rpc_grants.sql`은 역할별 EXECUTE와 타 사용자 ID 대입 차단을 검증한다.
 
-## Production 입력
+## Production Target-only 적용
 
-Production `runbcaegpefqnljsswhv`은 읽기 전용으로만 확인하고 DEV 연결로 복구했다.
+Production `runbcaegpefqnljsswhv`은 최초에는 읽기 전용으로 감사했으며, 이후 사용자 추가 승인에 따라
+TASK-058/059만 target-only 방식으로 적용했다.
 
 - 원격 history에는 로컬에 없는 version 4개만 존재한다:
   `20260403070821`, `20260423112332`, `20260427021704`, `20260427023948`
-- 동일 manifest 결과는 116/185 일치, 69개 불일치다.
-- DEV 차이 외에 `checklist_items.is_private`와 `checklist_template_items.is_private`가
-  Production에서 `NOT NULL`이 아니다.
+- 적용 전 동일 manifest 결과는 116/185 일치, 69개 불일치였다.
+- 기존 원격 history 4건의 placeholder와 TASK-058/059만 포함한 격리 workspace의 dry-run에서 두
+  target migration만 확인한 뒤 적용했다.
+- 적용 후 target-only dry-run은 0건이며 history에 `20260723000003`과 `20260727000001`이 등록됐다.
+- fingerprint는 11/12 version, 183/185 객체 일치다. TASK-058/059 대상 차이는 모두 해소됐다.
+- Production anon key로 public write wrapper와 internal command RPC가 모두 `42501`로 차단됨을
+  확인했다. 실제 사용자나 QA 계정·여행은 생성하지 않았다.
 
-Production repair나 migration은 수행하지 않는다. 원격 전용 version의 출처와 두 nullability 차이는
-TASK-063에서 독립적으로 분류·승인한다.
+| Production 증적 | SHA-256 |
+|---|---|
+| 적용 전 schema dump | `1ffa1c0676ff42b62c2fb34e9b696c158a85ba44aeeed681f1d187b8afa0465b` |
+| 적용 전 data dump | `c91dddbc77685d772e26aaec2bfd9b86e161e68cea1d205a81458723a949bcd6` |
+| 적용 전 migration list | `d7c7eb8cdacb0817c8df9d1de6ff677dce208dd46041edaa32bdc5a6989f03fc` |
+| 적용 후 schema dump | `385a89e4464f3931d3aafb007df24c17754723a34c06b217c6e24cd4f21d68ff` |
+| 적용 후 migration list | `66aba3fb19f25a54316be43a5525b8199ea9cd8e22a1c91b5aeeef594de3bf18` |
+| 적용 후 fingerprint 결과 | `7beafbdb40638840a094419a8a724bda1716a3dd0bbb360ad39cb131893bd727` |
+
+`checklist_items.is_private`와 `checklist_template_items.is_private`의 `NOT NULL` 차이, 로컬 historical
+version 미등록, 원격 전용 version 4건의 출처는 그대로 남아 있다. Production 전체 ledger repair와
+출시 승인은 TASK-063에서 독립적으로 처리한다.
 
 ## Authenticated Remote-safe Smoke
 
@@ -108,4 +123,4 @@ provisioning에만 DEV service role을 사용하고, smoke subprocess에는 anon
   `3f6305ba1ecba44420bde693330e11b45d9d3cc2e4f8a3d1d8fbe3900f6a78c4`
 
 이로써 DEV migration drift 0, strict fingerprint 12/12·185/185, authenticated smoke PASS의
-TASK-059 완료 조건을 모두 충족했다. Production에는 변경하지 않았다.
+TASK-059 완료 조건을 모두 충족했다. Production에는 사용자 승인 범위인 TASK-058/059만 적용했다.

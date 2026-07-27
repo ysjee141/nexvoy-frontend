@@ -5,7 +5,8 @@
 Issue [#376](https://github.com/ysjee141/nexvoy-frontend/issues/376)에 따라 SQL Editor로 적용된 DEV 객체와
 미등록 migration history를 재현 가능하게 판정했다. 원본 historical SQL을 다시 실행하지 않고,
 검증된 version은 repair하고 실제 누락된 TASK-058/059만 forward migration으로 적용하는 절차를
-확정했다. 사용자 승인 후 DEV에 해당 절차를 실행했으며 Production은 변경하지 않았다.
+확정했다. 사용자 승인 후 DEV에 전체 절차를 실행하고, 추가 승인 후 Production에는 TASK-058/059만
+target-only 방식으로 적용했다.
 
 ## 주요 변경
 
@@ -28,8 +29,14 @@ Issue [#376](https://github.com/ysjee141/nexvoy-frontend/issues/376)에 따라 S
 - 임시 owner/editor/viewer/outsider 네 계정의 authenticated smoke PASS
 - QA 여행 soft-delete와 임시 Auth 계정 4/4 삭제
 
-Production은 읽기 전용으로만 확인했다. 로컬 history 대부분이 미등록이며 원격 전용 version 4건과
-두 checklist `is_private NOT NULL` 차이가 있어 TASK-063에서 독립 처리한다.
+## Production 적용
+
+- 기존 원격 전용 history 4건을 보존하는 격리 workspace 사용
+- dry-run에서 TASK-058/059만 확인한 뒤 두 migration 적용
+- 적용 후 target-only dry-run 0건, fingerprint 11/12 version·183/185 객체 일치
+- anonymous public write wrapper와 internal command RPC `42501` 차단 PASS
+- 실제 사용자, QA 계정과 여행 데이터 생성 없음
+- 남은 historical ledger gap과 두 checklist `is_private NOT NULL` 차이는 TASK-063에서 처리
 
 ## 검증
 
@@ -39,7 +46,7 @@ Production은 읽기 전용으로만 확인했다. 로컬 history 대부분이 �
 - fingerprint 자기 비교 12/12, 185/185 PASS
 - DEV 적용 후 fingerprint 12/12, 185/185와 migration drift 0 PASS
 - authenticated remote-safe smoke PASS
-- Production 변경 없음
+- Production TASK-058/059 target-only 적용과 anonymous denial smoke PASS
 
 ## 다음 단계
 
