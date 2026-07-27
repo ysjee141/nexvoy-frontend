@@ -62,19 +62,6 @@ BEGIN
     RAISE EXCEPTION 'Invalidation payload exceeds 1KB: %', octet_length(message.payload::text);
   END IF;
 
-  IF NOT public.can_receive_authority_topic(
-    message.topic,
-    '00000000-0000-0000-0000-000000000492'
-  ) THEN
-    RAISE EXCEPTION 'Expected accepted viewer to receive invalidation';
-  END IF;
-
-  IF public.can_receive_authority_topic(
-    message.topic,
-    '00000000-0000-0000-0000-000000000493'
-  ) THEN
-    RAISE EXCEPTION 'Expected outsider to be denied invalidation';
-  END IF;
 END $$;
 
 SET ROLE authenticated;
@@ -84,6 +71,13 @@ SET realtime.topic = 'trip:49000000-0000-0000-0000-000000000001';
 DO $$
 DECLARE visible_messages integer;
 BEGIN
+  IF NOT public.can_receive_authority_topic(
+    'trip:49000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000492'
+  ) THEN
+    RAISE EXCEPTION 'Expected accepted viewer to receive invalidation';
+  END IF;
+
   SELECT count(*) INTO visible_messages
   FROM realtime.messages
   WHERE topic = 'trip:49000000-0000-0000-0000-000000000001'
@@ -99,6 +93,28 @@ SET status = 'revoked'
 WHERE document_id = '49000000-0000-0000-0000-000000000001'
   AND user_id = '00000000-0000-0000-0000-000000000492';
 
+SET ROLE authenticated;
+SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000493';
+DO $$
+DECLARE visible_messages integer;
+BEGIN
+  IF public.can_receive_authority_topic(
+    'trip:49000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000493'
+  ) THEN
+    RAISE EXCEPTION 'Expected outsider to be denied invalidation';
+  END IF;
+
+  SELECT count(*) INTO visible_messages
+  FROM realtime.messages
+  WHERE topic = 'trip:49000000-0000-0000-0000-000000000001'
+    AND event = 'authority_changed';
+  IF visible_messages <> 0 THEN
+    RAISE EXCEPTION 'Expected outsider RLS to hide authority invalidations';
+  END IF;
+END $$;
+
+SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000492';
 DO $$
 BEGIN
   IF public.can_receive_authority_topic(
@@ -106,20 +122,6 @@ BEGIN
     '00000000-0000-0000-0000-000000000492'
   ) THEN
     RAISE EXCEPTION 'Expected revoked viewer to be denied invalidations';
-  END IF;
-END $$;
-
-SET ROLE authenticated;
-SET request.jwt.claim.sub = '00000000-0000-0000-0000-000000000493';
-DO $$
-DECLARE visible_messages integer;
-BEGIN
-  SELECT count(*) INTO visible_messages
-  FROM realtime.messages
-  WHERE topic = 'trip:49000000-0000-0000-0000-000000000001'
-    AND event = 'authority_changed';
-  IF visible_messages <> 0 THEN
-    RAISE EXCEPTION 'Expected outsider RLS to hide authority invalidations';
   END IF;
 END $$;
 

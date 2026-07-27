@@ -4,6 +4,30 @@
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
 
+## 2026-07-27 TASK-059 완료
+
+- 12개 migration version의 185개 function/table/constraint/index/policy/trigger/RLS/grant fingerprint를
+  재현 가능한 manifest와 Node 도구로 고정했다.
+- DEV history 미등록 10건의 객체를 확인했으며, 67개 최종 차이는 TASK-058 asset policy와 TASK-059
+  identity/grant hardening으로 모두 설명된다.
+- authority internal 함수의 accidental Data API EXECUTE를 service role로 제한하고 공개 제품 RPC를
+  authenticated allowlist로 재구성했다.
+- authority helper와 Realtime topic helper는 전달된 user ID가 `auth.uid()`와 다르면 false를 반환한다.
+- service role 없는 DEV 스모크에 owner/editor/viewer/outsider, 초대, 멱등성, role/revoke, revision,
+  anonymous 차단과 cleanup을 포함했다.
+- `pnpm test:production:p0`의 Playwright 23건, 전체 SQL, typecheck, package/Web/Mobile build,
+  Mobile lint를 통과했다.
+- Production은 읽기 전용으로만 감사했다. 원격 전용 history 4건과 두 checklist `is_private`
+  nullability 차이는 TASK-063 입력으로 유지한다.
+- 사용자 승인 후 DEV historical history 10건을 객체 재실행 없이 repair하고, dry-run에 남은
+  TASK-058/059만 forward migration으로 적용했다.
+- 적용 후 migration drift는 0이고 `public,realtime,storage` strict fingerprint는 12/12 version,
+  185/185 객체가 일치한다. Production은 변경하지 않았다.
+- DEV 임시 Auth 계정 네 개로 service-role 없는 authenticated remote-safe smoke를 실행해 초대,
+  editor write·멱등성, viewer/outsider/anonymous 차단, role 하향·revoke와 revision을 검증했다.
+- QA 여행은 soft-delete됐고 임시 Auth 계정은 4/4 삭제됐다. 다음 단계는 TASK-060 Web·Mobile
+  실기기 통합 검증이다.
+
 ## 2026-07-23 TASK-058 완료
 
 - `NEW-A01`~`NEW-A13`을 초대, 권한 전이/revoke, 계정 격리, 템플릿, asset, 충돌 재적용,

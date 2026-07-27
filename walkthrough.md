@@ -1,3 +1,53 @@
+# Walkthrough: TASK-059 DEV Migration Ledger 정합화
+
+## 요약
+
+Issue [#376](https://github.com/ysjee141/nexvoy-frontend/issues/376)에 따라 SQL Editor로 적용된 DEV 객체와
+미등록 migration history를 재현 가능하게 판정했다. 원본 historical SQL을 다시 실행하지 않고,
+검증된 version은 repair하고 실제 누락된 TASK-058/059만 forward migration으로 적용하는 절차를
+확정했다. 사용자 승인 후 DEV에 해당 절차를 실행했으며 Production은 변경하지 않았다.
+
+## 주요 변경
+
+- 12개 version, 185개 객체의 function/table/constraint/index/policy/trigger/RLS/grant manifest와
+  `pg_dump` 비교 도구를 추가했다.
+- Supabase 기본 함수 권한에서 남은 internal authority RPC의 `anon`/`authenticated` EXECUTE를
+  `service_role`로 제한했다.
+- 제품 RPC는 authenticated allowlist로 재구성하고, trip/template/topic helper를 `auth.uid()`에
+  결속해 타 사용자 ID 대입을 차단했다.
+- SQL 회귀 테스트는 internal RPC 접근, 역할별 공개 RPC, 초대 요약 익명 접근과 신원 결속을 검증한다.
+- remote-safe smoke는 service role 없이 전용 QA 네 계정으로 초대, 권한, revision, 멱등성과 revoke를
+  검증하고 QA 여행을 soft-delete한다.
+
+## DEV 적용
+
+- 적용 전 history 미등록: `20260712000001`~`20260723000002` 중 10건, TASK-058, TASK-059
+- historical 10건은 객체 재실행 없이 history만 repair
+- dry-run에서 TASK-058/059만 확인한 뒤 두 forward migration 적용
+- 적용 후 migration drift 0, strict fingerprint 12/12 version·185/185 객체 일치
+- 임시 owner/editor/viewer/outsider 네 계정의 authenticated smoke PASS
+- QA 여행 soft-delete와 임시 Auth 계정 4/4 삭제
+
+Production은 읽기 전용으로만 확인했다. 로컬 history 대부분이 미등록이며 원격 전용 version 4건과
+두 checklist `is_private NOT NULL` 차이가 있어 TASK-063에서 독립 처리한다.
+
+## 검증
+
+- `pnpm test:production:p0` PASS: Core, Web/Mobile store, 전체 SQL, Playwright 23건
+- `pnpm typecheck`, `pnpm build:packages`, `pnpm build:web` PASS
+- `pnpm build:mobile`, `pnpm lint:mobile` PASS
+- fingerprint 자기 비교 12/12, 185/185 PASS
+- DEV 적용 후 fingerprint 12/12, 185/185와 migration drift 0 PASS
+- authenticated remote-safe smoke PASS
+- Production 변경 없음
+
+## 다음 단계
+
+TASK-059 Gate를 모두 통과했다. TASK-060에서 DEV 기준 Web·Android·iOS 실기기, 다중 계정과 asset
+통합 매트릭스를 검증한다.
+
+---
+
 # Walkthrough: TASK-058 Production P0 통합 테스트 자동화
 
 ## 요약

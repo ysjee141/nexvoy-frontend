@@ -1,6 +1,6 @@
 # TASK-059: DEV 객체·Migration History 정합화
 
-- 상태: 대기
+- 상태: 완료
 - 선행 작업: `TASK-058`
 - 해소 대상: `B-01`, `B-02`
 
@@ -37,3 +37,20 @@ DEV `ivgkqzwosbjukonlpfdw`의 migration history와 실제 DB object를 일치시
 - Production migration
 - 실제 사용자 데이터 cleanup
 - legacy table·function 물리 삭제
+
+## 2026-07-27 구현 결과
+
+- 12개 version의 최종 function/table/constraint/index/policy/trigger/RLS/grant를 다루는 185개
+  fingerprint manifest와 dump 비교 도구를 추가했다.
+- DEV의 history 미등록 10건은 실제 객체가 존재하며, 최종 차이는 TASK-058/059 forward migration으로
+  전부 설명됨을 확인했다.
+- accidental `anon`/`authenticated` EXECUTE를 명시적 allowlist로 바꾸고 authority helper 인자를
+  `auth.uid()`에 결속하는 TASK-059 migration과 SQL 회귀 테스트를 구현했다.
+- service role 없는 DEV remote-safe smoke를 project ref·전용 계정·실행 플래그로 보호했다.
+- 로컬 Production P0 23건, 전체 SQL, typecheck, Web/Mobile build와 Mobile lint가 PASS했다.
+- 사용자 승인 후 DEV의 검증된 historical version 10건을 `repair --status applied`로 등록하고,
+  dry-run에 실제 미적용 TASK-058/059만 남는 것을 확인한 뒤 두 forward migration을 적용했다.
+- 적용 후 migration drift는 0이며, strict fingerprint는 12/12 version과 185/185 객체가 일치한다.
+- Production에는 변경을 수행하지 않았다.
+- DEV에 임시 owner/editor/viewer/outsider Auth 계정을 생성해 service role 없는 authenticated
+  remote-safe smoke를 실행했다. 모든 검사가 PASS했고 QA 여행은 soft-delete, 계정은 4/4 삭제됐다.

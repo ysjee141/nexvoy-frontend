@@ -9,7 +9,8 @@
     "start": "next start",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:authority": "tsx lib/server-authority/__tests__/indexedDbStore.test.ts"
+    "test:authority": "tsx lib/server-authority/__tests__/indexedDbStore.test.ts",
+    "test:task059:dev-smoke": "node scripts/task059-remote-safe-smoke.mjs"
   },
   "dependencies": {
     "@next/third-parties": "^16.2.9",
