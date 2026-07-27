@@ -17,16 +17,19 @@
   anonymous 차단과 cleanup을 포함했다.
 - `pnpm test:production:p0`의 Playwright 23건, 전체 SQL, typecheck, package/Web/Mobile build,
   Mobile lint를 통과했다.
-- Production은 읽기 전용으로만 감사했다. 원격 전용 history 4건과 두 checklist `is_private`
-  nullability 차이는 TASK-063 입력으로 유지한다.
+- Production은 처음에는 읽기 전용으로 감사한 뒤 사용자 추가 승인에 따라 기존 원격 history를
+  보존하는 target-only 방식으로 TASK-058/059를 적용했다.
 - 사용자 승인 후 DEV historical history 10건을 객체 재실행 없이 repair하고, dry-run에 남은
   TASK-058/059만 forward migration으로 적용했다.
-- 적용 후 migration drift는 0이고 `public,realtime,storage` strict fingerprint는 12/12 version,
-  185/185 객체가 일치한다. Production은 변경하지 않았다.
+- DEV 적용 후 migration drift는 0이고 `public,realtime,storage` strict fingerprint는 12/12 version,
+  185/185 객체가 일치한다.
 - DEV 임시 Auth 계정 네 개로 service-role 없는 authenticated remote-safe smoke를 실행해 초대,
   editor write·멱등성, viewer/outsider/anonymous 차단, role 하향·revoke와 revision을 검증했다.
 - QA 여행은 soft-delete됐고 임시 Auth 계정은 4/4 삭제됐다. 다음 단계는 TASK-060 Web·Mobile
   실기기 통합 검증이다.
+- Production target-only dry-run은 0건이고 fingerprint는 183/185다. 남은 두 checklist
+  nullability 차이, historical ledger gap, 원격 전용 history 4건과 rollout은 TASK-063 입력으로
+  유지한다.
 
 ## 2026-07-23 TASK-058 완료
 

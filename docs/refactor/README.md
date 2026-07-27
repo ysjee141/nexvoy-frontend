@@ -46,4 +46,6 @@ Production P0 자동 Gate는 로컬 Supabase를 시작한 뒤 `pnpm test:product
 DEV/Production에는 테스트 service role seed를 실행하지 않는다. TASK-059에서 DEV history repair와
 TASK-058/059 forward migration을 적용했고 strict fingerprint는 12/12 version, 185/185 객체가
 일치한다. 전용 임시 QA 네 계정의 authenticated remote-safe smoke도 PASS했으며 계정과 QA 데이터는
-정리했다. Production은 변경하지 않았다. 다음 작업은 TASK-060 실기기 검증이다.
+정리했다. 사용자 승인 후 Production에도 기존 history를 보존하는 target-only 방식으로
+TASK-058/059를 적용했으며 fingerprint는 183/185다. 남은 ledger와 nullability 차이는 TASK-063에서
+처리한다. 다음 작업은 TASK-060 실기기 검증이다.
