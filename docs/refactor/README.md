@@ -29,6 +29,9 @@
 - `docs/refactor/runbooks/TASK-051-mobile-sqlite-authority-smoke.md`
 - `docs/refactor/tasks/TASK-052-mobile-server-authority-product-cutover.md`
 - `docs/refactor/tasks/TASK-058-production-p0-integration-automation.md`
+- `docs/refactor/tasks/TASK-059-dev-migration-production-gate.md`
+- `docs/refactor/reports/TASK-059-dev-migration-ledger-audit.md`
+- `docs/refactor/runbooks/TASK-059-dev-migration-ledger.md`
 - `docs/refactor/runbooks/TASK-052-mobile-authority-product-smoke.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
 - `docs/refactor/runbooks/TASK-055-legacy-runtime-retirement.md`
@@ -40,5 +43,7 @@ Mobile SQLite cache, durable command outbox, Realtime revision invalidation만 �
 document key, encrypted backup, 별도 다운로드 여행 번들은 새 구현에서 사용하지 않는다.
 
 Production P0 자동 Gate는 로컬 Supabase를 시작한 뒤 `pnpm test:production:p0`로 실행한다. 원격
-DEV/Production에는 테스트 service role seed를 실행하지 않는다. 다음 작업 기준은 `TASK-059`의 DEV
-schema fingerprint와 migration history 정합화다.
+DEV/Production에는 테스트 service role seed를 실행하지 않는다. TASK-059에서 DEV history repair와
+TASK-058/059 forward migration을 적용했고 strict fingerprint는 12/12 version, 185/185 객체가
+일치한다. 전용 임시 QA 네 계정의 authenticated remote-safe smoke도 PASS했으며 계정과 QA 데이터는
+정리했다. Production은 변경하지 않았다. 다음 작업은 TASK-060 실기기 검증이다.

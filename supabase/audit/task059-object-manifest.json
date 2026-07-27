@@ -1,0 +1,334 @@
+{
+  "schemaVersion": 1,
+  "description": "TASK-059 final-state object manifest for the DEV migration ledger audit.",
+  "versions": [
+    {
+      "version": "20260712000001",
+      "task": "TASK-021",
+      "objects": [
+        {
+          "type": "policy",
+          "schema": "realtime",
+          "table": "messages",
+          "name": "accepted document members can receive signaling broadcast",
+          "present": false
+        },
+        {
+          "type": "policy",
+          "schema": "realtime",
+          "table": "messages",
+          "name": "accepted non-viewer document members can send signaling broadcast",
+          "present": false
+        }
+      ]
+    },
+    {
+      "version": "20260713000001",
+      "task": "TASK-025",
+      "objects": [
+        {
+          "type": "policy",
+          "schema": "realtime",
+          "table": "messages",
+          "name": "accepted document members can receive signaling broadcast",
+          "present": false
+        },
+        {
+          "type": "policy",
+          "schema": "realtime",
+          "table": "messages",
+          "name": "accepted non-viewer document members can send signaling broadcast",
+          "present": false
+        }
+      ]
+    },
+    {
+      "version": "20260714000001",
+      "task": "TASK-028",
+      "objects": [
+        { "type": "table", "schema": "public", "name": "document_signaling_room_topics" },
+        { "type": "index", "schema": "public", "name": "document_signaling_room_topics_document_active_idx" },
+        { "type": "index", "schema": "public", "name": "document_signaling_room_topics_room_topic_idx" },
+        { "type": "function", "schema": "public", "name": "issue_document_signaling_room_topic" },
+        { "type": "function", "schema": "public", "name": "can_receive_document_signaling_topic" },
+        { "type": "function", "schema": "public", "name": "can_send_document_signaling_topic" },
+        {
+          "type": "policy",
+          "schema": "public",
+          "table": "document_signaling_room_topics",
+          "name": "deny direct signaling topic reads"
+        },
+        {
+          "type": "policy",
+          "schema": "public",
+          "table": "document_signaling_room_topics",
+          "name": "deny direct signaling topic writes"
+        }
+      ]
+    },
+    {
+      "version": "20260716000003",
+      "task": "TASK-044",
+      "objects": [
+        { "type": "index", "schema": "public", "name": "document_invitation_links_target_email_idx" },
+        { "type": "function", "schema": "public", "name": "create_document_invitation_link" },
+        { "type": "function", "schema": "public", "name": "assert_targeted_invitation_recipient" },
+        { "type": "function", "schema": "public", "name": "accept_document_invitation" },
+        { "type": "function", "schema": "public", "name": "get_document_invitation_summary" },
+        { "type": "function", "schema": "public", "name": "list_my_pending_document_invitations" },
+        { "type": "function", "schema": "public", "name": "accept_my_document_invitation" },
+        { "type": "function", "schema": "public", "name": "decline_my_document_invitation" },
+        { "type": "function", "schema": "public", "name": "list_document_collaborators" },
+        { "type": "function", "schema": "public", "name": "list_document_pending_invitations" }
+      ]
+    },
+    {
+      "version": "20260717000001",
+      "task": "TASK-046",
+      "objects": [
+        { "type": "table", "schema": "public", "name": "trips" },
+        { "type": "table", "schema": "public", "name": "plans" },
+        { "type": "table", "schema": "public", "name": "plan_urls" },
+        { "type": "table", "schema": "public", "name": "checklists" },
+        { "type": "table", "schema": "public", "name": "checklist_items" },
+        { "type": "table", "schema": "public", "name": "checklist_item_assignees" },
+        { "type": "table", "schema": "public", "name": "checklist_item_user_checks" },
+        { "type": "table", "schema": "public", "name": "checklist_templates" },
+        { "type": "table", "schema": "public", "name": "checklist_template_items" },
+        { "type": "table", "schema": "public", "name": "checklist_template_shares" },
+        { "type": "table", "schema": "public", "name": "trip_authority_state" },
+        { "type": "table", "schema": "public", "name": "template_authority_state" },
+        { "type": "table", "schema": "public", "name": "applied_operations" },
+        { "type": "index", "schema": "public", "name": "applied_operations_resource_idx" },
+        { "type": "index", "schema": "public", "name": "applied_operations_actor_applied_idx" },
+        { "type": "function", "schema": "public", "name": "set_authority_row_metadata" },
+        { "type": "function", "schema": "public", "name": "check_can_read_authority_trip" },
+        { "type": "function", "schema": "public", "name": "check_can_write_authority_trip" },
+        { "type": "function", "schema": "public", "name": "check_can_read_authority_template" },
+        { "type": "function", "schema": "public", "name": "check_can_write_authority_template" },
+        { "type": "function", "schema": "public", "name": "is_trip_authority_resource" },
+        { "type": "function", "schema": "public", "name": "is_trip_authority_plan" },
+        { "type": "function", "schema": "public", "name": "is_trip_authority_checklist" },
+        { "type": "function", "schema": "public", "name": "is_trip_authority_checklist_item" },
+        { "type": "function", "schema": "public", "name": "is_template_authority_resource" },
+        { "type": "function", "schema": "public", "name": "get_trip_authority_revision" },
+        { "type": "function", "schema": "public", "name": "get_template_authority_revision" },
+        { "type": "function", "schema": "public", "name": "get_trip_authority_bundle" },
+        { "type": "function", "schema": "public", "name": "get_template_authority_bundle" },
+        { "type": "function", "schema": "public", "name": "get_trip_authority_changes" },
+        { "type": "function", "schema": "public", "name": "get_template_authority_changes" },
+        { "type": "function", "schema": "public", "name": "list_my_trip_authority_summaries" },
+        { "type": "function", "schema": "public", "name": "list_my_template_authority_summaries" },
+        { "type": "function", "schema": "public", "name": "apply_one_trip_authority_command" },
+        { "type": "function", "schema": "public", "name": "apply_one_template_authority_command" },
+        { "type": "function", "schema": "public", "name": "apply_trip_authority_commands" },
+        { "type": "function", "schema": "public", "name": "apply_template_authority_commands" },
+        { "type": "function", "schema": "public", "name": "apply_trip_commands" },
+        { "type": "function", "schema": "public", "name": "apply_template_commands" },
+        { "type": "trigger", "schema": "public", "table": "trips", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "plans", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "plan_urls", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "checklists", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "checklist_items", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "checklist_item_assignees", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "checklist_item_user_checks", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "checklist_templates", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "checklist_template_items", "name": "set_authority_row_metadata" },
+        { "type": "trigger", "schema": "public", "table": "checklist_template_shares", "name": "set_authority_row_metadata" },
+        { "type": "policy", "schema": "public", "table": "trips", "name": "authority trips require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "plans", "name": "authority plans require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "plan_urls", "name": "authority plan urls require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "checklists", "name": "authority checklists require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "checklist_items", "name": "authority checklist items require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "checklist_item_assignees", "name": "authority checklist assignees require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "checklist_item_user_checks", "name": "authority checklist checks require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "checklist_templates", "name": "authority templates require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "checklist_template_items", "name": "authority template items require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "checklist_template_shares", "name": "authority template shares require canonical RPC" },
+        { "type": "policy", "schema": "public", "table": "trip_authority_state", "name": "authority members can read trip state" },
+        { "type": "policy", "schema": "public", "table": "template_authority_state", "name": "authority readers can read template state" }
+      ]
+    },
+    {
+      "version": "20260717000002",
+      "task": "TASK-049",
+      "objects": [
+        { "type": "function", "schema": "public", "name": "can_receive_authority_topic" },
+        { "type": "function", "schema": "public", "name": "broadcast_authority_state_invalidation" },
+        { "type": "trigger", "schema": "public", "table": "trip_authority_state", "name": "broadcast_trip_authority_invalidation" },
+        { "type": "trigger", "schema": "public", "table": "template_authority_state", "name": "broadcast_template_authority_invalidation" },
+        { "type": "policy", "schema": "realtime", "table": "messages", "name": "authority readers can receive revision invalidations" }
+      ]
+    },
+    {
+      "version": "20260718000001",
+      "task": "TASK-053",
+      "objects": [
+        { "type": "function", "schema": "public", "name": "bump_authority_revision_for_membership" },
+        { "type": "function", "schema": "public", "name": "accept_document_invitation_unchecked" },
+        { "type": "function", "schema": "public", "name": "accept_my_document_invitation" },
+        { "type": "function", "schema": "public", "name": "set_document_member_role" },
+        { "type": "function", "schema": "public", "name": "revoke_document_member" }
+      ]
+    },
+    {
+      "version": "20260718000002",
+      "task": "TASK-054",
+      "objects": [
+        { "type": "table", "schema": "public", "name": "trip_asset_objects" },
+        { "type": "index", "schema": "public", "name": "trip_asset_objects_bucket_path_key" },
+        { "type": "index", "schema": "public", "name": "trip_asset_objects_trip_id_idx" },
+        { "type": "index", "schema": "public", "name": "trip_asset_objects_plan_id_idx" },
+        { "type": "policy", "schema": "public", "table": "trip_asset_objects", "name": "trip_asset_objects_select_member" },
+        { "type": "function", "schema": "public", "name": "register_place_photo_asset" },
+        { "type": "function", "schema": "public", "name": "list_orphan_place_photo_assets" }
+      ]
+    },
+    {
+      "version": "20260723000001",
+      "task": "TASK-055",
+      "defaultCompare": ["grants"],
+      "objects": [
+        {
+          "type": "function",
+          "schema": "public",
+          "name": "revoke_document_member",
+          "compare": ["definition", "grants"]
+        },
+        { "type": "function", "schema": "public", "name": "sanitize_key_provisioning_error_code" },
+        { "type": "function", "schema": "public", "name": "has_active_document_key_for_device" },
+        { "type": "function", "schema": "public", "name": "enqueue_key_provisioning_notification" },
+        { "type": "function", "schema": "public", "name": "upsert_key_provisioning_requests_for_user" },
+        { "type": "function", "schema": "public", "name": "register_user_key_material" },
+        { "type": "function", "schema": "public", "name": "revoke_user_key_material" },
+        { "type": "function", "schema": "public", "name": "request_document_key_provisioning" },
+        { "type": "function", "schema": "public", "name": "get_my_document_key_provisioning_status" },
+        { "type": "function", "schema": "public", "name": "list_pending_document_key_provisioning_requests" },
+        { "type": "function", "schema": "public", "name": "begin_document_key_provisioning" },
+        { "type": "function", "schema": "public", "name": "complete_document_key_provisioning" },
+        { "type": "function", "schema": "public", "name": "mark_document_key_provisioning_failed" },
+        { "type": "function", "schema": "public", "name": "get_my_active_document_key" },
+        { "type": "function", "schema": "public", "name": "upsert_owner_document_key" },
+        { "type": "function", "schema": "public", "name": "issue_document_signaling_room_topic" },
+        { "type": "function", "schema": "public", "name": "can_receive_document_signaling_topic" },
+        { "type": "function", "schema": "public", "name": "can_send_document_signaling_topic" },
+        { "type": "function", "schema": "public", "name": "generate_invitation_link" },
+        { "type": "function", "schema": "public", "name": "get_trip_summary_by_token" },
+        { "type": "function", "schema": "public", "name": "join_trip_via_token" },
+        { "type": "function", "schema": "public", "name": "set_trip_document_member_role" },
+        { "type": "function", "schema": "public", "name": "revoke_trip_document_member" },
+        { "type": "table", "schema": "public", "name": "documents" },
+        { "type": "table", "schema": "public", "name": "document_members" },
+        { "type": "table", "schema": "public", "name": "document_updates" },
+        { "type": "table", "schema": "public", "name": "document_devices" },
+        { "type": "table", "schema": "public", "name": "legacy_row_map" },
+        { "type": "table", "schema": "public", "name": "document_keys" },
+        { "type": "table", "schema": "public", "name": "user_key_materials" },
+        { "type": "table", "schema": "public", "name": "document_key_provisioning_requests" },
+        { "type": "table", "schema": "public", "name": "document_signaling_room_topics" },
+        { "type": "table", "schema": "public", "name": "trip_members" },
+        { "type": "table", "schema": "public", "name": "trip_shares" },
+        {
+          "type": "policy",
+          "schema": "realtime",
+          "table": "messages",
+          "name": "authority readers can receive revision invalidations"
+        }
+      ]
+    },
+    {
+      "version": "20260723000002",
+      "task": "TASK-056",
+      "objects": [
+        { "type": "function", "schema": "public", "name": "trip_authority_stale_batch_is_rebasable" },
+        { "type": "function", "schema": "public", "name": "template_authority_stale_batch_is_rebasable" },
+        { "type": "function", "schema": "public", "name": "apply_trip_commands" },
+        { "type": "function", "schema": "public", "name": "apply_template_commands" }
+      ]
+    },
+    {
+      "version": "20260723000003",
+      "task": "TASK-058",
+      "objects": [
+        { "type": "function", "schema": "public", "name": "check_can_write_place_photo_object" },
+        { "type": "function", "schema": "public", "name": "register_place_photo_asset" },
+        { "type": "policy", "schema": "public", "table": "trip_asset_objects", "name": "trip_asset_objects_select_member" },
+        { "type": "policy", "schema": "storage", "table": "objects", "name": "place_photos_insert_own" },
+        { "type": "policy", "schema": "storage", "table": "objects", "name": "place_photos_update_own" },
+        { "type": "policy", "schema": "storage", "table": "objects", "name": "place_photos_delete_own" }
+      ]
+    },
+    {
+      "version": "20260727000001",
+      "task": "TASK-059",
+      "defaultCompare": ["grants"],
+      "objects": [
+        {
+          "type": "function",
+          "schema": "public",
+          "name": "check_can_read_authority_trip",
+          "compare": ["definition", "grants"]
+        },
+        {
+          "type": "function",
+          "schema": "public",
+          "name": "check_can_write_authority_trip",
+          "compare": ["definition", "grants"]
+        },
+        {
+          "type": "function",
+          "schema": "public",
+          "name": "check_can_read_authority_template",
+          "compare": ["definition", "grants"]
+        },
+        {
+          "type": "function",
+          "schema": "public",
+          "name": "check_can_write_authority_template",
+          "compare": ["definition", "grants"]
+        },
+        {
+          "type": "function",
+          "schema": "public",
+          "name": "can_receive_authority_topic",
+          "compare": ["definition", "grants"]
+        },
+        { "type": "function", "schema": "public", "name": "apply_one_trip_authority_command" },
+        { "type": "function", "schema": "public", "name": "apply_one_template_authority_command" },
+        { "type": "function", "schema": "public", "name": "apply_trip_authority_commands" },
+        { "type": "function", "schema": "public", "name": "apply_template_authority_commands" },
+        { "type": "function", "schema": "public", "name": "trip_authority_stale_batch_is_rebasable" },
+        { "type": "function", "schema": "public", "name": "template_authority_stale_batch_is_rebasable" },
+        { "type": "function", "schema": "public", "name": "broadcast_authority_state_invalidation" },
+        { "type": "function", "schema": "public", "name": "bump_authority_revision_for_membership" },
+        { "type": "function", "schema": "public", "name": "assert_targeted_invitation_recipient" },
+        { "type": "function", "schema": "public", "name": "accept_document_invitation_unchecked" },
+        { "type": "function", "schema": "public", "name": "create_document_invitation_link_legacy" },
+        { "type": "function", "schema": "public", "name": "bootstrap_owner_document" },
+        { "type": "function", "schema": "public", "name": "create_document_invitation_link" },
+        { "type": "function", "schema": "public", "name": "accept_document_invitation" },
+        { "type": "function", "schema": "public", "name": "get_document_invitation_summary" },
+        { "type": "function", "schema": "public", "name": "list_my_pending_document_invitations" },
+        { "type": "function", "schema": "public", "name": "accept_my_document_invitation" },
+        { "type": "function", "schema": "public", "name": "decline_my_document_invitation" },
+        { "type": "function", "schema": "public", "name": "list_document_collaborators" },
+        { "type": "function", "schema": "public", "name": "list_document_pending_invitations" },
+        { "type": "function", "schema": "public", "name": "set_document_member_role" },
+        { "type": "function", "schema": "public", "name": "revoke_document_member" },
+        { "type": "function", "schema": "public", "name": "get_trip_authority_revision" },
+        { "type": "function", "schema": "public", "name": "get_template_authority_revision" },
+        { "type": "function", "schema": "public", "name": "get_trip_authority_bundle" },
+        { "type": "function", "schema": "public", "name": "get_template_authority_bundle" },
+        { "type": "function", "schema": "public", "name": "get_trip_authority_changes" },
+        { "type": "function", "schema": "public", "name": "get_template_authority_changes" },
+        { "type": "function", "schema": "public", "name": "list_my_trip_authority_summaries" },
+        { "type": "function", "schema": "public", "name": "list_my_template_authority_summaries" },
+        { "type": "function", "schema": "public", "name": "apply_trip_commands" },
+        { "type": "function", "schema": "public", "name": "apply_template_commands" },
+        { "type": "function", "schema": "public", "name": "check_can_write_place_photo_object" },
+        { "type": "function", "schema": "public", "name": "register_place_photo_asset" },
+        { "type": "function", "schema": "public", "name": "list_orphan_place_photo_assets" }
+      ]
+    }
+  ]
+}
