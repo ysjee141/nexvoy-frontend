@@ -28,11 +28,12 @@
     "./authority/serverAuthorityTypes": "./src/authority/serverAuthorityTypes.ts",
     "./supabase/invitationRepository": "./src/supabase/invitationRepository.ts",
     "./supabase/serverAuthorityRepository": "./src/supabase/serverAuthorityRepository.ts",
-    "./utils/date": "./src/utils/date.ts"
+    "./utils/date": "./src/utils/date.ts",
+    "./utils/id": "./src/utils/id.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",
-    "test": "tsx src/notifications/__tests__/metadata.test.ts && tsx src/notifications/__tests__/batching.test.ts && tsx src/observability/__tests__/events.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/serverAuthorityProductRepository.test.ts && tsx src/authority/__tests__/serverAuthorityMaterialize.test.ts && tsx src/authority/__tests__/authorityProtocolBudget.test.ts && tsx src/authority/__tests__/serverAuthoritySync.test.ts && tsx src/supabase/__tests__/invitationRepository.test.ts && tsx src/supabase/__tests__/storagePaths.test.ts",
+    "test": "tsx src/notifications/__tests__/metadata.test.ts && tsx src/notifications/__tests__/batching.test.ts && tsx src/observability/__tests__/events.test.ts && tsx src/repositories/__tests__/types.test.ts && tsx src/repositories/__tests__/serverAuthorityProductRepository.test.ts && tsx src/authority/__tests__/serverAuthorityMaterialize.test.ts && tsx src/authority/__tests__/authorityProtocolBudget.test.ts && tsx src/authority/__tests__/serverAuthoritySync.test.ts && tsx src/supabase/__tests__/invitationRepository.test.ts && tsx src/supabase/__tests__/storagePaths.test.ts && tsx src/utils/__tests__/id.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

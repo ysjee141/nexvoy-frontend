@@ -25,6 +25,7 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
+  createUuid,
   getChecklistCategories,
   getProfileByEmail,
 } from '@nexvoy/core'
@@ -184,7 +185,7 @@ export default function EditTemplateScreen() {
     setItems((prev) => [
       ...prev,
       {
-        id: `${Date.now()}-${prev.length}`,
+        id: createUuid(),
         item_name: trimmedDraft,
         category: itemCategory.trim() || '기타',
         is_private: itemPrivate,
@@ -209,7 +210,7 @@ export default function EditTemplateScreen() {
       await repositories.templates.updateTemplate(id, { title: title.trim() })
       await repositories.templates.replaceItems(id, {
         items: items.map((item, index) => ({
-          id: item.id.startsWith('template-item-') ? item.id : createEntityId('template-item'),
+          id: item.id,
           name: item.item_name,
           categoryName: item.category,
           isPrivate: item.is_private,
@@ -276,7 +277,7 @@ export default function EditTemplateScreen() {
     const repositories = await createMobileProductRepositories(supabase, { actorRole: 'owner' })
     await repositories.templates.upsertShare(id, {
       share: {
-        id: createEntityId('template-share'),
+        id: createUuid(),
         templateId: id,
         sharedWithUserId: profile.id,
         role,
@@ -643,11 +644,6 @@ export default function EditTemplateScreen() {
       />
     </SafeAreaView>
   )
-}
-
-function createEntityId(prefix: string): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
 }
 
 function getShareProfileLabel(share: ChecklistTemplateShareWithProfile): string {

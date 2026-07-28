@@ -23,7 +23,20 @@ module.exports = () => {
   config.plugins = [
     ...(config.plugins ?? []),
     'expo-background-task',
-    'expo-build-properties',
+    [
+      'expo-build-properties',
+      {
+        ios: {
+          useFrameworks: 'static',
+          forceStaticLinking: [
+            'RNFBApp',
+            'RNFBAnalytics',
+            'react-native-maps',
+            'react-native-google-maps',
+          ],
+        },
+      },
+    ],
     'expo-sqlite',
   ]
 

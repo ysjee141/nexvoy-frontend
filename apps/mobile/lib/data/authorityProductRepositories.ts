@@ -253,6 +253,22 @@ export function createMobileAuthorityTemplate(input: {
   return createServerAuthorityTemplate({ runtime: getRuntime(supabase), ...template })
 }
 
+export async function flushMobileAuthorityResource(
+  supabase: SupabaseClient,
+  resourceType: AuthorityResourceType,
+  resourceId: string,
+): Promise<AuthorityProductSyncSnapshot> {
+  const runtime = getRuntime(supabase)
+  let snapshot = await runtime.syncSnapshot(resourceType, resourceId)
+
+  for (let attempt = 0; attempt < 3 && snapshot.status === 'pending'; attempt += 1) {
+    await flushMobileAuthorityOutbox()
+    snapshot = await runtime.syncSnapshot(resourceType, resourceId)
+  }
+
+  return snapshot
+}
+
 export async function subscribeMobileAuthorityResource(
   supabase: SupabaseClient,
   resourceType: AuthorityResourceType,

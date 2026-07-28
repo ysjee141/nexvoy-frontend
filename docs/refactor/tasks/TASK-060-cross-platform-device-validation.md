@@ -1,8 +1,9 @@
 # TASK-060: Web·Mobile 실기기 통합 검증
 
-- 상태: 대기
+- 상태: 진행 중 (simulator 사전 Gate)
 - 선행 작업: `TASK-059`
 - 해소 대상: `B-04`, `B-11` 검증 부분
+- GitHub Issue: [#378](https://github.com/ysjee141/nexvoy-frontend/issues/378)
 
 ## 목적
 
@@ -29,3 +30,12 @@ Web과 Android/iOS가 동일한 server-authority 데이터, 권한, offline 복�
 
 - 7일 장기 관측
 - Production store 공개와 사용자 rollout
+
+## 현재 진행 결과
+
+- Android 시뮬레이터 2대의 동일 계정 신규 설치 복구, 일정 UUID v4, 장소 사진 240/800 asset과
+  canonical revision 수렴을 확인했다.
+- iOS 시뮬레이터 2대에 release archive를 설치하고 앱 실행을 확인했다.
+- 검증 중 발견한 Mobile 비표준 entity ID와 plan 저장 전 Storage upload race를 수정했다.
+- iOS 기능 전체, 다중 역할, offline/lifecycle 매트릭스와 실제 Android/iOS 기기 Gate는 남아 있다.
+- 현재 판정은 Simulator `PREPASS`, 실기기 `BLOCKED`, Production `NO-GO`다.

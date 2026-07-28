@@ -9,6 +9,7 @@ import {
   createMobileAuthorityDocumentRepositories,
   createMobileAuthorityTemplate,
   createMobileAuthorityTrip,
+  flushMobileAuthorityResource,
   getMobileAuthoritySyncSnapshot,
   refreshMobileAuthorityList,
   resolveMobileAuthorityConflict,
@@ -40,6 +41,14 @@ export function createMobileProductTemplate(input: {
   items: Array<{ item_name: string; category: string; is_private?: boolean }>
 }): Promise<string> {
   return createMobileAuthorityTemplate(input)
+}
+
+export function flushMobileProductResource(
+  supabase: SupabaseClient,
+  resourceType: AuthorityResourceType,
+  resourceId: string,
+): Promise<AuthorityProductSyncSnapshot> {
+  return flushMobileAuthorityResource(supabase, resourceType, resourceId)
 }
 
 export function subscribeMobileProductResource(
