@@ -1,8 +1,18 @@
 # Data Architecture Refactor Progress
 
-작성일: 2026-07-28
+작성일: 2026-07-29
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
+
+## 2026-07-29 Android 우선 출시 결정
+
+- 초기 Production 지원 범위를 Web·Android로 확정했다.
+- TASK-060은 Web/Web, Web/Android, Android/Android 실제 기기 Gate만 출시 차단 조건으로 사용한다.
+- TASK-061의 7일 안정성·비용 관측과 TASK-062 복구 smoke도 Web·Android release candidate를
+  기준으로 수행한다.
+- TASK-063은 Web·Android Production preflight와 Android 내부→5%→25%→100% rollout을 담당한다.
+- iOS typecheck, export, simulator launch는 비차단 회귀 검사로 유지한다.
+- iOS 실기기, OAuth·push·lifecycle, TestFlight/App Store 검증과 출시는 TASK-064로 이관했다.
 
 ## 2026-07-28 TASK-060 Simulator PREPASS
 
@@ -14,7 +24,8 @@
 - plan command가 canonical row가 되기 전에 Storage upload가 실행되던 race를 명시적 outbox flush로
   수정했다.
 - iOS release app은 두 simulator에서 설치·실행됐으나 기능·권한 전체 매트릭스는 미실행이다.
-- 실제 Android/iOS 기기가 없어 TASK-060은 진행 중이며 Production 판정은 `NO-GO`를 유지한다.
+- Android 실제 기기가 없어 TASK-060은 진행 중이며 Android Production 판정은 `NO-GO`를 유지한다.
+- iOS 실기기 미검증은 TASK-064 후속 범위이며 Android 출시 차단 항목에서 제외한다.
 
 ## 2026-07-27 TASK-059 완료
 

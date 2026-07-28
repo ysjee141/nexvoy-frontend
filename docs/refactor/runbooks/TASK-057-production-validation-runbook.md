@@ -2,9 +2,10 @@
 
 ## 결론
 
-이 Runbook은 Local → DEV → 복구 프로젝트 → Production 순서로 실행한다. 각 단계는 이전 Gate의 서명된
-증적이 있어야 시작한다. Production migration과 최종 GO는 한 사람이 단독 승인하지 않는다. 명령 실행 전
-항상 project ref와 release SHA를 소리 내어 교차 확인한다.
+이 Runbook은 Web·Android 초기 출시를 대상으로 Local → DEV → 복구 프로젝트 → Production 순서로
+실행한다. 각 단계는 이전 Gate의 서명된 증적이 있어야 시작한다. Production migration과 최종 GO는
+한 사람이 단독 승인하지 않는다. 명령 실행 전 항상 project ref와 release SHA를 소리 내어 교차
+확인한다. iOS 실기기와 App Store 출시는 TASK-064에서 별도 실행한다.
 
 ## 목차
 
@@ -14,7 +15,7 @@
 - [1단계: 로컬 Gate](#1단계-로컬-gate)
 - [2단계: DEV migration ledger 정합화](#2단계-dev-migration-ledger-정합화)
 - [3단계: DEV history 정합화와 원격 안전 검증](#3단계-dev-history-정합화와-원격-안전-검증)
-- [4단계: 실기기 통합 테스트](#4단계-실기기-통합-테스트)
+- [4단계: Web·Android 실기기 통합 테스트](#4단계-webandroid-실기기-통합-테스트)
 - [5단계: 7일 관측](#5단계-7일-관측)
 - [6단계: DB와 Storage 복구 Rehearsal](#6단계-db와-storage-복구-rehearsal)
 - [7단계: Production Preflight](#7단계-production-preflight)
@@ -50,9 +51,9 @@ Release ticket에 다음 정보를 먼저 기록한다.
 | Release SHA | `git rev-parse HEAD` 결과 |
 | PR/Tag | PR URL과 release tag |
 | Web 배포 | Preview/Production deployment ID |
-| Mobile 배포 | Android/iOS build ID와 version/build number |
+| Mobile 배포 | Android build ID와 version/build number, iOS 비차단 회귀 결과 |
 | 환경 | project ref, Supabase region |
-| 담당자 | Release manager, DB operator, QA, Web, Android, iOS, on-call |
+| 담당자 | Release manager, DB operator, QA, Web, Android, on-call |
 | 기준 문서 | TASK-057 계획·테스트·Runbook commit |
 | 시작 시각 | ISO 8601, `Asia/Seoul` |
 
@@ -239,19 +240,22 @@ backup, dry-run 승인을 거쳐 적용하며 이 Runbook의 history repair와 �
 - viewer/revoked/outsider write 성공
 - 반복 4xx/5xx, retry storm, revision 불일치
 
-## 4단계: 실기기 통합 테스트
+## 4단계: Web·Android 실기기 통합 테스트
 
-1. Android/iOS Preview build를 생성한다.
-2. 실제 기기에 설치하고 Metro 없이 실행한다.
+1. Android Preview/Internal build를 생성한다.
+2. Android 실제 기기 두 대에 설치하고 Metro 없이 실행한다.
 3. [필수 플랫폼 매트릭스](../test-plans/TASK-057-production-integration-test-cases.md#필수-플랫폼-매트릭스)를
    모두 실행한다.
 4. 각 조합에서 `MAN-A`, `MAN-D`, `MAN-C`, `MAN-S`, `MAN-X`, `MAN-M`의 P0/P1을 실행한다.
-5. Android는 Logcat, iOS는 device console, Web은 network/HAR와 console을 수집한다.
+5. Android는 Logcat, Web은 network/HAR와 console을 수집한다.
 6. 같은 place ID로 Web과 Mobile이 만든 Storage path가 byte 단위로 같은지 확인한다. 현재 구현처럼
    Web의 SHA-256과 Mobile의 별도 hash가 다르면 `B-11` 실패로 판정하고 공통 Core 함수로 수정한다.
 7. 목록에서는 `_w240`, 상세에서만 `_w800`이 요청되는지 network log로 확인한다.
+8. Android Google/Kakao OAuth, invitation deep link, 실제 초대 이메일, push·일정 알림을 확인한다.
 
 Mobile 설치·Logcat 절차는 `docs/develop-context/mobile-app-verification-lifecycle.md`를 따른다.
+iOS typecheck, export, simulator launch는 공통 회귀 검사로 기록하되 실기기 기능 검증은 TASK-064에서
+실행한다.
 
 합격 기준:
 
@@ -347,7 +351,7 @@ where bucket_id = 'place-photos';
 
 - 원본과 Recovery의 table count, sample resource revision, membership, operation receipt를 비교한다.
 - `trip_asset_objects`의 active path와 Storage manifest가 일치하는지 확인한다.
-- A/B/C/D 권한 smoke와 여행·일정·준비물·asset read를 실행한다.
+- Web·Android에서 A/B/C/D 권한 smoke와 여행·일정·준비물·asset read를 실행한다.
 - 시작부터 앱 read/write 성공까지의 RTO와 허용 가능한 데이터 기준 시점 RPO를 기록한다.
 
 ## 7단계: Production Preflight
@@ -361,10 +365,10 @@ where bucket_id = 'place-photos';
 5. 원격 전용 version을 삭제하거나 local version 전체를 일괄 repair하지 않는다.
 6. 승인된 정합화 이후 `db push --dry-run` 결과를 release ticket에 저장한다.
 7. managed DB backup, logical export, Storage manifest/object export를 만든다.
-8. Web/Mobile env, OAuth redirect, 이메일 발신, push, Maps, analytics, alert를 검증한다.
+8. Web·Android env, OAuth redirect, 이메일 발신, Android push, Maps, analytics, alert를 검증한다.
 9. `ASSET_CLEANUP_SECRET`을 secret store에 등록하고 scheduler의 인증 header, 주기, timeout, 실패 alert를 검증한다.
-10. 약관·개인정보 처리방침 URL과 store privacy/data safety 정보를 검토한다.
-11. 최소 Mobile 버전, 강제 업데이트, Web rollback, on-call 담당자를 승인한다.
+10. 약관·개인정보 처리방침 URL과 Google Play privacy/data safety 정보를 검토한다.
+11. 최소 Android 버전, 강제 업데이트, Web rollback, on-call 담당자를 승인한다.
 12. 최종 GO 회의에서 Release manager와 DB operator가 각각 서명한다.
 
 Production preflight에서는 고객 row를 수정하는 테스트를 하지 않는다. 승인된 내부 계정 smoke는 migration과
@@ -374,13 +378,14 @@ client 배포 후 내부 rollout 단계에서 수행한다.
 
 | 단계 | 실행 | Hold 중 확인 | 중단 조건 |
 |---|---|---|---|
-| 내부 | 운영·QA 계정에 Web/Mobile 제공 | P0 smoke, error/retry/latency | P0/P1 결함 또는 임계치 초과 |
+| 내부 | 운영·QA 계정에 Web·Android 제공 | P0 smoke, error/retry/latency | P0/P1 결함 또는 임계치 초과 |
 | 5% | 제한 사용자 확대 | 데이터/권한 incident, support 문의 | incident 1건이라도 발생 |
 | 25% | 대상 확대 | queue/Realtime/egress 추세 | 15분 이상 임계치 초과 |
 | 100% | 전체 공개 | 지속 monitoring과 일일 점검 | rollback 기준 충족 |
 
 각 단계는 최소 한 영업일을 유지한다. 25%는 최소 두 영업일을 유지한다. Hold 종료 시 Release manager와
-on-call 담당자가 다음 단계 GO를 기록한다.
+on-call 담당자가 다음 단계 GO를 기록한다. 100%는 Android 지원 대상만 의미하며 iOS rollout은
+TASK-064에서 별도 실행한다.
 
 ## 중단과 롤백
 

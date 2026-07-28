@@ -1,4 +1,4 @@
-# TASK-063: Production 사전 점검 및 단계적 출시
+# TASK-063: Web·Android Production 사전 점검 및 단계적 출시
 
 - 상태: 대기
 - 선행 작업: `TASK-061`, `TASK-062`
@@ -6,25 +6,31 @@
 
 ## 목적
 
-Production `runbcaegpefqnljsswhv`의 schema, backup, 외부 연동, 운영 책임을 독립 확인하고 내부에서
-100%까지 단계적으로 확대한다.
+Production `runbcaegpefqnljsswhv`의 schema, backup, Web·Android 외부 연동과 운영 책임을 독립
+확인하고 Android 지원 대상의 100%까지 단계적으로 확대한다.
 
 ## 범위
 
 - Production migration history·object drift 독립 감사
 - 배포 직전 DB와 Storage backup·checksum
-- Web/Mobile release SHA, 환경변수, OAuth, 이메일, push, 도메인
+- Web/Android release SHA, 환경변수, OAuth, 이메일, Android push·deep link, 도메인
 - asset cleanup scheduler, `ASSET_CLEANUP_SECRET`, 실패 alert
-- API 인증·rate limit, 약관·개인정보, 지원·incident 연락망
+- API 인증·rate limit, Google Play 정보, 약관·개인정보, 지원·incident 연락망
 - 내부→5%→25%→100% rollout과 단계별 hold·GO 승인
 - 쓰기 동결, authority-only client rollback, 비파괴 DB 복원 훈련
 
 ## 완료 조건
 
 - 마스터 계획 `G0`~`G6`이 GO이고 미해결 P0/P1 결함이 없다.
-- release manager, DB operator, Web/Mobile 배포자, on-call 담당자가 승인한다.
+- release manager, DB operator, Web/Android 배포자, on-call 담당자가 승인한다.
 - 단계별 임계치와 최소 관찰 시간을 충족한 뒤에만 다음 비율로 확대한다.
 - 100% 전환 후에도 alert, backup, rollback 준비가 유지된다.
+- iOS가 지원 대상 또는 출시 완료로 표시되지 않는다.
+
+## 제외 범위
+
+- iOS 실기기·TestFlight·App Store·iOS OAuth/push 검증과 출시
+- iOS Production 출시는 Android 안정화 이후 `TASK-064`에서 별도 승인
 
 ## 즉시 중단 조건
 

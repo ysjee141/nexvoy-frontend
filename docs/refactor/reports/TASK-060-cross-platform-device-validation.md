@@ -1,15 +1,22 @@
-# TASK-060 Web·Mobile 통합 검증 보고서
+# TASK-060 Web·Android 통합 검증 보고서
 
-작성일: 2026-07-28
+작성일: 2026-07-29
 환경: DEV `ivgkqzwosbjukonlpfdw`
-상태: **Simulator PREPASS / 실기기 BLOCKED / Production NO-GO**
+상태: **Simulator PREPASS / Android 실기기 BLOCKED / Android Production NO-GO**
 
 ## 현재 판정
 
 Android 시뮬레이터 두 대에서 동일 계정의 여행·일정·장소 사진 생성과 신규 설치 복구가 canonical
-데이터로 수렴했다. iOS 시뮬레이터용 release archive도 빌드·설치·실행됐다. 다만 실제 Android/iOS
-기기와 다중 역할 전체 매트릭스는 실행하지 못했으므로 TASK-060과 Production Gate는 완료 처리하지
-않는다.
+데이터로 수렴했다. iOS 시뮬레이터용 release archive도 빌드·설치·실행됐지만 iOS는 초기 출시
+범위에서 제외했다. 실제 Android 기기와 다중 역할 전체 매트릭스를 실행하지 못했으므로 TASK-060과
+Android Production Gate는 완료 처리하지 않는다.
+
+## 출시 범위 결정
+
+- 초기 지원 플랫폼은 Web과 Android다.
+- iOS typecheck, export, simulator launch는 공유 코드 회귀 방지용 비차단 Gate로 유지한다.
+- iOS 실기기·OAuth·push·TestFlight/App Store 출시는 `TASK-064`에서 별도 검증한다.
+- iOS 미검증은 Android 출시의 차단 항목이 아니며 iOS 지원을 선언하지 않는 조건으로 관리한다.
 
 ## 기준선
 
@@ -29,9 +36,8 @@ Android 시뮬레이터 두 대에서 동일 계정의 여행·일정·장소 �
 | Android preview build | PASS | APK SHA-256 `f63f08b...d5fb3` |
 | Android 동일 계정 신규 설치 복구 | PASS | 여행·일정·사진, revision 3, UUID v4 |
 | iOS simulator release archive | PREPASS | archive SHA-256 `43d8ffd...1699`, 2대 설치·실행 |
-| iOS 데이터·권한 전체 시나리오 | 대기 | 로그인 이후 기능 매트릭스 미실행 |
 | 실제 Android A1/A2 | BLOCKED | 실제 기기 미제공 |
-| 실제 iOS I1/I2 | BLOCKED | 실제 기기 미제공 |
+| iOS 데이터·권한·실기기 | DEFERRED | `TASK-064`, Android Gate 비차단 |
 
 ## 발견 결함과 조치
 
@@ -46,15 +52,14 @@ Android 시뮬레이터 두 대에서 동일 계정의 여행·일정·장소 �
 
 ## 잔여 위험
 
-- iOS EAS local wrapper는 native build와 archive 생성 후 임시 디렉토리 정리에서 `ENOTEMPTY`로
-  종료 코드 1을 반환했다. archive hash, 압축 해제, 설치, 실행은 성공했지만 도구 정리 오류는
-  재확인이 필요하다.
 - Expo Doctor는 dynamic config, Metro 기본값, 직접 `expo-modules-core` 의존성 경고를 남긴다.
-- iOS icon, Firebase/RNFirebase deprecation, Ad ID/ATT 심사 범위를 출시 전 확인해야 한다.
-- 실제 기기의 airplane mode, background/force-stop, push, 역할 변경·revoke, 초대 수락은 미검증이다.
+- Android 실제 기기의 airplane mode, background/force-stop, push, 역할 변경·revoke, 초대 수락과
+  Google/Kakao 로그인이 미검증이다.
+- iOS EAS cleanup 경고, icon, Firebase/RNFirebase deprecation과 심사 범위는 `TASK-064` 입력으로
+  이관한다.
 
 ## 다음 판정 조건
 
-실제 Android/iOS 기기에서 필수 플랫폼 조합과 P0/P1 수동 케이스를 100% 통과하고 데이터 손실,
-계정 노출, 권한 우회, canonical 중복이 0건이어야 TASK-060을 완료한다. 그 전까지 Production은
-`NO-GO`다.
+실제 Android 기기 두 대에서 Web/Android, Android/Android 필수 조합과 P0/P1 수동 케이스를 100%
+통과하고 데이터 손실, 계정 노출, 권한 우회, canonical 중복이 0건이어야 TASK-060을 완료한다. 그
+전까지 Android Production은 `NO-GO`다.

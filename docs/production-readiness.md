@@ -2,10 +2,17 @@
 
 ## 결론
 
-현재 OnVoy는 **Production NO-GO**다. Authority-only 제품 코드와 로컬 자동 Gate는 통과했지만 원격
-migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 관측, DB와 Storage 복구, 운영·법무·출시
-책임 증적이 남아 있다. 최종 판정은 [TASK-057 마스터 계획](refactor/reports/TASK-057-production-final-validation-plan.md)의
+현재 OnVoy는 **Web·Android Production NO-GO**다. Authority-only 제품 코드와 로컬 자동 Gate는
+통과했지만 Android 실기기, 7일 관측, DB와 Storage 복구, 운영·법무·출시 책임 증적이 남아 있다.
+최종 판정은 [TASK-057 마스터 계획](refactor/reports/TASK-057-production-final-validation-plan.md)의
 `G0`~`G7`을 따른다.
+
+## 출시 플랫폼
+
+- 초기 Production 지원 범위는 Web과 Android다.
+- iOS는 지원·출시 대상에서 제외하고 `TASK-064`에서 실기기·TestFlight/App Store Gate를 별도 수행한다.
+- 공통 변경의 iOS typecheck, export, simulator launch는 비차단 회귀 검사로 계속 수행한다.
+- Android 100% rollout은 iOS Production GO를 의미하지 않는다.
 
 ## 기준 문서
 
@@ -17,8 +24,9 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 | 실행·증적·출시 | [TASK-057 Runbook](refactor/runbooks/TASK-057-production-validation-runbook.md) |
 | 비용 기준 | [TASK-056 초기 Production 비용](refactor/reports/TASK-056-initial-production-cost-baseline.md) |
 
-실제 실행은 `TASK-058` 자동화, `TASK-059` DEV migration, `TASK-060` 실기기, `TASK-061` 관측,
-`TASK-062` 복구, `TASK-063` Production 출시 순서로 진행한다.
+실제 실행은 `TASK-058` 자동화, `TASK-059` DEV migration, `TASK-060` Web·Android 실기기,
+`TASK-061` 관측, `TASK-062` 복구, `TASK-063` Web·Android Production 출시 순서로 진행한다.
+iOS는 Android 안정화 이후 `TASK-064`에서 진행한다.
 
 ## 목표 아키텍처
 
@@ -33,10 +41,10 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 
 | Gate | GO 기준 | 현재 상태 |
 |---|---|---|
-| G0 문서·책임 | 문서 버전과 Release/DB/QA/Web/Mobile/on-call 담당자 지정 | NO-GO |
-| G1 로컬 자동화 | P0 자동화 공백 보완, 전체 test/typecheck/build PASS | 부분 PASS |
-| G2 DEV schema | historical 9건+TASK-056 전체 fingerprint, migration history drift 0 | NO-GO |
-| G3 DEV 제품 | 수동 P0/P1과 필수 플랫폼 조합 100% PASS | NO-GO |
+| G0 문서·책임 | 문서 버전과 Release/DB/QA/Web/Android/on-call 담당자 지정 | NO-GO |
+| G1 로컬 자동화 | P0 자동화, 전체 test/typecheck/build PASS | PASS |
+| G2 DEV schema | migration history drift 0, strict fingerprint와 authenticated smoke | PASS |
+| G3 DEV 제품 | Web/Web·Web/Android·Android/Android P0/P1 100% PASS | NO-GO |
 | G4 관측 | 연속 7일 무사고와 지표 임계치 충족 | NO-GO |
 | G5 복구 | DB+Storage 격리 복구와 RTO/RPO 검증 | NO-GO |
 | G6 Production preflight | 독립 history 감사, backup, 환경·법무·alert 승인 | NO-GO |
@@ -54,18 +62,27 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 | Browser | 지원 Chrome/Safari와 mobile browser 핵심 smoke | 플랫폼 결과표 |
 | Rollback | 직전 authority-only Vercel deployment 전환 가능 | rehearsal 기록 |
 
-## Mobile/EAS 준비
+## Android/EAS 준비
 
 | 항목 | GO 기준 | 증적 |
 |---|---|---|
-| App identity | 이름 `온여정`, scheme `onvoy`, package/bundle `xyz.nexvoy.app` | build metadata |
-| Build | Android/iOS Production profile 성공 | EAS build URL |
-| Preview | Metro 없이 실제 기기 실행 | 설치 영상, Logcat/device log |
+| App identity | 이름 `온여정`, scheme `onvoy`, package `xyz.nexvoy.app` | build metadata |
+| Build | Android Production profile 성공 | EAS build URL |
+| Preview | Metro 없이 Android 실제 기기 실행 | 설치 영상과 Logcat |
 | Environment | Supabase, Maps, Firebase가 build time에 정확히 주입 | secret 없는 build 검토 기록 |
-| Deep link | OAuth와 invitation link가 앱으로 연결 | Android/iOS 영상 |
+| Deep link | OAuth와 invitation link가 Android 앱으로 연결 | Android 영상 |
 | Upgrade | SQLite schema와 cache/outbox 보존 | upgrade case 결과 |
-| Store | Internal/TestFlight, privacy label, 권한 설명, 심사 metadata 준비 | Console draft |
+| Store | Google Play Internal, Data safety, 권한 설명, 심사 metadata 준비 | Console draft |
 | 최소 버전 | 직전 안정 authority-only build 이상을 강제 | 정책과 적용 화면 |
+
+## iOS 비차단 회귀
+
+| 항목 | Android 출시 중 기준 | iOS 출시 기준 |
+|---|---|---|
+| Typecheck·export | 공통 변경마다 PASS | 필수 |
+| Simulator launch | release archive 실행 유지 | 사전 Gate |
+| 실기기·OAuth·push | TASK-060/063 제외 | TASK-064 필수 |
+| TestFlight/App Store | 준비 의무 없음 | TASK-064 필수 |
 
 ## Supabase 준비
 
@@ -85,10 +102,10 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 | 영역 | GO 기준 |
 |---|---|
 | 이메일 | Resend 발신 domain, invitation delivery, bounce/error 확인 |
-| Push/알림 | Android/iOS token, 일정 알림 예약·취소, 권한 거부 UX 확인 |
+| Push/알림 | Android token, 일정 알림 예약·취소, 권한 거부 UX 확인 |
 | 지도/장소 | Google Maps/Places key 제한과 quota, 오류 fallback 확인 |
 | Analytics | GA4/Firebase event 수신, raw ID·콘텐츠·secret 0건 |
-| Crash | Web/Mobile release/environment tag와 critical alert 수신 확인 |
+| Crash | Web/Android release/environment tag와 critical alert 수신 확인 |
 | Feedback | Discord 또는 지원 채널 delivery와 개인정보 마스킹 확인 |
 | Supabase | DB CPU, connection, Auth error, Storage, Realtime alert owner 지정 |
 | Vercel/EAS | deploy/build failure 알림 수신자 지정 |
@@ -97,7 +114,7 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 
 | 항목 | GO 기준 |
 |---|---|
-| 약관/개인정보 | Web/Mobile과 store에서 접근 가능한 Production URL |
+| 약관/개인정보 | Web/Android와 Google Play에서 접근 가능한 Production URL |
 | 수집 항목 | 이메일, 닉네임, 여행 내용, 사진, push token, analytics, crash log 명시 |
 | 제3자/위탁 | Supabase, Vercel, Google, Firebase, Resend, Discord 등 반영 |
 | 탈퇴/삭제 | 계정 탈퇴, canonical row 처리, local namespace 삭제 정책 검증 |
@@ -127,5 +144,6 @@ migration, 제품 E2E 자동화 공백, 실기기 플랫폼 매트릭스, 7일 �
 
 ## 최종 승인
 
-Release manager, DB operator, QA, Web, Mobile, Security/Privacy, on-call 담당자가 각 Gate의 증적을 확인한다.
-Production migration 실행자와 최종 GO 승인자는 분리한다. 모든 Gate가 GO일 때만 100% rollout을 승인한다.
+Release manager, DB operator, QA, Web, Android, Security/Privacy, on-call 담당자가 각 Gate의 증적을
+확인한다. Production migration 실행자와 최종 GO 승인자는 분리한다. 모든 Gate가 GO일 때만 Android
+100% rollout을 승인한다. iOS 승인은 TASK-064에서 별도로 수행한다.

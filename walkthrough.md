@@ -1,4 +1,27 @@
-# Walkthrough: TASK-060 Web·Mobile 통합 검증 Simulator PREPASS
+# Walkthrough: Android 우선 Production 작업 재구성
+
+## 결정
+
+초기 Production 지원 범위를 Web과 Android로 확정했다. iOS 미검증은 Android 출시 차단 항목에서
+제외하되 iOS 지원을 선언하지 않으며, 공유 코드의 typecheck·export·simulator launch만 비차단 회귀
+Gate로 유지한다.
+
+## 작업 재구성
+
+- TASK-060: Web/Web, Web/Android, Android/Android 실기기 통합 검증
+- TASK-061: Web·Android release candidate의 DEV 7일 안정성·비용 관측
+- TASK-062: DB·Storage 복구와 Web·Android 권한·데이터 smoke
+- TASK-063: Web·Android Production preflight와 Android 단계적 rollout
+- TASK-064: iOS 실기기·OAuth·push·lifecycle·TestFlight/App Store 검증과 별도 rollout
+
+## 판정
+
+Android 실제 기기, 외부 연동, 관측과 복구가 남아 Web·Android Production은 계속 `NO-GO`다. iOS
+simulator PREPASS는 유지하지만 iOS Production 판정은 TASK-064 전까지 `DEFERRED`다.
+
+---
+
+# Walkthrough: TASK-060 Web·Android 통합 검증 Simulator PREPASS
 
 ## 판정
 
@@ -25,12 +48,13 @@ iOS 두 대의 설치 빌드를 검증했다. Android 동일 계정·asset 수�
 - DEV canonical revision 3, plan UUID v4, 사진 URL, 240/800 asset metadata 확인
 - iOS simulator release archive 빌드 및 iPhone 16 Pro/16e 설치·실행 PREPASS
 - Google/Kakao OAuth와 실제 초대 이메일 수락은 사용자 승인에 따라 Simulator Gate에서 제외
-- 실제 Android/iOS 기기 검증은 장비 미제공으로 BLOCKED
+- Android 실제 기기 검증은 장비 미제공으로 BLOCKED
+- iOS 실기기 검증은 TASK-064로 이관해 Android Gate에서 제외
 
 ## 다음 단계
 
-실제 Android/iOS 기기에서 플랫폼 조합, 다중 역할, offline/background/force-stop, 초대·revoke와
-asset 전체 P0/P1 수동 매트릭스를 실행한다.
+Android 실제 기기에서 Web/Android·Android/Android, 다중 역할, offline/background/force-stop,
+초대·revoke와 asset 전체 P0/P1 수동 매트릭스를 실행한다.
 
 ---
 
