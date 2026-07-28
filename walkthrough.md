@@ -1,3 +1,39 @@
+# Walkthrough: TASK-060 Web·Mobile 통합 검증 Simulator PREPASS
+
+## 판정
+
+Issue [#378](https://github.com/ysjee141/nexvoy-frontend/issues/378)에 따라 DEV에서 Android 두 대와
+iOS 두 대의 설치 빌드를 검증했다. Android 동일 계정·asset 수렴과 iOS release 앱 실행은
+`PREPASS`지만, 실제 기기와 전체 역할·offline 매트릭스가 남아 TASK-060은 진행 중이고 Production은
+`NO-GO`다.
+
+## 발견 결함과 수정
+
+- React Native에서 `crypto.randomUUID()`가 제공되지 않을 때 생성되던 `plan-*` ID가 PostgreSQL
+  UUID 변환에서 거부됐다. Core 공통 secure UUID v4 생성기를 추가하고 Mobile entity 생성 경로를
+  통일했다.
+- 장소 사진 upload가 plan command의 canonical 반영보다 먼저 실행돼 Storage RLS가 거부됐다.
+  outbox가 `synced`가 된 뒤 upload하고 image URL command를 다시 flush하도록 순서를 고정했다.
+- DEV 테스트 계정 도구는 정확한 project ref guard, mode `0600` credential과 장소 사진 정리를
+  포함한다.
+
+## 검증
+
+- Production P0 자동화, typecheck, package/Web/Mobile build와 Mobile lint PASS
+- Android preview APK 빌드·설치·실행 PASS
+- Android A에서 만든 여행·일정·Google 장소 사진을 Android B 새 설치에서 복구 PASS
+- DEV canonical revision 3, plan UUID v4, 사진 URL, 240/800 asset metadata 확인
+- iOS simulator release archive 빌드 및 iPhone 16 Pro/16e 설치·실행 PREPASS
+- Google/Kakao OAuth와 실제 초대 이메일 수락은 사용자 승인에 따라 Simulator Gate에서 제외
+- 실제 Android/iOS 기기 검증은 장비 미제공으로 BLOCKED
+
+## 다음 단계
+
+실제 Android/iOS 기기에서 플랫폼 조합, 다중 역할, offline/background/force-stop, 초대·revoke와
+asset 전체 P0/P1 수동 매트릭스를 실행한다.
+
+---
+
 # Walkthrough: TASK-059 DEV Migration Ledger 정합화
 
 ## 요약

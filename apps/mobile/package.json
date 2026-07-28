@@ -11,6 +11,7 @@
     "build": "expo export --platform all --output-dir dist",
     "build:development:android:local": "node scripts/eas-local-build.mjs --profile development --platform android --local --clear-cache",
     "build:preview:android:local": "node scripts/eas-local-build.mjs --profile preview --platform android --local --clear-cache",
+    "build:preview:ios-simulator:local": "node scripts/eas-local-build.mjs --profile preview-simulator --platform ios --local --clear-cache",
     "test:authority": "tsx --test lib/data/server-authority/__tests__/*.test.ts",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint"

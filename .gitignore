@@ -22,6 +22,7 @@
 # production
 /build
 apps/mobile/build-*.apk
+apps/mobile/build-*.tar.gz
 
 # misc
 .DS_Store
@@ -35,6 +36,12 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+
+# Firebase platform config (local/EAS secret input)
+/google-services.json
+/GoogleService-Info.plist
+/apps/mobile/google-services.json
+/apps/mobile/GoogleService-Info.plist
 
 # vercel
 .vercel

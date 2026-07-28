@@ -45,6 +45,7 @@ import {
   getChecklistCategories,
   getChecklistItemStatus,
   createChecklistCategory,
+  createUuid,
   formatDate,
   formatCurrency,
   getCurrencyFromTimezone,
@@ -89,6 +90,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import {
   createMobileProductRepositories,
+  flushMobileProductResource,
   getMobileProductSyncSnapshot,
   resolveMobileProductConflict,
   subscribeMobileProductResource,
@@ -660,11 +662,6 @@ function confirmNotificationPermissionPrompt(): Promise<boolean> {
   })
 }
 
-function createEntityId(prefix: string): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`
-}
-
 function normalizeDocumentRole(role: string | null): 'owner' | 'editor' | 'viewer' | null {
   return role === 'owner' || role === 'editor' || role === 'viewer' ? role : null
 }
@@ -687,7 +684,7 @@ async function syncPlanUrls(
   await Promise.all(normalizedNextUrls.map((url) => {
     const existing = previousByUrl.get(url)
     return repositories.plans.upsertPlanUrl(tripId, {
-      id: existing?.id ?? createEntityId('plan-url'),
+      id: existing?.id ?? createUuid(),
       planId,
       url,
     })
@@ -893,7 +890,7 @@ export default function TripDetailScreen() {
     const repositories = await createMobileProductRepositories(supabase, {
       actorRole: normalizeDocumentRole(userRole),
     })
-    const checklistId = createEntityId('checklist')
+    const checklistId = createUuid()
     const result = await repositories.checklists.createChecklist(id, {
       id: checklistId,
       title: '준비물',
@@ -1107,7 +1104,7 @@ export default function TripDetailScreen() {
       const repositories = await createMobileProductRepositories(supabase, {
         actorRole: normalizeDocumentRole(userRole),
       })
-      const planId = editingPlan?.id ?? createEntityId('plan')
+      const planId = editingPlan?.id ?? createUuid()
       const planInput = {
         title: input.title,
         location: input.location,
@@ -1197,19 +1194,22 @@ export default function TripDetailScreen() {
       setIsPlanSheetOpen(false)
       await loadTrip()
       if (
-        authorityServerReady &&
         savedPlan &&
         session?.user.id &&
         input.google_place_id &&
         input.photo_reference
       ) {
-        void storePlanPlacePhoto({
-          planId: savedPlan.id,
-          tripId: id,
-          userId: session.user.id,
-          placeId: input.google_place_id,
-          photoReference: input.photo_reference,
-        })
+        void flushMobileProductResource(supabase, 'trip', id)
+          .then((syncSnapshot) => {
+            if (syncSnapshot.status !== 'synced') return null
+            return storePlanPlacePhoto({
+              planId: savedPlan.id,
+              tripId: id,
+              userId: session.user.id,
+              placeId: input.google_place_id,
+              photoReference: input.photo_reference,
+            })
+          })
           .then(async (imageUrl) => {
             if (!imageUrl) return
             await repositories.plans.updatePlan(id, {
@@ -1219,6 +1219,7 @@ export default function TripDetailScreen() {
                 photoReference: input.photo_reference,
               },
             })
+            await flushMobileProductResource(supabase, 'trip', id)
             setPlans((prev) =>
               prev.map((plan) =>
                 plan.id === savedPlan.id
@@ -1232,7 +1233,7 @@ export default function TripDetailScreen() {
           })
       }
     },
-    [authorityServerReady, editingPlan, id, loadTrip, session?.user.id, userRole]
+    [editingPlan, id, loadTrip, session?.user.id, userRole]
   )
 
   const handleDeletePlan = useCallback(
@@ -1304,7 +1305,7 @@ export default function TripDetailScreen() {
           actorRole: normalizeDocumentRole(userRole),
         })
         await repositories.checklists.createItem(id, {
-          id: createEntityId('checklist-item'),
+          id: createUuid(),
           checklistId: currentChecklist.id,
           name: input.item_name,
           categoryName: normalizedCategory,
@@ -1351,7 +1352,7 @@ export default function TripDetailScreen() {
         id,
         currentChecklist.id,
         templateId,
-        template.items.map(() => createEntityId('checklist-item')),
+        template.items.map(() => createUuid()),
       )
       setIsTemplateSheetOpen(false)
       await loadChecklist()

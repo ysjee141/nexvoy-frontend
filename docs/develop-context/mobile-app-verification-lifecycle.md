@@ -1,6 +1,8 @@
 # Mobile App Verification Lifecycle
 
-OnVoy mobile app은 Expo Router 기반 React Native 앱이지만, native module을 포함하는 순간부터 Expo Go만으로는 검증할 수 없다. 특히 `react-native-webrtc` 같은 native dependency가 들어간 빌드는 EAS dev client, preview APK, 또는 prebuild된 native project에서 검증해야 한다.
+OnVoy mobile app은 Expo Router 기반 React Native 앱이며 Expo SQLite, Background Task,
+Notifications와 선택적 React Native Firebase native config를 사용한다. 따라서 최종 검증은 Expo
+Go가 아니라 EAS dev client, preview build 또는 prebuild된 native project에서 수행한다.
 
 이 문서는 앱 빌드, 실제 디바이스 설치, 실행, Logcat 분석까지의 표준 검증 절차를 정의한다.
 
@@ -13,9 +15,10 @@ OnVoy mobile app은 Expo Router 기반 React Native 앱이지만, native module�
 | JS/UI 빠른 개발 | EAS development client | 필요 | native runtime은 고정하고 JS를 빠르게 갱신 |
 | 실기기 standalone 검증 | EAS preview APK | 불필요 | 사용자가 설치할 앱과 유사한 환경 검증 |
 | native 설정/Gradle 디버깅 | `expo prebuild` + Android Studio | variant에 따라 다름 | Android native project 직접 확인 |
-| Expo Go | 사용 불가 | 필요 | `react-native-webrtc` 등 custom native module이 없을 때만 가능 |
+| Expo Go | 최종 검증 불가 | 필요 | 순수 JS/UI의 임시 확인에만 사용 |
 
-`react-native-webrtc`가 포함된 현재 구성에서는 Expo Go를 검증 경로로 사용하지 않는다.
+현재 authority-only 구성에서도 SQLite lifecycle, background task, notifications와 Firebase native
+연동은 Expo Go만으로 검증할 수 없다.
 
 ---
 
@@ -37,7 +40,8 @@ OnVoy mobile app은 Expo Router 기반 React Native 앱이지만, native module�
 
 - UI/JS를 빠르게 바꾸며 확인해야 하면 `development`.
 - Metro 없이 실제 배포형 실행을 검증해야 하면 `preview`.
-- `react-native-webrtc` 같은 native module 존재 여부를 검증하려면 Expo Go가 아니라 둘 중 하나를 사용한다.
+- SQLite, background task, notifications, Firebase native module을 검증하려면 Expo Go가 아니라
+  development 또는 preview build를 사용한다.
 
 ---
 
@@ -170,7 +174,7 @@ adb -s <device-serial> shell monkey -p xyz.nexvoy.app 1
 4. Logcat에서 crash 확인
 
 ```bash
-adb -s <device-serial> logcat | rg "xyz.nexvoy.app|AndroidRuntime|ReactNativeJS|Expo|WebRTC"
+adb -s <device-serial> logcat | rg "xyz.nexvoy.app|AndroidRuntime|ReactNativeJS|Expo|Firebase|SQLite"
 ```
 
 주의:
@@ -245,7 +249,7 @@ Android Studio:
 CLI:
 
 ```bash
-adb -s <device-serial> logcat | rg "xyz.nexvoy.app|AndroidRuntime|ReactNativeJS|Expo|WebRTC"
+adb -s <device-serial> logcat | rg "xyz.nexvoy.app|AndroidRuntime|ReactNativeJS|Expo|Firebase|SQLite"
 ```
 
 Crash 분석 시 가장 먼저 `FATAL EXCEPTION`, `JavascriptException`, `NoClassDefFoundError`, `Unable to resolve`, `Cannot find module`을 찾는다.

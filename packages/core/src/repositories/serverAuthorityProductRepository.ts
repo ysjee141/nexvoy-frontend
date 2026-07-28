@@ -30,6 +30,7 @@ import type {
   CanonicalResourceBundle,
 } from '../authority/serverAuthorityTypes'
 import { createInvitationRepository, type DocumentCollaborator } from '../supabase/invitationRepository'
+import { createUuid as createId } from '../utils/id'
 
 type Tables = Database['public']['Tables']
 type TableRow<TName extends keyof Tables> = Tables[TName]['Row']
@@ -865,13 +866,4 @@ function assertWritable(role: ServerAuthorityActorRole): void {
 
 function assertOwner(role: ServerAuthorityActorRole): void {
   if (role !== 'owner') throw new Error('소유자 권한이 필요합니다.')
-}
-
-function createId(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID()
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (character) => {
-    const random = Math.floor(Math.random() * 16)
-    const value = character === 'x' ? random : (random & 0x3) | 0x8
-    return value.toString(16)
-  })
 }

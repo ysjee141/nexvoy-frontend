@@ -1,8 +1,20 @@
 # Data Architecture Refactor Progress
 
-작성일: 2026-07-23
+작성일: 2026-07-28
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
+
+## 2026-07-28 TASK-060 Simulator PREPASS
+
+- Android preview APK와 iOS simulator release archive를 로컬 EAS로 빌드했다.
+- Android 두 대에서 동일 owner의 여행 생성, 일정·장소 사진 저장, 새 설치 복구를 확인했다.
+- DEV canonical revision 3, UUID v4 plan ID, 240/800 asset metadata와 사진 URL 수렴을 확인했다.
+- React Native의 비표준 fallback ID가 PostgreSQL UUID command를 거부하던 결함을 공통 secure UUID
+  생성기로 수정했다.
+- plan command가 canonical row가 되기 전에 Storage upload가 실행되던 race를 명시적 outbox flush로
+  수정했다.
+- iOS release app은 두 simulator에서 설치·실행됐으나 기능·권한 전체 매트릭스는 미실행이다.
+- 실제 Android/iOS 기기가 없어 TASK-060은 진행 중이며 Production 판정은 `NO-GO`를 유지한다.
 
 ## 2026-07-27 TASK-059 완료
 

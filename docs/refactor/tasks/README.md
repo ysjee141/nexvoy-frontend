@@ -128,7 +128,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-057-production-final-validation.md` | 문서화 완료 | Production 마스터 Gate, 자동·수동 통합 테스트, 증적·출시 Runbook, Issue [#370](https://github.com/ysjee141/nexvoy-frontend/issues/370) |
 | `TASK-058-production-p0-integration-automation.md` | 완료 | `NEW-A01`~`A13`, 로컬 Supabase 단일 Gate, asset write/path hardening, Issue [#374](https://github.com/ysjee141/nexvoy-frontend/issues/374), PR [#375](https://github.com/ysjee141/nexvoy-frontend/pull/375) |
 | `TASK-059-dev-migration-production-gate.md` | 완료 | DEV drift 0·authenticated smoke PASS, Production TASK-058/059 target-only 적용 |
-| `TASK-060-cross-platform-device-validation.md` | 대기 | Web·Android·iOS 실기기, 다중 계정, asset 전체 회귀 |
+| `TASK-060-cross-platform-device-validation.md` | 진행 중 (Simulator PREPASS) | Android 동일 계정·asset 수렴 및 iOS release 실행 확인, 실기기 Gate BLOCKED |
 | `TASK-061-dev-stability-cost-soak.md` | 대기 | DEV 연속 7일 안정성·비용 관측 |
 | `TASK-062-disaster-recovery-rehearsal.md` | 대기 | DB·Storage 격리 복구와 RTO/RPO 검증 |
 | `TASK-063-production-preflight-and-rollout.md` | 대기 | Production 사전 점검과 내부→5%→25%→100% 출시 |

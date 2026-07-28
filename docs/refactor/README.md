@@ -32,6 +32,9 @@
 - `docs/refactor/tasks/TASK-059-dev-migration-production-gate.md`
 - `docs/refactor/reports/TASK-059-dev-migration-ledger-audit.md`
 - `docs/refactor/runbooks/TASK-059-dev-migration-ledger.md`
+- `docs/refactor/tasks/TASK-060-cross-platform-device-validation.md`
+- `docs/refactor/reports/TASK-060-cross-platform-device-validation.md`
+- `docs/refactor/runbooks/TASK-060-cross-platform-device-validation.md`
 - `docs/refactor/runbooks/TASK-052-mobile-authority-product-smoke.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
 - `docs/refactor/runbooks/TASK-055-legacy-runtime-retirement.md`
@@ -47,5 +50,6 @@ DEV/Production에는 테스트 service role seed를 실행하지 않는다. TASK
 TASK-058/059 forward migration을 적용했고 strict fingerprint는 12/12 version, 185/185 객체가
 일치한다. 전용 임시 QA 네 계정의 authenticated remote-safe smoke도 PASS했으며 계정과 QA 데이터는
 정리했다. 사용자 승인 후 Production에도 기존 history를 보존하는 target-only 방식으로
-TASK-058/059를 적용했으며 fingerprint는 183/185다. 남은 ledger와 nullability 차이는 TASK-063에서
-처리한다. 다음 작업은 TASK-060 실기기 검증이다.
+TASK-058/059를 적용했으며 fingerprint는 183/185다. TASK-060의 Android 동일 계정·asset 수렴과 iOS
+release 실행은 Simulator PREPASS지만 실제 기기 Gate가 남아 Production은 `NO-GO`다. 남은 ledger와
+nullability 차이는 TASK-063에서 처리한다.
