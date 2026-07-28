@@ -1,10 +1,10 @@
-# TASK-060 Web·Mobile 통합 검증 Runbook
+# TASK-060 Web·Android 통합 검증 Runbook
 
 ## 목적
 
-DEV `ivgkqzwosbjukonlpfdw`에서 Web, Android, iOS가 같은 canonical row, revision, 권한, offline
-outbox와 asset 결과로 수렴하는지 검증한다. Simulator는 사전 Gate이며 실제 기기 Gate를 대체하지
-않는다.
+DEV `ivgkqzwosbjukonlpfdw`에서 Web과 Android가 같은 canonical row, revision, 권한, offline
+outbox와 asset 결과로 수렴하는지 검증한다. Simulator는 사전 Gate이며 Android 실제 기기 Gate를
+대체하지 않는다. iOS 제품 검증은 `TASK-064`로 이관한다.
 
 ## 1. 안전 경계
 
@@ -68,7 +68,7 @@ $HOME/Library/Android/sdk/emulator/emulator -avd Medium_Phone_API_35
 $HOME/Library/Android/sdk/platform-tools/adb devices -l
 ```
 
-iOS Simulator 두 대:
+iOS 비차단 회귀 검사:
 
 ```bash
 open -a Simulator
@@ -77,7 +77,7 @@ xcrun simctl boot "iPhone 16e"
 xcrun simctl list devices booted
 ```
 
-필수 회귀 항목:
+Android 출시 필수 회귀 항목:
 
 - Mobile 생성 entity ID가 UUID v4인지 확인한다.
 - 일정 사진 upload 전에 plan command가 canonical row로 반영되는지 확인한다.
@@ -85,17 +85,20 @@ xcrun simctl list devices booted
 - 동일 owner의 새 설치에서 여행·일정·사진과 revision이 복구되는지 확인한다.
 - viewer/revoked/outsider write, 계정 namespace 노출, offline outbox 유실이 없는지 확인한다.
 
-Simulator 성공은 `PREPASS`로만 기록한다.
+Android Simulator 성공은 `PREPASS`로만 기록한다. iOS build·launch 실패는 공유 코드 회귀로
+분류해 수정하지만, iOS 기능 매트릭스는 TASK-060 완료 조건에 포함하지 않는다.
 
-## 6. 실제 기기 Gate
+## 6. Android 실제 기기 Gate
 
-- Android A1/A2와 iOS I1/I2 Preview/TestFlight build가 필요하다.
-- `W1↔A1`, `W1↔I1`, `A1↔A2`, `I1↔I2`, `A1↔I1`을 모두 실행한다.
+- Android 실제 기기 A1/A2와 Preview/Internal build가 필요하다.
+- `W1↔W2`, `W1↔A1`, `A1↔A2`를 모두 실행한다.
 - 전체 여행·일정·준비물·템플릿·초대·권한·asset 시나리오를 실행한다.
-- airplane mode, background, force-stop/terminate, 앱 업데이트, Logcat/device console을 확인한다.
-- Google/Kakao OAuth와 실제 초대 이메일 수락은 최종 Gate에서 별도 판정한다.
+- airplane mode, background, force-stop, 앱 업데이트와 Logcat을 확인한다.
+- Android Google/Kakao OAuth, invitation deep link, 실제 초대 이메일 수락, push·일정 알림을
+  별도 판정한다.
 
-실제 기기가 없는 조합은 `BLOCKED`로 기록하고 출시 `NO-GO`를 유지한다.
+Android 실제 기기가 없는 조합은 `BLOCKED`로 기록하고 Android 출시 `NO-GO`를 유지한다. iOS
+실기기 조합은 `DEFERRED/TASK-064`로 기록하며 Android 출시 판정에 포함하지 않는다.
 
 ## 7. 중단 조건
 
@@ -103,5 +106,5 @@ Simulator 성공은 `PREPASS`로만 기록한다.
 - viewer/revoked/outsider write 성공
 - offline outbox 유실 또는 retry storm
 - fatal crash 또는 unhandled rejection
-- Web/Mobile asset path 불일치
+- Web/Android asset path 불일치
 - 증적에 credential이나 실제 식별자 노출

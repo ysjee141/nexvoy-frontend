@@ -7,7 +7,7 @@
 ## 목적
 
 같은 기준 시점의 DB와 `place-photos` object를 격리된 Supabase 프로젝트에 복구하고 핵심 제품
-데이터가 읽기·수정 가능한 상태로 돌아오는지 검증한다.
+데이터가 Web과 Android에서 읽기·수정 가능한 상태로 돌아오는지 검증한다.
 
 ## 범위
 
@@ -15,7 +15,7 @@
 - Storage object manifest, checksum, metadata export
 - 격리 복구 프로젝트에 schema·data·object 복원
 - membership, revision, operation receipt, asset reference 정합성 비교
-- owner/editor/viewer 제품 smoke와 RTO/RPO 측정
+- Web·Android owner/editor/viewer 제품 smoke와 RTO/RPO 측정
 - backup 접근 권한과 보관·폐기 정책 확인
 
 ## 완료 조건
@@ -29,3 +29,4 @@
 
 - Production 원본 프로젝트에서의 파괴적 복구
 - legacy authority로의 rollback
+- iOS 설치 빌드 smoke (`TASK-064`에서 동일 복구 기준을 재사용)

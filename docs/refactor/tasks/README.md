@@ -128,10 +128,11 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-057-production-final-validation.md` | 문서화 완료 | Production 마스터 Gate, 자동·수동 통합 테스트, 증적·출시 Runbook, Issue [#370](https://github.com/ysjee141/nexvoy-frontend/issues/370) |
 | `TASK-058-production-p0-integration-automation.md` | 완료 | `NEW-A01`~`A13`, 로컬 Supabase 단일 Gate, asset write/path hardening, Issue [#374](https://github.com/ysjee141/nexvoy-frontend/issues/374), PR [#375](https://github.com/ysjee141/nexvoy-frontend/pull/375) |
 | `TASK-059-dev-migration-production-gate.md` | 완료 | DEV drift 0·authenticated smoke PASS, Production TASK-058/059 target-only 적용 |
-| `TASK-060-cross-platform-device-validation.md` | 진행 중 (Simulator PREPASS) | Android 동일 계정·asset 수렴 및 iOS release 실행 확인, 실기기 Gate BLOCKED |
-| `TASK-061-dev-stability-cost-soak.md` | 대기 | DEV 연속 7일 안정성·비용 관측 |
-| `TASK-062-disaster-recovery-rehearsal.md` | 대기 | DB·Storage 격리 복구와 RTO/RPO 검증 |
-| `TASK-063-production-preflight-and-rollout.md` | 대기 | Production 사전 점검과 내부→5%→25%→100% 출시 |
+| `TASK-060-cross-platform-device-validation.md` | 진행 중 (Simulator PREPASS) | Web·Android 실기기 Gate, iOS는 TASK-064로 이관 |
+| `TASK-061-dev-stability-cost-soak.md` | 대기 | Web·Android DEV 연속 7일 안정성·비용 관측 |
+| `TASK-062-disaster-recovery-rehearsal.md` | 대기 | DB·Storage 복구와 Web·Android smoke |
+| `TASK-063-production-preflight-and-rollout.md` | 대기 | Web·Android Production 사전 점검과 단계적 출시 |
+| `TASK-064-ios-production-validation-and-rollout.md` | 보류 | Android 안정화 후 iOS 실기기·TestFlight/App Store 검증·출시 |
 
 ## 이전 단계 이력
 
@@ -235,10 +236,14 @@ rotating room secret 보안 하드닝을 완료했다.
 
 - [x] `TASK-058-production-p0-integration-automation.md`: Production P0 통합 테스트 자동화
 - [x] `TASK-059-dev-migration-production-gate.md`: DEV 전체 Gate와 Production TASK-058/059 target-only 적용 완료
-- [ ] `TASK-060-cross-platform-device-validation.md`: Web·Mobile 실기기 통합 검증
-- [ ] `TASK-061-dev-stability-cost-soak.md`: DEV 안정성·비용 7일 관측
-- [ ] `TASK-062-disaster-recovery-rehearsal.md`: DB·Storage 재해 복구 rehearsal
-- [ ] `TASK-063-production-preflight-and-rollout.md`: Production 사전 점검과 단계적 출시
+- [ ] `TASK-060-cross-platform-device-validation.md`: Web·Android 실기기 통합 검증
+- [ ] `TASK-061-dev-stability-cost-soak.md`: Web·Android DEV 안정성·비용 7일 관측
+- [ ] `TASK-062-disaster-recovery-rehearsal.md`: DB·Storage 복구와 Web·Android smoke
+- [ ] `TASK-063-production-preflight-and-rollout.md`: Web·Android Production 사전 점검과 단계적 출시
+
+### Phase 11: iOS Production Validation (Deferred)
+
+- [ ] `TASK-064-ios-production-validation-and-rollout.md`: iOS Production 검증과 단계적 출시
 
 ## 권장 시작 순서
 
@@ -260,11 +265,12 @@ flowchart TD
     T56 --> T57["TASK-057 최종 검증 문서화"]
     T57 --> T58["TASK-058 P0 자동화"]
     T58 --> T59["TASK-059 DEV schema/history"]
-    T59 --> T60["TASK-060 실기기 통합"]
-    T60 --> T61["TASK-061 7일 관측"]
-    T60 --> T62["TASK-062 복구 rehearsal"]
-    T61 --> T63["TASK-063 Production 출시"]
+    T59 --> T60["TASK-060 Web·Android 실기기"]
+    T60 --> T61["TASK-061 Web·Android 7일 관측"]
+    T60 --> T62["TASK-062 복구+Web·Android smoke"]
+    T61 --> T63["TASK-063 Web·Android Production"]
     T62 --> T63
+    T63 --> T64["TASK-064 iOS 검증·출시"]
 ```
 
 1. `TASK-046`과 `TASK-047`로 server와 shared contract를 먼저 고정한다.
@@ -274,5 +280,6 @@ flowchart TD
 5. `TASK-055`는 신규 경로 검증 전 실행하지 않는다.
 6. `TASK-056`에서 Initial Production go/no-go를 판정한다.
 7. `TASK-057`에서 최종 검증 기준과 Runbook을 확정한다.
-8. `TASK-058`~`TASK-060`에서 자동화, DEV schema/history, 실기기 Gate를 순서대로 통과한다.
-9. `TASK-061` 관측과 `TASK-062` 복구를 병렬 완료한 뒤 `TASK-063`에서 단계적 출시를 승인한다.
+8. `TASK-058`~`TASK-060`에서 자동화, DEV schema/history, Web·Android 실기기 Gate를 통과한다.
+9. `TASK-061` 관측과 `TASK-062` 복구를 병렬 완료한 뒤 `TASK-063`에서 Web·Android 출시를 승인한다.
+10. Android 안정화 이후 `TASK-064`에서 iOS 실기기와 App Store 출시를 별도 승인한다.

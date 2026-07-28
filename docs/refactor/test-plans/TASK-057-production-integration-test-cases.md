@@ -2,10 +2,12 @@
 
 ## 결론
 
-Production GO에는 **자동 테스트 P0 100%**, **수동 테스트 P0/P1 100%**, **필수 플랫폼 조합 100%**가
-필요하다. 현재 자동화는 Core, 로컬 저장소, SQL, Web 기본 흐름과 동시 충돌을 검증한다. 초대, role/revoke,
-계정 전환, 템플릿, asset 제품 E2E는 추가 구현이 필요하다. Mobile OS lifecycle과 플랫폼 간 동기화는 실제
-기기 수동 테스트를 최종 기준으로 사용한다.
+초기 Web·Android Production GO에는 **자동 테스트 P0 100%**, **수동 테스트 P0/P1 100%**,
+**Web/Web·Web/Android·Android/Android 조합 100%**가 필요하다. iOS 실기기와 iOS가 포함된 조합은
+`TASK-064`의 별도 출시 Gate이며 Android GO를 차단하지 않는다.
+
+공통 코드 변경은 iOS typecheck, Expo export와 simulator launch를 계속 통과해야 한다. 이는 iOS
+지원 승인이 아니라 iOS 코드의 장기 파손을 방지하는 비차단 회귀 검사다.
 
 ## 목차
 
@@ -72,9 +74,9 @@ Production GO에는 **자동 테스트 P0 100%**, **수동 테스트 P0/P1 100%*
 |---|---|
 | W1 | Desktop Chrome 일반 프로필 |
 | W2 | Desktop Chrome 별도 프로필 또는 시크릿 창 |
-| WM | Android Chrome 또는 iOS Safari |
+| WM | Android Chrome (iOS Safari는 TASK-064) |
 | A1/A2 | 서로 다른 Android 실제 기기 Preview build |
-| I1/I2 | 서로 다른 iOS 실제 기기 Preview/TestFlight build |
+| I1/I2 | TASK-064에서 사용할 서로 다른 iOS 실제 기기 Preview/TestFlight build |
 
 ## 현재 자동화 자산
 
@@ -163,14 +165,15 @@ docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d po
 | 조합 | 동일 계정 | collaborator | offline/reconnect | conflict | 초대·권한 | 필수 여부 |
 |---|---:|---:|---:|---:|---:|---|
 | W1 ↔ W2 | O | O | O | O | O | 필수 |
-| W1 ↔ WM | O | O | O | O | O | 필수 |
+| W1 ↔ WM | O | O | O | O | O | Android mobile browser 필수 |
 | W1 ↔ A1 | O | O | O | O | O | 필수 |
-| W1 ↔ I1 | O | O | O | O | O | 필수 |
 | A1 ↔ A2 | O | O | O | O | O | Android 출시 전 필수 |
-| I1 ↔ I2 | O | O | O | O | O | iOS 출시 전 필수 |
-| A1 ↔ I1 | O | O | O | O | O | 양 플랫폼 출시 전 필수 |
+| W1 ↔ I1 | O | O | O | O | O | TASK-064 |
+| I1 ↔ I2 | O | O | O | O | O | TASK-064 |
+| A1 ↔ I1 | O | O | O | O | O | TASK-064 |
 
-동일 OS 두 대를 확보할 수 없으면 해당 플랫폼 출시는 NO-GO로 유지하거나 출시 대상에서 명시적으로 제외한다.
+Android 실제 기기 두 대를 확보하지 못하면 Android 출시는 NO-GO다. iOS 조합은 `DEFERRED`로 기록하고
+iOS를 지원 대상에서 제외한다.
 
 ## 수동 통합 테스트
 
@@ -179,17 +182,17 @@ docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d po
 | ID | 우선순위 | 절차 | 합격 기준 |
 |---|---|---|---|
 | MAN-A01 | P1 | 이메일 로그인→새로고침/앱 재시작→로그아웃 | 세션 유지와 로그아웃 후 보호 경로 차단 |
-| MAN-A02 | P1 | 지원하는 Google/Kakao OAuth를 Web/Mobile에서 실행 | redirect/deep link 성공, 중복 계정 없음 |
+| MAN-A02 | P1 | Google/Kakao OAuth를 Web/Android에서 실행 | redirect/deep link 성공, 중복 계정 없음 |
 | MAN-A03 | P0 | A로 데이터 생성→로그아웃→B 로그인 | A 여행/cache/outbox가 B UI에 0건 |
 | MAN-A04 | P0 | B 로그아웃→A 재로그인 | A local cache가 복구되고 server revision과 수렴 |
 | MAN-A05 | P0 | A가 새 브라우저 프로필과 새 Mobile 설치에서 로그인 | canonical 여행·템플릿이 local 데이터 없이 복구 |
-| MAN-A06 | P1 | 회원 탈퇴 후 Web/Mobile 재로그인과 local DB 확인 | 인증 차단, 해당 계정 local namespace 제거 |
+| MAN-A06 | P1 | 회원 탈퇴 후 Web/Android 재로그인과 local DB 확인 | 인증 차단, 해당 계정 local namespace 제거 |
 
 ### 여행·일정·준비물·템플릿
 
 | ID | 우선순위 | 절차 | 합격 기준 |
 |---|---|---|---|
-| MAN-D01 | P0 | A가 여행 생성, W2/A1/I1에서 열기 | destination/date/count와 revision 동일 |
+| MAN-D01 | P0 | A가 여행 생성, W2/A1에서 열기 | destination/date/count와 revision 동일 |
 | MAN-D02 | P1 | 여행 정보 수정 후 다른 클라이언트 foreground | 새 값 수렴, 중복 여행 0건 |
 | MAN-D03 | P0 | 일정 생성·수정·삭제와 URL/사진 연결 | 순서·시간대·주소·URL·사진 ref 정합성 |
 | MAN-D04 | P0 | 준비물 목록/항목 생성·수정·삭제 | category, quantity, privacy, sort 정합성 |
@@ -250,7 +253,10 @@ docker exec -i supabase_db_travel-pack psql -v ON_ERROR_STOP=1 -U postgres -d po
 | MAN-M03 | P0 | airplane mode on/off 반복 | reconnect마다 중복 flush 없이 수렴 |
 | MAN-M04 | P1 | 앱 업데이트 설치 | SQLite v2 migration과 기존 cache/outbox 보존 |
 | MAN-M05 | P1 | 직전 authority-only build로 허용된 downgrade | DB open 실패·canonical 손실 없음 |
-| MAN-M06 | P1 | Android Logcat/iOS device log 관찰 | fatal crash, unhandled rejection, 무한 retry 없음 |
+| MAN-M06 | P1 | Android Logcat 관찰 | fatal crash, unhandled rejection, 무한 retry 없음 |
+
+`I1/I2`, iOS device log, iOS background/terminate, iOS OAuth·push·deep link가 필요한 동일 케이스는
+TASK-064에서 다시 실행한다.
 
 ## 비기능 테스트
 

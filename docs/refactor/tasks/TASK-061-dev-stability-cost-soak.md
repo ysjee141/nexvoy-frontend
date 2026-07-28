@@ -6,15 +6,15 @@
 
 ## 목적
 
-Production 예상 사용 패턴을 DEV에서 연속 7일 재현해 동기화 안정성과 Supabase 비용 신호가 승인
-임계치 안에 있는지 판정한다.
+Web·Android 초기 Production 예상 사용 패턴을 DEV에서 연속 7일 재현해 동기화 안정성과 Supabase
+비용 신호가 승인 임계치 안에 있는지 판정한다.
 
 ## 범위
 
-- owner/editor/viewer의 일별 생성·수정·초대·offline·재연결 traffic
+- Web·Android owner/editor/viewer의 일별 생성·수정·초대·offline·재연결 traffic
 - outbox age, retry, reject, conflict, invalidation gap, full refresh
 - RPC latency, Realtime message, DB·Storage egress, thumbnail 비율
-- 앱 오류, alert 전달, quota 추세와 월간 비용 추정
+- Android crash/lifecycle 오류, alert 전달, quota 추세와 월간 비용 추정
 - 임계치 초과 시 원인 수정 후 관측 기간 재시작
 
 ## 완료 조건
@@ -28,3 +28,4 @@ Production 예상 사용 패턴을 DEV에서 연속 7일 재현해 동기화 안
 
 - Production 실제 고객 traffic
 - DB와 Storage 복구 rehearsal
+- iOS 사용량·lifecycle 비용 관측 (`TASK-064`에서 별도 기준 확정)

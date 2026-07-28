@@ -1,4 +1,4 @@
-# TASK-060: Web·Mobile 실기기 통합 검증
+# TASK-060: Web·Android 실기기 통합 검증
 
 - 상태: 진행 중 (simulator 사전 Gate)
 - 선행 작업: `TASK-059`
@@ -7,29 +7,31 @@
 
 ## 목적
 
-Web과 Android/iOS가 동일한 server-authority 데이터, 권한, offline 복구 결과를 보장하는지 실제
-브라우저와 설치 빌드에서 확인한다.
+초기 Production 지원 범위인 Web과 Android가 동일한 server-authority 데이터, 권한, offline 복구
+결과를 보장하는지 실제 브라우저와 Android 설치 빌드에서 확인한다.
 
 ## 범위
 
-- Web/Web, Web/Android, Web/iOS, Android/Android, Android/iOS, iOS/iOS
+- Web/Web, Web/Android, Android/Android
 - 동일 계정 새 브라우저·새 설치와 서로 다른 collaborator 계정
 - 여행·일정·준비물·템플릿·초대·권한·asset 전체 회귀
 - offline, 강제 종료, reconnect, Realtime gap, 충돌, revoke
-- Web/Mobile canonical asset path 일치와 thumbnail network 요청
+- Web/Android canonical asset path 일치와 thumbnail network 요청
 - orphan cleanup이 사용 중 object를 보존하고 retention 대상만 삭제하는지 확인
+- Android Google/Kakao 로그인, 초대 deep link, push·일정 알림
 
 ## 완료 조건
 
-- 필수 플랫폼 조합의 P0/P1 수동 케이스가 100% PASS한다.
+- Web/Web, Web/Android, Android/Android P0/P1 수동 케이스가 100% PASS한다.
 - 데이터 손실·계정 간 노출·권한 우회·중복 canonical row가 0건이다.
-- 기기·OS·build SHA와 영상, network/Logcat, DB revision 증적이 케이스별로 연결된다.
+- Android 실제 기기 2대의 OS·build SHA, 영상, network/Logcat, DB revision 증적이 연결된다.
 - 미해결 P0/P1 결함이 없다.
 
 ## 제외 범위
 
 - 7일 장기 관측
 - Production store 공개와 사용자 rollout
+- iOS 실기기, TestFlight/App Store, iOS OAuth·push·lifecycle 전체 검증 (`TASK-064`)
 
 ## 현재 진행 결과
 
@@ -37,5 +39,6 @@ Web과 Android/iOS가 동일한 server-authority 데이터, 권한, offline 복�
   canonical revision 수렴을 확인했다.
 - iOS 시뮬레이터 2대에 release archive를 설치하고 앱 실행을 확인했다.
 - 검증 중 발견한 Mobile 비표준 entity ID와 plan 저장 전 Storage upload race를 수정했다.
-- iOS 기능 전체, 다중 역할, offline/lifecycle 매트릭스와 실제 Android/iOS 기기 Gate는 남아 있다.
-- 현재 판정은 Simulator `PREPASS`, 실기기 `BLOCKED`, Production `NO-GO`다.
+- iOS simulator release archive 설치·실행은 비차단 회귀 검사로 유지한다.
+- 실제 Android 다중 역할, offline/lifecycle과 Web/Android 매트릭스가 남아 있다.
+- 현재 판정은 Simulator `PREPASS`, Android 실기기 `BLOCKED`, Android Production `NO-GO`다.
