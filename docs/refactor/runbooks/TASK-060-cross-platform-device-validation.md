@@ -46,7 +46,25 @@ pnpm --dir apps/mobile exec expo install --check
 
 하나라도 실패하면 설치 검증을 중단하고 결함을 수정한다.
 
-## 4. Preview Build
+## 4. DEV 초대 함수
+
+Mobile 이메일 초대는 Web Preview API가 아니라 현재 Supabase 프로젝트의
+`send-document-invitation`을 호출한다. DEV에서만 다음 secret과 함수를 설정한다.
+
+```bash
+supabase secrets set \
+  --project-ref ivgkqzwosbjukonlpfdw \
+  RESEND_API_KEY=... \
+  ONVOY_APP_ORIGIN=https://preview.nexvoy.xyz
+supabase functions deploy send-document-invitation \
+  --project-ref ivgkqzwosbjukonlpfdw
+```
+
+실행 후 owner JWT로 초대를 생성하고 이메일 발송, `list_document_pending_invitations` 조회,
+초대 취소를 확인한다. secret 값, JWT, token과 초대 코드는 증적에 남기지 않는다. Production에는
+이 단계의 명령을 실행하지 않으며 TASK-063 승인을 따른다.
+
+## 5. Preview Build
 
 ```bash
 pnpm --filter nexvoy-app build:preview:android:local
@@ -58,7 +76,7 @@ archive에 포함한 뒤 설정을 원복한다. iOS에서 `Build successful`과
 `ENOTEMPTY`가 발생하면 곧바로 실패로 단정하지 말고 archive hash, 압축 해제, app 설치·실행을
 검증해 build 결과와 wrapper 정리 오류를 분리한다.
 
-## 5. Simulator 사전 Gate
+## 6. Simulator 사전 Gate
 
 Android AVD 두 대:
 
@@ -88,19 +106,22 @@ Android 출시 필수 회귀 항목:
 Android Simulator 성공은 `PREPASS`로만 기록한다. iOS build·launch 실패는 공유 코드 회귀로
 분류해 수정하지만, iOS 기능 매트릭스는 TASK-060 완료 조건에 포함하지 않는다.
 
-## 6. Android 실제 기기 Gate
+## 7. Android 실제 기기 Gate
 
 - Android 실제 기기 A1/A2와 Preview/Internal build가 필요하다.
 - `W1↔W2`, `W1↔A1`, `A1↔A2`를 모두 실행한다.
 - 전체 여행·일정·준비물·템플릿·초대·권한·asset 시나리오를 실행한다.
 - airplane mode, background, force-stop, 앱 업데이트와 Logcat을 확인한다.
+- Web에서 생성한 대상 이메일 초대가 같은 owner의 Android에서 `수락 대기`로 보이는지 확인한다.
+- Android에서 생성한 이메일 초대가 Web에서도 `수락 대기`로 보이고 Alert에 객체 문자열이
+  노출되지 않는지 확인한다.
 - Android Google/Kakao OAuth, invitation deep link, 실제 초대 이메일 수락, push·일정 알림을
   별도 판정한다.
 
 Android 실제 기기가 없는 조합은 `BLOCKED`로 기록하고 Android 출시 `NO-GO`를 유지한다. iOS
 실기기 조합은 `DEFERRED/TASK-064`로 기록하며 Android 출시 판정에 포함하지 않는다.
 
-## 7. 중단 조건
+## 8. 중단 조건
 
 - 데이터 손실, 계정 간 노출, 권한 우회, 중복 canonical row
 - viewer/revoked/outsider write 성공

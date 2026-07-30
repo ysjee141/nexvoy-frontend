@@ -49,12 +49,20 @@ Android Production Gate는 완료 처리하지 않는다.
    flush하도록 순서를 고정했다.
 3. 수정 후 Android A에서 생성한 여행·일정·사진을 Android B의 새 설치에서 복구했고, DEV
    canonical row는 UUID v4, 사진 URL, 240/800 폭 asset 두 개와 동일 revision으로 확인됐다.
+4. Mobile 동행자 화면은 승인 멤버만 읽어 Web에서 만든 이메일 초대의 `pending` 상태를 누락했다.
+   승인 멤버와 대상 이메일 초대를 함께 조회하고 `수락 대기`를 별도 표시하도록 수정했다.
+5. DEV Android 앱의 이메일 초대가 Vercel 보호된 Preview API에서 401 객체 응답을 받아
+   `[object Object]`를 표시했다. Mobile 초대를 동일 Supabase 프로젝트의 JWT 인증 Edge Function으로
+   전환하고 구조화 오류 파서를 추가했다. DEV 인증 스모크에서 초대 생성, 이메일 전송, owner 조회와
+   취소를 확인했다.
 
 ## 잔여 위험
 
 - Expo Doctor는 dynamic config, Metro 기본값, 직접 `expo-modules-core` 의존성 경고를 남긴다.
 - Android 실제 기기의 airplane mode, background/force-stop, push, 역할 변경·revoke, 초대 수락과
   Google/Kakao 로그인이 미검증이다.
+- `send-document-invitation`은 DEV에만 배포했다. Production secret과 함수 배포는 TASK-063
+  preflight 전까지 출시 차단 항목이다.
 - iOS EAS cleanup 경고, icon, Firebase/RNFirebase deprecation과 심사 범위는 `TASK-064` 입력으로
   이관한다.
 

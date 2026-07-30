@@ -14,6 +14,8 @@ Production `runbcaegpefqnljsswhv`의 schema, backup, Web·Android 외부 연동�
 - Production migration history·object drift 독립 감사
 - 배포 직전 DB와 Storage backup·checksum
 - Web/Android release SHA, 환경변수, OAuth, 이메일, Android push·deep link, 도메인
+- `send-document-invitation` Production secret(`RESEND_API_KEY`,
+  `ONVOY_APP_ORIGIN=https://app.nexvoy.xyz`)과 함수 배포, 인증·권한·실제 이메일 smoke
 - asset cleanup scheduler, `ASSET_CLEANUP_SECRET`, 실패 alert
 - API 인증·rate limit, Google Play 정보, 약관·개인정보, 지원·incident 연락망
 - 내부→5%→25%→100% rollout과 단계별 hold·GO 승인
@@ -26,6 +28,8 @@ Production `runbcaegpefqnljsswhv`의 schema, backup, Web·Android 외부 연동�
 - 단계별 임계치와 최소 관찰 시간을 충족한 뒤에만 다음 비율로 확대한다.
 - 100% 전환 후에도 alert, backup, rollback 준비가 유지된다.
 - iOS가 지원 대상 또는 출시 완료로 표시되지 않는다.
+- Production Android 이메일 초대가 Web 배포 보호 설정에 의존하지 않고, owner/editor 권한과
+  수락 대기 상태가 Web과 동일하게 수렴한다.
 
 ## 제외 범위
 
