@@ -55,6 +55,7 @@ import {
 import {
   createInvitationRepository,
   type CreatedDocumentInvitation,
+  type DocumentPendingInvitation,
   type DocumentInvitationRole,
   type DocumentShareType,
 } from '@nexvoy/core/supabase/invitationRepository'
@@ -95,6 +96,11 @@ import {
   resolveMobileProductConflict,
   subscribeMobileProductResource,
 } from '@/lib/data/repositoryFactory'
+import {
+  getInviteApiErrorMessage,
+  getInviteFunctionErrorMessage,
+  isInviteApiSuccess,
+} from '@/lib/invitations/inviteApi'
 import {
   toChecklistSnapshotRows,
   toPlanRow,
@@ -211,10 +217,7 @@ const PLACES_API_KEY =
   process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ??
   process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY ??
   ''
-const WEB_APP_BASE =
-  process.env.EXPO_PUBLIC_APP_URL ??
-  process.env.EXPO_PUBLIC_WEB_API_URL ??
-  'https://app.nexvoy.xyz'
+const WEB_APP_BASE = process.env.EXPO_PUBLIC_APP_URL ?? 'https://app.nexvoy.xyz'
 const PLACE_PHOTO_BUCKET = 'place-photos'
 const DURATION_OPTIONS = [
   { value: '0.5', label: '30분' },
@@ -739,6 +742,7 @@ export default function TripDetailScreen() {
   const [isCollaboratorSheetOpen, setIsCollaboratorSheetOpen] = useState(false)
   const [allTrips, setAllTrips] = useState<Trip[]>([])
   const [members, setMembers] = useState<TripMember[]>([])
+  const [pendingInvitations, setPendingInvitations] = useState<DocumentPendingInvitation[]>([])
   const [membersLoading, setMembersLoading] = useState(false)
   const [timeDisplayMode, setTimeDisplayMode] = useState<TimeDisplayMode>('local')
   const [isTimeModeSheetOpen, setIsTimeModeSheetOpen] = useState(false)
@@ -768,6 +772,7 @@ export default function TripDetailScreen() {
 
   useEffect(() => {
     setGeneratedInvite(null)
+    setPendingInvitations([])
   }, [id])
 
   const loadTripList = useCallback(async () => {
@@ -786,10 +791,19 @@ export default function TripDetailScreen() {
     setMembersLoading(true)
     try {
       const repositories = await createMobileProductRepositories(supabase)
-      const data = await repositories.members.listMembers(id)
-      if (isMounted.current) setMembers(toTripMemberRows(data, id))
+      const [data, pending] = await Promise.all([
+        repositories.members.listMembers(id),
+        createInvitationRepository(supabase).listDocumentPendingInvitations(id).catch(() => []),
+      ])
+      if (isMounted.current) {
+        setMembers(toTripMemberRows(data, id))
+        setPendingInvitations(pending)
+      }
     } catch {
-      if (isMounted.current) setMembers([])
+      if (isMounted.current) {
+        setMembers([])
+        setPendingInvitations([])
+      }
     } finally {
       if (isMounted.current) setMembersLoading(false)
     }
@@ -1470,28 +1484,24 @@ export default function TripDetailScreen() {
     setInviteLoading(true)
     try {
       if (!session?.access_token) throw new Error('로그인이 필요합니다.')
-      const response = await fetch(`${WEB_APP_BASE.replace(/\/$/, '')}/api/invite`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
+      const { data: result, error: inviteError } = await supabase.functions.invoke(
+        'send-document-invitation',
+        {
+          body: {
+            documentId: id,
+            email: email.trim(),
+            destination: trip.destination,
+            startDate: trip.start_date,
+            endDate: trip.end_date,
+            role,
+          },
         },
-        body: JSON.stringify({
-          documentId: id,
-          email: email.trim(),
-          destination: trip.destination,
-          startDate: trip.start_date,
-          endDate: trip.end_date,
-          role,
-        }),
-      })
-      const result = await response.json() as {
-        error?: string
-        invitation?: CreatedDocumentInvitation
-        inviteUrl?: string
+      )
+      if (inviteError) {
+        throw new Error(await getInviteFunctionErrorMessage(inviteError))
       }
-      if (!response.ok || !result.invitation || !result.inviteUrl) {
-        throw new Error(result.error ?? '초대에 실패했어요.')
+      if (!isInviteApiSuccess(result)) {
+        throw new Error(getInviteApiErrorMessage(result, 200))
       }
       setGeneratedInvite({
         id: result.invitation.id,
@@ -1971,6 +1981,7 @@ export default function TripDetailScreen() {
           <CollaboratorSheet
             visible={isCollaboratorSheetOpen}
             members={members}
+            pendingInvitations={pendingInvitations}
             loading={membersLoading}
             inviteLoading={inviteLoading}
             currentUserId={session?.user.id ?? null}
@@ -2340,6 +2351,7 @@ function ShareTripSheet({
 function CollaboratorSheet({
   visible,
   members,
+  pendingInvitations,
   loading,
   inviteLoading,
   currentUserId,
@@ -2359,6 +2371,7 @@ function CollaboratorSheet({
 }: {
   visible: boolean
   members: TripMember[]
+  pendingInvitations: DocumentPendingInvitation[]
   loading: boolean
   inviteLoading: boolean
   currentUserId: string | null
@@ -2513,6 +2526,30 @@ function CollaboratorSheet({
                 <Text style={styles.inviteLinkCreateText}>초대 링크 생성</Text>
               </Pressable>
             )}
+          </View>
+        </View>
+      ) : null}
+
+      {canInvite && pendingInvitations.length > 0 ? (
+        <View style={styles.pendingInvitationSection}>
+          <View style={styles.membersHeader}>
+            <Text style={styles.sheetSectionTitle}>수락 대기</Text>
+            <Text style={styles.memberCountText}>{pendingInvitations.length}명</Text>
+          </View>
+          <View style={styles.memberList}>
+            {pendingInvitations.map((invitation) => (
+              <View key={invitation.id} style={styles.memberRow}>
+                <View style={styles.memberAvatar}>
+                  <Ionicons name="mail-outline" size={18} color={colors.brand.primary} />
+                </View>
+                <View style={styles.memberBody}>
+                  <Text style={styles.memberName} numberOfLines={1}>{invitation.targetEmail}</Text>
+                  <Text style={styles.memberMeta} numberOfLines={1}>
+                    {ROLE_LABELS[invitation.role]} · 수락 대기
+                  </Text>
+                </View>
+              </View>
+            ))}
           </View>
         </View>
       ) : null}
@@ -5689,6 +5726,9 @@ const styles = StyleSheet.create({
     color: colors.brand.muted,
     fontSize: fontSizes.sm,
     fontWeight: fontWeights.semibold,
+  },
+  pendingInvitationSection: {
+    marginTop: spacing.sm,
   },
   memberList: {
     gap: spacing.sm,

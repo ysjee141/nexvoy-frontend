@@ -1,3 +1,31 @@
+# Walkthrough: TASK-060 Android 동행자 초대 정합성
+
+## 문제와 원인
+
+- Web에서 만든 이메일 초대는 `document_invitation_links`에 `pending`으로 저장되지만 Mobile은 승인된
+  `document_members`만 조회해 같은 owner 계정에서도 수락 대기를 표시하지 않았다.
+- DEV Android preview는 Vercel Deployment Protection이 적용된 Web Preview API를 호출했다. 401
+  응답의 `error` 객체가 문자열로 변환되면서 Alert에 `[object Object]`가 노출됐다.
+
+## 조치
+
+- Mobile 동행자 화면이 승인 멤버와 대상 이메일 초대를 함께 조회하고 `수락 대기`를 별도 표시한다.
+- Mobile 이메일 초대는 현재 Supabase 프로젝트의 인증 Edge Function
+  `send-document-invitation`을 호출한다. 함수는 사용자 JWT와 기존 invitation RPC 권한을 그대로
+  사용하고, 메일 실패 시 생성한 초대를 취소한다.
+- 오류 응답을 구조적으로 파싱해 문자열 메시지만 Alert에 전달하며 관련 단위 테스트를 추가했다.
+- DEV `ivgkqzwosbjukonlpfdw`에 함수와 `RESEND_API_KEY`,
+  `ONVOY_APP_ORIGIN=https://preview.nexvoy.xyz`를 적용했다. 인증 스모크에서 초대 생성, 이메일 전송,
+  owner 수락 대기 조회와 취소를 확인하고 테스트 계정을 제거했다.
+- Production 함수와 secret은 배포하지 않았으며 TASK-063 preflight에서 별도 승인·검증한다.
+
+## 검증
+
+- Mobile invitation/authority 테스트 12건, typecheck, lint, export와 Android release build가
+  통과했다.
+- 최종 APK 생성 후 실제 Android 기기의 ADB 연결이 끊겨 화면 재검증은 TASK-060 실기기 Gate에
+  남겼다.
+
 # Walkthrough: Android 우선 Production 작업 재구성
 
 ## 결정
