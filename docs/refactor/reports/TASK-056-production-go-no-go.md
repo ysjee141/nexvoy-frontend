@@ -32,7 +32,7 @@ TASK-057의 `G0`~`G7`을 모두 통과해야 Production Gate를 GO로 변경한�
 | B-01 | DEV historical version 9건의 전체 객체 fingerprint와 history repair | 미실행 | [TASK-057 Runbook](../runbooks/TASK-057-production-validation-runbook.md#2단계-dev-migration-ledger-정합화) |
 | B-02 | TASK-056 grant hardening, 전체 fingerprint, `20260723000002` history 등록, 원격 안전 smoke | 핵심 객체와 예상 밖 `anon` grant 확인 | 같은 Runbook 3단계 |
 | B-03 | 초대·권한·계정·템플릿·asset P0 자동화 공백 보완 | TASK-058 로컬 PASS, PR CI 증적 대기 | [통합 테스트 케이스](../test-plans/TASK-057-production-integration-test-cases.md#자동화-테스트-목록) |
-| B-04 | Web/Mobile·Mobile/Mobile 실기기 매트릭스 | 미실행 | 같은 테스트 문서의 필수 플랫폼 매트릭스 |
+| B-04 | Web/Android·Android/Android 실기기 매트릭스 | TASK-060 PASS, G3 GO | release SHA마다 핵심 smoke 유지 |
 | B-05 | DEV 7일 운영 지표 | 미실행 | TASK-057 Runbook 5단계 |
 | B-06 | DB와 `place-photos` Storage 복구 rehearsal | 미실행 | TASK-057 Runbook 6단계 |
 | B-07 | Production 원격 전용 history·실제 schema drift 독립 감사와 backup | 미실행 | TASK-057 Runbook 7단계 |

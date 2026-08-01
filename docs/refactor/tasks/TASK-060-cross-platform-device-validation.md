@@ -1,6 +1,6 @@
 # TASK-060: Web·Android 실기기 통합 검증
 
-- 상태: 진행 중 (simulator 사전 Gate)
+- 상태: 완료 (`G3 GO`, 2026-08-01 Android 실기기 확인)
 - 선행 작업: `TASK-059`
 - 해소 대상: `B-04`, `B-11` 검증 부분
 - GitHub Issue: [#378](https://github.com/ysjee141/nexvoy-frontend/issues/378)
@@ -40,7 +40,8 @@
 - iOS 시뮬레이터 2대에 release archive를 설치하고 앱 실행을 확인했다.
 - 검증 중 발견한 Mobile 비표준 entity ID와 plan 저장 전 Storage upload race를 수정했다.
 - iOS simulator release archive 설치·실행은 비차단 회귀 검사로 유지한다.
-- 실제 Android 다중 역할, offline/lifecycle과 Web/Android 매트릭스가 남아 있다.
-- 실제 기기 점검에서 Mobile 수신 초대 UI 누락과 오프라인 준비물 표시 차단을 발견해 Issue #380에서
-  수정·재검증 중이다.
-- 현재 판정은 Simulator `PREPASS`, Android 실기기 `BLOCKED`, Android Production `NO-GO`다.
+- 실제 기기 점검에서 발견한 Mobile 수신 초대 UI 누락과 오프라인 준비물 표시 차단은 Issue #380,
+  PR #381에서 수정했다.
+- Web/Web, Web/Android, Android/Android의 여행·일정·준비물·템플릿·초대·권한·asset 및
+  offline/reconnect 실기기 Gate를 통과했다.
+- TASK-060 판정은 `PASS`, 마스터 계획 `G3`는 `GO`다. Production은 TASK-061~063이 남아 `NO-GO`다.
