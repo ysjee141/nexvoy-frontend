@@ -1,8 +1,18 @@
 # Data Architecture Refactor Progress
 
-작성일: 2026-07-29
+작성일: 2026-08-01
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
+
+## 2026-08-01 TASK-060 완료 및 TASK-061/062 착수
+
+- Android 실제 기기에서 Web/Web, Web/Android, Android/Android의 여행·일정·준비물·템플릿·초대,
+  권한, asset과 offline/reconnect Gate를 통과했다.
+- PR #381의 Mobile 수신 초대 수락·거절과 오프라인 준비물 저장을 실제 기기에서 재검증했다.
+- TASK-060을 `PASS`, 마스터 계획 `G3`를 `GO`로 변경했다.
+- TASK-061 Issue #382와 TASK-062 Issue #383을 등록했다.
+- 7일 일별 증적·임계치 validator와 DEV→Recovery checksum/digest 비교 도구를 준비한다.
+- `G4` 7일 관측과 `G5` 격리 복구가 남아 Web·Android Production은 `NO-GO`다.
 
 ## 2026-07-29 Android 우선 출시 결정
 

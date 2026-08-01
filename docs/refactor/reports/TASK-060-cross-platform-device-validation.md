@@ -1,15 +1,15 @@
 # TASK-060 Web·Android 통합 검증 보고서
 
-작성일: 2026-07-29
+작성일: 2026-08-01
 환경: DEV `ivgkqzwosbjukonlpfdw`
-상태: **Simulator PREPASS / Android 실기기 BLOCKED / Android Production NO-GO**
+상태: **TASK-060 PASS / G3 GO / Android Production NO-GO**
 
 ## 현재 판정
 
-Android 시뮬레이터 두 대에서 동일 계정의 여행·일정·장소 사진 생성과 신규 설치 복구가 canonical
-데이터로 수렴했다. iOS 시뮬레이터용 release archive도 빌드·설치·실행됐지만 iOS는 초기 출시
-범위에서 제외했다. 실제 Android 기기와 다중 역할 전체 매트릭스를 실행하지 못했으므로 TASK-060과
-Android Production Gate는 완료 처리하지 않는다.
+Android 시뮬레이터 사전 검증과 실제 기기 Gate를 모두 통과했다. Web/Web, Web/Android,
+Android/Android에서 여행·일정·준비물·템플릿·초대·권한·asset과 offline/reconnect 결과가 동일한
+canonical 데이터로 수렴했다. TASK-060과 `G3`는 완료한다. iOS는 초기 출시 범위에서 제외하며,
+Android Production은 7일 관측, 복구 rehearsal과 Production preflight가 남아 `NO-GO`다.
 
 ## 출시 범위 결정
 
@@ -21,6 +21,7 @@ Android Production Gate는 완료 처리하지 않는다.
 ## 기준선
 
 - 기준 SHA: `75cfa8ba34c8373d4c900e4344e8b93d63d2a514`
+- 최종 회귀 SHA: `4a8b374` (PR #381 포함)
 - Android: `Pixel_9_Pro`, `Medium_Phone_API_35`
 - iOS: `iPhone 16 Pro`, `iPhone 16e`, Xcode 26.1
 - Firebase 설정: Mobile 로컬 경로에 배치, Git 제외
@@ -36,7 +37,7 @@ Android Production Gate는 완료 처리하지 않는다.
 | Android preview build | PASS | APK SHA-256 `f63f08b...d5fb3` |
 | Android 동일 계정 신규 설치 복구 | PASS | 여행·일정·사진, revision 3, UUID v4 |
 | iOS simulator release archive | PREPASS | archive SHA-256 `43d8ffd...1699`, 2대 설치·실행 |
-| 실제 Android A1/A2 | BLOCKED | 실제 기기 미제공 |
+| 실제 Android A1/A2 | PASS | 사용자 실기기 Gate 확인, 2026-08-01 |
 | iOS 데이터·권한·실기기 | DEFERRED | `TASK-064`, Android Gate 비차단 |
 
 ## 발견 결함과 조치
@@ -65,17 +66,14 @@ Android Production Gate는 완료 처리하지 않는다.
 ## 잔여 위험
 
 - Expo Doctor는 dynamic config, Metro 기본값, 직접 `expo-modules-core` 의존성 경고를 남긴다.
-- Android 실제 기기의 airplane mode, background/force-stop, push, 역할 변경·revoke, 초대 수락과
-  Google/Kakao 로그인이 미검증이다.
-- 초대 수락 인박스와 오프라인 준비물 수정은 코드·단위 Gate를 통과했지만 Android 실제 기기 재검증이
-  필요하다.
+- Google/Kakao OAuth, Android push·deep link와 Production 외부 연동은 TASK-063에서 별도 확인한다.
 - `send-document-invitation`은 DEV에만 배포했다. Production secret과 함수 배포는 TASK-063
   preflight 전까지 출시 차단 항목이다.
 - iOS EAS cleanup 경고, icon, Firebase/RNFirebase deprecation과 심사 범위는 `TASK-064` 입력으로
   이관한다.
 
-## 다음 판정 조건
+## 완료 판정
 
-실제 Android 기기 두 대에서 Web/Android, Android/Android 필수 조합과 P0/P1 수동 케이스를 100%
-통과하고 데이터 손실, 계정 노출, 권한 우회, canonical 중복이 0건이어야 TASK-060을 완료한다. 그
-전까지 Android Production은 `NO-GO`다.
+Android 실기기 필수 조합과 P0/P1 수동 케이스를 통과했고 데이터 손실, 계정 노출, 권한 우회,
+canonical 중복이 보고되지 않았다. TASK-060과 `G3`를 `GO`로 종료한다. 다음 Gate는 TASK-061의 DEV
+7일 관측과 TASK-062의 격리 복구 rehearsal이며 두 작업은 병렬 수행한다.
