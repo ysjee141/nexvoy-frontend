@@ -18,6 +18,10 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { formatDate } from '@nexvoy/core'
+import {
+  createInvitationRepository,
+  type PendingDocumentInvitation,
+} from '@nexvoy/core/supabase/invitationRepository'
 import type { TripWithProgress } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
@@ -62,6 +66,10 @@ export default function HomeScreen() {
   const router = useRouter()
   const [trips, setTrips] = useState<TripWithProgress[]>([])
   const [loading, setLoading] = useState(true)
+  const [invitations, setInvitations] = useState<PendingDocumentInvitation[]>([])
+  const [invitationsLoading, setInvitationsLoading] = useState(true)
+  const [invitationError, setInvitationError] = useState<string | null>(null)
+  const [processingInvitationId, setProcessingInvitationId] = useState<string | null>(null)
   const [openSections, setOpenSections] = useState<Record<TripStatus, boolean>>({
     ongoing: true,
     upcoming: true,
@@ -87,11 +95,72 @@ export default function HomeScreen() {
     }
   }, [session?.user])
 
+  const loadInvitations = useCallback(async () => {
+    if (!session?.user) return
+    setInvitationsLoading(true)
+    setInvitationError(null)
+    try {
+      const rows = await createInvitationRepository(supabase).listMyPendingDocumentInvitations()
+      setInvitations(rows)
+    } catch {
+      setInvitationError('초대 목록을 불러오지 못했어요.')
+    } finally {
+      setInvitationsLoading(false)
+    }
+  }, [session?.user])
+
+  const processInvitation = useCallback(async (
+    invitationId: string,
+    action: 'accept' | 'decline',
+  ) => {
+    if (processingInvitationId) return
+    setProcessingInvitationId(invitationId)
+    setInvitationError(null)
+    try {
+      const repository = createInvitationRepository(supabase)
+      if (action === 'decline') {
+        await repository.declineMyDocumentInvitation(invitationId)
+        setInvitations((current) => current.filter((invitation) => invitation.id !== invitationId))
+        return
+      }
+
+      const accepted = await repository.acceptMyDocumentInvitation(invitationId)
+      setInvitations((current) => current.filter((invitation) => invitation.id !== invitationId))
+      try {
+        await refreshMobileProductList(supabase, 'trip')
+        await loadTrips(false)
+      } catch {
+        setInvitationError('초대는 수락했지만 여행 데이터를 준비하지 못했어요. 다시 시도해 주세요.')
+        return
+      }
+      router.push({ pathname: '/trip/[id]', params: { id: accepted.documentId } })
+    } catch {
+      setInvitationError(action === 'accept'
+        ? '초대를 수락하지 못했어요.'
+        : '초대를 거절하지 못했어요.')
+    } finally {
+      setProcessingInvitationId(null)
+    }
+  }, [loadTrips, processingInvitationId, router])
+
+  const retryInvitationState = useCallback(async () => {
+    setInvitationError(null)
+    await Promise.all([
+      loadInvitations(),
+      refreshMobileProductList(supabase, 'trip')
+        .then(() => loadTrips(false))
+        .catch(() => {
+          setInvitationError('여행 데이터를 준비하지 못했어요. 연결 상태를 확인해 주세요.')
+        }),
+    ])
+  }, [loadInvitations, loadTrips])
+
   useFocusEffect(
     useCallback(() => {
       let disposed = false
       let unsubscribe: () => void = () => undefined
       void loadTrips()
+      void loadInvitations()
       void subscribeMobileProductAccount(supabase, 'trip', () => {
         if (!disposed) void loadTrips(false)
       }).then((next) => {
@@ -103,7 +172,7 @@ export default function HomeScreen() {
         disposed = true
         unsubscribe()
       }
-    }, [loadTrips])
+    }, [loadInvitations, loadTrips])
   )
 
   const sections = useMemo<TripSection[]>(() => {
@@ -213,6 +282,16 @@ export default function HomeScreen() {
         <Text style={styles.heading}>어디로 떠나볼까요?</Text>
       </View>
 
+      <InvitationInbox
+        invitations={invitations}
+        loading={invitationsLoading}
+        processingId={processingInvitationId}
+        error={invitationError}
+        onAccept={(invitationId) => { void processInvitation(invitationId, 'accept') }}
+        onDecline={(invitationId) => { void processInvitation(invitationId, 'decline') }}
+        onRetry={() => { void retryInvitationState() }}
+      />
+
       {loading ? (
         <View style={styles.centerFill}>
           <ActivityIndicator size="large" color={colors.brand.primary} />
@@ -285,6 +364,111 @@ export default function HomeScreen() {
   )
 }
 
+function InvitationInbox({
+  invitations,
+  loading,
+  processingId,
+  error,
+  onAccept,
+  onDecline,
+  onRetry,
+}: {
+  invitations: PendingDocumentInvitation[]
+  loading: boolean
+  processingId: string | null
+  error: string | null
+  onAccept: (invitationId: string) => void
+  onDecline: (invitationId: string) => void
+  onRetry: () => void
+}) {
+  if (loading || (invitations.length === 0 && !error)) return null
+
+  return (
+    <View style={styles.invitationBand} accessibilityRole="summary">
+      <View style={styles.invitationHeader}>
+        <View style={styles.invitationTitleRow}>
+          <Ionicons name="mail-outline" size={18} color={colors.brand.primary} />
+          <Text style={styles.invitationTitle}>새로운 여행 초대</Text>
+          {invitations.length > 0 ? (
+            <Text style={styles.invitationCount}>{invitations.length}</Text>
+          ) : null}
+        </View>
+        {error ? (
+          <Pressable
+            onPress={onRetry}
+            accessibilityRole="button"
+            accessibilityLabel="초대 목록 다시 불러오기"
+            hitSlop={8}
+            style={({ pressed }) => [styles.invitationRetry, pressed && styles.invitationButtonPressed]}
+          >
+            <Ionicons name="refresh" size={18} color={colors.brand.primary} />
+          </Pressable>
+        ) : null}
+      </View>
+
+      {invitations.length > 0 ? (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.invitationList}
+        >
+          {invitations.map((invitation) => {
+            const processing = processingId === invitation.id
+            return (
+              <View key={invitation.id} style={styles.invitationCard}>
+                <View style={styles.invitationBody}>
+                  <Text style={styles.invitationDestination} numberOfLines={1}>
+                    {invitation.destination || '새 여행'}
+                  </Text>
+                  <Text style={styles.invitationMeta} numberOfLines={1}>
+                    {invitation.ownerNickname || '동행자'} · {invitation.role === 'editor' ? '편집 가능' : '조회 전용'}
+                  </Text>
+                </View>
+                <View style={styles.invitationActions}>
+                  <Pressable
+                    onPress={() => onAccept(invitation.id)}
+                    disabled={Boolean(processingId)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${invitation.destination || '여행'} 초대 수락`}
+                    style={({ pressed }) => [
+                      styles.invitationActionButton,
+                      styles.invitationAcceptButton,
+                      pressed && styles.invitationButtonPressed,
+                      processingId && styles.invitationButtonDisabled,
+                    ]}
+                  >
+                    {processing ? (
+                      <ActivityIndicator size="small" color={colors.bg.canvas} />
+                    ) : (
+                      <Ionicons name="checkmark" size={18} color={colors.bg.canvas} />
+                    )}
+                  </Pressable>
+                  <Pressable
+                    onPress={() => onDecline(invitation.id)}
+                    disabled={Boolean(processingId)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${invitation.destination || '여행'} 초대 거절`}
+                    style={({ pressed }) => [
+                      styles.invitationActionButton,
+                      styles.invitationDeclineButton,
+                      pressed && styles.invitationButtonPressed,
+                      processingId && styles.invitationButtonDisabled,
+                    ]}
+                  >
+                    <Ionicons name="close" size={18} color={colors.brand.muted} />
+                  </Pressable>
+                </View>
+              </View>
+            )
+          })}
+        </ScrollView>
+      ) : null}
+
+      {error ? <Text style={styles.invitationError}>{error}</Text> : null}
+    </View>
+  )
+}
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.bg.canvas },
   header: {
@@ -302,6 +486,111 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
     color: colors.brand.ink,
     letterSpacing: -0.5,
+  },
+  invitationBand: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.brand.border,
+    backgroundColor: colors.bg.surfaceSoft,
+    paddingVertical: spacing.sm,
+  },
+  invitationHeader: {
+    minHeight: 36,
+    paddingHorizontal: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  invitationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  invitationTitle: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.ink,
+  },
+  invitationCount: {
+    minWidth: 22,
+    height: 22,
+    borderRadius: radii.full,
+    overflow: 'hidden',
+    textAlign: 'center',
+    lineHeight: 22,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.primary,
+    backgroundColor: colors.bg.canvas,
+  },
+  invitationRetry: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  invitationList: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
+    gap: spacing.sm,
+  },
+  invitationCard: {
+    width: 292,
+    minHeight: 72,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.brand.border,
+    borderRadius: radii.sm,
+    backgroundColor: colors.bg.canvas,
+  },
+  invitationBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  invitationDestination: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.bold,
+    color: colors.brand.ink,
+  },
+  invitationMeta: {
+    marginTop: spacing.xs,
+    fontSize: fontSizes.xs,
+    color: colors.brand.muted,
+  },
+  invitationActions: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  invitationActionButton: {
+    width: 36,
+    height: 36,
+    borderRadius: radii.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  invitationAcceptButton: {
+    backgroundColor: colors.brand.primary,
+  },
+  invitationDeclineButton: {
+    borderWidth: 1,
+    borderColor: colors.brand.border,
+    backgroundColor: colors.bg.canvas,
+  },
+  invitationButtonPressed: {
+    opacity: 0.72,
+  },
+  invitationButtonDisabled: {
+    opacity: 0.5,
+  },
+  invitationError: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.xs,
+    fontSize: fontSizes.xs,
+    fontWeight: fontWeights.semibold,
+    color: colors.brand.error,
   },
   centerFill: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   listBody: {

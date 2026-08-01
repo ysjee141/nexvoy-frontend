@@ -55,12 +55,20 @@ Android Production Gate는 완료 처리하지 않는다.
    `[object Object]`를 표시했다. Mobile 초대를 동일 Supabase 프로젝트의 JWT 인증 Edge Function으로
    전환하고 구조화 오류 파서를 추가했다. DEV 인증 스모크에서 초대 생성, 이메일 전송, owner 조회와
    취소를 확인했다.
+6. 실제 Android 기기에서 초대받은 계정의 수락 UI가 없음을 확인했다. Core invitation repository의
+   수신 목록·수락·거절 경로를 Mobile 홈 인박스에 연결하고, 수락 후 trip authority hydration을
+   완료한 다음 상세로 이동하도록 수정했다.
+7. 오프라인 준비물 저장은 SQLite authority commit 이후 원격 category 조회에서 화면 갱신이
+   중단됐고, 신규 category insert는 commit 자체보다 먼저 실행됐다. 준비물 snapshot을 즉시 표시하고
+   category catalog 요청을 비차단 보조 동기화로 분리했다.
 
 ## 잔여 위험
 
 - Expo Doctor는 dynamic config, Metro 기본값, 직접 `expo-modules-core` 의존성 경고를 남긴다.
 - Android 실제 기기의 airplane mode, background/force-stop, push, 역할 변경·revoke, 초대 수락과
   Google/Kakao 로그인이 미검증이다.
+- 초대 수락 인박스와 오프라인 준비물 수정은 코드·단위 Gate를 통과했지만 Android 실제 기기 재검증이
+  필요하다.
 - `send-document-invitation`은 DEV에만 배포했다. Production secret과 함수 배포는 TASK-063
   preflight 전까지 출시 차단 항목이다.
 - iOS EAS cleanup 경고, icon, Firebase/RNFirebase deprecation과 심사 범위는 `TASK-064` 입력으로

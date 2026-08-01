@@ -14,6 +14,9 @@ const responses: Record<string, unknown> = {
     start_date: '2026-07-20', end_date: '2026-07-24', owner_nickname: 'owner',
     expires_at: null, created_at: '2026-07-16T00:00:00.000Z',
   }],
+  accept_my_document_invitation: {
+    document_id: 'document-1', role: 'editor', status: 'accepted', already_member: false,
+  },
   list_document_collaborators: [{
     member_id: 'member-1', user_id: 'user-1', invited_email: null, nickname: 'owner',
     email: 'owner@example.com', role: 'owner', status: 'accepted',
@@ -49,6 +52,20 @@ async function main(): Promise<void> {
   const pending = await repository.listMyPendingDocumentInvitations()
   assert.equal(pending[0]?.destination, '전주')
   assert.equal(pending[0]?.ownerNickname, 'owner')
+
+  const accepted = await repository.acceptMyDocumentInvitation('invite-1')
+  assert.equal(accepted.documentId, 'document-1')
+  assert.equal(accepted.alreadyMember, false)
+  assert.deepEqual(calls.at(-1), {
+    name: 'accept_my_document_invitation',
+    params: { p_invitation_id: 'invite-1' },
+  })
+
+  await repository.declineMyDocumentInvitation('invite-2')
+  assert.deepEqual(calls.at(-1), {
+    name: 'decline_my_document_invitation',
+    params: { p_invitation_id: 'invite-2' },
+  })
 
   const collaborators = await repository.listDocumentCollaborators('document-1')
   assert.equal(collaborators[0]?.role, 'owner')
