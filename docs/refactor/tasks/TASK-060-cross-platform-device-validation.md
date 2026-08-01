@@ -41,4 +41,6 @@
 - 검증 중 발견한 Mobile 비표준 entity ID와 plan 저장 전 Storage upload race를 수정했다.
 - iOS simulator release archive 설치·실행은 비차단 회귀 검사로 유지한다.
 - 실제 Android 다중 역할, offline/lifecycle과 Web/Android 매트릭스가 남아 있다.
+- 실제 기기 점검에서 Mobile 수신 초대 UI 누락과 오프라인 준비물 표시 차단을 발견해 Issue #380에서
+  수정·재검증 중이다.
 - 현재 판정은 Simulator `PREPASS`, Android 실기기 `BLOCKED`, Android Production `NO-GO`다.

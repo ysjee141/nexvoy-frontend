@@ -115,6 +115,10 @@ Android Simulator 성공은 `PREPASS`로만 기록한다. iOS build·launch 실�
 - Web에서 생성한 대상 이메일 초대가 같은 owner의 Android에서 `수락 대기`로 보이는지 확인한다.
 - Android에서 생성한 이메일 초대가 Web에서도 `수락 대기`로 보이고 Alert에 객체 문자열이
   노출되지 않는지 확인한다.
+- 초대받은 Android 계정의 홈에서 수신 초대가 표시되고 수락·거절할 수 있는지 확인한다. 수락하면
+  해당 여행이 목록에 나타나고 상세 데이터가 복구돼야 한다.
+- airplane mode에서 준비물 추가·수정·삭제·체크가 즉시 화면에 반영되는지 확인한다. reconnect 후
+  `동기화 완료`가 되고 다른 Web/Android 기기의 canonical 결과와 일치해야 한다.
 - Android Google/Kakao OAuth, invitation deep link, 실제 초대 이메일 수락, push·일정 알림을
   별도 판정한다.
 

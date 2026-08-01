@@ -103,6 +103,23 @@ async function runServerAuthorityProductRepositoryTest(): Promise<void> {
     throw new Error('Authority trip bootstrap should enqueue trip and checklist commands together.')
   }
 
+  await repositories.checklists.createItem(tripId, {
+    id: 'checklist-item-offline-1',
+    checklistId: initial.checklists[0].id,
+    name: 'Offline passport',
+    categoryName: 'Documents',
+    legacyIsChecked: false,
+    isPrivate: false,
+    assignmentType: 'anyone',
+    assignedUserId: null,
+    sourceTemplateName: null,
+    assigneeIds: [],
+  })
+  const offlineChecklist = await repositories.checklists.getChecklist(tripId)
+  if (offlineChecklist[0]?.items[0]?.name !== 'Offline passport') {
+    throw new Error('Offline checklist mutations should be immediately readable from local state.')
+  }
+
   await repositories.plans.createPlan(tripId, {
     id: 'plan-1',
     title: 'Hanok Village',

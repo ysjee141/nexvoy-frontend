@@ -1,3 +1,31 @@
+# Walkthrough: TASK-060 Android 초대 수락·오프라인 준비물 회귀
+
+## 발견 원인
+
+- Core에는 대상 이메일 초대 조회와 수락·거절 RPC가 있었지만 Mobile 홈에서 호출하지 않아 초대받은
+  계정이 응답할 UI가 없었다.
+- 준비물 authority mutation은 SQLite와 outbox에 낙관적으로 commit할 수 있었지만, 화면 reload가
+  원격 `checklist_categories` 조회를 기다렸다. 오프라인에서는 로컬 저장 결과를 다시 읽고도 화면에
+  반영하지 못했다.
+- 신규 카테고리 insert도 준비물 commit보다 먼저 실행돼 네트워크 오류가 핵심 데이터 저장을
+  차단했다.
+
+## 조치
+
+- Mobile 홈에 수신 초대 인박스를 추가하고 수락·거절, 오류 재시도를 연결했다. 수락 후에는 새 멤버
+  권한으로 trip authority 목록을 hydrate한 뒤 여행 상세로 이동한다.
+- 준비물 snapshot은 로컬 repository에서 읽은 즉시 화면에 적용한다. 원격 카테고리 catalog 조회와
+  생성은 비차단 보조 동기화로 분리했다.
+- 오프라인에서 만든 카테고리명은 준비물 canonical 데이터에서 로컬 선택지로 복원하므로 catalog
+  요청 실패와 무관하게 추가·수정 결과를 즉시 확인할 수 있다.
+
+## 검증
+
+- Core invitation 수락·거절 RPC와 offline checklist 낙관적 read 회귀 테스트를 추가했다.
+- Mobile typecheck와 lint, Core 전체 테스트를 통과했다.
+- Android 실기기에서는 초대받은 계정의 수락/거절, airplane mode 준비물 추가·수정·삭제·체크,
+  reconnect 후 다른 기기 수렴을 다시 확인해야 한다.
+
 # Walkthrough: TASK-060 Android 동행자 초대 정합성
 
 ## 문제와 원인

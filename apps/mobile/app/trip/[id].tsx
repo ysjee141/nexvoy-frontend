@@ -42,9 +42,7 @@ import { NativeMapView, NativeMarker } from '@/components/map/NativeMap'
 import { AuthoritySyncStatusBadge } from '@/components/trip/AuthoritySyncStatusBadge'
 import { AuthorityConflictModal } from '@/components/trip/AuthorityConflictModal'
 import {
-  getChecklistCategories,
   getChecklistItemStatus,
-  createChecklistCategory,
   createUuid,
   formatDate,
   formatCurrency,
@@ -96,6 +94,11 @@ import {
   resolveMobileProductConflict,
   subscribeMobileProductResource,
 } from '@/lib/data/repositoryFactory'
+import {
+  mergeChecklistCategories,
+  persistChecklistCategory,
+  readChecklistCategoryCatalog,
+} from '@/lib/data/checklistCategoryCatalog'
 import {
   getInviteApiErrorMessage,
   getInviteFunctionErrorMessage,
@@ -882,12 +885,22 @@ export default function TripDetailScreen() {
       const result = await repositories.checklists.getChecklist(id)
       if (!isMounted.current) return
       const snapshot = toChecklistSnapshotRows(result, id)
-      const categoryData = session?.user.id ? await getChecklistCategories(supabase, session.user.id) : []
       setChecklist(snapshot.checklist)
       setItems(snapshot.items)
       setItemAssignees(snapshot.itemAssignees)
       setUserChecks(snapshot.userChecks)
-      setChecklistCategories(categoryData)
+      const categoryNames = snapshot.items.map((item) => item.category)
+      const userId = session?.user.id ?? null
+      setChecklistCategories((current) => mergeChecklistCategories(current, categoryNames, userId))
+      if (userId) {
+        void readChecklistCategoryCatalog(supabase, userId)
+          .then((categoryData) => {
+            if (isMounted.current) {
+              setChecklistCategories(mergeChecklistCategories(categoryData, categoryNames, userId))
+            }
+          })
+          .catch(() => undefined)
+      }
     } catch {
       // 빈 상태 유지
     } finally {
@@ -1282,16 +1295,6 @@ export default function TripDetailScreen() {
       const normalizedCategory = input.category.trim() || '기타'
       const shouldCreateCategory = Boolean(session?.user.id)
         && !checklistCategories.some((category) => category.name.trim().toLowerCase() === normalizedCategory.toLowerCase())
-      if (shouldCreateCategory && session?.user.id) {
-        const createdCategory = await createChecklistCategory(supabase, {
-          user_id: session.user.id,
-          name: normalizedCategory,
-          sort_order: checklistCategories.length > 0
-            ? Math.max(...checklistCategories.map((category) => category.sort_order ?? 0)) + 10
-            : 10,
-        })
-        setChecklistCategories((prev) => [...prev, createdCategory])
-      }
       const finalAssigneeIds = input.is_private
         ? (session?.user.id ? [session.user.id] : [])
         : input.assignment_type === 'specific'
@@ -1330,6 +1333,35 @@ export default function TripDetailScreen() {
           sourceTemplateName: null,
           assigneeIds: finalAssigneeIds,
         })
+      }
+      const userId = session?.user.id ?? null
+      setChecklistCategories((current) => mergeChecklistCategories(
+        current,
+        [normalizedCategory],
+        userId,
+      ))
+      if (shouldCreateCategory && userId) {
+        const sortOrder = checklistCategories.length > 0
+          ? Math.max(...checklistCategories.map((category) => category.sort_order ?? 0)) + 10
+          : 10
+        void persistChecklistCategory({
+          supabase,
+          userId,
+          name: normalizedCategory,
+          sortOrder,
+        }).then((createdCategory) => {
+          if (!isMounted.current) return
+          setChecklistCategories((current) => mergeChecklistCategories(
+            [
+              ...current.filter((category) => (
+                category.name.trim().toLowerCase() !== normalizedCategory.toLowerCase()
+              )),
+              createdCategory,
+            ],
+            [normalizedCategory],
+            userId,
+          ))
+        }).catch(() => undefined)
       }
       setEditingItem(null)
       setIsItemSheetOpen(false)
