@@ -1,9 +1,10 @@
-# Walkthrough: Android 일정 카드 그림자 정리
+# Walkthrough: Android 목록 카드 그림자 정리
 
 ## 변경
 
 - 여행 상세 일정 카드의 `shadowColor`, `shadowOpacity`, `shadowRadius`, `shadowOffset`, `elevation`을
   제거했다.
+- 홈 여행 목록과 템플릿 목록 카드의 `shadows.card` 적용도 제거했다.
 - 1px `hairline` 테두리, 흰 배경과 기존 radius는 유지해 카드 경계가 사라지지 않도록 했다.
 - 모달과 FAB 등 실제 부유 요소의 그림자는 변경하지 않았다.
 
