@@ -1,3 +1,32 @@
+# Walkthrough: TASK-065 온여정 앱 브랜드 자산
+
+## 결과
+
+승인된 「온기 있는 여정선」 콘셉트로 기존 Nexvoy 시각 자산을 대체할 앱 아이콘과 splash 체계를 구현했다. Cobalt 배경 위의 열린 `O/ㅇ` 여정선은 동행자와 이어 가는 여행을, coral 점은 목적지와 출발 전 설렘을 나타낸다.
+
+## 구현
+
+- `apps/mobile/assets/branding/source`에 색상과 기하가 고정된 SVG 원본을 추가했다.
+- iOS/공통 icon, Android adaptive/monochrome/notification, splash PNG를 Expo 설정에 연결했다.
+- Play Store 512×512 icon과 1024×500 feature graphic을 추가했다.
+- `expo-splash-screen`을 설치하고 Warm white `#FFFDF8` 배경에 중앙 심볼이 표시되도록 설정했다.
+- [앱 브랜드 자산 가이드](docs/brand/APP-BRAND-ASSET-GUIDE.md)에 색상, 여백, 사용 금지 규칙을 기록했다.
+
+## 시각 보정
+
+최초 Android preview에서 런처가 adaptive foreground를 추가 확대하면서 여정선 시작점과 coral 목적지가 원형 mask에 닿는 것을 확인했다. Adaptive와 themed foreground만 중심 기준 75%로 축소하고 알림용 원본을 분리했다. 최종 Pixel 9 Pro Android 15 emulator에서는 모든 형태가 mask 안에 안정적으로 표시됐다.
+
+## 검증
+
+- Mobile lint/typecheck와 Web·iOS·Android Expo export PASS
+- 전체 workspace typecheck와 Web production build PASS
+- Android preview APK release build 2회 PASS
+- 최종 APK 설치, launcher icon과 splash 시각 검증 PASS
+- standalone 앱 실행 및 Logcat crash/JavascriptException 0건
+- Expo Doctor 기존 경고 3건은 app.json/dynamic config, Metro override, `expo-modules-core` 직접 dependency이며 이번 변경과 무관하다.
+
+---
+
 # Walkthrough: TASK-060 Android 초대 수락·오프라인 준비물 회귀
 
 ## 발견 원인

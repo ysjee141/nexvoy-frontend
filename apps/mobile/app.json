@@ -5,11 +5,13 @@
     "version": "0.1.0",
     "orientation": "portrait",
     "scheme": "onvoy",
+    "icon": "./assets/branding/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
+      "image": "./assets/branding/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFFF"
+      "backgroundColor": "#FFFDF8"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -31,7 +33,9 @@
     "android": {
       "package": "xyz.nexvoy.app",
       "adaptiveIcon": {
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/branding/adaptive-icon.png",
+        "monochromeImage": "./assets/branding/adaptive-icon-monochrome.png",
+        "backgroundColor": "#2563EB"
       },
       "permissions": [
         "android.permission.ACCESS_NETWORK_STATE",
@@ -51,7 +55,17 @@
       [
         "expo-notifications",
         {
+          "icon": "./assets/branding/notification-icon.png",
           "color": "#2563EB"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#FFFDF8",
+          "image": "./assets/branding/splash-icon.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
         }
       ],
       "expo-secure-store",
