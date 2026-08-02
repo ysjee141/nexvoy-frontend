@@ -1,3 +1,19 @@
+# Walkthrough: Android 일정 카드 그림자 정리
+
+## 변경
+
+- 여행 상세 일정 카드의 `shadowColor`, `shadowOpacity`, `shadowRadius`, `shadowOffset`, `elevation`을
+  제거했다.
+- 1px `hairline` 테두리, 흰 배경과 기존 radius는 유지해 카드 경계가 사라지지 않도록 했다.
+- 모달과 FAB 등 실제 부유 요소의 그림자는 변경하지 않았다.
+
+## 검증
+
+- Mobile typecheck와 Expo lint PASS
+- Web·Android·iOS Expo export PASS
+- Android Preview release APK build 및 연결된 실기기 업데이트 설치 PASS
+- 기기가 PIN 잠금 상태여서 자동 화면 캡처는 수행하지 못했다.
+
 # Walkthrough: TASK-060 Android 초대 수락·오프라인 준비물 회귀
 
 ## 발견 원인
