@@ -12,7 +12,8 @@
 
 - Mobile typecheck와 Expo lint PASS
 - Web·Android·iOS Expo export PASS
-- Android Preview release APK build 및 연결된 실기기 업데이트 설치 PASS
+- 초기 일정 카드 변경의 Android Preview release APK build 및 연결된 실기기 업데이트 설치 PASS
+- 홈 여행·템플릿 카드 추가 변경 후 Web·Android·iOS Expo export 재검증 PASS
 - 기기가 PIN 잠금 상태여서 자동 화면 캡처는 수행하지 못했다.
 
 # Walkthrough: TASK-060 Android 초대 수락·오프라인 준비물 회귀
