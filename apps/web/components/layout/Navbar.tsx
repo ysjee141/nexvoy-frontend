@@ -138,7 +138,7 @@ export default function Navbar() {
                 {/* 왼쪽: 로고 + 가이드 */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '20px' })}>
                     <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: 'brand.ink' })}>
-                        <Image src="/logo.png" alt="온여정 로고" width={28} height={28} priority />
+                        <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={28} height={28} priority />
                         <span>온여정</span>
                     </Link>
                     {isOffline && (
@@ -245,7 +245,7 @@ export default function Navbar() {
                         })}
                     >
                         {pageTitle === '온여정' && (
-                            <Image src="/logo.png" alt="온여정 로고" width={20} height={20} priority />
+                            <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={20} height={20} priority />
                         )}
                         <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.ink', letterSpacing: '-0.01em' })}>
                             {pageTitle}
@@ -255,7 +255,7 @@ export default function Navbar() {
                 ) : (
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
                         {pageTitle === '온여정' && (
-                            <Image src="/logo.png" alt="온여정 로고" width={20} height={20} priority />
+                            <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={20} height={20} priority />
                         )}
                         <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.ink', letterSpacing: '-0.01em' })}>
                             {pageTitle}

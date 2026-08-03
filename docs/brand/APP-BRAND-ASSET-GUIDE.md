@@ -1,47 +1,41 @@
-# 온여정 앱 브랜드 자산 가이드
+# 온여정 앱 브랜드 자산 적용 가이드
 
-## 브랜드 콘셉트
+앱 브랜드 자산은 `docs/brand/v6`의 승인 원본에서 생성한다. `apps/mobile/assets/branding`의 배포 파일을 직접 디자인 원본으로 취급하지 않는다.
 
-「온기 있는 여정선」은 동행자와 함께 이어 가는 여행을 하나의 선으로 표현한다. 선이 만드는 열린 `O/ㅇ` 형태는 OnVoy와 온여정을 함께 암시하고, coral 원은 아직 닿지 않은 목적지와 출발 전 설렘을 뜻한다.
+## 적용 원본
 
-## 색상
+| 대상 | 승인 원본 | 적용 위치 |
+| --- | --- | --- |
+| 공통 앱 아이콘 | `v6/app-icon.svg` | `apps/mobile/assets/branding/icon.png` |
+| Android adaptive icon | v6 반전 마크 58% 배치 영역 | `apps/mobile/assets/branding/adaptive-icon.png` |
+| Android themed icon | v6 소형 단색 실루엣 58% 배치 영역 | `apps/mobile/assets/branding/adaptive-icon-monochrome.png` |
+| Android 알림 | v6 소형 단색 실루엣 | `apps/mobile/assets/branding/notification-icon.png` |
+| 네이티브 스플래시 | `v6/brand-mark.svg` | `apps/mobile/assets/branding/splash-icon.png` |
+| Play Store | `v6/app-icon.svg` | `apps/mobile/assets/branding/store/play-store-icon.png` |
+| 브라우저 파비콘 | `v6/favicon.svg` | `apps/web/app/favicon.ico`, `apps/web/app/icon.svg` |
+| Apple Touch icon | `v6/app-icon.svg` | `apps/web/app/apple-icon.png` |
+| 설치형 웹 앱 | `v6/app-icon.svg` | `apps/web/public/icons/` |
+| Web 화면 로고 | `v6/favicon.svg` | `apps/web/public/brand/onvoy-app-icon-v6.png` |
 
-| 역할 | 색상 | 용도 |
-|---|---|---|
-| Cobalt | `#2563EB` | 아이콘 배경, 브랜드 인지색 |
-| Warm white | `#FFFDF8` | 여정선, 스플래시 배경 |
-| Coral | `#FF8A65` | 목적지 점에만 제한적으로 사용 |
-| Ink | `#1E293B` | 스토어 문구 |
+정확한 파일명은 앱 설정과 함께 확인한다. 플랫폼 자산을 교체할 때 `apps/mobile/app.json`의 경로와 배경색도 함께 검증한다.
 
-Coral은 제품 UI의 신규 상태색이 아니다. 브랜드 이미지의 목적지 점에만 사용하며 기존 Clear Departure의 10% 강조색 원칙을 유지한다.
+## 플랫폼 규칙
 
-## 사용 규칙
+- 앱 아이콘 원본에는 둥근 모서리와 그림자를 추가하지 않는다. OS와 스토어가 최종 마스크를 적용한다.
+- 공통 앱 아이콘은 전체 캔버스의 78% 배치 영역을 사용해 실제 심벌 폭을 약 68%로 제한한다.
+- Android adaptive icon은 런처의 전경 확대를 감안해 전체 캔버스의 58% 배치 영역을 사용한다.
+- Android themed icon과 알림 아이콘은 단색 alpha 실루엣을 사용한다.
+- 알림 아이콘은 작은 상태바 식별성을 위해 adaptive icon보다 큰 75% 배치 영역을 유지한다.
+- 스플래시는 앱 아이콘 사각형 대신 투명 배경의 기본 마크를 사용한다.
+- 스플래시 배경색은 `#FFFFFF` 또는 제품에서 승인한 밝은 표면색을 사용한다.
+- `#2563EB` 배경에서는 `brand-mark-reverse.svg`를 사용한다.
 
-- 앱 아이콘 원본에는 둥근 모서리, 그림자, gradient를 넣지 않는다. OS와 스토어가 최종 mask를 적용한다.
-- 심볼의 형태와 여백 비율을 임의로 변경하거나 외곽선을 추가하지 않는다.
-- 단색 배경에서는 기본 Cobalt 아이콘을 사용한다. Cobalt 표면에서는 warm-white 여정선과 coral 목적지만 사용한다.
-- Android adaptive icon의 foreground는 `adaptive-foreground.png`, 배경은 `#2563EB`로 고정한다.
-- Adaptive foreground는 Android 런처가 추가 확대하므로 원본 심볼의 75% 비율을 유지한다.
-- Android 알림은 `notification-icon.png`의 단색 alpha 실루엣만 사용한다.
-- 네이티브 splash 배경은 `#FFFDF8`이며 슬로건이나 로딩 문구를 추가하지 않는다.
+## 검증 절차
 
-## 원본과 파생 자산
+1. `pnpm brand:apply`로 승인 원본과 플랫폼 자산을 재생성한다.
+2. 생성된 PNG, SVG와 ICO의 크기·alpha를 확인한다.
+3. `pnpm --filter nexvoy-app typecheck`와 Expo 설정 검사를 실행한다.
+4. Android adaptive, themed, notification, splash 화면을 실제 기기에서 확인한다.
+5. Play Store와 브라우저 탭, 홈 화면 설치 미리보기에서 잘림, 여백, 색상 변화를 확인한다.
 
-편집 가능한 원본은 `apps/mobile/assets/branding/source`에 있다. 배포용 PNG는 같은 상위 디렉터리에 두며, Play Store 제출 자산은 `apps/mobile/assets/branding/store`에 둔다.
-
-| 파일 | 규격 | 용도 |
-|---|---:|---|
-| `icon.png` | 1024×1024 | Expo/iOS 공통 앱 아이콘 |
-| `adaptive-icon.png` | 1024×1024 | Android adaptive foreground |
-| `adaptive-icon-monochrome.png` | 1024×1024 | Android themed icon |
-| `notification-icon.png` | 96×96 | Android notification |
-| `splash-icon.png` | 512×512 | 네이티브 splash 심볼 |
-| `store/play-store-icon.png` | 512×512 | Play Store 아이콘 |
-| `store/play-store-feature-graphic.png` | 1024×500 | Play Store feature graphic |
-
-## 금지 예시
-
-- 비행기, 지도 핀, 여권, 나침반을 추가해 일반 여행 앱 아이콘으로 변형
-- coral 원을 여러 곳에 장식적으로 반복
-- 사진이나 질감 위에 심볼을 배치해 작은 크기의 대비를 저하
-- `Nexvoy` 명칭 또는 이전 기하 로고와 혼용
+이전 「온기 있는 여정선」 아이콘은 폐기된 시안이다. v6 `ㅇㅇㅈ` 심벌과 혼용하지 않는다.

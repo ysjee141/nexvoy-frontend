@@ -139,7 +139,7 @@ export default function SignUpPage() {
             })}>
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
-                        <Image src="/logo.png" alt="온여정 로고" width={32} height={32} priority />
+                        <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={32} height={32} priority />
                         <span className={css({ fontSize: '20px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em' })}>온여정</span>
                     </div>
                     <h1 className={css({

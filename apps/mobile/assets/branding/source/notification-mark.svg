@@ -1,11 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
-  <path
-    d="M232 688C340 784 500 782 610 680C710 586 684 424 560 366C430 306 300 382 292 514C284 636 392 716 504 670C626 620 710 520 764 406"
-    fill="none"
-    stroke="#000000"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    stroke-width="104"
-  />
-  <circle cx="794" cy="294" r="52" fill="#000000"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <g transform="translate(8 8) scale(.75)"><circle cx="14" cy="30" r="7" fill="none" stroke="#000000" stroke-width="4.5"/>
+    <circle cx="33.5" cy="30" r="7" fill="none" stroke="#000000" stroke-width="4.5"/>
+    <path d="M46 23H58" fill="none" stroke="#000000" stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M52 25L46.5 38M52 25L57.5 38" fill="none" stroke="#000000" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></g>
+  </svg>

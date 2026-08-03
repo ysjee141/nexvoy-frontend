@@ -2,28 +2,30 @@
 
 ## 결과
 
-승인된 「온기 있는 여정선」 콘셉트로 기존 Nexvoy 시각 자산을 대체할 앱 아이콘과 splash 체계를 구현했다. Cobalt 배경 위의 열린 `O/ㅇ` 여정선은 동행자와 이어 가는 여행을, coral 점은 목적지와 출발 전 설렘을 나타낸다.
+승인된 v6 `ㅇㅇㅈ` 심벌로 앱과 웹 브랜드 자산을 통일했다. 첫 `ㅇ`의 시계는 계획, 둘째 `ㅇ`의 체크는 준비 완료, `ㅈ` 윗획의 종이비행기는 출발을 나타낸다.
 
 ## 구현
 
-- `apps/mobile/assets/branding/source`에 색상과 기하가 고정된 SVG 원본을 추가했다.
-- iOS/공통 icon, Android adaptive/monochrome/notification, splash PNG를 Expo 설정에 연결했다.
-- Play Store 512×512 icon과 1024×500 feature graphic을 추가했다.
-- `expo-splash-screen`을 설치하고 Warm white `#FFFDF8` 배경에 중앙 심볼이 표시되도록 설정했다.
-- [앱 브랜드 자산 가이드](docs/brand/APP-BRAND-ASSET-GUIDE.md)에 색상, 여백, 사용 금지 규칙을 기록했다.
+- `docs/brand/v6`을 Git이 추적하는 단일 원본으로 만들고 `pnpm brand:apply` 재생성 명령을 추가했다.
+- iOS/공통 icon, Android adaptive/themed/notification, splash PNG를 v6로 교체했다.
+- Play Store icon과 feature graphic, Web ICO·SVG favicon, Apple Touch 및 PWA icon을 교체했다.
+- Web manifest에 온여정 이름, Primary 테마와 192/512px 설치 아이콘을 연결했다.
+- 인증 proxy에서 `manifest.webmanifest`를 정적 자산으로 제외해 비로그인 설치 요청을 허용했다.
+- [앱 브랜드 자산 가이드](docs/brand/APP-BRAND-ASSET-GUIDE.md)에 플랫폼 적용·검증 규칙을 기록했다.
 
 ## 시각 보정
 
-최초 Android preview에서 런처가 adaptive foreground를 추가 확대하면서 여정선 시작점과 coral 목적지가 원형 mask에 닿는 것을 확인했다. Adaptive와 themed foreground만 중심 기준 75%로 축소하고 알림용 원본을 분리했다. 최종 Pixel 9 Pro Android 15 emulator에서는 모든 형태가 mask 안에 안정적으로 표시됐다.
+첫 실기기 설치에서 런처 마스크 안의 `ㅇㅇㅈ`이 좌우로 과밀하게 보이는 것을 확인했다. 공통 앱 아이콘은 78% 배치 영역(실제 심벌 폭 약 68%), Android adaptive와 themed icon은 런처 확대를 고려한 58% 배치 영역으로 보완했다. 96px 알림 아이콘은 작은 상태바 식별성을 위해 기존 75% 배치 영역을 유지했다. Web 화면 내부의 작은 로고는 전용 favicon 심벌을 사용한다.
 
 ## 검증
 
+- `pnpm brand:apply` 반복 실행 전후 asset hash 일치 PASS
+- PNG 규격과 alpha, SVG 파싱, ICO 16/32/48px entry PASS
 - Mobile lint/typecheck와 Web·iOS·Android Expo export PASS
-- 전체 workspace typecheck와 Web production build PASS
-- Android preview APK release build 2회 PASS
-- 최종 APK 설치, launcher icon과 splash 시각 검증 PASS
-- standalone 앱 실행 및 Logcat crash/JavascriptException 0건
-- Expo Doctor 기존 경고 3건은 app.json/dynamic config, Metro override, `expo-modules-core` 직접 dependency이며 이번 변경과 무관하다.
+- Web production build와 `/icon.svg`, `/apple-icon.png`, `/manifest.webmanifest` 정적 route PASS
+- 브라우저에서 favicon·Apple Touch·manifest link와 버전 경로의 UI logo 확인 PASS
+- Android clean prebuild와 `assembleDebug` PASS
+- 연결된 Android 기기가 없어 v6 APK의 launcher mask와 splash 실기기 시각 확인은 남아 있다.
 
 ---
 
