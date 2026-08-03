@@ -1,8 +1,9 @@
 # TASK-062: DB·Storage 재해 복구 Rehearsal
 
-- 상태: 대기
+- 상태: 진행 중 (복구 harness 준비, Recovery project 대기)
 - 선행 작업: `TASK-060`
 - 해소 대상: `B-06`
+- GitHub Issue: [#383](https://github.com/ysjee141/nexvoy-frontend/issues/383)
 
 ## 목적
 
@@ -30,3 +31,9 @@
 - Production 원본 프로젝트에서의 파괴적 복구
 - legacy authority로의 rollback
 - iOS 설치 빌드 smoke (`TASK-064`에서 동일 복구 기준을 재사용)
+
+## 실행 도구
+
+- Runbook: [TASK-062 DB·Storage 복구](../runbooks/TASK-062-disaster-recovery-rehearsal.md)
+- preflight·manifest·정합성 비교: `pnpm task062:recovery`
+- 도구 회귀: `pnpm test:operational-gates`

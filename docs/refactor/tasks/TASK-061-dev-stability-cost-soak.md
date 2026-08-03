@@ -1,8 +1,9 @@
 # TASK-061: DEV 안정성·비용 관측
 
-- 상태: 대기
+- 상태: 진행 중 (관측 harness 준비)
 - 선행 작업: `TASK-060`
 - 해소 대상: `B-05`
+- GitHub Issue: [#382](https://github.com/ysjee141/nexvoy-frontend/issues/382)
 
 ## 목적
 
@@ -29,3 +30,9 @@ Web·Android 초기 Production 예상 사용 패턴을 DEV에서 연속 7일 재
 - Production 실제 고객 traffic
 - DB와 Storage 복구 rehearsal
 - iOS 사용량·lifecycle 비용 관측 (`TASK-064`에서 별도 기준 확정)
+
+## 실행 도구
+
+- Runbook: [TASK-061 DEV 안정성·비용 관측](../runbooks/TASK-061-dev-stability-cost-soak.md)
+- 초기화·판정: `pnpm task061:soak`
+- 도구 회귀: `pnpm test:operational-gates`

@@ -6135,11 +6135,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     backgroundColor: colors.bg.canvas,
-    shadowColor: colors.bg.scrim,
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 2,
   },
   planCardVisited: {
     opacity: 0.65,

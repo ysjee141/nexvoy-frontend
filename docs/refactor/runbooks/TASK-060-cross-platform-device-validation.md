@@ -125,6 +125,12 @@ Android Simulator 성공은 `PREPASS`로만 기록한다. iOS build·launch 실�
 Android 실제 기기가 없는 조합은 `BLOCKED`로 기록하고 Android 출시 `NO-GO`를 유지한다. iOS
 실기기 조합은 `DEFERRED/TASK-064`로 기록하며 Android 출시 판정에 포함하지 않는다.
 
+### 실행 결과 (2026-08-01)
+
+Web/Web, Web/Android, Android/Android의 전체 제품, 권한, asset, offline/reconnect와 PR #381 회귀를
+실제 기기에서 통과했다. TASK-060은 `PASS`, `G3`는 `GO`다. Google/Kakao OAuth, push·deep link와
+Production 외부 연동은 TASK-063에서 별도 검증한다.
+
 ## 8. 중단 조건
 
 - 데이터 손실, 계정 간 노출, 권한 우회, 중복 canonical row

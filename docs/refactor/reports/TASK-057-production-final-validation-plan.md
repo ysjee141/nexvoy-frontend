@@ -34,7 +34,7 @@ Production GO는 코드 병합이 아니라 `G0`~`G7`의 증적 완료로 판정
 | Mobile 정적/저장소 | PASS | typecheck, lint, Expo export, SQLite tests | Android Preview 실기기 검증 |
 | DEV schema/history | PASS | TASK-059 drift 0, strict fingerprint 12/12·185/185, authenticated smoke | release 전 read-only 재확인 |
 | Production schema/history | NO-GO | TASK-058/059 적용, fingerprint 183/185, ledger/nullability 차이 잔존 | TASK-063 독립 감사·승인 |
-| Web·Android 실기기 | NO-GO | Android simulator PREPASS, 실제 기기 증적 없음 | Web/Android·Android/Android 실행 |
+| Web·Android 실기기 | GO | TASK-060 실제 기기 Gate PASS, PR #381 회귀 재검증 | release SHA마다 핵심 smoke 유지 |
 | iOS | 후속 출시 | simulator build·launch PREPASS | TASK-064에서 실기기·스토어 검증 |
 | 운영 관측 | NO-GO | 7일 지표 없음 | 임계치 기반 관찰 |
 | 복구 | NO-GO | DB+Storage 동시 복구 증적 없음 | 격리 프로젝트 rehearsal |
@@ -67,7 +67,7 @@ flowchart TD
 | B-01 (완료) | DEV historical history gap | TASK-059 repair 후 drift 0 | migration list, fingerprint 결과 | G2 |
 | B-02 (완료) | TASK-056 객체·grant·history | TASK-059 grant hardening·authenticated smoke PASS | schema dump, smoke 결과 | G2 |
 | B-03 (완료) | 제품 E2E 자동화 공백 | TASK-058과 Production P0 23건 PASS | CI URL과 리포트 | G1 |
-| B-04 | Android 실기기·플랫폼 조합 미검증 | Web/Web, Web/Android, Android/Android P0/P1 100% PASS | Android 기기/OS/build, 영상·스크린샷, network/Logcat | G3 |
+| B-04 (완료) | Android 실기기·플랫폼 조합 | TASK-060에서 Web/Web, Web/Android, Android/Android P0/P1 PASS | Android 기기/OS/build와 사용자 확인 기록 | G3 |
 | B-05 | 7일 운영 지표 없음 | 연속 7일 동안 임계치와 무사고 기준 충족 | GA4/Firebase/Supabase 대시보드 export | G4 |
 | B-06 | DB+Storage 복구 미검증 | 격리 프로젝트에서 동일 기준 시점 데이터와 object 복구 검증 | dump/checksum, object manifest, row count, RTO/RPO | G5 |
 | B-07 | Production history·schema drift·backup 미확정 | 원격 전용 version 4건과 `public` schema 차이 분류·승인, ledger 정합화, pre-deploy DB/Storage backup 완료 | 독립 감사 기록, schema diff, backup 위치·checksum | G6 |

@@ -39,6 +39,10 @@
 - `docs/refactor/tasks/TASK-064-ios-production-validation-and-rollout.md`
 - `docs/refactor/reports/TASK-060-cross-platform-device-validation.md`
 - `docs/refactor/runbooks/TASK-060-cross-platform-device-validation.md`
+- `docs/refactor/reports/TASK-061-dev-stability-cost-soak.md`
+- `docs/refactor/runbooks/TASK-061-dev-stability-cost-soak.md`
+- `docs/refactor/reports/TASK-062-disaster-recovery-rehearsal.md`
+- `docs/refactor/runbooks/TASK-062-disaster-recovery-rehearsal.md`
 - `docs/refactor/runbooks/TASK-052-mobile-authority-product-smoke.md`
 - `docs/refactor/TECHNICAL-SPEC.md`
 - `docs/refactor/runbooks/TASK-055-legacy-runtime-retirement.md`
@@ -55,7 +59,7 @@ TASK-058/059 forward migration을 적용했고 strict fingerprint는 12/12 versi
 일치한다. 전용 임시 QA 네 계정의 authenticated remote-safe smoke도 PASS했으며 계정과 QA 데이터는
 정리했다. 사용자 승인 후 Production에도 기존 history를 보존하는 target-only 방식으로
 TASK-058/059를 적용했으며 fingerprint는 183/185다. 초기 Production 범위는 Web·Android다.
-TASK-060의 Android 동일 계정·asset 수렴과 iOS release 실행은 Simulator PREPASS지만 Android 실제
-기기 Gate가 남아 Android Production은 `NO-GO`다. TASK-061~063에서 관측·복구·Web/Android 출시를
-진행하고 iOS 실기기와 App Store 출시는 TASK-064로 이관한다. 남은 ledger와 nullability 차이는
-TASK-063에서 처리한다.
+TASK-060의 Web/Web·Web/Android·Android/Android 실제 기기 Gate를 통과해 `G3`는 `GO`다.
+TASK-061의 DEV 7일 관측과 TASK-062의 격리 복구를 병렬 착수했으며, 두 Gate와 TASK-063
+preflight·rollout 전까지 Android Production은 `NO-GO`다. iOS 실기기와 App Store 출시는
+TASK-064로 이관하고 남은 ledger와 nullability 차이는 TASK-063에서 처리한다.

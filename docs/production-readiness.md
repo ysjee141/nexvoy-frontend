@@ -2,8 +2,8 @@
 
 ## 결론
 
-현재 OnVoy는 **Web·Android Production NO-GO**다. Authority-only 제품 코드와 로컬 자동 Gate는
-통과했지만 Android 실기기, 7일 관측, DB와 Storage 복구, 운영·법무·출시 책임 증적이 남아 있다.
+현재 OnVoy는 **Web·Android Production NO-GO**다. Authority-only 제품 코드, 로컬 자동 Gate와
+Android 실기기 Gate는 통과했지만 7일 관측, DB와 Storage 복구, 운영·법무·출시 책임 증적이 남아 있다.
 최종 판정은 [TASK-057 마스터 계획](refactor/reports/TASK-057-production-final-validation-plan.md)의
 `G0`~`G7`을 따른다.
 
@@ -44,7 +44,7 @@ iOS는 Android 안정화 이후 `TASK-064`에서 진행한다.
 | G0 문서·책임 | 문서 버전과 Release/DB/QA/Web/Android/on-call 담당자 지정 | NO-GO |
 | G1 로컬 자동화 | P0 자동화, 전체 test/typecheck/build PASS | PASS |
 | G2 DEV schema | migration history drift 0, strict fingerprint와 authenticated smoke | PASS |
-| G3 DEV 제품 | Web/Web·Web/Android·Android/Android P0/P1 100% PASS | NO-GO |
+| G3 DEV 제품 | Web/Web·Web/Android·Android/Android P0/P1 100% PASS | PASS |
 | G4 관측 | 연속 7일 무사고와 지표 임계치 충족 | NO-GO |
 | G5 복구 | DB+Storage 격리 복구와 RTO/RPO 검증 | NO-GO |
 | G6 Production preflight | 독립 history 감사, backup, 환경·법무·alert 승인 | NO-GO |
