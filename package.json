@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "brand:apply": "node docs/brand/v6/render-system.js && node scripts/apply-brand-assets.cjs",
     "dev": "pnpm --filter nexvoy-web dev",
     "dev:web": "pnpm --filter nexvoy-web dev",
     "dev:mobile": "pnpm --filter nexvoy-app start",
@@ -28,6 +29,7 @@
     "test:e2e:report": "pnpm --filter nexvoy-web exec playwright show-report"
   },
   "devDependencies": {
-    "next": "16.2.9"
+    "next": "16.2.9",
+    "sharp": "0.34.5"
   }
 }

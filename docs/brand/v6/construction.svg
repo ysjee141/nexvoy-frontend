@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+    <rect width="1024" height="1024" fill="#FFF9EC"/>
+    <g fill="none" stroke="#D8DEE6" stroke-width="2">
+      <path d="M48 342H976M48 374H976M48 474H976M48 607H976"/>
+      <path d="M63 280V670M327 280V670M363 280V670M627 280V670M663 280V670M958 280V670"/>
+    </g>
+    <g fill="#64748B" font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-size="20">
+      <text x="48" y="238">상단선 342</text>
+      <text x="260" y="238">비행기 중심 369</text>
+      <text x="500" y="238">심벌 중심 474</text>
+      <text x="742" y="238">하단선 607</text>
+      <text x="335" y="700">36px</text>
+      <text x="635" y="700">36px</text>
+    </g>
+    <circle cx="195" cy="474" r="100" fill="none" stroke="#2563EB" stroke-width="64"/>
+    <path d="M195 474V432M195 474L227 493" fill="none" stroke="#2563EB" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="495" cy="474" r="100" fill="none" stroke="#1D4ED8" stroke-width="64"/>
+    <path d="M455 474L485 504L539 448" fill="none" stroke="#1D4ED8" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M695 342H875Q885 342 894 347L944 368Q958 374 944 380L894 401Q885 406 875 406H695C677 406 663 392 663 374C663 356 677 342 695 342Z" fill="#2563EB"/>
+    <path d="M816 357L924 369L884 389L861 374L842 389Z" fill="#FFFFFF"/>
+    <path d="M854 374L902 369L867 379Z" fill="#2563EB"/>
+    <path d="M815 405L735 575M815 405L895 575" fill="none" stroke="#2563EB" stroke-width="64" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>

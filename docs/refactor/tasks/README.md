@@ -133,6 +133,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-062-disaster-recovery-rehearsal.md` | 진행 중 | DB·Storage 복구와 Web·Android smoke, Issue #383 |
 | `TASK-063-production-preflight-and-rollout.md` | 대기 | Web·Android Production 사전 점검과 단계적 출시 |
 | `TASK-064-ios-production-validation-and-rollout.md` | 보류 | Android 안정화 후 iOS 실기기·TestFlight/App Store 검증·출시 |
+| `TASK-065-app-brand-assets.md` | 구현 완료 | 온여정 앱 아이콘·스플래시·Android/Play Store 브랜드 자산, Issue [#387](https://github.com/ysjee141/nexvoy-frontend/issues/387) |
 
 ## 이전 단계 이력
 
@@ -244,6 +245,10 @@ rotating room secret 보안 하드닝을 완료했다.
 ### Phase 11: iOS Production Validation (Deferred)
 
 - [ ] `TASK-064-ios-production-validation-and-rollout.md`: iOS Production 검증과 단계적 출시
+
+### Phase 12: Product Branding
+
+- [x] `TASK-065-app-brand-assets.md`: 온여정 앱 아이콘·스플래시·스토어 브랜드 자산
 
 ## 권장 시작 순서
 

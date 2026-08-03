@@ -1,3 +1,34 @@
+# Walkthrough: TASK-065 온여정 앱 브랜드 자산
+
+## 결과
+
+승인된 v6 `ㅇㅇㅈ` 심벌로 앱과 웹 브랜드 자산을 통일했다. 첫 `ㅇ`의 시계는 계획, 둘째 `ㅇ`의 체크는 준비 완료, `ㅈ` 윗획의 종이비행기는 출발을 나타낸다.
+
+## 구현
+
+- `docs/brand/v6`을 Git이 추적하는 단일 원본으로 만들고 `pnpm brand:apply` 재생성 명령을 추가했다.
+- iOS/공통 icon, Android adaptive/themed/notification, splash PNG를 v6로 교체했다.
+- Play Store icon과 feature graphic, Web ICO·SVG favicon, Apple Touch 및 PWA icon을 교체했다.
+- Web manifest에 온여정 이름, Primary 테마와 192/512px 설치 아이콘을 연결했다.
+- 인증 proxy에서 `manifest.webmanifest`를 정적 자산으로 제외해 비로그인 설치 요청을 허용했다.
+- [앱 브랜드 자산 가이드](docs/brand/APP-BRAND-ASSET-GUIDE.md)에 플랫폼 적용·검증 규칙을 기록했다.
+
+## 시각 보정
+
+첫 실기기 설치에서 런처 마스크 안의 `ㅇㅇㅈ`이 좌우로 과밀하게 보이는 것을 확인했다. 공통 앱 아이콘은 78% 배치 영역(실제 심벌 폭 약 68%), Android adaptive와 themed icon은 런처 확대를 고려한 58% 배치 영역으로 보완했다. 96px 알림 아이콘은 작은 상태바 식별성을 위해 기존 75% 배치 영역을 유지했다. Web 화면 내부의 작은 로고는 전용 favicon 심벌을 사용한다.
+
+## 검증
+
+- `pnpm brand:apply` 반복 실행 전후 asset hash 일치 PASS
+- PNG 규격과 alpha, SVG 파싱, ICO 16/32/48px entry PASS
+- Mobile lint/typecheck와 Web·iOS·Android Expo export PASS
+- Web production build와 `/icon.svg`, `/apple-icon.png`, `/manifest.webmanifest` 정적 route PASS
+- 브라우저에서 favicon·Apple Touch·manifest link와 버전 경로의 UI logo 확인 PASS
+- Android clean prebuild와 `assembleDebug` PASS
+- 연결된 Android 기기가 없어 v6 APK의 launcher mask와 splash 실기기 시각 확인은 남아 있다.
+
+---
+
 # Walkthrough: Android 목록 카드 그림자 정리
 
 ## 변경
@@ -38,7 +69,6 @@
 
 TASK-061의 7일 DEV 관측과 TASK-062의 별도 Recovery 프로젝트 복원이 남아 `G4`, `G5`와 Android
 Production은 `NO-GO`다. 두 작업 통과 후 TASK-063 preflight와 단계적 rollout을 진행한다.
-
 
 # Walkthrough: TASK-060 Android 초대 수락·오프라인 준비물 회귀
 
