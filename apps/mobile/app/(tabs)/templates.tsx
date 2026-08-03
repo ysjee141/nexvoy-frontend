@@ -276,7 +276,6 @@ const styles = StyleSheet.create({
     borderColor: colors.brand.border,
     padding: spacing.base,
     marginBottom: spacing.sm,
-    ...shadows.card,
   },
   cardHeader: {
     flexDirection: 'row',

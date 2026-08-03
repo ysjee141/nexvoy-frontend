@@ -637,7 +637,6 @@ const styles = StyleSheet.create({
     borderColor: colors.brand.border,
     padding: spacing.base,
     marginBottom: spacing.md,
-    ...shadows.card,
   },
   badgeRow: {
     flexDirection: 'row',

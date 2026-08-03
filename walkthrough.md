@@ -1,3 +1,21 @@
+# Walkthrough: Android 목록 카드 그림자 정리
+
+## 변경
+
+- 여행 상세 일정 카드의 `shadowColor`, `shadowOpacity`, `shadowRadius`, `shadowOffset`, `elevation`을
+  제거했다.
+- 홈 여행 목록과 템플릿 목록 카드의 `shadows.card` 적용도 제거했다.
+- 1px `hairline` 테두리, 흰 배경과 기존 radius는 유지해 카드 경계가 사라지지 않도록 했다.
+- 모달과 FAB 등 실제 부유 요소의 그림자는 변경하지 않았다.
+
+## 검증
+
+- Mobile typecheck와 Expo lint PASS
+- Web·Android·iOS Expo export PASS
+- 초기 일정 카드 변경의 Android Preview release APK build 및 연결된 실기기 업데이트 설치 PASS
+- 홈 여행·템플릿 카드 추가 변경 후 Web·Android·iOS Expo export 재검증 PASS
+- 기기가 PIN 잠금 상태여서 자동 화면 캡처는 수행하지 못했다.
+
 # Walkthrough: TASK-060 완료 및 TASK-061/062 운영 Gate 착수
 
 ## TASK-060 완료
@@ -20,6 +38,7 @@
 
 TASK-061의 7일 DEV 관측과 TASK-062의 별도 Recovery 프로젝트 복원이 남아 `G4`, `G5`와 Android
 Production은 `NO-GO`다. 두 작업 통과 후 TASK-063 preflight와 단계적 rollout을 진행한다.
+
 
 # Walkthrough: TASK-060 Android 초대 수락·오프라인 준비물 회귀
 
