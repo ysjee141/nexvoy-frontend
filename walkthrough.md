@@ -15,6 +15,30 @@
 - 초기 일정 카드 변경의 Android Preview release APK build 및 연결된 실기기 업데이트 설치 PASS
 - 홈 여행·템플릿 카드 추가 변경 후 Web·Android·iOS Expo export 재검증 PASS
 - 기기가 PIN 잠금 상태여서 자동 화면 캡처는 수행하지 못했다.
+=======
+# Walkthrough: TASK-060 완료 및 TASK-061/062 운영 Gate 착수
+
+## TASK-060 완료
+
+- Android 실제 기기에서 Web/Web, Web/Android, Android/Android의 여행·일정·준비물·템플릿·초대,
+  권한, asset과 offline/reconnect를 통과했다.
+- PR #381의 초대 수락 인박스와 오프라인 준비물 저장도 재검증했다.
+- TASK-060은 `PASS`, Production 마스터 계획의 `G3`는 `GO`다.
+
+## 운영 Gate 준비
+
+- TASK-061 Issue #382와 TASK-062 Issue #383을 등록했다.
+- `task061-soak-report.mjs`는 동일 release SHA의 7일 연속성, authority 오류율·p95, quota와 incident를
+  판정한다.
+- `task062-recovery-audit.mjs`는 DEV/Production을 Recovery 대상으로 차단하고 backup checksum,
+  canonical table과 Storage digest를 비교한다.
+- 실제 증적은 Git에서 제외된 `_workspace` 또는 repository 밖의 암호화 저장소에만 둔다.
+
+## 현재 판정
+
+TASK-061의 7일 DEV 관측과 TASK-062의 별도 Recovery 프로젝트 복원이 남아 `G4`, `G5`와 Android
+Production은 `NO-GO`다. 두 작업 통과 후 TASK-063 preflight와 단계적 rollout을 진행한다.
+
 
 # Walkthrough: TASK-060 Android 초대 수락·오프라인 준비물 회귀
 
