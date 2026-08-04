@@ -21,7 +21,7 @@ export async function getMobileProductTravelStats(
   options: { refresh?: boolean } = {},
 ): Promise<TravelStats> {
   const repositories = await createMobileProductRepositories(supabase)
-  return loadTravelStatsFromSource(userId, {
+  return loadTravelStatsFromSource({
     listTrips: () => repositories.trips.listTrips(userId),
     refreshTrips: options.refresh
       ? () => refreshMobileProductList(supabase, 'trip')

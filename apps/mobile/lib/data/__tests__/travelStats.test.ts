@@ -24,9 +24,9 @@ test('derives completed, upcoming, duration, and destination statistics', () => 
   assert.deepEqual(stats.upcomingTrips.map((item) => item.id), ['today', 'future'])
 })
 
-test('refreshes before reading and excludes trips owned by another account', async () => {
+test('refreshes before reading and includes accessible collaborator trips', async () => {
   const calls: string[] = []
-  const stats = await loadTravelStatsFromSource(USER_ID, {
+  const stats = await loadTravelStatsFromSource({
     refreshTrips: async () => { calls.push('refresh') },
     listTrips: async () => {
       calls.push('list')
@@ -38,12 +38,12 @@ test('refreshes before reading and excludes trips owned by another account', asy
   })
 
   assert.deepEqual(calls, ['refresh', 'list'])
-  assert.equal(stats.completedCount, 1)
-  assert.deepEqual(stats.pastTrips.map((item) => item.id), ['owned'])
+  assert.equal(stats.completedCount, 2)
+  assert.deepEqual(stats.pastTrips.map((item) => item.id), ['owned', 'shared'])
 })
 
 test('falls back to the local trip list when refresh fails', async () => {
-  const stats = await loadTravelStatsFromSource(USER_ID, {
+  const stats = await loadTravelStatsFromSource({
     refreshTrips: async () => { throw new Error('offline') },
     listTrips: async () => [trip({ id: 'local', startDate: '2026-08-10', endDate: '2026-08-10' })],
   })
@@ -55,7 +55,7 @@ test('falls back to the local trip list when refresh fails', async () => {
 
 test('surfaces a refresh failure when no local trips can be shown', async () => {
   await assert.rejects(
-    loadTravelStatsFromSource(USER_ID, {
+    loadTravelStatsFromSource({
       refreshTrips: async () => { throw new Error('authority unavailable') },
       listTrips: async () => [],
     }),

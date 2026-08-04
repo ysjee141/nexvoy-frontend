@@ -7,7 +7,6 @@ export interface TravelStatsSource {
 }
 
 export async function loadTravelStatsFromSource(
-  userId: string,
   source: TravelStatsSource,
 ): Promise<TravelStats> {
   let refreshError: unknown = null
@@ -22,8 +21,8 @@ export async function loadTravelStatsFromSource(
   const localTrips = await source.listTrips()
   if (refreshError && localTrips.length === 0) throw refreshError
 
-  const trips = localTrips.filter((trip) => trip.ownerId === userId)
-  return deriveTravelStats(trips)
+  // Authority lists are already scoped to resources the current account can access.
+  return deriveTravelStats(localTrips)
 }
 
 export function deriveTravelStats(

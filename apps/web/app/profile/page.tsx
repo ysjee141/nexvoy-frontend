@@ -77,8 +77,7 @@ function ProfileContent() {
 
             await refreshWebProductList(supabase, 'trip')
             const repositories = await createWebProductDocumentRepositories(supabase)
-            const allTrips = (await repositories.trips.listTrips(currentUser.id))
-                .filter((trip) => trip.ownerId === currentUser.id)
+            const allTrips = await repositories.trips.listTrips(currentUser.id)
             const tripDetails = await Promise.all(allTrips.map((trip) => repositories.trips.getTrip(trip.id)))
             const totalPlans = tripDetails.reduce((sum, trip) => sum + (trip?.planCount ?? 0), 0)
 
