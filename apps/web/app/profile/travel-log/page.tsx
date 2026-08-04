@@ -42,7 +42,6 @@ export default function TravelLogPage() {
             await refreshWebProductList(supabase, 'trip')
             const repositories = await createWebProductDocumentRepositories(supabase)
             const trips = (await repositories.trips.listTrips(user.id))
-                .filter((trip) => trip.ownerId === user.id)
                 .map((trip) => ({
                     id: trip.id,
                     destination: trip.destination,

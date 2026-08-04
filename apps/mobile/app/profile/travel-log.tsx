@@ -3,7 +3,7 @@
  *
  * 제품 Repository의 로컬 read model로 사용자 여행 통계를 집계해
  * 4칸 통계 카드 + 지난/예정 여정 목록으로 표시한다.
- * 화면은 데이터 표시/로딩/에러 상태만 담당하며 집계 로직은 core 쿼리에 위임.
+ * 화면은 데이터 표시/로딩/에러 상태만 담당하며 집계 로직은 data helper에 위임.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
@@ -22,10 +22,7 @@ import type { TravelStats } from '@nexvoy/types'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { getMobileProductTravelStats } from '@/lib/data/productDerivedData'
-import {
-  refreshMobileProductList,
-  subscribeMobileProductAccount,
-} from '@/lib/data/repositoryFactory'
+import { subscribeMobileProductAccount } from '@/lib/data/repositoryFactory'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 type TripEntry = TravelStats['pastTrips'][number]
@@ -37,14 +34,24 @@ export default function TravelLogScreen() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const isMounted = useRef(true)
-  useEffect(() => () => { isMounted.current = false }, [])
+  useEffect(() => {
+    isMounted.current = true
+    return () => { isMounted.current = false }
+  }, [])
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (
+    showLoading = true,
+    refreshTrips = true,
+  ) => {
     if (!session?.user) return
-    setLoading(true)
+    if (showLoading) setLoading(true)
     setError(null)
     try {
-      const data = await getMobileProductTravelStats(supabase, session.user.id)
+      const data = await getMobileProductTravelStats(
+        supabase,
+        session.user.id,
+        { refresh: refreshTrips },
+      )
       if (isMounted.current) setStats(data)
     } catch {
       if (isMounted.current) {
@@ -56,7 +63,7 @@ export default function TravelLogScreen() {
   }, [session?.user])
 
   useEffect(() => {
-    load()
+    void load()
   }, [load])
 
   useEffect(() => {
@@ -64,12 +71,11 @@ export default function TravelLogScreen() {
     let unsubscribe: () => void = () => undefined
     let disposed = false
     void subscribeMobileProductAccount(supabase, 'trip', () => {
-      if (!disposed) void load()
+      if (!disposed) void load(false, false)
     }).then((next) => {
       if (disposed) next()
       else unsubscribe = next
     })
-    void refreshMobileProductList(supabase, 'trip').catch(() => undefined)
     return () => {
       disposed = true
       unsubscribe()
@@ -107,7 +113,7 @@ export default function TravelLogScreen() {
         <View style={styles.centerFill}>
           <Text style={styles.errorText}>{error}</Text>
           <Pressable
-            onPress={load}
+            onPress={() => { void load() }}
             accessibilityRole="button"
             style={({ pressed }) => [styles.retryBtn, pressed && styles.pressedFade]}
           >

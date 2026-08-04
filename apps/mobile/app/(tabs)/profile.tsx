@@ -22,10 +22,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/lib/auth-context'
 import { ConfirmSheet } from '@/components/ui'
 import { getMobileProductTravelStats } from '@/lib/data/productDerivedData'
-import {
-  refreshMobileProductList,
-  subscribeMobileProductAccount,
-} from '@/lib/data/repositoryFactory'
+import { subscribeMobileProductAccount } from '@/lib/data/repositoryFactory'
 import { colors, fontSizes, fontWeights, radii, spacing } from '@/theme'
 
 function getInitial(nickname: string | null, email: string | null): string {
@@ -78,9 +75,13 @@ export default function ProfileScreen() {
   const router = useRouter()
   const { session, signOut } = useAuth()
   const isMounted = useRef(true)
-  useEffect(() => { return () => { isMounted.current = false } }, [])
+  useEffect(() => {
+    isMounted.current = true
+    return () => { isMounted.current = false }
+  }, [])
   const [profile, setProfile] = useState<Profile | null>(null)
   const [stats, setStats] = useState<TravelStats | null>(null)
+  const [statsError, setStatsError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   // 닉네임 인라인 편집 상태
@@ -90,20 +91,28 @@ export default function ProfileScreen() {
   const [nicknameError, setNicknameError] = useState('')
   const [showLogoutSheet, setShowLogoutSheet] = useState(false)
 
-  const loadProfile = useCallback(async (showLoading = true) => {
+  const loadProfile = useCallback(async (
+    showLoading = true,
+    refreshTrips = true,
+  ) => {
     if (!session?.user) return
     if (showLoading) setLoading(true)
     try {
-      const [profileData, statsData] = await Promise.all([
+      const [profileResult, statsResult] = await Promise.allSettled([
         getProfile(supabase, session.user.id),
-        getMobileProductTravelStats(supabase, session.user.id).catch(() => null),
+        getMobileProductTravelStats(supabase, session.user.id, { refresh: refreshTrips }),
       ])
       if (isMounted.current) {
-        setProfile(profileData)
-        if (statsData) setStats(statsData)
+        if (profileResult.status === 'fulfilled') setProfile(profileResult.value)
+        if (statsResult.status === 'fulfilled') {
+          setStats(statsResult.value)
+          setStatsError(null)
+        } else {
+          setStatsError('여행 통계를 계산하지 못했어요.')
+        }
       }
     } catch {
-      // 로드 실패 시 session 기본값으로 표시
+      if (isMounted.current) setStatsError('여행 통계를 계산하지 못했어요.')
     } finally {
       if (isMounted.current) setLoading(false)
     }
@@ -118,12 +127,11 @@ export default function ProfileScreen() {
     let unsubscribe: () => void = () => undefined
     let disposed = false
     void subscribeMobileProductAccount(supabase, 'trip', () => {
-      if (!disposed) void loadProfile(false)
+      if (!disposed) void loadProfile(false, false)
     }).then((next) => {
       if (disposed) next()
       else unsubscribe = next
     })
-    void refreshMobileProductList(supabase, 'trip').catch(() => undefined)
     return () => {
       disposed = true
       unsubscribe()
@@ -335,6 +343,21 @@ export default function ProfileScreen() {
                 <Text style={styles.statLabel}>방문한 곳</Text>
               </View>
             </View>
+          ) : statsError ? (
+            <View style={styles.statsErrorBox}>
+              <Text style={styles.statsErrorText}>{statsError}</Text>
+              <Pressable
+                onPress={() => { void loadProfile(false, true) }}
+                style={({ pressed }) => [
+                  styles.statsRetryButton,
+                  pressed && styles.pressedFade,
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="여행 통계 다시 계산"
+              >
+                <Text style={styles.statsRetryText}>다시 계산</Text>
+              </Pressable>
+            </View>
           ) : null}
 
           {/* 내 여행 */}
@@ -528,6 +551,30 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.xs,
     color: colors.brand.muted,
     marginTop: spacing.xxs,
+  },
+  statsErrorBox: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.brand.border,
+    backgroundColor: colors.bg.surfaceSoft,
+  },
+  statsErrorText: {
+    fontSize: fontSizes.sm,
+    color: colors.brand.muted,
+  },
+  statsRetryButton: {
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  statsRetryText: {
+    fontSize: fontSizes.sm,
+    fontWeight: fontWeights.semibold,
+    color: colors.brand.primary,
   },
   displayEmail: {
     fontSize: fontSizes.sm,
