@@ -4,7 +4,11 @@ import type {
   TripSummaryReadModel,
 } from '@nexvoy/core/product/readModels'
 import type { TravelStats, VisitedPlace } from '@nexvoy/types'
-import { createMobileProductRepositories } from './repositoryFactory'
+import {
+  createMobileProductRepositories,
+  refreshMobileProductList,
+} from './repositoryFactory'
+import { loadTravelStatsFromSource } from './travelStats'
 
 export interface MobileProductDeletionSummary {
   tripCount: number
@@ -14,11 +18,15 @@ export interface MobileProductDeletionSummary {
 export async function getMobileProductTravelStats(
   supabase: SupabaseClient,
   userId: string,
+  options: { refresh?: boolean } = {},
 ): Promise<TravelStats> {
   const repositories = await createMobileProductRepositories(supabase)
-  const trips = (await repositories.trips.listTrips(userId))
-    .filter((trip) => trip.ownerId === userId)
-  return deriveTravelStats(trips)
+  return loadTravelStatsFromSource(userId, {
+    listTrips: () => repositories.trips.listTrips(userId),
+    refreshTrips: options.refresh
+      ? () => refreshMobileProductList(supabase, 'trip')
+      : undefined,
+  })
 }
 
 export async function getMobileProductVisitedPlaces(
@@ -74,47 +82,6 @@ async function listOwnedTripDetails(
   return details.filter((trip): trip is TripDetailReadModel => trip !== null)
 }
 
-function deriveTravelStats(trips: TripSummaryReadModel[]): TravelStats {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  let totalDays = 0
-  let completedCount = 0
-  let longestTripDays = 0
-  const destinations = new Set<string>()
-  const pastTrips: TravelStats['pastTrips'] = []
-  const upcomingTrips: TravelStats['upcomingTrips'] = []
-
-  for (const trip of trips) {
-    const days = inclusiveDays(trip.startDate, trip.endDate)
-    totalDays += days
-    longestTripDays = Math.max(longestTripDays, days)
-    if (trip.destination) destinations.add(trip.destination)
-    const entry = {
-      id: trip.id,
-      destination: trip.destination,
-      start_date: trip.startDate,
-      end_date: trip.endDate,
-    }
-    if (parseLocalDate(trip.endDate).getTime() < today.getTime()) {
-      completedCount += 1
-      pastTrips.push(entry)
-    } else {
-      upcomingTrips.push(entry)
-    }
-  }
-
-  pastTrips.sort((a, b) => parseLocalDate(b.start_date).getTime() - parseLocalDate(a.start_date).getTime())
-  upcomingTrips.sort((a, b) => parseLocalDate(a.start_date).getTime() - parseLocalDate(b.start_date).getTime())
-  return {
-    totalDays,
-    completedCount,
-    longestTripDays,
-    uniqueDestinations: destinations.size,
-    pastTrips,
-    upcomingTrips,
-  }
-}
-
 function summarizeDeletion(
   trips: TripSummaryReadModel[],
   details: Array<TripDetailReadModel | null>,
@@ -129,16 +96,4 @@ function summarizeDeletion(
       0,
     ),
   }
-}
-
-function parseLocalDate(value: string): Date {
-  const [year, month, day] = value.split('-').map((part) => Number(part))
-  return new Date(year, (month || 1) - 1, day || 1)
-}
-
-function inclusiveDays(start: string, end: string): number {
-  const difference = Math.round(
-    (parseLocalDate(end).getTime() - parseLocalDate(start).getTime()) / 86_400_000,
-  )
-  return difference >= 0 ? difference + 1 : 1
 }
