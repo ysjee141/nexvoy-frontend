@@ -43,7 +43,10 @@ supabase db push --linked --dry-run
 migration으로 목표 상태를 만든 뒤 원래 version의 history 처리 근거를 승인받는다. Production history는
 DEV 결과를 추정하지 않고 독립적으로 감사한다.
 
-## 배포 전 Backup
+## Pro 전환 후 Backup
+
+초기 Web·Android 출시에서는 아래 절차를 필수 Gate로 사용하지 않는다. 초기 운영 기간의 복구
+미보장 위험을 수용하고, Supabase Pro 전환 시 managed DB backup과 Storage 정책을 확인한 뒤 적용한다.
 
 1. Release SHA, project ref, migration list, active client version을 기록한다.
 2. Supabase managed DB backup 또는 snapshot을 생성한다.
@@ -74,8 +77,8 @@ find "backup/$PROJECT_REF/$RELEASE_SHA" -type f ! -name SHA256SUMS \
 3. TASK-055/056 원본 SQL을 다시 실행하지 않고 Local 전체 SQL/E2E와 DEV authenticated smoke를 실행한다.
 4. Web과 내부 Mobile build에서 Web/Web, Web/Mobile, Mobile/Mobile 테스트를 실행한다.
 5. DEV에서 연속 7일 동안 데이터·권한 incident 없이 지표 임계치를 통과한다.
-6. Recovery project에서 DB와 Storage를 함께 복구한다.
-7. Production 원격 전용 history 4건과 실제 schema drift 감사, pre-deploy backup을 완료한다.
+6. Production 원격 전용 history 4건과 실제 schema drift 감사를 완료한다.
+7. 현재 plan의 backup 제공 범위와 초기 복구 미보장 위험 승인 기록을 확인한다.
 8. Web, Mobile 내부, 5%, 25%, 100% 순서로 확대한다.
 
 Local SQL smoke와 service-role Playwright를 DEV나 Production에 직접 실행하지 않는다. 원격 검증은 전용
@@ -105,9 +108,10 @@ authenticated 계정과 `QA-` fixture를 사용하는 안전한 smoke로 수행�
 3. TASK-055에서 legacy runtime을 제거했으므로 retired feature flag를 롤백 수단으로 사용하지 않는다.
 4. `20260723000002` 동작을 되돌려야 하면 `20260717000001`의 이전 wrapper function 정의를 복원한다.
 5. 이미 commit된 canonical row는 삭제하거나 역변환하지 않는다.
-6. 데이터 손상은 별도 Recovery project에서 DB를 복구하고 검증한 뒤 cutover를 결정한다.
-7. 같은 기준 시점의 `place-photos` object를 복구하고 asset metadata와 manifest를 비교한다.
-8. 권한, duplicate, revision, asset, invitation 테스트를 다시 통과한 후에만 쓰기를 재개한다.
+6. Pro 전환 후 검증된 backup이 있다면 별도 Recovery project에서 복구하고 cutover를 결정한다.
+7. 같은 기준 시점의 `place-photos` backup이 있는 경우 asset metadata와 manifest를 비교한다.
+8. 초기 백업 미보장 기간에는 복구를 약속하지 않고 쓰기 중단, 영향 범위와 잔존 데이터 확인을 우선한다.
+9. 권한, duplicate, revision, asset, invitation 테스트를 다시 통과한 후에만 쓰기를 재개한다.
 
 외부 MAU 100명, 유료 사용 시작, 월 canonical mutation 50,000건, 허용 RPO 24시간 미만 중 하나가
 충족되면 PITR을 필수로 전환한다.

@@ -3,9 +3,9 @@
 ## 결론
 
 현재 OnVoy는 **Web·Android Production NO-GO**다. Authority-only 제품 코드, 로컬 자동 Gate와
-Android 실기기 Gate는 통과했지만 7일 관측, DB와 Storage 복구, 운영·법무·출시 책임 증적이 남아 있다.
+Android 실기기 Gate는 통과했지만 7일 관측과 운영·법무·출시 책임 증적이 남아 있다.
 최종 판정은 [TASK-057 마스터 계획](refactor/reports/TASK-057-production-final-validation-plan.md)의
-`G0`~`G7`을 따른다.
+초기 출시 필수 Gate `G0`~`G4`, `G6`, `G7`을 따른다. `G5` 복구는 초기 출시 비차단으로 보류한다.
 
 ## 출시 플랫폼
 
@@ -25,7 +25,8 @@ Android 실기기 Gate는 통과했지만 7일 관측, DB와 Storage 복구, 운
 | 비용 기준 | [TASK-056 초기 Production 비용](refactor/reports/TASK-056-initial-production-cost-baseline.md) |
 
 실제 실행은 `TASK-058` 자동화, `TASK-059` DEV migration, `TASK-060` Web·Android 실기기,
-`TASK-061` 관측, `TASK-062` 복구, `TASK-063` Web·Android Production 출시 순서로 진행한다.
+`TASK-061` 관측, `TASK-063` Web·Android Production 출시 순서로 진행한다. `TASK-062` 복구는
+Supabase Pro 전환 시 재개한다.
 iOS는 Android 안정화 이후 `TASK-064`에서 진행한다.
 
 ## 목표 아키텍처
@@ -46,8 +47,8 @@ iOS는 Android 안정화 이후 `TASK-064`에서 진행한다.
 | G2 DEV schema | migration history drift 0, strict fingerprint와 authenticated smoke | PASS |
 | G3 DEV 제품 | Web/Web·Web/Android·Android/Android P0/P1 100% PASS | PASS |
 | G4 관측 | 연속 7일 무사고와 지표 임계치 충족 | NO-GO |
-| G5 복구 | DB+Storage 격리 복구와 RTO/RPO 검증 | NO-GO |
-| G6 Production preflight | 독립 history 감사, backup, 환경·법무·alert 승인 | NO-GO |
+| G5 복구 | Pro 전환 시 DB+Storage 격리 복구와 RTO/RPO 검증 | 보류 (초기 출시 비차단) |
+| G6 Production preflight | 독립 history 감사, 환경·법무·alert·위험 승인 | NO-GO |
 | G7 Rollout | 내부→5%→25%→100% 단계별 Hold 통과 | NO-GO |
 
 ## Web/Vercel 준비
@@ -93,8 +94,8 @@ iOS는 Android 안정화 이후 `TASK-064`에서 진행한다.
 | RLS/RPC | owner/editor/viewer/revoked/outsider 정책 PASS | SQL과 제품 smoke |
 | Realtime | private invalidation과 gap recovery PASS | Supabase report와 client log |
 | Storage | 플랫폼 공통 path, RLS, thumbnail, orphan cleanup scheduler PASS | object manifest, scheduler와 network log |
-| Backup | Managed DB backup과 별도 Storage export | 위치·시각·checksum |
-| Recovery | 격리 프로젝트 복구와 앱 smoke PASS | RTO/RPO 보고서 |
+| Backup | 현재 plan의 제공 범위와 초기 복구 미보장 위험 승인; Pro 전환 시 managed backup 확인 | plan·승인 기록 |
+| Recovery | Pro 전환 시 격리 프로젝트 복구와 앱 smoke PASS | RTO/RPO 보고서 |
 | Capacity | Usage/Realtime/egress 월 예상 70% 미만 | 7일 관측 보고서 |
 
 ## 외부 연동과 운영 관측
@@ -127,7 +128,8 @@ iOS는 Android 안정화 이후 `TASK-064`에서 진행한다.
 
 - Support 문의 접수와 P0/P1 escalation 경로를 정한다.
 - Release manager와 on-call 담당자가 단계별 GO/NO-GO 회의 시간을 정한다.
-- 데이터 incident 발생 시 쓰기 동결, 영향 범위 확인, backup 보호, 사용자 통지 순서를 rehearsal한다.
+- 데이터 incident 발생 시 쓰기 동결, 영향 범위 확인, 사용 가능한 backup 보호와 사용자 통지 순서를
+  rehearsal한다.
 - 월별 비용·quota와 주간 sync 품질 지표 검토 owner를 지정한다.
 - PITR 도입 조건과 legacy 물리 삭제 조건을 별도 Gate로 유지한다.
 
@@ -137,7 +139,7 @@ iOS는 Android 안정화 이후 `TASK-064`에서 진행한다.
 2. 계정 간 cache, row, Realtime, asset이 노출된다.
 3. viewer, revoked, outsider가 허용되지 않은 작업을 수행한다.
 4. migration history drift, 원격 전용 version 미분류 또는 미승인 object 변경이 있다.
-5. DB와 Storage 복구가 같은 기준 시점으로 완료되지 않는다.
+5. Supabase Pro 전환 후 실행한 DB와 Storage 복구가 같은 기준 시점으로 완료되지 않는다.
 6. 미해결 P0/P1 결함이 있다.
 7. Rollback과 on-call 담당자가 지정되지 않았다.
 8. 약관·개인정보·store 필수 항목이 승인되지 않았다.
@@ -145,5 +147,5 @@ iOS는 Android 안정화 이후 `TASK-064`에서 진행한다.
 ## 최종 승인
 
 Release manager, DB operator, QA, Web, Android, Security/Privacy, on-call 담당자가 각 Gate의 증적을
-확인한다. Production migration 실행자와 최종 GO 승인자는 분리한다. 모든 Gate가 GO일 때만 Android
-100% rollout을 승인한다. iOS 승인은 TASK-064에서 별도로 수행한다.
+확인한다. Production migration 실행자와 최종 GO 승인자는 분리한다. 초기 출시 필수 Gate가 GO일
+때만 Android 100% rollout을 승인한다. iOS 승인은 TASK-064에서 별도로 수행한다.

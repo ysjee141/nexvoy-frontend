@@ -60,6 +60,7 @@ TASK-058/059 forward migration을 적용했고 strict fingerprint는 12/12 versi
 정리했다. 사용자 승인 후 Production에도 기존 history를 보존하는 target-only 방식으로
 TASK-058/059를 적용했으며 fingerprint는 183/185다. 초기 Production 범위는 Web·Android다.
 TASK-060의 Web/Web·Web/Android·Android/Android 실제 기기 Gate를 통과해 `G3`는 `GO`다.
-TASK-061의 DEV 7일 관측과 TASK-062의 격리 복구를 병렬 착수했으며, 두 Gate와 TASK-063
-preflight·rollout 전까지 Android Production은 `NO-GO`다. iOS 실기기와 App Store 출시는
-TASK-064로 이관하고 남은 ledger와 nullability 차이는 TASK-063에서 처리한다.
+TASK-061의 DEV 7일 관측을 통과한 뒤 TASK-063 preflight·rollout으로 진행한다. TASK-062의 격리
+복구는 초기 출시 비차단으로 보류하고 Supabase Pro 전환 시 재개한다. 초기 운영 기간에는 DB·Storage
+복구 미보장 위험을 수용한다. iOS 실기기와 App Store 출시는 TASK-064로 이관하고 남은 ledger와
+nullability 차이는 TASK-063에서 처리한다.

@@ -38,7 +38,7 @@
 
 | 등급 | 의미 | 출시 조건 |
 |---|---|---|
-| P0 | 데이터 정합성, 권한, 계정 격리, 복구 | 100% PASS 필수 |
+| P0 | 데이터 정합성, 권한, 계정 격리 | 100% PASS 필수 |
 | P1 | 핵심 제품 기능과 지원 플랫폼 | 100% PASS 필수 |
 | P2 | 비핵심 UX, 장기 비용 최적화 | 승인된 예외만 허용 |
 
@@ -50,7 +50,7 @@
 |---|---|---|---|
 | Local Supabase | destructive SQL, service role seed, Playwright | reset, 전체 SQL/E2E | Production secret 사용 |
 | DEV `ivgkqzwosbjukonlpfdw` | 원격 migration, 실제 client smoke, 7일 관측 | 전용 계정의 제품 UI 테스트 | local-only guard 우회, 고객 데이터 사용 |
-| 복구 프로젝트 | DB+Storage restore rehearsal | dump/object 복구와 비교 | DEV/Production endpoint로 전환 |
+| 복구 프로젝트 (Pro 전환 시) | DB+Storage restore rehearsal | dump/object 복구와 비교 | DEV/Production endpoint로 전환 |
 | Production `runbcaegpefqnljsswhv` | preflight와 제한 smoke | read-only 점검, 승인된 내부 계정 smoke | destructive seed, service role E2E |
 
 ### 테스트 계정
@@ -66,7 +66,8 @@
 - DEV/Production에서는 전용 테스트 이메일과 가명만 사용한다.
 - 로그와 문서에는 실제 UUID, token, 초대 코드를 붙이지 않는다.
 - 데이터 이름은 `QA-<release>-<case-id>` 형식을 사용한다.
-- 삭제 검증이 끝난 데이터는 case 종료 후 cleanup한다. 복구 rehearsal fixture는 별도 보관한다.
+- 삭제 검증이 끝난 데이터는 case 종료 후 cleanup한다. Pro 전환 후 복구 rehearsal fixture는 별도
+  보관한다.
 
 ### 클라이언트 표기
 
@@ -266,14 +267,14 @@ TASK-064에서 다시 실행한다.
 | NFT-02 | 비용 | 7일 payload, full refresh, Realtime, egress 집계 | 비용 baseline과 quota 70% 미만 |
 | NFT-03 | 접근성 | Web keyboard/screen reader, Mobile VoiceOver/TalkBack | conflict·초대·오류 UI 조작 가능 |
 | NFT-04 | 보안 | RLS/RPC/Storage direct 접근, token 로그 검사 | 우회 0건, secret/UUID/content analytics 0건 |
-| NFT-05 | 복구 | DB+Storage 격리 복구 | row/object 정합성 100%, 합의 RTO/RPO 충족 |
+| NFT-05 | 복구 (Pro 전환 시) | DB+Storage 격리 복구 | row/object 정합성 100%, 합의 RTO/RPO 충족 |
 | NFT-06 | 호환성 | 지원 브라우저/OS와 최소 Mobile 버전 | crash·데이터 포맷 불일치 0건 |
 
 ## 결함 등급과 종료 기준
 
 | 등급 | 예시 | 조치 |
 |---|---|---|
-| P0 | 데이터 손실, 계정 간 노출, RLS 우회, 복구 실패 | 즉시 중단, GO 취소, 원인 제거 후 전체 Gate 재실행 |
+| P0 | 데이터 손실, 계정 간 노출, RLS 우회, Pro 전환 후 복구 실패 | 즉시 중단, GO 취소, 원인 제거 후 영향 Gate 재실행 |
 | P1 | 핵심 CRUD/초대/offline 불가, 반복 crash | release candidate 폐기, 수정 후 영향 매트릭스 재실행 |
 | P2 | 우회 가능한 비핵심 UX, 경미한 시각 문제 | owner·만료일·영향을 기록한 예외 승인 필요 |
 | P3 | 문구·개발 편의 개선 | backlog 허용 |

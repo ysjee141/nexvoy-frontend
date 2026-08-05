@@ -17,7 +17,7 @@
 - [3단계: DEV history 정합화와 원격 안전 검증](#3단계-dev-history-정합화와-원격-안전-검증)
 - [4단계: Web·Android 실기기 통합 테스트](#4단계-webandroid-실기기-통합-테스트)
 - [5단계: 7일 관측](#5단계-7일-관측)
-- [6단계: DB와 Storage 복구 Rehearsal](#6단계-db와-storage-복구-rehearsal)
+- [6단계: DB와 Storage 복구 Rehearsal (보류)](#6단계-db와-storage-복구-rehearsal-보류)
 - [7단계: Production Preflight](#7단계-production-preflight)
 - [8단계: 단계적 출시](#8단계-단계적-출시)
 - [중단과 롤백](#중단과-롤백)
@@ -29,7 +29,7 @@
 |---|---|---|
 | DEV | `ivgkqzwosbjukonlpfdw` | migration, 실기기 테스트, 7일 관측 |
 | Production | `runbcaegpefqnljsswhv` | 승인된 migration과 단계적 출시 |
-| Recovery | 실행 시 기록 | DB+Storage 복구 rehearsal 전용 |
+| Recovery | Supabase Pro 전환 시 기록 | DB+Storage 복구 rehearsal 전용 |
 
 ## 안전 원칙
 
@@ -302,7 +302,11 @@ curl --fail-with-body --silent --show-error \
 임계치가 초과되거나 P0 incident가 발생하면 관측 기간을 중단한다. 수정 release로 G1부터 다시 시작하고
 7일 기간도 처음부터 다시 계산한다.
 
-## 6단계: DB와 Storage 복구 Rehearsal
+## 6단계: DB와 Storage 복구 Rehearsal (보류)
+
+초기 Web·Android 출시에서는 실행하지 않는다. 초기 운영 기간의 DB·Storage 복구 미보장 위험을
+승인 기록에 남기고, Supabase Pro 전환 시 managed DB backup을 실제 복구 원본으로 확인한 뒤 아래
+절차를 수행한다.
 
 ### 6.1 백업
 
@@ -364,7 +368,7 @@ where bucket_id = 'place-photos';
    schema 차이가 의도된 운영 차이인지 누락된 migration인지 판정한다.
 5. 원격 전용 version을 삭제하거나 local version 전체를 일괄 repair하지 않는다.
 6. 승인된 정합화 이후 `db push --dry-run` 결과를 release ticket에 저장한다.
-7. managed DB backup, logical export, Storage manifest/object export를 만든다.
+7. 현재 Supabase plan과 backup 제공 범위, 초기 복구 미보장 위험의 승인자를 기록한다.
 8. Web·Android env, OAuth redirect, 이메일 발신, Android push, Maps, analytics, alert를 검증한다.
 9. `ASSET_CLEANUP_SECRET`을 secret store에 등록하고 scheduler의 인증 header, 주기, timeout, 실패 alert를 검증한다.
 10. 약관·개인정보 처리방침 URL과 Google Play privacy/data safety 정보를 검토한다.
@@ -394,7 +398,7 @@ TASK-064에서 별도 실행한다.
 - 데이터 손실·변질 또는 duplicate canonical row
 - 계정 간 데이터/asset 노출
 - viewer/revoked/outsider 권한 우회
-- migration drift, DB corruption, 복구 실패
+- migration drift, DB corruption, Pro 전환 후 검증된 복구 절차의 실패
 - crash loop, retry storm, 인증 전면 장애
 
 ### 절차
@@ -405,7 +409,9 @@ TASK-064에서 별도 실행한다.
 4. Mobile은 store rollout을 중단하고 최소 버전/강제 업데이트 정책으로 안정 build를 유지한다.
 5. TASK-056 wrapper 문제라면 `20260717000001`의 이전 function 정의를 복원한다.
 6. committed canonical row를 임의 삭제하거나 legacy runtime을 다시 활성화하지 않는다.
-7. 데이터 손상 시 원본 Production에 덮어쓰지 않고 Recovery project에서 복구·검증한 뒤 cutover를 결정한다.
+7. 사용 가능한 검증된 backup이 있다면 원본 Production에 덮어쓰지 않고 Recovery project에서
+   복구·검증한 뒤 cutover를 결정한다. 초기 백업 미보장 기간에는 쓰기를 중단하고 잔존 데이터와
+   영향 범위를 우선 확인하며 복구 가능성을 보장하지 않는다.
 8. P0 incident review와 G1~영향 Gate 재실행 전에는 rollout을 재개하지 않는다.
 
 ## 증적 템플릿
@@ -426,7 +432,7 @@ TASK-064에서 별도 실행한다.
 ## 선행 조건
 - [ ] 이전 Gate PASS
 - [ ] project ref 교차 확인
-- [ ] backup 또는 cleanup 준비
+- [ ] backup 제공 범위·위험 승인 또는 cleanup 준비
 
 ## 실행 내용
 1.

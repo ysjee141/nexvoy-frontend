@@ -130,7 +130,7 @@ TASK-008a-web-checklist-read-through-hydration.md
 | `TASK-059-dev-migration-production-gate.md` | 완료 | DEV drift 0·authenticated smoke PASS, Production TASK-058/059 target-only 적용 |
 | `TASK-060-cross-platform-device-validation.md` | 완료 (G3 GO) | Web·Android 실기기 Gate, iOS는 TASK-064로 이관 |
 | `TASK-061-dev-stability-cost-soak.md` | 진행 중 | Web·Android DEV 연속 7일 안정성·비용 관측, Issue #382 |
-| `TASK-062-disaster-recovery-rehearsal.md` | 진행 중 | DB·Storage 복구와 Web·Android smoke, Issue #383 |
+| `TASK-062-disaster-recovery-rehearsal.md` | 보류 (초기 출시 비차단) | Supabase Pro 전환 시 DB·Storage 복구와 Web·Android smoke, Issue #383 |
 | `TASK-063-production-preflight-and-rollout.md` | 대기 | Web·Android Production 사전 점검과 단계적 출시 |
 | `TASK-064-ios-production-validation-and-rollout.md` | 보류 | Android 안정화 후 iOS 실기기·TestFlight/App Store 검증·출시 |
 | `TASK-065-app-brand-assets.md` | 구현 완료 | 온여정 앱 아이콘·스플래시·Android/Play Store 브랜드 자산, Issue [#387](https://github.com/ysjee141/nexvoy-frontend/issues/387) |
@@ -239,7 +239,7 @@ rotating room secret 보안 하드닝을 완료했다.
 - [x] `TASK-059-dev-migration-production-gate.md`: DEV 전체 Gate와 Production TASK-058/059 target-only 적용 완료
 - [x] `TASK-060-cross-platform-device-validation.md`: Web·Android 실기기 통합 검증
 - [ ] `TASK-061-dev-stability-cost-soak.md`: Web·Android DEV 안정성·비용 7일 관측
-- [ ] `TASK-062-disaster-recovery-rehearsal.md`: DB·Storage 복구와 Web·Android smoke
+- [ ] `TASK-062-disaster-recovery-rehearsal.md`: Supabase Pro 전환 시 DB·Storage 복구와 Web·Android smoke (초기 출시 비차단)
 - [ ] `TASK-063-production-preflight-and-rollout.md`: Web·Android Production 사전 점검과 단계적 출시
 
 ### Phase 11: iOS Production Validation (Deferred)
@@ -272,9 +272,8 @@ flowchart TD
     T58 --> T59["TASK-059 DEV schema/history"]
     T59 --> T60["TASK-060 Web·Android 실기기"]
     T60 --> T61["TASK-061 Web·Android 7일 관측"]
-    T60 --> T62["TASK-062 복구+Web·Android smoke"]
     T61 --> T63["TASK-063 Web·Android Production"]
-    T62 --> T63
+    T63 -. "Supabase Pro 전환" .-> T62["TASK-062 복구+Web·Android smoke"]
     T63 --> T64["TASK-064 iOS 검증·출시"]
 ```
 
@@ -286,6 +285,7 @@ flowchart TD
 6. `TASK-056`에서 Initial Production go/no-go를 판정한다.
 7. `TASK-057`에서 최종 검증 기준과 Runbook을 확정한다.
 8. `TASK-058`~`TASK-060`에서 자동화, DEV schema/history, Web·Android 실기기 Gate를 통과한다.
-9. `TASK-060`과 `G3`는 2026-08-01 실제 Android 기기 Gate로 완료했다. `TASK-061` 관측과
-   `TASK-062` 복구를 병렬 완료한 뒤 `TASK-063`에서 Web·Android 출시를 승인한다.
+9. `TASK-060`과 `G3`는 2026-08-01 실제 Android 기기 Gate로 완료했다. `TASK-061` 관측을 완료한 뒤
+   `TASK-063`에서 Web·Android 출시를 승인한다. `TASK-062` 복구는 초기 출시 비차단으로 보류하고
+   Supabase Pro 전환 시 재개한다.
 10. Android 안정화 이후 `TASK-064`에서 iOS 실기기와 App Store 출시를 별도 승인한다.
