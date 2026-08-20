@@ -1,0 +1,14 @@
+{
+  "logo": {
+    "width": 1024,
+    "height": 571,
+    "changedPixelsOver24Delta": 30784,
+    "totalAbsoluteRgbDelta": 6382076
+  },
+  "appIcon": {
+    "width": 446,
+    "height": 446,
+    "changedPixelsOver24Delta": 9184,
+    "totalAbsoluteRgbDelta": 1972084
+  }
+}

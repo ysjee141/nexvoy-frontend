@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">갈래 앱 아이콘 미리보기</title>
+  <desc id="desc">운영체제 마스크를 적용한 둥근 모서리 미리보기</desc>
+  <rect x="24" y="24" width="976" height="976" rx="220" fill="#3342B3"/>
+  <path d="M212 300H512A100 100 0 0 1 512 500H412A100 100 0 0 0 412 700H792" fill="none" stroke="#FFFFFF" stroke-width="140" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="792" cy="700" r="90" fill="#F8725A"/>
+  <circle cx="792" cy="700" r="36" fill="#FFFFFF"/>
+</svg>

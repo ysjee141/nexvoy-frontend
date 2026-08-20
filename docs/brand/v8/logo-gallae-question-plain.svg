@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 390" role="img" aria-labelledby="title desc">
+  <title id="title">갈래?</title>
+  <desc id="desc">경로 그래픽을 제외한 갈래 물음표 워드마크</desc>
+  <g fill="none" stroke="#3342B3" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M84 86H290V194"/><path d="M390 58V290M344 160H440"/><path d="M84 250H300V310H132V368H320"/>
+    <path d="M500 86H720V154H556V218H738"/><path d="M820 58V294M820 160H880M938 58V294"/>
+    <path d="M1060 118C1060 80 1090 58 1128 58C1170 58 1198 86 1198 124C1198 158 1178 180 1150 198C1127 212 1114 231 1114 253"/>
+  </g>
+  <circle cx="1114" cy="322" r="28" fill="#3342B3"/>
+</svg>

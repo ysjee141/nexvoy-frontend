@@ -1,0 +1,23 @@
+{
+  "colors": {
+    "logoNavy": "#051F46",
+    "logoCoral": "#FD5644",
+    "appBlue": "#192F82",
+    "appCoral": "#DE6653",
+    "white": "#FFFFFF"
+  },
+  "logo": {
+    "changedPixelsOver24Delta": 34915,
+    "totalAbsoluteRgbDelta": 6839192
+  },
+  "appIcon": {
+    "changedPixelsOver24Delta": 12535,
+    "totalAbsoluteRgbDelta": 3957657
+  },
+  "detailCrop": {
+    "left": 130,
+    "top": 30,
+    "width": 730,
+    "height": 390
+  }
+}

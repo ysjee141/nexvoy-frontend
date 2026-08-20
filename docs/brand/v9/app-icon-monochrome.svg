@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">갈래 단색 앱 아이콘</title>
+  <desc id="desc">단색 플랫폼 아이콘용 경로와 웨이포인트 실루엣</desc>
+  <path d="M212 300H512A100 100 0 0 1 512 500H412A100 100 0 0 0 412 700H792" fill="none" stroke="#000000" stroke-width="140" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="792" cy="700" r="90" fill="#000000"/>
+  <circle cx="792" cy="700" r="36" fill="#FFFFFF"/>
+</svg>

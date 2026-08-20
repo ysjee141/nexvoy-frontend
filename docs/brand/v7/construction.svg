@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
+    <rect width="1600" height="1000" fill="#FBF8F4"/>
+    <g fill="none" stroke="#D9DEEA" stroke-width="2">
+      <path d="M120 205H1480M120 300H1480M120 500H1480M120 700H1480M120 790H1480"/>
+      <path d="M212 130V840M312 130V840M412 130V840M512 130V840M612 130V840M792 130V840"/>
+      <circle cx="792" cy="700" r="90"/>
+    </g>
+    <g fill="#667085" font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif" font-size="22">
+      <text x="120" y="170">공통 경로 construction</text>
+      <text x="20" y="287">시작선 300</text>
+      <text x="20" y="487">중간선 500</text>
+      <text x="20" y="687">종점선 700</text>
+      <text x="900" y="708">웨이포인트 중심 792, 700</text>
+      <text x="212" y="890">stroke 140 · arc radius 100 · waypoint 90/36 · round cap/join</text>
+    </g>
+    <path d="M 212,300 L 512,300 A 100 100 0 0 1 512,500 L 412,500 A 100 100 0 0 0 412,700 L 792,700"
+    fill="none" stroke="#4052D2" stroke-width="140" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="792" cy="700" r="90" fill="#F8725A"/>
+  <circle cx="792" cy="700" r="36" fill="#FFFFFF"/>
+  </svg>
