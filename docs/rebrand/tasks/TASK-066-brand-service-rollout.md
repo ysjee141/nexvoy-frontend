@@ -1,6 +1,6 @@
 # TASK-066: 갈래 canonical 브랜드 서비스 적용
 
-- 상태: 구현 진행 중
+- 상태: 구현 완료 / E2E 환경 검증 대기
 - 기준 브랜치: `refactoring/local-first-architecture`
 - 구현 브랜치: `codex/task-066-brand-service-rollout`
 - 선행 작업: canonical 브랜드 에셋 PR #392 (기준 브랜치 반영 완료)
@@ -191,15 +191,46 @@ rg -n '<image|data:image|font-family|@font-face|<script|<text' \
 - bundle ID, package name, scheme과 외부 callback은 변경하지 않으므로 별도 복구 작업이 필요하지 않다.
 - 앱 업데이트 후 캐시된 PWA icon이 남으면 manifest/cache version을 이전 release 기준으로 복원한다.
 
+## 구현 결과
+
+구현은 기준 브랜치 `refactoring/local-first-architecture` 최신 커밋에서 분기한
+`codex/task-066-brand-service-rollout`에서 작업했으며, 변경을 다음과 같이 기능 단위 커밋으로
+나누었다.
+
+- `a449b38 docs(TASK-066): record rollout analysis`: inventory와 적용 계획 기록
+- `6b47f62 feat(TASK-066): apply canonical brand asset pipeline`: v12 canonical 기반 Web/Mobile 파생 자산 생성 파이프라인과 공통 토큰 적용
+- `04d8443 feat(TASK-066): apply gallae web branding`: Web 메타데이터, 자산 경로와 사용자 노출 카피 적용
+- `8b1a87f feat(TASK-066): apply gallae mobile branding`: Mobile 인증·알림 카피와 Expo 표시명·브랜드 자산 적용
+- `467859a refactor(TASK-066): align legacy web blue accents`: 남은 사용자 화면의 직접 Blue accent를 Deep Navy 기준으로 정렬
+
+canonical 원본은 `docs/brand/v12`에 유지하고, 제품 런타임은 해당 SVG에서 생성한 플랫폼별 자산을
+사용한다. 기존 `scheme`, bundle/package identifier, API path와 외부 식별자는 유지했다.
+
+## 검증 결과
+
+- PASS: `pnpm build:packages`
+- PASS: `pnpm --filter nexvoy-web exec panda codegen`
+- PASS: Web TypeScript, `pnpm build`
+- PASS: Mobile TypeScript, lint, authority tests 18건, `pnpm build:mobile`
+- PASS: 제품 SVG vector-only scan (`<image>`, embedded bitmap, external font, `<text>`, script 없음)
+- BLOCKED: `pnpm test:e2e`
+  - Playwright Chromium 실행 파일이 설치되지 않은 환경
+  - E2E helper가 요구하는 local Supabase 대신 `.env.local`의 remote Supabase를 사용 중
+  - 따라서 이번 결과는 애플리케이션 실패가 아니라 E2E 실행 환경 미충족으로 분류한다.
+
+실제 Android/iOS 런처와 소형 아이콘의 시각 확인, local Supabase 기반 E2E 재실행은 PR의 후속
+검증 항목으로 남긴다.
+
 ## 완료 조건
 
-- [ ] PR #392 canonical 브랜드 에셋이 기준 브랜치에 반영됨
-- [ ] Web과 Mobile의 표시명이 `갈래` 기준으로 통일됨
-- [ ] Web favicon, manifest, Apple Touch icon과 Mobile launcher/splash/notification이 v12 자산을 사용함
-- [ ] UI 토큰이 Deep Navy/Coral 기준으로 통일되고 레거시 Cobalt/Mint 신규 사용이 없음
-- [ ] 제품 SVG에 raster wrapper, 외부 폰트, script, text가 없음
-- [ ] Web build와 E2E가 통과함
-- [ ] Mobile typecheck, lint, authority tests와 Expo export가 통과함
-- [ ] Android adaptive/monochrome와 iOS icon/splash의 소형 식별성이 확인됨
-- [ ] bundle ID, package name, scheme, API path, OAuth callback과 analytics event가 변경되지 않음
-- [ ] 롤백 절차와 적용된 배포 자산 목록이 PR에 기록됨
+- [x] PR #392 canonical 브랜드 에셋이 기준 브랜치에 반영됨
+- [x] Web과 Mobile의 표시명이 `갈래` 기준으로 통일됨
+- [x] Web favicon, manifest, Apple Touch icon과 Mobile launcher/splash/notification이 v12 자산을 사용함
+- [x] UI 토큰이 Deep Navy/Coral 기준으로 통일되고 레거시 Cobalt/Mint 신규 사용이 없음
+- [x] 제품 SVG에 raster wrapper, 외부 폰트, script, text가 없음
+- [ ] Web E2E 통과: local Supabase와 Playwright browser 설치 후 재검증 필요
+- [x] Web production build 통과
+- [x] Mobile typecheck, lint, authority tests와 Expo export가 통과함
+- [ ] Android adaptive/monochrome와 iOS icon/splash의 실제 소형 기기 식별성 확인
+- [x] bundle ID, package name, scheme, API path, OAuth callback과 analytics event가 변경되지 않음
+- [x] 롤백 절차와 적용된 배포 자산 목록이 기록됨
