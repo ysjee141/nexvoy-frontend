@@ -125,7 +125,7 @@ function createInviteEmailHtml(input: {
     <h2 style="color:#0D2340">갈래 초대</h2>
     <p><strong>${title}</strong> 여정의 동행자로 초대받았습니다.</p>
     <p>권한: <strong>${roleLabel}</strong></p>
-    <p><a href="${inviteUrl}" style="background:#2563eb;color:white;padding:12px 20px;text-decoration:none;border-radius:8px;display:inline-block">초대 확인하기</a></p>
+    <p><a href="${inviteUrl}" style="background:#0D2340;color:white;padding:12px 20px;text-decoration:none;border-radius:8px;display:inline-block">초대 확인하기</a></p>
     <p style="color:#6b7280;font-size:14px">링크가 열리지 않으면 초대 코드 <strong>${inviteCode}</strong>를 입력해 주세요.</p>
   </div>`
 }

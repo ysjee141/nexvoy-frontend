@@ -154,5 +154,5 @@ function formatInviteCode(value: string): string {
 }
 
 const iconButtonStyle = css({ display: { base: 'none', md: 'inline-flex' }, alignItems: 'center', justifyContent: 'center', w: '40px', h: '40px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', bg: 'white', color: 'brand.ink', cursor: 'pointer' })
-const inputStyle = css({ w: '100%', h: '48px', px: '14px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', bg: 'white', color: 'brand.ink', fontSize: '16px', textAlign: 'center', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 3px rgba(37, 99, 235, 0.12)' } })
+const inputStyle = css({ w: '100%', h: '48px', px: '14px', border: '1px solid', borderColor: 'brand.hairline', borderRadius: '8px', bg: 'white', color: 'brand.ink', fontSize: '16px', textAlign: 'center', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 3px rgba(13, 35, 64, 0.12)' } })
 const primaryButtonStyle = css({ mt: '22px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', w: '100%', minH: '48px', px: '16px', border: 'none', borderRadius: '8px', bg: 'brand.primary', color: 'white', fontSize: '15px', fontWeight: '700', cursor: 'pointer', _hover: { bg: 'brand.primaryActive' }, _disabled: { opacity: 0.5, cursor: 'not-allowed' } })
