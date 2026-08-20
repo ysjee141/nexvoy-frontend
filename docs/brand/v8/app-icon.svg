@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">갈래 앱 아이콘</title>
+  <desc id="desc">인디고 배경 위 흰색 여행 경로와 코랄 웨이포인트</desc>
+  <rect width="1024" height="1024" fill="#3342B3"/>
+  <path d="M212 300H512A100 100 0 0 1 512 500H412A100 100 0 0 0 412 700H792" fill="none" stroke="#FFFFFF" stroke-width="140" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="792" cy="700" r="90" fill="#F8725A"/>
+  <circle cx="792" cy="700" r="36" fill="#FFFFFF"/>
+</svg>

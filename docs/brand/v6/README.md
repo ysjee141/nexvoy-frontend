@@ -1,37 +1,54 @@
-# 온여정 Brand System v6
+# Legacy: 온여정 / OnVoy Brand System v6
 
-온여정의 `ㅇㅇㅈ` 초성에 **계획 → 준비 → 출발** 흐름을 담은 승인 브랜드 시스템이다. 사용자가 선택한 둥근 `ㅈ` 윗획 안에 수평 종이비행기를 배치했으며, 광학 균형을 위해 비행기 전체를 윗획 중심선보다 `5px` 위로 이동했다.
+> 상태: 폐기됨, 역사 보관 전용
+>
+> 현재 브랜드: `갈래 / Nextward`
+>
+> 현재 기준: `docs/brand/BRAND.md`
 
-## 핵심 결정
+이 디렉터리는 이전 `온여정 / OnVoy` 브랜드의 `ㅇㅇㅈ` 심벌, 컬러, 생성 스크립트와 PNG 파생본을 보존한다. 리브랜딩 이력과 기존 배포 자산의 출처를 추적하기 위한 자료이며 현재 승인 브랜드 원본이 아니다.
 
-- 첫 `ㅇ`: Pale 외곽과 시계로 계획을 표현한다.
-- 둘째 `ㅇ`: 흰색 외곽과 체크로 준비 완료를 표현한다.
-- `ㅈ`: 수평 종이비행기로 출발을 표현한다.
-- 외곽 획은 `64px`, 내부 행동 단서는 `16px`, 글자 사이 실제 여백은 `36px`다.
-- 16px 파비콘은 내부 단서를 제거한 전용 심벌을 사용한다.
-- 앱 아이콘은 심벌을 78% 배치 영역에 넣어 시스템 라운딩 뒤에도 좌우 여백을 유지한다.
-- Android adaptive foreground와 themed icon은 런처 확대를 보정하는 58% 배치 영역을 사용한다.
+## 사용 금지
 
-## 파일
+- 새 `갈래 / Nextward` 로고나 앱 아이콘의 기초 도형으로 사용하지 않는다.
+- 기존 SVG의 색상만 바꿔 새 브랜드 자산으로 만들지 않는다.
+- 이 디렉터리의 PNG, SVG, ICO를 신규 화면, 스토어 또는 마케팅에 배포하지 않는다.
+- `render-system.js` 또는 루트 `pnpm brand:apply`를 일반 브랜드 작업에 실행하지 않는다.
+- `ㅇㅇㅈ` 심벌과 새 공통 경로 심벌을 혼용하지 않는다.
 
-- `app-icon.svg`: 앱 아이콘 원본
-- `brand-mark.svg`: 밝은 배경용 마크
-- `brand-mark-reverse.svg`: Primary 배경용 반전 마크
-- `brand-mark-mono.svg`: 단색 마크
-- `favicon.svg`: 소형 전용 심벌
-- `wordmark-lockup.svg`: 한글·영문 워드마크 조합
-- `construction.svg`: 기하와 간격
-- `brand-system.svg`: 브랜드 시스템 보드
-- `png/`: 크기별 배포본
+## 보존 파일
 
-## 재생성
+```text
+app-icon.svg
+brand-mark.svg
+brand-mark-reverse.svg
+brand-mark-mono.svg
+favicon.svg
+wordmark-lockup.svg
+construction.svg
+brand-system.svg
+brand-system.png
+png/
+render-system.js
+```
+
+파일명과 내부의 `온여정`, `OnVoy`, 기존 색상 값은 당시 산출물의 재현성을 위해 그대로 유지한다. 이 값은 현재 브랜드 기준이 아니며 `docs/brand/BRAND.md`의 이름과 컬러를 우선한다.
+
+## 레거시 재현
+
+과거 산출물 조사나 회귀 비교를 위해 꼭 필요한 경우에만 다음 명령을 직접 실행할 수 있다.
 
 ```bash
 node docs/brand/v6/render-system.js
 ```
 
-`render-system.js`가 기하와 색상의 단일 원본이다. 생성 결과는 직접 수정하지 않는다.
+이 명령은 `v6` 내부 산출물을 다시 만들 수 있다. 제품 배포 자산까지 복사하는 `pnpm brand:apply`는 새 브랜드 생성 파이프라인이 완성될 때까지 실행하지 않는다.
 
-## 적용 상태
+## 후속 정리
 
-이 디렉터리는 Git이 추적하는 승인 디자인 원본이다. 앱 아이콘, 스플래시, 웹 로고와 파비콘은 `pnpm brand:apply`로 이 원본에서 생성한다. 제품 적용 시 `docs/brand/BRAND.md`와 `docs/brand/APP-BRAND-ASSET-GUIDE.md`를 따른다.
+새 브랜드 원본과 생성 파이프라인이 등록된 뒤 다음을 결정한다.
+
+- `v6`를 장기 보존할지 별도 legacy 경로로 이동할지
+- 레거시 정적 URL 호환이 필요한지
+- `render-system.js`와 기존 PNG 파생본을 계속 보관할지
+- 루트 `brand:apply` 명령을 교체한 뒤 레거시 실행 경로를 제거할지

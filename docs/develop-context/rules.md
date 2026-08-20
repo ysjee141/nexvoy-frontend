@@ -59,10 +59,10 @@ Server-authority row/registry는 다음 원칙을 추가로 적용한다.
 
 ## 3. 🎨 Design DNA & Aesthetics
 
-OnVoy의 디자인 가치와 브랜드 아이デン티티를 훼손하지 마십시오.
+갈래의 디자인 가치와 브랜드 아이덴티티를 훼손하지 마십시오. 현재 사용자 노출 브랜드는 `갈래`이며, 글로벌 표기는 `Nextward`입니다. `온여정`과 `OnVoy`는 레거시 프로젝트 식별자로만 취급합니다.
 
-- **Brand Color**: **Cobalt Blue (#2563EB)**가 프로젝트의 상징색입니다.
-- **Legacy Removal**: 과거의 민트색(#2EC4B6) 코드가 발견될 경우 즉시 코발트 블루로 변경합니다.
+- **Brand Colors**: UI의 핵심 색상은 **Deep Navy (#0D2340)**와 **Coral (#FF6B5C)**입니다. canonical logo artwork는 원본 정합성을 위해 별도 artwork 색상 토큰을 유지합니다.
+- **Legacy Removal**: 과거의 Cobalt Blue (#2563EB)와 민트색(#2EC4B6)을 신규 브랜드 색상으로 사용하지 않습니다. 색상 변경은 `DESIGN.md`와 `docs/brand/BRAND.md`의 토큰을 기준으로 합니다.
 - **Premium UI**: Framer Motion을 활용한 부드러운 전환과 `Safe Area`를 고려한 모바일 최적화 레이아웃을 지향합니다.
 
 ---

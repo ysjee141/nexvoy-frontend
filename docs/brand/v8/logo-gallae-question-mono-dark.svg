@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 540" role="img" aria-labelledby="title desc">
+  <title id="title">갈래?</title>
+  <desc id="desc">밝은 배경용 단색 갈래 물음표 워드마크</desc>
+  <g fill="none" stroke="#1D2433" stroke-width="56" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M84 86H290V194"/><path d="M390 58V290M344 160H440"/><path d="M84 250H300V310H132V368H320"/>
+    <path d="M500 86H720V154H556V218H738"/><path d="M820 58V294M820 160H880M938 58V294"/>
+    <path d="M1060 118C1060 80 1090 58 1128 58C1170 58 1198 86 1198 124C1198 158 1178 180 1150 198C1127 212 1114 231 1114 253"/>
+  </g>
+  <circle cx="1114" cy="322" r="28" fill="#1D2433"/>
+  <path d="M84 432C230 485 370 468 532 430C702 390 842 388 982 430C1070 456 1130 448 1170 410" fill="none" stroke="#1D2433" stroke-width="26" stroke-linecap="round"/>
+  <path d="M1174 310C1138 310 1110 338 1110 374C1110 421 1174 476 1174 476C1174 476 1238 421 1238 374C1238 338 1210 310 1174 310Z" fill="#1D2433"/>
+  <circle cx="1174" cy="374" r="18" fill="#FFFFFF"/>
+</svg>

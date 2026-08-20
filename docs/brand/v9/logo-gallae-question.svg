@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1320 540" role="img" aria-labelledby="title desc">
+  <title id="title">갈래?</title>
+  <desc id="desc">부드러운 곡선 골격의 갈래 물음표 워드마크와 여행 경로</desc>
+  <g fill="none" stroke="#1D2433" stroke-width="54" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M100 94H254C286 94 306 112 302 143C297 188 257 220 190 236"/>
+    <path d="M390 56V252M390 157H454"/>
+    <path d="M116 294H420V346H164V397H450"/>
+    <path d="M516 94H716C746 94 762 110 762 138V153C762 180 746 196 716 196H580C553 196 537 211 537 237V252C537 280 553 296 580 296H750"/>
+    <path d="M824 56V298M824 160H890M940 56V298"/>
+    <path d="M1040 118C1040 78 1072 54 1112 54C1155 54 1185 83 1185 123C1185 157 1167 179 1142 197C1119 213 1110 231 1110 254"/>
+  </g>
+  <circle cx="1110" cy="322" r="27" fill="#1D2433"/>
+  <path d="M84 432C230 485 370 468 532 430C702 390 842 388 982 430C1070 456 1130 448 1170 410" fill="none" stroke="#F8725A" stroke-width="26" stroke-linecap="round"/>
+  <path d="M1174 310C1138 310 1110 338 1110 374C1110 421 1174 476 1174 476C1174 476 1238 421 1238 374C1238 338 1210 310 1174 310Z" fill="#F8725A"/>
+  <circle cx="1174" cy="374" r="18" fill="#FFFFFF"/>
+</svg>

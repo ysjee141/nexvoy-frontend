@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000">
+    <rect width="1600" height="1000" fill="#F7F8FC"/>
+    <rect x="56" y="56" width="1488" height="888" rx="24" fill="#FFFFFF" stroke="#D9DEEA"/>
+    <text x="104" y="126" fill="#1D2433" font-family="Arial, sans-serif" font-size="34" font-weight="700">갈래 BRAND SYSTEM / v8</text>
+    <text x="104" y="168" fill="#667085" font-family="Arial, sans-serif" font-size="20">A soft invitation to choose a place, make a plan, and keep moving together.</text>
+    <line x1="104" y1="208" x2="1496" y2="208" stroke="#D9DEEA"/>
+    <text x="104" y="266" fill="#1D2433" font-family="Arial, sans-serif" font-size="22" font-weight="700">PRIMARY WORDMARK</text>
+    <rect x="104" y="296" width="1020" height="410" rx="18" fill="#FBF8F4"/>
+    <g transform="translate(146 352) scale(.72)">
+  <title id="title">갈래?</title>
+  <desc id="desc">부드러운 곡선 골격의 갈래 물음표 워드마크와 여행 경로</desc>
+  <g fill="none" stroke="#1D2433" stroke-width="54" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M100 94H254C286 94 306 112 302 143C297 188 257 220 190 236"/>
+    <path d="M390 56V252M390 157H454"/>
+    <path d="M116 294H420V346H164V397H450"/>
+    <path d="M516 94H716C746 94 762 110 762 138V153C762 180 746 196 716 196H580C553 196 537 211 537 237V252C537 280 553 296 580 296H750"/>
+    <path d="M824 56V298M824 160H890M940 56V298"/>
+    <path d="M1040 118C1040 78 1072 54 1112 54C1155 54 1185 83 1185 123C1185 157 1167 179 1142 197C1119 213 1110 231 1110 254"/>
+  </g>
+  <circle cx="1110" cy="322" r="27" fill="#1D2433"/>
+  <path d="M84 432C230 485 370 468 532 430C702 390 842 388 982 430C1070 456 1130 448 1170 410" fill="none" stroke="#F8725A" stroke-width="26" stroke-linecap="round"/>
+  <path d="M1174 310C1138 310 1110 338 1110 374C1110 421 1174 476 1174 476C1174 476 1238 421 1238 374C1238 338 1210 310 1174 310Z" fill="#F8725A"/>
+  <circle cx="1174" cy="374" r="18" fill="#FFFFFF"/>
+</g>
+    <text x="104" y="766" fill="#667085" font-family="Arial, sans-serif" font-size="20">갈래? / custom Korean lettering + route lockup</text>
+    <text x="1190" y="266" fill="#1D2433" font-family="Arial, sans-serif" font-size="22" font-weight="700">APP ICON</text>
+    <g transform="translate(1190 304) scale(.30)">
+  <title id="title">갈래 앱 아이콘</title>
+  <desc id="desc">인디고 배경 위 흰색 여행 경로와 코랄 웨이포인트</desc>
+  <rect width="1024" height="1024" fill="#3342B3"/>
+  <path d="M212 300H512A100 100 0 0 1 512 500H412A100 100 0 0 0 412 700H792" fill="none" stroke="#FFFFFF" stroke-width="140" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="792" cy="700" r="90" fill="#F8725A"/>
+  <circle cx="792" cy="700" r="36" fill="#FFFFFF"/>
+</g>
+    <text x="1190" y="674" fill="#667085" font-family="Arial, sans-serif" font-size="20">route + waypoint</text>
+    <text x="104" y="850" fill="#1D2433" font-family="Arial, sans-serif" font-size="22" font-weight="700">PALETTE</text>
+    <circle cx="104" cy="890" r="18" fill="#3342B3"/><text x="136" y="897" fill="#344054" font-family="Arial, sans-serif" font-size="18">Indigo 700  #3342B3</text>
+    <circle cx="390" cy="890" r="18" fill="#4052D2"/><text x="422" y="897" fill="#344054" font-family="Arial, sans-serif" font-size="18">Indigo 600  #4052D2</text>
+    <circle cx="676" cy="890" r="18" fill="#F8725A"/><text x="708" y="897" fill="#344054" font-family="Arial, sans-serif" font-size="18">Coral 500  #F8725A</text>
+    <circle cx="962" cy="890" r="18" fill="#FFFFFF" stroke="#D9DEEA"/><text x="994" y="897" fill="#344054" font-family="Arial, sans-serif" font-size="18">Surface  #FFFFFF</text>
+  </svg>

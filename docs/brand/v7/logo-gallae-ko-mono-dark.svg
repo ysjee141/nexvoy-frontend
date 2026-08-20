@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 325"><path d="M 40,55 L 130,55 Q 150,55 145,85 C 135,120 100,145 40,150" fill="none" stroke="#1D2433" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="180" y1="45" x2="180" y2="145" fill="none" stroke="#1D2433" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="180" y1="85" x2="225" y2="85" fill="none" stroke="#1D2433" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 60,180 L 165,180 Q 185,180 185,200 Q 185,220 165,220 L 70,220 Q 50,220 50,240 Q 50,260 70,260 C 135,260 195,265 255,285" fill="none" stroke="#1D2433" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 275,55 L 350,55 Q 370,55 370,75 L 370,115 Q 370,135 350,135 L 285,135 Q 265,135 265,155 L 265,195 Q 265,215 285,215 C 325,215 360,200 390,185" fill="none" stroke="#1D2433" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="430" y1="45" x2="430" y2="260" fill="none" stroke="#1D2433" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="430" y1="135" x2="475" y2="135" fill="none" stroke="#1D2433" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/>
+  <line x1="475" y1="45" x2="475" y2="260" fill="none" stroke="#1D2433" stroke-width="28" stroke-linecap="round" stroke-linejoin="round"/></svg>

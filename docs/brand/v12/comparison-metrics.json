@@ -1,0 +1,14 @@
+{
+  "brandSystem": {
+    "changedPixelsOver24Delta": 0,
+    "totalAbsoluteRgbDelta": 0
+  },
+  "logo": {
+    "changedPixelsOver24Delta": 34915,
+    "totalAbsoluteRgbDelta": 6839192
+  },
+  "appIcon": {
+    "changedPixelsOver24Delta": 12535,
+    "totalAbsoluteRgbDelta": 3957657
+  }
+}
