@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "온여정",
+    "name": "갈래",
     "slug": "nexvoy-app",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/branding/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFDF8"
+      "backgroundColor": "#FBF8F4"
     },
     "assetBundlePatterns": [
       "**/*"
@@ -35,7 +35,7 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/branding/adaptive-icon.png",
         "monochromeImage": "./assets/branding/adaptive-icon-monochrome.png",
-        "backgroundColor": "#2563EB"
+        "backgroundColor": "#192F82"
       },
       "permissions": [
         "android.permission.ACCESS_NETWORK_STATE",
@@ -56,13 +56,13 @@
         "expo-notifications",
         {
           "icon": "./assets/branding/notification-icon.png",
-          "color": "#2563EB"
+          "color": "#FF6B5C"
         }
       ],
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FFFDF8",
+          "backgroundColor": "#FBF8F4",
           "image": "./assets/branding/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain"

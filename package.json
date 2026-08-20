@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "brand:apply": "node docs/brand/v6/render-system.js && node scripts/apply-brand-assets.cjs",
+    "brand:apply": "node scripts/apply-brand-assets.cjs",
+    "brand:apply:canonical": "node docs/brand/v12/apply-approved-assets.js && node scripts/apply-brand-assets.cjs",
     "dev": "pnpm --filter nexvoy-web dev",
     "dev:web": "pnpm --filter nexvoy-web dev",
     "dev:mobile": "pnpm --filter nexvoy-app start",

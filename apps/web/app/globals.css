@@ -53,8 +53,8 @@ html {
 body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background: #FFFFFF; /* bg-light (Pure White) */
-    color: #1E293B;      /* text-primary (Deep Slate) */
+    background: #FFFFFF;
+    color: #1D2433;
     min-height: 100vh;
     font-family: var(--font-sans);
 }
@@ -72,7 +72,7 @@ body {
 }
 
 .airbnb-btn-primary {
-    background: #2563EB; /* primary-blue (Cobalt) */
+    background: #0D2340;
     color: #FFFFFF;
     border: none;
     border-radius: 8px; 
@@ -89,12 +89,12 @@ body {
 
 .airbnb-btn-primary:active {
     transform: scale(0.96);
-    background: #1D4ED8; /* primary-blue dark */
+    background: #081A30;
 }
 
 .airbnb-btn-secondary {
     background: #FFFFFF;
-    color: #1E293B;
+    color: #1D2433;
     border: 1px solid #1E293B;
     border-radius: 8px;
     padding: 13px 23px;

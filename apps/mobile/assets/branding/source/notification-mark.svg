@@ -1,6 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <g transform="translate(8 8) scale(.75)"><circle cx="14" cy="30" r="7" fill="none" stroke="#000000" stroke-width="4.5"/>
-    <circle cx="33.5" cy="30" r="7" fill="none" stroke="#000000" stroke-width="4.5"/>
-    <path d="M46 23H58" fill="none" stroke="#000000" stroke-width="4.5" stroke-linecap="round"/>
-    <path d="M52 25L46.5 38M52 25L57.5 38" fill="none" stroke="#000000" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/></g>
-  </svg>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="title desc"><title id="title">갈래 notification icon</title><desc id="desc">알림 표시 영역에 맞춘 단색 경로와 웨이포인트 심벌</desc><g transform="translate(-11 -10) scale(.25)"><path d="M98 137 H211 C238 137 257 155 257 181 C257 207 239 223 213 223 H173 C148 223 144 241 144 267 V270 C144 296 158 312 184 312 H316" fill="none" stroke="#000000" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/><circle cx="339" cy="290.5" r="36.5" fill="#000000"/><circle cx="339" cy="290.5" r="17" fill="#000000"/></g></svg>

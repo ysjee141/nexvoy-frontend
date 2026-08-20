@@ -1,7 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <rect width="64" height="64" rx="13" fill="#2563EB"/>
-    <circle cx="14" cy="30" r="7" fill="none" stroke="#BFDBFE" stroke-width="4.5"/>
-    <circle cx="33.5" cy="30" r="7" fill="none" stroke="#FFFFFF" stroke-width="4.5"/>
-    <path d="M46 23H58" fill="none" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round"/>
-    <path d="M52 25L46.5 38M52 25L57.5 38" fill="none" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="446" height="446" viewBox="0 0 446 446" role="img" aria-labelledby="title desc"><title id="title">갈래 기본 앱 아이콘</title><desc id="desc">승인된 raster를 기준으로 배경, 흰색 route wordmark와 Coral waypoint를 정리한 clean vector 앱 아이콘</desc><rect x="10" y="10" width="426" height="426" rx="94" fill="#192F82"/><path d="M98 137 H211 C238 137 257 155 257 181 C257 207 239 223 213 223 H173 C148 223 144 241 144 267 V270 C144 296 158 312 184 312 H316" fill="none" stroke="#FFFFFF" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/><circle cx="339" cy="290.5" r="36.5" fill="#DE6653"/><circle cx="339" cy="290.5" r="17" fill="#FFFFFF"/></svg>
