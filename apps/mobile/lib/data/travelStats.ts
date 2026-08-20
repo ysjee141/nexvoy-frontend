@@ -8,6 +8,7 @@ export interface TravelStatsSource {
 
 export async function loadTravelStatsFromSource(
   source: TravelStatsSource,
+  now: Date = new Date(),
 ): Promise<TravelStats> {
   let refreshError: unknown = null
   if (source.refreshTrips) {
@@ -22,7 +23,7 @@ export async function loadTravelStatsFromSource(
   if (refreshError && localTrips.length === 0) throw refreshError
 
   // Authority lists are already scoped to resources the current account can access.
-  return deriveTravelStats(localTrips)
+  return deriveTravelStats(localTrips, now)
 }
 
 export function deriveTravelStats(
