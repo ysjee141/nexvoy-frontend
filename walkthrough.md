@@ -1,3 +1,43 @@
+# Walkthrough: TASK-066 갈래 브랜드 서비스 적용
+
+## 결과
+
+기준 브랜치 `refactoring/local-first-architecture`에서 분기한
+`codex/task-066-brand-service-rollout`에 `docs/brand/v12` canonical 브랜드를 Web과 Mobile
+런타임에 적용했다. 제품 기능과 외부 기술 식별자는 유지하고, 표시명·아이콘·메타데이터·UI 토큰·
+사용자 노출 카피만 갈래 기준으로 통일했다.
+
+## 구현
+
+- v12 canonical SVG에서 Web favicon, Apple icon, PWA icon, Mobile launcher/adaptive/monochrome/
+  notification/splash/store 자산을 재생성하는 `scripts/apply-brand-assets.cjs` 파이프라인을 정리했다.
+- 제품 SVG는 `<image>`, embedded bitmap, 외부 폰트, `<text>`, script 없는 path 기반 자산만 사용한다.
+- 공통 UI 색상은 Deep Navy `#0D2340`와 Coral `#FF6B5C` 기준으로 갱신하고, canonical artwork의
+  logo navy/app blue와 UI 토큰은 용도를 분리했다.
+- Web metadata, manifest, 인증·공유·프로필·초대·이메일 카피와 Mobile 인증·알림 카피를 `갈래`로
+  변경했다.
+- `onvoy://`, bundle/package identifier, API path와 analytics/storage 기술 식별자는 변경하지 않았다.
+
+## 검증
+
+- `pnpm build:packages`: PASS
+- `pnpm --filter nexvoy-web exec panda codegen`: PASS
+- `pnpm build`: PASS
+- Mobile TypeScript, lint, authority tests 18건, `pnpm build:mobile`: PASS
+- 제품 SVG vector-only scan: PASS
+- `pnpm test:e2e`: BLOCKED. Playwright Chromium이 설치되지 않았고, 테스트 helper가 요구하는
+  local Supabase 대신 remote Supabase 환경이 설정되어 있어 애플리케이션 실패와 분리해 기록했다.
+
+## 커밋
+
+- `a449b38 docs(TASK-066): record rollout analysis`
+- `6b47f62 feat(TASK-066): apply canonical brand asset pipeline`
+- `04d8443 feat(TASK-066): apply gallae web branding`
+- `8b1a87f feat(TASK-066): apply gallae mobile branding`
+- `467859a refactor(TASK-066): align legacy web blue accents`
+
+---
+
 # Walkthrough: TASK-062 초기 출시 Gate 재분류
 
 ## 결정
