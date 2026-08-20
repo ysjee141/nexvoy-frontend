@@ -1,5 +1,14 @@
 # TASK-062 DB·Storage 복구 Rehearsal Runbook
 
+## 실행 상태
+
+초기 Web·Android 출시에 대해서는 **DEFERRED**다. 지금 Recovery 프로젝트를 만들거나 아래 복원 절차를
+실행하지 않는다. Supabase Pro 전환 시 managed DB backup을 실제 복구 원본으로 확인하고, Storage
+object byte의 별도 보관 정책을 결정한 뒤 본 Runbook을 다시 사용한다.
+
+초기 운영 기간에는 DB·Storage 복구가 보장되지 않는 위험을 명시적으로 수용한다. 로컬 IndexedDB와
+SQLite cache/outbox는 공식 복구 원본으로 간주하지 않는다.
+
 ## 목적과 중단 조건
 
 DEV `ivgkqzwosbjukonlpfdw`의 DB와 `place-photos`를 별도 Supabase Recovery 프로젝트에 복원한다.

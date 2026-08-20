@@ -4,6 +4,15 @@
 기준 브랜치: `refactoring/local-first-architecture`  
 현재 목표: **Supabase normalized row authority + account-scoped local cache + durable outbox + Realtime invalidation으로 Web/Mobile 전체 기능을 전환하고 Initial Production gate를 통과한다.**
 
+## 2026-08-05 TASK-062 초기 출시 비차단 전환
+
+- 초기 운영 규모와 비용 우선순위를 재평가해 TASK-062 격리 복구 rehearsal을 보류했다.
+- 초기 Web·Android 출시는 TASK-061 7일 관측 통과 후 TASK-063으로 진행한다.
+- 초기 운영 기간에는 DB·Storage 복구 미보장 위험을 명시적으로 수용한다.
+- Supabase Pro 전환 시 managed DB backup을 실제 복구 원본으로 확인하고 TASK-062를 재개한다.
+- Storage object byte는 DB backup과 별개이므로 Pro 전환 시 자산 중요도와 별도 보관 필요성을
+  재평가한다.
+
 ## 2026-08-01 TASK-060 완료 및 TASK-061/062 착수
 
 - Android 실제 기기에서 Web/Web, Web/Android, Android/Android의 여행·일정·준비물·템플릿·초대,
@@ -12,7 +21,8 @@
 - TASK-060을 `PASS`, 마스터 계획 `G3`를 `GO`로 변경했다.
 - TASK-061 Issue #382와 TASK-062 Issue #383을 등록했다.
 - 7일 일별 증적·임계치 validator와 DEV→Recovery checksum/digest 비교 도구를 준비한다.
-- `G4` 7일 관측과 `G5` 격리 복구가 남아 Web·Android Production은 `NO-GO`다.
+- `G4` 7일 관측과 `G6` Production preflight가 남아 Web·Android Production은 `NO-GO`다. `G5`는
+  2026-08-05 결정으로 초기 출시 비차단 보류 상태다.
 
 ## 2026-07-29 Android 우선 출시 결정
 

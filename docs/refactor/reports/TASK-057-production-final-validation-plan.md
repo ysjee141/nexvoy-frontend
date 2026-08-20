@@ -3,15 +3,17 @@
 ## 결론
 
 현재 OnVoy는 **코드 게이트 PASS, Web·Android Production 운영 게이트 NO-GO**다. Android
-Production GO는 코드 병합이 아니라 `G0`~`G7`의 증적 완료로 판정한다. 데이터 손실, 계정 간 노출,
-권한 우회, 복구 실패 중 하나라도 발생하면 즉시 NO-GO를 유지한다.
+Production GO는 코드 병합이 아니라 초기 출시 필수 Gate인 `G0`~`G4`, `G6`, `G7`의 증적으로
+판정한다. 데이터 손실, 계정 간 노출 또는 권한 우회가 발생하면 즉시 NO-GO를 유지한다. `G5` 복구
+rehearsal은 초기 출시 비차단으로 보류하고 Supabase Pro 전환 시 재개한다.
 
 ## 초기 출시 플랫폼 결정
 
 - 초기 Production 지원 범위는 Web과 Android다.
 - iOS 실기기, TestFlight/App Store, iOS OAuth·push·lifecycle 검증은 `TASK-064`로 이관한다.
 - iOS typecheck, Expo export와 simulator launch는 공유 코드 파손을 막는 비차단 회귀 Gate로 유지한다.
-- `G0`~`G7`과 100% rollout은 Android 지원 대상만 의미하며 iOS 지원 또는 출시 완료를 의미하지 않는다.
+- Gate 번호와 100% rollout은 Android 지원 대상만 의미하며 iOS 지원 또는 출시 완료를 의미하지
+  않는다. 초기 출시에 `G5`는 요구하지 않는다.
 
 ## 목차
 
@@ -37,8 +39,8 @@ Production GO는 코드 병합이 아니라 `G0`~`G7`의 증적 완료로 판정
 | Web·Android 실기기 | GO | TASK-060 실제 기기 Gate PASS, PR #381 회귀 재검증 | release SHA마다 핵심 smoke 유지 |
 | iOS | 후속 출시 | simulator build·launch PREPASS | TASK-064에서 실기기·스토어 검증 |
 | 운영 관측 | NO-GO | 7일 지표 없음 | 임계치 기반 관찰 |
-| 복구 | NO-GO | DB+Storage 동시 복구 증적 없음 | 격리 프로젝트 rehearsal |
-| Production preflight | NO-GO | history·backup·책임자 미확정 | 독립 감사와 승인 |
+| 복구 | 보류 | 초기 운영 기간 복구 미보장 위험 수용 | Supabase Pro 전환 시 격리 프로젝트 rehearsal |
+| Production preflight | NO-GO | history·운영 설정·책임자 미확정 | 독립 감사와 승인 |
 
 ## Gate 흐름
 
@@ -48,14 +50,14 @@ flowchart TD
     G1 --> G2["G2 DEV schema/history 정합화"]
     G2 --> G3["G3 DEV Web·Android 실기기 PASS"]
     G3 --> G4["G4 7일 관측 PASS"]
-    G4 --> G5["G5 DB+Storage 복구 PASS"]
-    G5 --> G6["G6 Production preflight GO"]
+    G4 --> G6["G6 Production preflight GO"]
     G6 --> G7["G7 단계적 출시 완료"]
+    G7 -. "Supabase Pro 전환" .-> G5["G5 DB+Storage 복구 PASS"]
     G1 -. "실패" .-> NOGO["NO-GO / 결함 수정"]
     G2 -. "실패" .-> NOGO
     G3 -. "실패" .-> NOGO
     G4 -. "임계치 초과" .-> NOGO
-    G5 -. "복구 불일치" .-> NOGO
+    G5 -. "Pro 전환 후 복구 불일치" .-> NOGO
     G6 -. "승인 누락" .-> NOGO
     G7 --> I64["TASK-064 iOS 별도 검증·출시"]
 ```
@@ -69,8 +71,8 @@ flowchart TD
 | B-03 (완료) | 제품 E2E 자동화 공백 | TASK-058과 Production P0 23건 PASS | CI URL과 리포트 | G1 |
 | B-04 (완료) | Android 실기기·플랫폼 조합 | TASK-060에서 Web/Web, Web/Android, Android/Android P0/P1 PASS | Android 기기/OS/build와 사용자 확인 기록 | G3 |
 | B-05 | 7일 운영 지표 없음 | 연속 7일 동안 임계치와 무사고 기준 충족 | GA4/Firebase/Supabase 대시보드 export | G4 |
-| B-06 | DB+Storage 복구 미검증 | 격리 프로젝트에서 동일 기준 시점 데이터와 object 복구 검증 | dump/checksum, object manifest, row count, RTO/RPO | G5 |
-| B-07 | Production history·schema drift·backup 미확정 | 원격 전용 version 4건과 `public` schema 차이 분류·승인, ledger 정합화, pre-deploy DB/Storage backup 완료 | 독립 감사 기록, schema diff, backup 위치·checksum | G6 |
+| B-06 (보류) | DB+Storage 복구 미검증 | Supabase Pro 전환 시 managed DB backup과 Storage 정책을 확정하고 격리 복구 검증 | backup 상태, object 정책, digest, RTO/RPO | G5 (초기 출시 비차단) |
+| B-07 | Production history·schema drift 미확정 | 원격 전용 version 4건과 `public` schema 차이 분류·승인, ledger 정합화 | 독립 감사 기록, schema diff | G6 |
 | B-08 | Android 최소 버전·출시 책임 미확정 | Android 최소 지원 버전과 강제 업데이트 정책, 배포·on-call 담당자 승인 | release ticket, 연락망, Google Play 설정 | G6 |
 | B-09 | 제품 운영 준비 미확정 | Web·Android 환경변수, OAuth, 이메일, Android push, 도메인, 약관·개인정보, alert test PASS | 설정 inventory와 각 검증 링크 | G6 |
 | B-10 | Android 단계적 rollout 미실행 | 내부→5%→25%→100% 각 hold 구간 통과 | 단계별 지표와 GO 승인 | G7 |
@@ -87,8 +89,8 @@ TASK-057은 검증 기준과 실행 절차를 확정하는 문서 작업이다. 
 | `TASK-059` | DEV 객체 fingerprint와 migration history 정합화 | B-01, B-02 | TASK-058 |
 | `TASK-060` | Web·Android 실기기·다중 계정·asset 검증 | B-04, B-11의 실환경 검증 부분 | TASK-059 |
 | `TASK-061` | Web·Android DEV 7일 안정성·비용 관측 | B-05 | TASK-060 |
-| `TASK-062` | DB+Storage 복구와 Web·Android smoke | B-06 | TASK-060 |
-| `TASK-063` | Web·Android Production preflight와 단계적 출시 | B-07~B-10, B-11 운영 설정 | TASK-061, TASK-062 |
+| `TASK-062` | Pro 전환 시 DB+Storage 복구와 Web·Android smoke | B-06 | Supabase Pro 전환 |
+| `TASK-063` | Web·Android Production preflight와 단계적 출시 | B-07~B-10, B-11 운영 설정 | TASK-061 |
 | `TASK-064` | iOS 실기기·TestFlight/App Store 검증과 출시 | iOS 지원 선언에 필요한 별도 Gate | TASK-063 |
 
 ## 단계별 실행 계획
@@ -137,12 +139,14 @@ TASK-057은 검증 기준과 실행 절차를 확정하는 문서 작업이다. 
 - 데이터 손실, 계정 간 노출, 권한 우회, 중복 row incident는 허용하지 않는다.
 - 임계치 초과는 원인과 재검증 기간을 새로 시작한다.
 
-### G5. 복구 Gate
+### G5. 복구 Gate (초기 출시 비차단)
 
-- DEV와 분리된 복구 프로젝트를 사용한다.
-- 같은 release 시점의 DB dump와 `place-photos` object export를 복구한다.
-- row count, membership, revision, operation receipt, asset metadata와 object manifest를 비교한다.
-- Web과 Android가 복구 프로젝트에서 핵심 여행을 읽고 수정할 수 있는지 확인한다.
+- 초기 Web·Android 출시에서는 실행하지 않고 DB·Storage 복구 미보장 위험을 수용한다.
+- Supabase Pro 전환 시 managed DB backup을 실제 복구 원본으로 확인하고 DEV/Production과 분리된
+  Recovery 프로젝트에서 실행한다.
+- 같은 기준 시점의 DB와 `place-photos` object를 복구하고 row count, membership, revision,
+  operation receipt, asset metadata와 object manifest를 비교한다.
+- Storage object byte는 DB backup에 포함되지 않으므로 Pro 전환 시 별도 보관 필요성을 결정한다.
 
 ### G6. Production Preflight
 
@@ -151,7 +155,7 @@ TASK-057은 검증 기준과 실행 절차를 확정하는 문서 작업이다. 
   `20260427023948`의 출처와 객체를 보존·분류한다.
 - Production 전용 `public` 객체와 DEV 전용 객체가 의도된 차이인지 migration 누락인지 판정한다.
 - migration dry-run이 승인 대상만 표시되는지 확인한다.
-- DB와 Storage backup을 생성하고 checksum과 보관 위치를 기록한다.
+- 현재 Supabase plan과 backup 제공 범위, 초기 복구 미보장 위험의 승인자를 기록한다.
 - Web·Android release SHA, 환경변수, OAuth redirect, 이메일, Android push, 약관·개인정보 URL을
   검증한다.
 - asset cleanup scheduler와 `ASSET_CLEANUP_SECRET`을 설정하고 실패 alert를 시험한다.
@@ -171,7 +175,7 @@ TASK-057은 검증 기준과 실행 절차를 확정하는 문서 작업이다. 
 | 역할 | 주요 책임 | 승인 대상 |
 |---|---|---|
 | Release manager | 일정, Gate 상태, 최종 GO/NO-GO 회의 | G0, G6, G7 |
-| DB operator | fingerprint, repair, migration, backup, restore | G2, G5, G6 |
+| DB operator | fingerprint, repair, migration, plan/backup 범위 확인 | G2, G6, Pro 전환 후 G5 |
 | Web 담당 | Web build, 브라우저 E2E, Vercel·OAuth | G1, G3, G6 |
 | Android 담당 | Android build, 설치, Logcat, Google Play rollout | G1, G3, G6, G7 |
 | iOS 담당 | 공통 변경의 typecheck/export/simulator 회귀, TASK-064 준비 | G1, TASK-064 |
@@ -189,7 +193,7 @@ TASK-057은 검증 기준과 실행 절차를 확정하는 문서 작업이다. 
 - 계정 간 cache·row·asset 노출
 - owner/editor/viewer/revoked 권한 우회
 - duplicate operation으로 canonical row 중복 생성
-- DB 또는 Storage 복구 불일치
+- Pro 전환 후 실행한 DB 또는 Storage 복구의 불일치
 - migration history drift 또는 미승인 migration 발견
 - 미해결 P0/P1 결함
 
@@ -215,8 +219,8 @@ TASK-057은 검증 기준과 실행 절차를 확정하는 문서 작업이다. 
 | DEV schema/history | 1영업일 | migration ledger 증적 |
 | Android 실기기 통합 테스트 | 2~3영업일 | 케이스별 증적, 결함 목록 |
 | DEV 관측 | 연속 7일 | 일별 지표와 최종 요약 |
-| 복구 rehearsal | 1~2영업일 | RTO/RPO와 정합성 보고서 |
-| Production preflight | 1영업일 | 최종 승인서와 backup 증적 |
+| 복구 rehearsal | Supabase Pro 전환 시 1~2영업일 | RTO/RPO와 정합성 보고서 |
+| Production preflight | 1영업일 | 최종 승인서와 plan·복구 위험 승인 기록 |
 | Web·Android 단계적 rollout | 최소 4영업일 | 단계별 GO 기록 |
 | iOS 검증·rollout | TASK-063 이후 별도 산정 | TASK-064 증적과 GO 기록 |
 

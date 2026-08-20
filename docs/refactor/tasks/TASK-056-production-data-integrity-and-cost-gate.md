@@ -51,7 +51,7 @@
 7. 계정 A/B 전환에서 local cache와 outbox가 혼합되지 않는다.
 8. 여행·일정·준비물·템플릿 삭제와 tombstone 정리가 다른 기기에 반영된다.
 9. asset upload/download/orphan cleanup이 권한과 CDN 정책을 지킨다.
-10. DB backup/export에서 canonical row를 복구하는 rehearsal을 수행한다.
+10. Supabase Pro 전환 시 DB backup/export에서 canonical row를 복구하는 rehearsal을 수행한다.
 
 ## Initial 품질 및 비용 기준
 
@@ -87,7 +87,8 @@
 
 - 쓰기를 동결하고 이전 안정 authority-only release로 client를 롤백한다.
 - destructive DB migration 전에는 revoke-only object를 복구한다.
-- Production 데이터는 managed backup/off-site export와 migration rollback script로 복구한다.
+- 초기 운영 기간에는 DB·Storage 복구 미보장 위험을 수용한다.
+- Supabase Pro 전환 이후 Production 데이터는 managed backup과 승인된 Storage 정책으로 복구한다.
 
 ## 완료 조건
 
@@ -110,6 +111,7 @@
 - Production rollout/recovery runbook, Initial 비용 baseline, go/no 판정서를 작성했다.
 
 자동화 가능한 코드 gate는 PASS다. TASK-055/056 핵심 객체는 DEV와 Production에서 확인됐지만
-migration history와 전체 schema fingerprint, 실기기 matrix, 7일 지표, DB+Storage restore rehearsal은
-운영 증적이 없으므로 DEV와 Production은 NO-GO로 유지한다. Legacy object 물리 삭제도 별도 destructive
+migration history와 전체 schema fingerprint, 실기기 matrix와 7일 지표는 운영 증적이 없으므로 DEV와
+Production은 NO-GO로 유지한다. DB+Storage restore rehearsal은 초기 출시 비차단으로 보류한다.
+Legacy object 물리 삭제도 별도 destructive
 migration 승인 전까지 유예한다.

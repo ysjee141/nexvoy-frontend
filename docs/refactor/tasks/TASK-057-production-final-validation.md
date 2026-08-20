@@ -9,8 +9,9 @@
 
 TASK-057은 TASK-056의 코드 게이트 이후 필요한 검증 기준, 테스트 케이스, 실행 Runbook을 확정한다.
 현재 상태는 **Production NO-GO**다. 실제 검증과 출시는 `TASK-058`~`TASK-063`에서 단계적으로 수행하며,
-원격 객체와 migration history 정합화, 실기기 통합 테스트, 7일 관측, DB와 Storage 복구, 출시 책임자
-지정이 모두 끝나야 GO로 전환한다.
+원격 객체와 migration history 정합화, 실기기 통합 테스트, 7일 관측과 출시 책임자 지정이 끝나야
+GO로 전환한다. DB와 Storage 복구 rehearsal은 초기 출시 비차단으로 보류하고 Supabase Pro 전환 시
+재개한다.
 
 ## 산출물
 
@@ -28,7 +29,7 @@ TASK-057은 TASK-056의 코드 게이트 이후 필요한 검증 기준, 테스�
 - offline, 강제 종료, reconnect, Realtime 유실, 충돌, revoke 검증
 - DEV 객체 fingerprint와 migration history 정합화
 - 7일 운영 지표 관찰과 비용 기준 확인
-- DB와 `place-photos` Storage의 분리 백업·복구 rehearsal
+- Supabase Pro 전환 시 DB와 `place-photos` Storage의 분리 백업·복구 rehearsal
 - Production preflight, canary, 단계적 확대, 중단과 롤백
 
 ## 제외 범위
@@ -44,15 +45,16 @@ TASK-057은 TASK-056의 코드 게이트 이후 필요한 검증 기준, 테스�
 2. `TASK-059`에서 DEV schema fingerprint와 migration history를 정합화한다.
 3. `TASK-060`에서 원격 안전 smoke와 전체 실기기 매트릭스를 실행한다.
 4. `TASK-061`에서 7일 안정성·비용 지표를 수집한다.
-5. `TASK-062`에서 DB+Storage 복구 rehearsal을 통과한다.
-6. `TASK-063`에서 Production preflight와 내부·5%·25%·100% 출시를 수행한다.
+5. `TASK-063`에서 Production preflight와 내부·5%·25%·100% 출시를 수행한다.
+6. Supabase Pro 전환 시 `TASK-062`의 DB+Storage 복구 rehearsal을 수행한다.
 
 ## 완료 조건
 
 - 마스터 계획, 통합 테스트 명세, Runbook이 서로 같은 Gate와 차단 항목을 사용한다.
 - TASK-056의 남은 차단 항목이 `B-01`~`B-11`로 추적된다.
 - 실제 실행 범위가 `TASK-058`~`TASK-063`으로 분리되고 선행 관계와 종료 조건이 명시된다.
-- Production GO는 후속 작업 완료 전 선언하지 않는다.
+- Production GO는 초기 출시 필수 작업 완료 전 선언하지 않는다. 보류된 `TASK-062`는 Supabase Pro
+  전환 시 별도 Gate로 재개한다.
 
 ## 롤백 원칙
 

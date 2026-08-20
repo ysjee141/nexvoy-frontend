@@ -9,7 +9,8 @@
 Android 시뮬레이터 사전 검증과 실제 기기 Gate를 모두 통과했다. Web/Web, Web/Android,
 Android/Android에서 여행·일정·준비물·템플릿·초대·권한·asset과 offline/reconnect 결과가 동일한
 canonical 데이터로 수렴했다. TASK-060과 `G3`는 완료한다. iOS는 초기 출시 범위에서 제외하며,
-Android Production은 7일 관측, 복구 rehearsal과 Production preflight가 남아 `NO-GO`다.
+Android Production은 7일 관측과 Production preflight가 남아 `NO-GO`다. 복구 rehearsal은
+2026-08-05 결정으로 초기 출시 비차단 보류 상태다.
 
 ## 출시 범위 결정
 
@@ -76,4 +77,5 @@ Android Production은 7일 관측, 복구 rehearsal과 Production preflight가 �
 
 Android 실기기 필수 조합과 P0/P1 수동 케이스를 통과했고 데이터 손실, 계정 노출, 권한 우회,
 canonical 중복이 보고되지 않았다. TASK-060과 `G3`를 `GO`로 종료한다. 다음 Gate는 TASK-061의 DEV
-7일 관측과 TASK-062의 격리 복구 rehearsal이며 두 작업은 병렬 수행한다.
+7일 관측이다. 통과 후 TASK-063 Production preflight로 진행한다. TASK-062는 Supabase Pro 전환 시
+재개한다.

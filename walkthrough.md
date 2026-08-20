@@ -1,3 +1,28 @@
+# Walkthrough: TASK-062 초기 출시 Gate 재분류
+
+## 결정
+
+- TASK-062 DB·Storage 복구 rehearsal은 초기 Web·Android 출시의 필수 Gate에서 제외했다.
+- 초기 운영 기간에는 별도 Recovery 프로젝트와 DB·Storage 복구 미보장 위험을 명시적으로 수용한다.
+- Supabase Pro 전환 시 managed DB backup을 실제 복구 원본으로 확인하고 TASK-062를 재개한다.
+- Storage object byte는 DB backup과 별개이므로 Pro 전환 시 자산 중요도와 별도 보관 필요성을
+  재평가한다.
+
+## 출시 흐름
+
+- TASK-061 DEV 7일 관측을 통과한 뒤 TASK-063 Production preflight와 단계적 Android rollout으로
+  진행한다.
+- G5/B-06은 초기 출시 비차단 보류 상태이며 G0~G4, G6, G7의 판정에는 포함하지 않는다.
+- TASK-062의 digest 도구와 Runbook은 삭제하지 않고 후속 운영 강화에 재사용한다.
+
+## 문서 정합화
+
+- Production 준비 현황, TASK-056/057/060/062/063, 작업 README와 진행 문서를 같은 선행 관계로
+  정리했다.
+- 복구 실패는 Pro 전환 후 TASK-062를 실제 실행한 경우의 운영 강화 NO-GO 조건으로 제한했다.
+
+---
+
 # Walkthrough: 모바일 프로필 여행 통계 복구
 
 ## 원인
@@ -106,10 +131,11 @@
   canonical table과 Storage digest를 비교한다.
 - 실제 증적은 Git에서 제외된 `_workspace` 또는 repository 밖의 암호화 저장소에만 둔다.
 
-## 현재 판정
+## 당시 판정 (2026-08-01)
 
 TASK-061의 7일 DEV 관측과 TASK-062의 별도 Recovery 프로젝트 복원이 남아 `G4`, `G5`와 Android
 Production은 `NO-GO`다. 두 작업 통과 후 TASK-063 preflight와 단계적 rollout을 진행한다.
+2026-08-05 결정으로 TASK-062/G5는 초기 출시 비차단 보류로 변경했다.
 
 # Walkthrough: TASK-060 Android 초대 수락·오프라인 준비물 회귀
 
@@ -183,10 +209,11 @@ Gate로 유지한다.
 - TASK-063: Web·Android Production preflight와 Android 단계적 rollout
 - TASK-064: iOS 실기기·OAuth·push·lifecycle·TestFlight/App Store 검증과 별도 rollout
 
-## 판정
+## 당시 판정 (2026-07-29)
 
 Android 실제 기기, 외부 연동, 관측과 복구가 남아 Web·Android Production은 계속 `NO-GO`다. iOS
 simulator PREPASS는 유지하지만 iOS Production 판정은 TASK-064 전까지 `DEFERRED`다.
+2026-08-05 결정으로 초기 출시에는 TASK-062 복구를 요구하지 않는다.
 
 ---
 
@@ -393,12 +420,15 @@ flowchart LR
 - DB managed backup과 logical export는 Storage object byte를 포함하지 않으므로 `place-photos`를 별도 복구한다.
 - TASK-055 이후 롤백은 직전 authority-only client와 비파괴 function 복원만 사용한다.
 
-## 다음 작업
+## 당시 다음 작업
 
 1. `TASK-058`에서 `NEW-A01`~`NEW-A13` P0 자동 테스트를 구현한다.
 2. `TASK-059`에서 DEV historical 9건과 TASK-056 전체를 fingerprint하고 history를 정합화한다.
 3. `TASK-060`에서 TASK-059에서 정합화한 schema를 기준으로 전체 실기기·asset 매트릭스를 실행한다.
 4. `TASK-061`·`TASK-062`의 7일 관측과 복구 후 `TASK-063` Production preflight를 진행한다.
+
+이 순서는 2026-08-05 결정으로 변경했다. 현재는 TASK-061 이후 TASK-063으로 진행하고 TASK-062는
+Supabase Pro 전환 시 재개한다.
 
 ---
 
