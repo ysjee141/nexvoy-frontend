@@ -49,7 +49,7 @@ export default function LicensesPage() {
             </div>
 
             <p className={css({ color: 'brand.muted', fontSize: '14px', mb: '16px', px: '8px', lineHeight: '1.6' })}>
-                온여정 개발에 사용된 오픈 소스 라이브러리 목록입니다.
+                갈래 개발에 사용된 오픈 소스 라이브러리 목록입니다.
             </p>
 
             {/* 라이선스 통계 */}

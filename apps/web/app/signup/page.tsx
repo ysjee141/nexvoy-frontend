@@ -85,7 +85,7 @@ export default function SignUpPage() {
         if (error) {
             setMessage({ type: 'error', text: error.message })
         } else if (data?.user?.identities && data.user.identities.length === 0) {
-            setMessage({ type: 'error', text: '이미 온여정의 식구인 이메일이에요! 로그인하시거나 다른 메일을 사용해 주세요.' })
+            setMessage({ type: 'error', text: '이미 갈래의 동행자인 이메일이에요! 로그인하시거나 다른 메일을 사용해 주세요.' })
         } else {
             setIsSuccess(true)
         }
@@ -139,8 +139,8 @@ export default function SignUpPage() {
             })}>
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
-                        <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={32} height={32} priority />
-                        <span className={css({ fontSize: '20px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em' })}>온여정</span>
+                        <Image src="/brand/gallae-app-icon.png" alt="갈래 로고" width={32} height={32} priority />
+                        <span className={css({ fontSize: '20px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em' })}>갈래</span>
                     </div>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
@@ -153,7 +153,7 @@ export default function SignUpPage() {
                         함께 떠날 준비가 되셨나요?
                     </h1>
                     <p className={css({ fontSize: '16px', color: 'brand.muted', wordBreak: 'keep-all' })}>
-                        설레는 여행의 첫 걸음, 온여정과 함께 시작해 보세요.
+                        설레는 여행의 첫 걸음, 갈래와 함께 시작해 보세요.
                     </p>
                 </div>
 

@@ -13,8 +13,8 @@ import ToastContainer from '@/components/common/ToastContainer'
 import LegacyV1Reset from '@/components/system/LegacyV1Reset'
 
 export const metadata: Metadata = {
-  title: '온여정 - 당신의 따뜻한 여행 동반자',
-  description: '설레는 여행의 모든 순간, 온여정과 함께하세요. 일정표 작성부터 체크리스트까지 한 곳에서 관리하는 여행 앱',
+  title: '갈래 - 함께 만드는 여행',
+  description: '계획부터 기록까지, 함께 만드는 여행. 갈래에서 동행자와 여행의 방향을 정해보세요.',
 }
 
 export const viewport = {

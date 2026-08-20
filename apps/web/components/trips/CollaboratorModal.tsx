@@ -521,7 +521,7 @@ export default function CollaboratorModal({ isOpen, onClose, tripId, tripTitle, 
                 <div className={css({ p: '16px 24px', bg: 'bg.softCotton', borderTop: '1px solid', borderTopColor: 'brand.hairline', textAlign: 'center' })}>
                     <p className={css({ fontSize: '12px', color: 'brand.muted', lineHeight: 1.5, wordBreak: 'keep-all' })}>
                         <strong>편집자</strong>는 일정을 추가, 수정, 삭제할 수 있고 <strong>뷰어</strong>는 조회만 가능합니다.<br />
-                        멤버 초대를 위해 상대방이 <strong>온여정</strong>에 가입되어 있어야 합니다.
+                        멤버 초대를 위해 상대방이 <strong>갈래</strong>에 가입되어 있어야 합니다.
                     </p>
                 </div>
             </div>

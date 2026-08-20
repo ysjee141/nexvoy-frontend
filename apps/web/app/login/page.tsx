@@ -98,8 +98,8 @@ function LoginForm() {
             })}>
                 <div className={css({ textAlign: 'center', mb: '32px' })}>
                     <div className={css({ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', mb: '24px' })}>
-                        <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={32} height={32} priority />
-                        <span className={css({ fontSize: '20px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em' })}>온여정</span>
+                        <Image src="/brand/gallae-app-icon.png" alt="갈래 로고" width={32} height={32} priority />
+                        <span className={css({ fontSize: '20px', fontWeight: '700', color: 'brand.secondary', letterSpacing: '-0.02em' })}>갈래</span>
                     </div>
                     <h1 className={css({
                         fontSize: { base: '26px', sm: '32px' },
@@ -112,7 +112,7 @@ function LoginForm() {
                         반가워요! 다시 오셨네요.
                     </h1>
                     <p className={css({ fontSize: '16px', color: 'brand.muted', wordBreak: 'keep-all' })}>
-                        소중한 여행의 모든 순간, 온여정이 동행할게요.
+                        소중한 여행의 모든 순간, 갈래가 동행할게요.
                     </p>
                 </div>
 

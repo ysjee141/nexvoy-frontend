@@ -32,7 +32,7 @@ class FeedbackService {
               { name: "💬 내용", value: data.content, inline: false },
               { name: "🌐 환경", value: data.browserInfo, inline: false },
             ],
-            footer: { text: "OnVoy Beta Test" },
+            footer: { text: "갈래 Beta Test" },
             timestamp: new Date().toISOString(),
           }
         ]
