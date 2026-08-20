@@ -168,7 +168,17 @@ pnpm test:production:p0
 node docs/brand/v12/apply-approved-assets.js
 node docs/brand/v12/render-assets.js
 rg -n '<image|data:image|font-family|@font-face|<script|<text' \
-  docs/brand/v12/*.svg \
+  docs/brand/v12/logo-gallae-primary.svg \
+  docs/brand/v12/logo-gallae-vertical.svg \
+  docs/brand/v12/logo-gallae-horizontal.svg \
+  docs/brand/v12/logo-gallae.svg \
+  docs/brand/v12/route-symbol.svg \
+  docs/brand/v12/app-icon.svg \
+  docs/brand/v12/app-icon-dark.svg \
+  docs/brand/v12/app-icon-light.svg \
+  docs/brand/v12/app-icon-coral.svg \
+  docs/brand/v12/app-icon-outline.svg \
+  docs/brand/v12/favicon.svg \
   apps/mobile/assets/branding/source/*.svg \
   apps/web/app/icon.svg
 ```
