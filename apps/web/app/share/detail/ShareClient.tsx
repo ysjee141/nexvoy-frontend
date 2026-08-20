@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { css } from 'styled-system/css'
 import { Globe, Lock, Calendar, MapPin, Clock, BadgeCheck, ChevronDown, ChevronUp } from 'lucide-react'
@@ -222,8 +223,8 @@ export default function SharePage() {
         <div className={css({ maxW: '800px', mx: 'auto', p: { base: '24px 20px', sm: '40px 24px' }, bg: 'white', minH: '100vh' })}>
             <div className={css({ mb: '48px', textAlign: 'left', borderBottom: '1px solid #EEEEEE', pb: '32px' })}>
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '8px', mb: '20px' })}>
-                    <div className={css({ w: '32px', h: '32px', bg: 'brand.primary', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '18px' })}>O</div>
-                    <span className={css({ fontSize: '16px', fontWeight: '700', color: '#222', letterSpacing: '-0.5px' })}>온여정</span>
+                    <Image src="/brand/gallae-app-icon.png" alt="갈래 로고" width={32} height={32} priority />
+                    <span className={css({ fontSize: '16px', fontWeight: '700', color: '#222', letterSpacing: '-0.5px' })}>갈래</span>
                 </div>
                 
                 <h1 className={css({ 
@@ -284,7 +285,7 @@ export default function SharePage() {
                     boxShadow: 'shadow.primary',
                     transition: 'all 0.2s',
                     _active: { transform: 'scale(0.96)' }
-                })}>온여정 시작하기</a>
+                })}>갈래 시작하기</a>
             </div>
         </div>
     )

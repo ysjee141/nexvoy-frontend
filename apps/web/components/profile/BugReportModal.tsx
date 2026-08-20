@@ -137,7 +137,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                     <div className={css({ display: 'flex', flexDirection: 'column', gap: '4px' })}>
                         <h3 className={css({ fontSize: '14px', fontWeight: '700', color: 'brand.primary' })}>테스트에 참여해주셔서 고맙습니다!</h3>
                         <p className={css({ fontSize: '13px', color: '#6B7280', fontWeight: '600', lineHeight: '1.55', wordBreak: 'keep-all' })}>
-                            테스터님의 소중한 의견과 발견된 결함들이 모여 더 완벽한 온여정이 만들어집니다. 어떤 의견이라도 편하게 들려주세요!
+                            테스터님의 소중한 의견과 발견된 결함들이 모여 더 완벽한 갈래가 만들어집니다. 어떤 의견이라도 편하게 들려주세요!
                         </p>
                     </div>
                 </div>
@@ -150,7 +150,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                             fontSize: '40px'
                         })}>✨</div>
                         <h3 className={css({ fontSize: '22px', fontWeight: '700', mb: '12px', color: '#2C3A47', letterSpacing: '-0.02em' })}>소중한 피드백 감사합니다!</h3>
-                        <p className={css({ color: '#6B7280', fontSize: '16px', fontWeight: '500' })}>보내주신 의견을 바탕으로 더 멋진 온여정을 만들게요.</p>
+                        <p className={css({ color: '#6B7280', fontSize: '16px', fontWeight: '500' })}>보내주신 의견을 바탕으로 더 멋진 갈래를 만들게요.</p>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className={css({ p: '24px', display: 'flex', flexDirection: 'column', gap: '20px' })}>

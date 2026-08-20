@@ -26,7 +26,7 @@ export type LegalDocument = {
 
 export const ONVOY_TERMS_DOCUMENT: LegalDocument = {
   title: '이용약관 및 개인정보 처리방침',
-  intro: '온여정(OnVoy)은 이용자의 개인정보를 소중히 다루며, 관련 법령을 투명하게 준수합니다.',
+  intro: '갈래는 이용자의 개인정보를 소중히 다루며, 관련 법령을 투명하게 준수합니다.',
   sections: [
     {
       title: '제1조 개인정보의 수집 및 이용 목적',

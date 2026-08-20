@@ -139,7 +139,7 @@ const ADVANCED = [
 // ── FAQ ──
 const FAQS = [
   {
-      q: '온여정는 무료인가요?',
+      q: '갈래는 무료인가요?',
       a: '네, 완전 무료예요! 별도 결제나 신용카드 등록 없이 바로 시작해 보세요.',
   },
   {
@@ -441,7 +441,7 @@ export default function HomeClient() {
                   maxW: '520px', mx: 'auto', lineHeight: 1.8, mb: '36px', wordBreak: 'keep-all',
               })}>
                   일정 관리부터 환율 변환, 동행자와의 계획까지.<br />
-                  복잡한 준비는 온여정에게 맡기고, 오직 여행의 설렘에만 집중하세요!
+                  복잡한 준비는 갈래에게 맡기고, 오직 여행의 설렘에만 집중하세요!
               </p>
               <div className={css({ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' })}>
                   <Link href="/signup" className={css({
@@ -468,7 +468,7 @@ export default function HomeClient() {
 
           {/* ── 주요 기능 ── */}
           <section className={css({ mb: '72px' })}>
-              <SectionTitle badge="핵심 기능" title="여행에 필요한 모든 것, 한 곳에" sub="여러 앱을 오갈 필요 없습니다. 온여정 하나로 충분합니다." />
+              <SectionTitle badge="핵심 기능" title="여행에 필요한 모든 것, 한 곳에" sub="여러 앱을 오갈 필요 없습니다. 갈래 하나로 충분합니다." />
               <div className={css({
                   display: 'grid',
                   gridTemplateColumns: { base: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' },
@@ -578,7 +578,7 @@ export default function HomeClient() {
                   <Zap size={13} /> 지금 바로 시작하세요
               </div>
               <h2 className={css({ fontSize: { base: '24px', md: '34px' }, fontWeight: '700', color: 'white', mb: '12px', letterSpacing: '-0.02em', lineHeight: 1.2 })}>
-                  다음 여행, 온여정와<br />함께 계획하세요 ✈️
+                  다음 여행, 갈래와<br />함께 계획하세요 ✈️
               </h2>
               <p className={css({ fontSize: '15px', color: 'white/85', mb: '32px', lineHeight: 1.7, wordBreak: 'keep-all' })}>
                   무료 계정 하나로 무제한 여행을 관리해 보세요.<br />

@@ -105,7 +105,7 @@ export default function WithdrawalPage() {
                     <div className={css({ bg: 'white', borderRadius: '24px', p: { base: '32px 24px', sm: '48px' }, textAlign: 'center', boxShadow: '0 8px 24px rgba(0,0,0,0.04)' })}>
                         <div className={css({ fontSize: '48px', mb: '16px' })}>🥺</div>
                         <h2 className={css({ fontSize: '24px', fontWeight: '700', color: '#172554', mb: '12px' })}>
-                            정말 온여정을 떠나시겠어요?
+                            정말 갈래를 떠나시겠어요?
                         </h2>
                         
                         {(stats.totalTrips > 0 || stats.totalItems > 0) ? (
@@ -114,7 +114,7 @@ export default function WithdrawalPage() {
                             </p>
                         ) : (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
-                                탈퇴 시 계정 정보와 여행 데이터가 영구적으로 삭제되어 복구할 수 없게 돼요. 온여정과 함께 멋진 여행을 다시 스케치해 보는 건 어떨까요?
+                                탈퇴 시 계정 정보와 여행 데이터가 영구적으로 삭제되어 복구할 수 없게 돼요. 갈래와 함께 멋진 여행을 다시 스케치해 보는 건 어떨까요?
                             </p>
                         )}
                         

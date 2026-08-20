@@ -619,7 +619,7 @@ function ProfileContent() {
                             </div>
                             <div>
                                 <div className={css({ fontSize: '16px', fontWeight: '750', color: 'brand.secondary' })}>건의 및 버그 제보</div>
-                                <div className={css({ fontSize: '13px', color: 'brand.muted', mt: '2px', fontWeight: '600' })}>온여정을 더 좋게 만드는 소중한 의견을 주세요</div>
+                                <div className={css({ fontSize: '13px', color: 'brand.muted', mt: '2px', fontWeight: '600' })}>갈래를 더 좋게 만드는 소중한 의견을 주세요</div>
                             </div>
                         </div>
                         <ChevronRight size={20} className={css({ color: '#CCC', transition: 'all 0.2s' })} />

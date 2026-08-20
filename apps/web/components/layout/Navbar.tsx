@@ -15,7 +15,7 @@ import { useBugReport } from '@/hooks/useBugReport'
 import BugReportModal from '../profile/BugReportModal'
 
 const PAGE_TITLES: Record<string, string> = {
-    '/': '온여정',
+    '/': '갈래',
     '/templates': '체크리스트 템플릿',
     '/templates/': '체크리스트 템플릿',
     '/profile': '내 정보',
@@ -40,7 +40,7 @@ export default function Navbar() {
     const { mobileTitle, setMobileTitle, setIsTripSwitcherOpen } = useUIStore()
     const isRootPage = normalizedPath === '/'
     const isTripDetailPage = normalizedPath === '/trips/detail'
-    const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || PAGE_TITLES[pathname] || '온여정'
+    const pageTitle = mobileTitle || PAGE_TITLES[normalizedPath] || PAGE_TITLES[pathname] || '갈래'
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
 
@@ -138,8 +138,8 @@ export default function Navbar() {
                 {/* 왼쪽: 로고 + 가이드 */}
                 <div className={css({ display: 'flex', alignItems: 'center', gap: '20px' })}>
                     <Link href="/" className={css({ fontSize: 'xl', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', color: 'brand.ink' })}>
-                        <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={28} height={28} priority />
-                        <span>온여정</span>
+                        <Image src="/brand/gallae-app-icon.png" alt="갈래 로고" width={28} height={28} priority />
+                        <span>갈래</span>
                     </Link>
                     {isOffline && (
                         <div className={css({ 
@@ -244,8 +244,8 @@ export default function Navbar() {
                             _active: { bg: 'bg.softCotton' }
                         })}
                     >
-                        {pageTitle === '온여정' && (
-                            <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={20} height={20} priority />
+                        {pageTitle === '갈래' && (
+                            <Image src="/brand/gallae-app-icon.png" alt="갈래 로고" width={20} height={20} priority />
                         )}
                         <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.ink', letterSpacing: '-0.01em' })}>
                             {pageTitle}
@@ -254,8 +254,8 @@ export default function Navbar() {
                     </button>
                 ) : (
                     <div className={css({ display: 'flex', alignItems: 'center', gap: '6px' })}>
-                        {pageTitle === '온여정' && (
-                            <Image src="/brand/onvoy-app-icon-v6.png" alt="온여정 로고" width={20} height={20} priority />
+                        {pageTitle === '갈래' && (
+                            <Image src="/brand/gallae-app-icon.png" alt="갈래 로고" width={20} height={20} priority />
                         )}
                         <h1 className={css({ fontSize: '17px', fontWeight: 'bold', color: 'brand.ink', letterSpacing: '-0.01em' })}>
                             {pageTitle}

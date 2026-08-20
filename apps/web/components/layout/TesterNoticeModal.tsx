@@ -60,7 +60,7 @@ export default function TesterNoticeModal({ userId }: TesterNoticeModalProps) {
                             베타 테스터에 참여해 주셔서 감사합니다! 🎁
                         </h2>
                         <p className={css({ fontSize: '15px', color: 'brand.muted', lineHeight: '1.65', wordBreak: 'keep-all', fontWeight: '500' })}>
-                            온여정은 현재 더 나은 여행 경험을 위해 기능 개선 중에 있습니다. 사용자님의 소중한 의견이 서비스 발전에 큰 도움이 됩니다.
+                            갈래는 현재 더 나은 여행 경험을 위해 기능 개선 중에 있습니다. 사용자님의 소중한 의견이 서비스 발전에 큰 도움이 됩니다.
                         </p>
                     </div>
 
