@@ -22,7 +22,7 @@ type StoredPlanAlarm = {
 
 const STORAGE_KEY = '@onvoy/local-notifications/v1'
 const LOCAL_NOTIFICATION_TITLE = '일정 시간이 다가오고 있어요'
-const LOCAL_NOTIFICATION_BODY = 'OnVoy에서 여행 일정을 확인해 주세요.'
+const LOCAL_NOTIFICATION_BODY = '갈래에서 여행 일정을 확인해 주세요.'
 
 let notificationsModulePromise: Promise<ExpoNotificationsModule | null> | null = null
 let notificationHandlerConfigured = false

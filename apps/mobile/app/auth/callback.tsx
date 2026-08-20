@@ -7,7 +7,7 @@
  * onAuthStateChange 는 Root _layout 의 auth gate 가 수신하므로 여기서는 navigate 만 수행.
  */
 import { useEffect, useState } from 'react'
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native'
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -68,7 +68,8 @@ export default function AuthCallbackScreen() {
   return (
     <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.center}>
-        <Text style={styles.brand}>온여정</Text>
+        <Image source={require('../../assets/branding/icon.png')} style={styles.brandIcon} />
+        <Text style={styles.brand}>갈래</Text>
         <ActivityIndicator size="large" color={colors.brand.primary} style={styles.spinner} />
         <Text style={styles.loadingText}>인증을 확인하고 있어요...</Text>
       </View>
@@ -91,6 +92,11 @@ const styles = StyleSheet.create({
     color: colors.brand.ink,
     letterSpacing: -0.4,
     marginBottom: spacing.lg,
+  },
+  brandIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radii.md,
   },
   spinner: { marginBottom: spacing.sm },
   loadingText: {

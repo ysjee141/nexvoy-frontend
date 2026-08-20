@@ -8,6 +8,7 @@
 import { useState } from 'react'
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -116,9 +117,10 @@ export default function SignupScreen() {
           <View style={styles.card}>
             <View style={styles.header}>
               <View style={styles.brandRow}>
-                <Text style={styles.brandName}>온여정</Text>
+                <Image source={require('../../assets/branding/icon.png')} style={styles.brandIcon} />
+                <Text style={styles.brandName}>갈래</Text>
               </View>
-              <Text style={styles.title}>온여정에 오신 걸{'\n'}환영해요!</Text>
+              <Text style={styles.title}>갈래에 오신 걸{'\n'}환영해요!</Text>
               <Text style={styles.subtitle}>
                 소중한 여행의 모든 순간을 함께 기록해요.
               </Text>
@@ -389,6 +391,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   brandRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
     marginBottom: spacing.lg,
   },
   brandName: {
@@ -396,6 +402,11 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
     color: colors.brand.ink,
     letterSpacing: -0.4,
+  },
+  brandIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radii.sm,
   },
   title: {
     fontSize: fontSizes['3xl'],
