@@ -46,7 +46,7 @@ test('falls back to the local trip list when refresh fails', async () => {
   const stats = await loadTravelStatsFromSource({
     refreshTrips: async () => { throw new Error('offline') },
     listTrips: async () => [trip({ id: 'local', startDate: '2026-08-10', endDate: '2026-08-10' })],
-  })
+  }, TODAY)
 
   assert.equal(stats.completedCount, 0)
   assert.deepEqual(stats.upcomingTrips.map((item) => item.id), ['local'])
