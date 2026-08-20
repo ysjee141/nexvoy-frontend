@@ -38,7 +38,7 @@ function SuccessContent() {
                     w: '64px',
                     h: '64px',
                     bg: '#EFF6FF',
-                    color: '#2563EB',
+                    color: '#0D2340',
                     borderRadius: '50%',
                     mx: 'auto',
                     mb: '24px'

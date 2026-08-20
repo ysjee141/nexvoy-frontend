@@ -163,7 +163,7 @@ export default function AccountLinking({ user }: AccountLinkingProps) {
                 px: '14px', py: '8px', borderRadius: '12px',
                 fontSize: '14px', fontWeight: '800', border: 'none', cursor: 'pointer',
                 transition: 'all 0.2s',
-                _hover: { bg: '#1D4ED8', transform: 'translateX(2px)' },
+                _hover: { bg: '#081A30', transform: 'translateX(2px)' },
                 _active: { transform: 'scale(0.95)' },
                 _disabled: { opacity: 0.6, cursor: 'not-allowed' },
               })}
@@ -241,7 +241,7 @@ export default function AccountLinking({ user }: AccountLinkingProps) {
                 px: '14px', py: '8px', borderRadius: '12px',
                 fontSize: '14px', fontWeight: '800', border: 'none', cursor: 'pointer',
                 transition: 'all 0.2s',
-                _hover: { bg: '#1D4ED8', transform: 'translateX(2px)' },
+                _hover: { bg: '#081A30', transform: 'translateX(2px)' },
                 _active: { transform: 'scale(0.95)' },
                 _disabled: { opacity: 0.6, cursor: 'not-allowed' },
               })}

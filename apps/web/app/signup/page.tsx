@@ -414,8 +414,8 @@ export default function SignUpPage() {
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         gap: '8px',
-                                        _hover: { bg: 'brand.primaryDark', boxShadow: '0 8px 20px rgba(59, 130, 246, 0.3)' },
-                                        _active: { transform: 'scale(0.96)', boxShadow: '0 4px 10px rgba(59, 130, 246, 0.2)' },
+                                        _hover: { bg: 'brand.primaryDark', boxShadow: '0 8px 20px rgba(13, 35, 64, 0.3)' },
+                                        _active: { transform: 'scale(0.96)', boxShadow: '0 4px 10px rgba(13, 35, 64, 0.2)' },
                                         _disabled: { opacity: 0.5, cursor: 'not-allowed', bg: 'brand.border', transform: 'none', boxShadow: 'none', pointerEvents: 'none' },
                                         mb: '24px',
                                     })}

@@ -77,7 +77,7 @@ export default function LocationTooltip({ locationName, address: initialAddress,
                 className={className || css({ 
                     fontSize: '14px', color: '#717171', display: 'flex', alignItems: 'center', gap: '4px',
                     bg: 'transparent', border: 'none', cursor: 'pointer', p: 0, m: 0,
-                    transition: 'all 0.2s', _hover: { color: '#3B82F6' }
+                    transition: 'all 0.2s', _hover: { color: '#0D2340' }
                 })}
                 title="클릭하여 현지 주소 보기"
                 type="button"

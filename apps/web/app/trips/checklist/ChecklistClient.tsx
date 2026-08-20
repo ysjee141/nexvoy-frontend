@@ -799,7 +799,7 @@ export default function ChecklistPage({
                             bg: status.is_checked ? 'brand.muted' : (status.is_my_checked ? 'brand.primary' : 'transparent'),
                             transition: 'all 0.2s',
                             opacity: !canCheck ? 0.3 : 1,
-                            boxShadow: status.is_my_checked ? '0 2px 6px rgba(37, 99, 235, 0.15)' : 'none'
+                            boxShadow: status.is_my_checked ? '0 2px 6px rgba(13, 35, 64, 0.15)' : 'none'
                         })}>
                             {(status.is_checked || status.is_my_checked) && <Check size={18} color="white" strokeWidth={3} />}
                         </div>
@@ -969,7 +969,7 @@ export default function ChecklistPage({
                             <label className={css({ display: 'block', fontSize: '13px', fontWeight: '700', mb: '8px', color: 'brand.muted' })}>항목 이름</label>
                             <input 
                                 type="text" value={name} onChange={(e) => setName(e.target.value)}
-                                className={css({ w: '100%', p: '12px', border: '1px solid', borderColor: 'brand.hairlineSoft', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 2px rgba(37, 99, 235, 0.1)' } })}
+                                className={css({ w: '100%', p: '12px', border: '1px solid', borderColor: 'brand.hairlineSoft', borderRadius: '12px', fontSize: '16px', outline: 'none', _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 2px rgba(13, 35, 64, 0.1)' } })}
                             />
                         </div>
                         <div className={css({ display: 'flex', gap: '12px' })}>
@@ -1312,7 +1312,7 @@ export default function ChecklistPage({
             {totalItems > 0 && (
                 <div className={css({ w: '100%', bg: 'bg.surfaceSoft', h: '12px', borderRadius: '16px', mb: '24px', overflow: 'hidden', border: '1px solid', borderColor: 'brand.hairlineSoft' })}>
                     <div
-                        className={css({ h: '100%', bg: 'linear-gradient(90deg, #2563eb, #4f46e5, #6366f1)', borderRadius: '16px', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
+                        className={css({ h: '100%', bg: 'linear-gradient(90deg, #0D2340, #4f46e5, #6366f1)', borderRadius: '16px', transition: 'width 0.8s cubic-bezier(0.1, 0.7, 0.1, 1)' })}
                         style={{ width: `${filterMode !== 'all' ? filteredProgressPercent : progressPercent}%` }}
                     />
                 </div>

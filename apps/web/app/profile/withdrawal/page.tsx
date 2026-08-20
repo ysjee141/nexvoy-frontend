@@ -110,7 +110,7 @@ export default function WithdrawalPage() {
                         
                         {(stats.totalTrips > 0 || stats.totalItems > 0) ? (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
-                                지금 떠나시면 그동안 함께 했던 <strong className={css({ color: '#3B82F6' })}>{stats.totalTrips}개의 소중한 여행 일정</strong>과 <strong className={css({ color: '#2563EB' })}>{stats.totalItems}개의 짐 챙기기 기록</strong>이 모두 삭제되며, 영구적으로 복구할 수 없습니다. 계속 함께해 주시면 안 될까요?
+                                지금 떠나시면 그동안 함께 했던 <strong className={css({ color: '#0D2340' })}>{stats.totalTrips}개의 소중한 여행 일정</strong>과 <strong className={css({ color: '#0D2340' })}>{stats.totalItems}개의 짐 챙기기 기록</strong>이 모두 삭제되며, 영구적으로 복구할 수 없습니다. 계속 함께해 주시면 안 될까요?
                             </p>
                         ) : (
                             <p className={css({ fontSize: '15px', color: '#555', lineHeight: 1.6, mb: '32px', wordBreak: 'keep-all' })}>
@@ -119,7 +119,7 @@ export default function WithdrawalPage() {
                         )}
                         
                         <div className={css({ display: 'flex', flexDirection: 'column', gap: '12px' })}>
-                            <button onClick={() => router.back()} className={css({ w: '100%', py: '16px', bg: '#2563EB', color: 'white', fontWeight: 'bold', fontSize: '16px', borderRadius: '14px', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _hover: { bg: '#2d8a45' }, boxShadow: '0 8px 20px rgba(52, 168, 83, 0.2)' })}>
+                            <button onClick={() => router.back()} className={css({ w: '100%', py: '16px', bg: '#0D2340', color: 'white', fontWeight: 'bold', fontSize: '16px', borderRadius: '14px', cursor: 'pointer', border: 'none', transition: 'all 0.2s', _hover: { bg: '#2d8a45' }, boxShadow: '0 8px 20px rgba(52, 168, 83, 0.2)' })}>
                                 우리 계속 함께해요! (돌아가기)
                             </button>
                             <button onClick={() => setStep(2)} className={css({ w: '100%', py: '16px', bg: 'transparent', color: '#999', fontWeight: '600', fontSize: '14px', borderRadius: '14px', cursor: 'pointer', border: 'none', textDecoration: 'underline', _hover: { color: '#666' } })}>
