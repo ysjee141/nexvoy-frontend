@@ -12,7 +12,6 @@ const webAppRoot = path.join(repositoryRoot, 'apps/web/app')
 const webPublicRoot = path.join(repositoryRoot, 'apps/web/public')
 const webIconRoot = path.join(webPublicRoot, 'icons')
 
-const APP_BLUE = '#192F82'
 const APP_CORAL = '#DE6653'
 const SURFACE = '#FBF8F4'
 const MONOCHROME = '#000000'
@@ -38,10 +37,6 @@ function writeFile(filePath, contents) {
 
 function documentSvg(width, height, title, desc, children) {
   return `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="title desc"><title id="title">${title}</title><desc id="desc">${desc}</desc>${children}</svg>\n`
-}
-
-function writeSvg(filePath, width, height, title, desc, children) {
-  writeFile(filePath, documentSvg(width, height, title, desc, children))
 }
 
 function removeBackground(svg) {
