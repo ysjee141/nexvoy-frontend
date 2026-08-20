@@ -1204,7 +1204,7 @@ export default function TripDetailScreen() {
                 text: '설정 열기',
                 onPress: () => {
                   void Linking.openSettings().catch(() => {
-                    Alert.alert('설정을 열 수 없어요', '기기 설정에서 OnVoy 알림을 허용해 주세요.')
+                    Alert.alert('설정을 열 수 없어요', '기기 설정에서 갈래 알림을 허용해 주세요.')
                   })
                 },
               },
@@ -1501,7 +1501,7 @@ export default function TripDetailScreen() {
       const data = shareInfo ?? (await ensureShareLink())
       if (!data) return
       const url = `${WEB_APP_BASE.replace(/\/$/, '')}/share/detail?token=${data.shareToken}`
-      const subject = encodeURIComponent(`[온여정] ${trip?.destination ?? '여행'} 여행 일정 공유`)
+      const subject = encodeURIComponent(`[갈래] ${trip?.destination ?? '여행'} 여행 일정 공유`)
       const body = encodeURIComponent(`안녕하세요,\n\n${trip?.destination ?? '여행'} 여행 일정을 함께 확인해보세요!\n\n링크: ${url}\n\n감사합니다.`)
       await Linking.openURL(`mailto:?subject=${subject}&body=${body}`)
     } catch {

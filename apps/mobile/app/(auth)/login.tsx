@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -138,11 +139,12 @@ export default function LoginScreen() {
           <View style={styles.card}>
             <View style={styles.header}>
               <View style={styles.brandRow}>
-                <Text style={styles.brandName}>온여정</Text>
+                <Image source={require('../../assets/branding/icon.png')} style={styles.brandIcon} />
+                <Text style={styles.brandName}>갈래</Text>
               </View>
               <Text style={styles.title}>반가워요! 다시 오셨네요.</Text>
               <Text style={styles.subtitle}>
-                소중한 여행의 모든 순간, 온여정이 동행할게요.
+                소중한 여행의 모든 순간, 갈래가 동행할게요.
               </Text>
             </View>
 
@@ -314,6 +316,11 @@ const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
     color: colors.brand.ink,
     letterSpacing: -0.4,
+  },
+  brandIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: radii.sm,
   },
   title: {
     fontSize: fontSizes['3xl'],
