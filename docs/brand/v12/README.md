@@ -1,12 +1,12 @@
 # 갈래 Brand System v12
 
-v12는 사용자 제공 raster 보드와 별도 제공한 primary logo·app icon raster를 기준으로 확정한 canonical 브랜드 시스템이다. 문서용 reference와 제품용 clean vector를 분리하며, 승인 후보에서 파생 에셋을 재생성할 수 있다.
+v12는 사용자 제공 raster 보드와 별도 제공한 primary logo·app icon raster를 기준으로 확정한 canonical 브랜드 시스템이다. 문서용 reference와 제품용 clean vector를 분리하며, 승인 후보에서 파생 에셋을 재생성할 수 있다. 제품 자산은 승인된 구조를 유지하면서 Journey Indigo/Departure Coral 팔레트로 정규화한다.
 
 ## 원칙
 
 - `brand-system.png`는 제공된 전체 보드를 픽셀 그대로 보존한다.
 - `brand-system.svg`는 문서용 self-contained reference wrapper다. 제품 로고로 사용하지 않는다.
-- `reference/approved-*`는 최종 primary logo와 app icon의 직접 raster 기준이다.
+- `reference/approved-*`는 최종 primary logo와 app icon의 직접 raster 기준이다. 색상은 제품 팔레트 결정에 따라 정규화될 수 있다.
 - VTracer trace는 원본 비교와 QA intermediate다. canonical SVG는 승인 후보의 path 보정 결과를 적용한다.
 - raster와 완전히 같은 벡터라고 주장하지 않는다. 구조 정합성, 작은 크기 식별성, vector-only 여부를 함께 검수한다.
 
@@ -61,3 +61,10 @@ cargo install --git https://github.com/visioncortex/vtracer vtracer-cli --locked
 ```
 
 제품용 SVG에는 `<image>`, embedded bitmap, 외부 폰트와 스크립트를 포함하지 않는다. 단, `brand-system.svg`와 `*-comparison.svg`는 문서·검수용 wrapper이므로 raster image를 포함할 수 있다.
+
+## Product palette
+
+- Journey Indigo 700: `#3342B3` (wordmark, app background, strong brand surface)
+- Journey Indigo 600: `#4052D2` (UI primary action)
+- Departure Coral 500: `#F8725A` (route, waypoint, invitation)
+- Surface: `#FFFFFF`
