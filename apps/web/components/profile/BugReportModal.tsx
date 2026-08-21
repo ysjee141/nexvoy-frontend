@@ -117,7 +117,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                     alignItems: 'center', justifyContent: 'space-between', bg: 'white'
                 })}>
                     <h2 className={css({ fontSize: '18px', fontWeight: '700', color: '#2C3A47', display: 'flex', alignItems: 'center', gap: '8px', letterSpacing: '-0.02em' })}>
-                        <MessageSquare size={20} color="#0D2340" strokeWidth={2.5} /> 테스터 피드백 보내기
+                        <MessageSquare size={20} color="#4052D2" strokeWidth={2.5} /> 테스터 피드백 보내기
                     </h2>
                     <button onClick={handleClose} className={css({ 
                         p: '6px', bg: '#F8F9FA', border: 'none', cursor: 'pointer', color: '#9CA3AF', 
@@ -130,7 +130,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
 
                 {/* 테스터 감사 인사 및 가이드 */}
                 <div className={css({
-                    p: '18px 24px', bg: 'rgba(13, 35, 64, 0.05)', borderBottom: '1.5px solid rgba(13, 35, 64, 0.1)',
+                    p: '18px 24px', bg: 'rgba(64, 82, 210, 0.05)', borderBottom: '1.5px solid rgba(64, 82, 210, 0.1)',
                     display: 'flex', gap: '14px', alignItems: 'flex-start'
                 })}>
                     <div className={css({ fontSize: '20px', mt: '2px' })}>✨</div>
@@ -145,7 +145,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                 {success ? (
                     <div className={css({ p: '70px 40px', textAlign: 'center', animation: 'fadeIn 0.5s ease-out' })}>
                         <div className={css({ 
-                            w: '80px', h: '80px', bg: 'rgba(13, 35, 64, 0.08)', borderRadius: '50%', 
+                            w: '80px', h: '80px', bg: 'rgba(64, 82, 210, 0.08)', borderRadius: '50%', 
                             display: 'flex', alignItems: 'center', justifyContent: 'center', m: '0 auto 24px',
                             fontSize: '40px'
                         })}>✨</div>
@@ -164,7 +164,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                                     w: '100%', h: '130px', p: '18px', border: '1.5px solid #F1F3F5', borderRadius: '20px',
                                     outline: 'none', fontSize: '15px', resize: 'none', fontWeight: '500', bg: '#F8F9FA',
                                     transition: 'all 0.2s',
-                                    _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 4px rgba(13, 35, 64, 0.1)' }
+                                    _focus: { borderColor: 'brand.primary', bg: 'white', boxShadow: '0 0 0 4px rgba(64, 82, 210, 0.1)' }
                                 })}
                             />
                         </div>
@@ -187,7 +187,7 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                                         position: 'relative', w: '68px', h: '68px', borderRadius: '16px', bg: '#F8F9FA',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1.5px solid #F1F3F5'
                                     })}>
-                                        {file.type.startsWith('image/') ? <ImageIcon size={22} color="#0D2340" /> : <Video size={22} color="#0D2340" />}
+                                        {file.type.startsWith('image/') ? <ImageIcon size={22} color="#4052D2" /> : <Video size={22} color="#4052D2" />}
                                         <button
                                             type="button"
                                             onClick={() => removeFile(i)}
@@ -248,10 +248,10 @@ export default function BugReportModal({ isOpen, onClose, user }: BugReportModal
                                 w: '100%', py: '18px', bg: 'brand.primary', color: 'white', borderRadius: '20px',
                                 fontWeight: '700', fontSize: '17px', border: 'none', cursor: 'pointer',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
-                                boxShadow: '0 8px 25px rgba(13, 35, 64, 0.2)',
+                                boxShadow: '0 8px 25px rgba(64, 82, 210, 0.2)',
                                 transition: 'all 0.3s cubic-bezier(0.2, 0, 0, 1)',
                                 _disabled: { opacity: 0.5, cursor: 'not-allowed', boxShadow: 'none', transform: 'none' }, 
-                                _hover: { bg: '#081A30', transform: 'translateY(-2px)', boxShadow: '0 12px 30px rgba(13, 35, 64, 0.25)' },
+                                _hover: { bg: '#3342B3', transform: 'translateY(-2px)', boxShadow: '0 12px 30px rgba(64, 82, 210, 0.25)' },
                                 _active: { transform: 'scale(0.97)' }
                             })}
                         >

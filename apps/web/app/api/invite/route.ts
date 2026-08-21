@@ -122,10 +122,10 @@ function createInviteEmailHtml(input: {
   const inviteCode = escapeHtml(input.inviteCode)
   const roleLabel = input.role === 'viewer' ? '조회 전용' : '편집 가능'
   return `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:8px">
-    <h2 style="color:#0D2340">갈래 초대</h2>
+    <h2 style="color:#4052D2">갈래 초대</h2>
     <p><strong>${title}</strong> 여정의 동행자로 초대받았습니다.</p>
     <p>권한: <strong>${roleLabel}</strong></p>
-    <p><a href="${inviteUrl}" style="background:#0D2340;color:white;padding:12px 20px;text-decoration:none;border-radius:8px;display:inline-block">초대 확인하기</a></p>
+    <p><a href="${inviteUrl}" style="background:#4052D2;color:white;padding:12px 20px;text-decoration:none;border-radius:8px;display:inline-block">초대 확인하기</a></p>
     <p style="color:#6b7280;font-size:14px">링크가 열리지 않으면 초대 코드 <strong>${inviteCode}</strong>를 입력해 주세요.</p>
   </div>`
 }

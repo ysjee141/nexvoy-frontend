@@ -435,7 +435,7 @@ export default function PlanDetailModal({
                                     <InfoRow 
                                         icon={<Clock size={18} className={css({ color: 'brand.primary' })} />} 
                                         label="시간"
-                                        bgColor="rgba(13, 35, 64, 0.05)"
+                                        bgColor="rgba(64, 82, 210, 0.05)"
                                         value={
                                             <div className={css({ display: 'flex', flexDirection: 'column', gap: '8px', w: '100%' })}>
                                                 <div className={css({ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '10px', flexWrap: 'wrap' })}>

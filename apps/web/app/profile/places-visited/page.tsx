@@ -174,9 +174,9 @@ export default function PlacesVisitedPage() {
                     {/* Visual Intro */}
                     <div className={css({ 
                         p: '40px 24px', borderRadius: '24px', color: 'white', mb: '32px', 
-                        position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px rgba(13, 35, 64, 0.15)',
+                        position: 'relative', overflow: 'hidden', boxShadow: '0 20px 40px rgba(64, 82, 210, 0.15)',
                         bg: 'brand.primary',
-                        backgroundImage: 'linear-gradient(135deg, #0D2340 0%, #0D2340 100%)'
+                        backgroundImage: 'linear-gradient(135deg, #4052D2 0%, #4052D2 100%)'
                     })}>
                         <div className={css({ position: 'relative', zIndex: 2 })}>
                             <div className={css({ 
@@ -211,7 +211,7 @@ export default function PlacesVisitedPage() {
                                 bg: 'white', border: '1px solid #E2E8F0', fontSize: '15px',
                                 outline: 'none', transition: 'all 0.2s',
                                 boxShadow: '0 4px 6px rgba(0,0,0,0.02)',
-                                _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 4px rgba(13, 35, 64, 0.1)' }
+                                _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 4px rgba(64, 82, 210, 0.1)' }
                             })}
                         />
                     </div>
@@ -309,7 +309,7 @@ export default function PlacesVisitedPage() {
                                                                 position: 'absolute', left: '0', top: '10px', 
                                                                 w: '16px', h: '16px', bg: 'white', border: '3px solid', 
                                                                 borderColor: 'brand.primary', borderRadius: 'full', zIndex: 2,
-                                                                boxShadow: '0 0 12px rgba(13, 35, 64, 0.3)'
+                                                                boxShadow: '0 0 12px rgba(64, 82, 210, 0.3)'
                                                             })} />
                                                             
                                                             <button 
@@ -327,7 +327,7 @@ export default function PlacesVisitedPage() {
                                                                         borderColor: 'brand.primary', 
                                                                         bg: '#F0F7FF',
                                                                         transform: 'translateX(10px)',
-                                                                        boxShadow: '0 20px 40px rgba(13, 35, 64, 0.1)'
+                                                                        boxShadow: '0 20px 40px rgba(64, 82, 210, 0.1)'
                                                                     },
                                                                     cursor: 'pointer'
                                                                 })}

@@ -57,7 +57,7 @@ export default function LicensesPage() {
                 {Object.entries(licenseStats).sort((a, b) => b[1] - a[1]).map(([type, count]) => (
                     <span key={type} className={css({
                         px: '10px', py: '4px', borderRadius: '12px', fontSize: '12px', fontWeight: '700',
-                        bg: type === 'MIT' ? 'rgba(13, 35, 64, 0.08)' : type === 'ISC' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                        bg: type === 'MIT' ? 'rgba(64, 82, 210, 0.08)' : type === 'ISC' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
                         color: type === 'MIT' ? 'brand.primary' : type === 'ISC' ? '#10B981' : '#F59E0B',
                     })}>
                         {type} ({count})
@@ -82,7 +82,7 @@ export default function LicensesPage() {
                         fontSize: '14px', color: 'brand.secondary',
                         bg: 'white', outline: 'none',
                         transition: 'all 0.2s',
-                        _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 3px rgba(13, 35, 64, 0.08)' },
+                        _focus: { borderColor: 'brand.primary', boxShadow: '0 0 0 3px rgba(64, 82, 210, 0.08)' },
                         _placeholder: { color: 'brand.muted' },
                     })}
                 />
@@ -118,7 +118,7 @@ export default function LicensesPage() {
                                     <div className={css({ fontSize: '15px', fontWeight: '700', color: 'brand.secondary', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' })}>{id}</div>
                                     <span className={css({
                                         flexShrink: 0, px: '6px', py: '2px', borderRadius: '6px', fontSize: '10px', fontWeight: '800',
-                                        bg: data.licenses === 'MIT' ? 'rgba(13, 35, 64, 0.08)' : data.licenses === 'ISC' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
+                                        bg: data.licenses === 'MIT' ? 'rgba(64, 82, 210, 0.08)' : data.licenses === 'ISC' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(245, 158, 11, 0.08)',
                                         color: data.licenses === 'MIT' ? 'brand.primary' : data.licenses === 'ISC' ? '#10B981' : '#F59E0B',
                                     })}>
                                         {data.licenses}

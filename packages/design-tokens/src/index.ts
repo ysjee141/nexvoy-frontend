@@ -10,11 +10,11 @@
 
 export const colors = {
   brand: {
-    primary: '#0D2340',
-    primaryActive: '#081A30',
-    primaryDark: '#081A30',
-    primaryDisabled: '#B8C4D2',
-    accent: '#FF6B5C',
+    primary: '#4052D2',
+    primaryActive: '#3342B3',
+    primaryDark: '#3342B3',
+    primaryDisabled: '#BFDBFE',
+    accent: '#F8725A',
     secondary: '#1D2433',
     error: '#D92D20',
     errorHover: '#B42318',
@@ -24,17 +24,17 @@ export const colors = {
     body: '#344054',
     muted: '#667085',
     mutedSoft: '#98A2B3',
-    hairline: '#D9DEEA',
+    hairline: '#E2E8F0',
     hairlineSoft: '#EEF1F6',
-    border: '#D9DEEA',
-    borderStrong: '#B8C1D1',
+    border: '#E2E8F0',
+    borderStrong: '#CBD5E1',
     success: '#12B76A',
   },
   bg: {
     canvas: '#FFFFFF',
-    softCotton: '#FBF8F4',
-    surfaceSoft: '#F7F8FC',
-    surfaceStrong: '#F2F4F7',
+    softCotton: '#FFFDF8',
+    surfaceSoft: '#F8FAFF',
+    surfaceStrong: '#F1F5F9',
     scrim: '#000000',
   },
 } as const
@@ -83,6 +83,6 @@ export const fontWeights = {
 export const shadows = {
   card: '0 2px 12px rgba(0,0,0,0.06)',
   modal: '0 20px 60px rgba(0,0,0,0.15)',
-  fab: '0 4px 16px rgba(13,35,64,0.25)',
-  nav: '0 -1px 0 #D9DEEA',
+  fab: '0 4px 16px rgba(64,82,210,0.30)',
+  nav: '0 -1px 0 #E2E8F0',
 } as const

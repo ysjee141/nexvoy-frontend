@@ -14,18 +14,19 @@ brand:
   appIcon: docs/brand/v12/app-icon.svg
 
 colors:
-  deep-navy-900: '#0D2340'
-  coral-500: '#FF6B5C'
-  logo-navy: '#051F46'
-  logo-coral: '#FD5644'
-  app-blue: '#192F82'
-  app-coral: '#DE6653'
+  journey-indigo-700: '#3342B3'
+  journey-indigo-600: '#4052D2'
+  departure-coral-500: '#F8725A'
+  logo-indigo: '#3342B3'
+  logo-coral: '#F8725A'
+  app-indigo: '#3342B3'
+  app-coral: '#F8725A'
   surface: '#FFFFFF'
-  background: '#F7F8FC'
-  background-warm: '#FBF8F4'
+  background: '#F8FAFF'
+  background-warm: '#FFFDF8'
   ink-900: '#1D2433'
   ink-500: '#667085'
-  border: '#D9DEEA'
+  border: '#E2E8F0'
 
 typography:
   fontFamily: 'Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
@@ -73,17 +74,17 @@ spacing:
 
 ## Color Use
 
-Deep Navy는 방향성과 안정감, Coral은 경로·웨이포인트·초대를 나타낸다.
+Journey Indigo는 방향성과 안정감, Departure Coral은 경로·웨이포인트·초대를 나타낸다.
 
-- Primary action: `#0D2340`, 텍스트는 `#FFFFFF`
-- Route and waypoint: `#FF6B5C`
-- Page background: `#F7F8FC`
-- Warm editorial surface: `#FBF8F4`
+- Primary action: `#4052D2`, hover/strong brand surface: `#3342B3`, 텍스트는 `#FFFFFF`
+- Route and waypoint: `#F8725A`
+- Page background: `#F8FAFF`
+- Warm editorial surface: `#FFFDF8`
 - Primary text: `#1D2433`
 - Secondary text: `#667085`
-- Border: `#D9DEEA`
+- Border: `#E2E8F0`
 
-UI 토큰과 raster artwork의 색상은 구분한다. UI는 `deep-navy-900`과 `coral-500`을 사용하고, 승인 SVG는 원본 정합성을 위해 `logo-navy`, `logo-coral`, `app-blue`, `app-coral`을 보존한다. 상태는 색상만으로 구분하지 않는다.
+UI 토큰과 raster artwork의 색상은 같은 Journey Indigo/Departure Coral 팔레트를 사용한다. 제공 raster는 원본 구조 검수용으로 보존하고, 제품 SVG는 승인 팔레트로 정규화한다. 상태는 색상만으로 구분하지 않는다.
 
 ## Shape Language
 
@@ -107,7 +108,7 @@ font-family: Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSyste
 
 ### Primary Button
 
-Deep Navy 배경, 흰색 텍스트, 최소 48px 높이, 10px radius. 라벨은 `새 여행 만들기`, `동행자 초대`처럼 행동을 분명히 한다.
+Journey Indigo 600 배경, 흰색 텍스트, 최소 48px 높이, 10px radius. 라벨은 `새 여행 만들기`, `동행자 초대`처럼 행동을 분명히 한다.
 
 ### Secondary Button
 
