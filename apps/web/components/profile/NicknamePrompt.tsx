@@ -48,24 +48,24 @@ export default function NicknamePrompt({ onClose }: NicknamePromptProps) {
                     p: '20px 24px',
                     bg: 'linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)',
                     borderRadius: '16px',
-                    border: '1px solid #B8C4D2',
+                    border: '1px solid #BFDBFE',
                     textDecoration: 'none',
                     transition: 'all 0.2s',
                     position: 'relative',
                     overflow: 'hidden',
-                    _hover: { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(13, 35, 64, 0.15)' },
+                    _hover: { transform: 'translateY(-2px)', boxShadow: '0 4px 12px rgba(64, 82, 210, 0.15)' },
                     _active: { transform: 'scale(0.98)' }
                 })}
             >
                 {/* Decorative Sparkles */}
-                <div className={css({ position: 'absolute', top: '-10px', right: '10%', opacity: 0.4, color: '#0D2340' })}>
+                <div className={css({ position: 'absolute', top: '-10px', right: '10%', opacity: 0.4, color: '#4052D2' })}>
                     <Sparkles size={40} />
                 </div>
 
                 <div className={css({
                     w: '48px', h: '48px', bg: 'white', borderRadius: '12px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: '#0D2340', flexShrink: 0, boxShadow: '0 2px 6px rgba(13, 35, 64, 0.1)'
+                    color: '#4052D2', flexShrink: 0, boxShadow: '0 2px 6px rgba(64, 82, 210, 0.1)'
                 })}>
                     <Sparkles size={24} />
                 </div>
@@ -74,7 +74,7 @@ export default function NicknamePrompt({ onClose }: NicknamePromptProps) {
                     <h3 className={css({ fontSize: '16px', fontWeight: '700', color: '#1E3A8A', mb: '2px' })}>
                         닉네임을 설정해 주세요!
                     </h3>
-                    <p className={css({ fontSize: '13px', color: '#0D2340', fontWeight: '500' })}>
+                    <p className={css({ fontSize: '13px', color: '#4052D2', fontWeight: '500' })}>
                         동행자들이 나를 더 쉽게 알아볼 수 있어요.
                     </p>
                 </div>
@@ -93,7 +93,7 @@ export default function NicknamePrompt({ onClose }: NicknamePromptProps) {
                     className={css({
                         position: 'absolute', top: '12px', right: '12px',
                         p: '4px', bg: 'transparent', border: 'none', cursor: 'pointer',
-                        color: '#0D2340', opacity: 0.6,
+                        color: '#4052D2', opacity: 0.6,
                         _hover: { opacity: 1 }
                     })}
                 >

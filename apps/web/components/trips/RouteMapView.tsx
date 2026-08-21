@@ -309,7 +309,7 @@ export default function RouteMapView({
         polylineRef.current = new google.maps.Polyline({
             path: polylinePath,
             map: mapRef.current,
-            strokeColor: '#081A30',
+            strokeColor: '#3342B3',
             strokeOpacity: 0.8,
             strokeWeight: 4,
         })

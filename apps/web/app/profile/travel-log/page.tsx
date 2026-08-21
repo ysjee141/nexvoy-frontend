@@ -150,7 +150,7 @@ export default function TravelLogPage() {
                     {/* Key Stats Grid */}
                     <div className={css({ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', mb: '48px' })}>
                         <div className={css({ bg: 'white', p: '24px', borderRadius: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #F3F4F6' })}>
-                            <div className={css({ color: '#0D2340', mb: '14px' })}><TrendingUp size={22} /></div>
+                            <div className={css({ color: '#4052D2', mb: '14px' })}><TrendingUp size={22} /></div>
                             <div className={css({ fontSize: '22px', fontWeight: '850', color: '#111' })}>{stats.completedCount}번</div>
                             <div className={css({ fontSize: '14px', color: '#888', mt: '4px', fontWeight: '500' })}>완료한 여정</div>
                         </div>
@@ -192,7 +192,7 @@ export default function TravelLogPage() {
                                                 display: 'block', bg: 'white', p: '18px', borderRadius: '20px',
                                                 border: '1px solid #E5E7EB', transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 position: 'relative',
-                                                _hover: { borderColor: '#0D2340', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(13, 35, 64, 0.08)' }
+                                                _hover: { borderColor: '#4052D2', transform: 'translateY(-2px)', boxShadow: '0 8px 20px rgba(64, 82, 210, 0.08)' }
                                             })}
                                         >
                                             <div className={css({ display: 'flex', alignItems: 'flex-start', gap: '14px' })}>
@@ -200,7 +200,7 @@ export default function TravelLogPage() {
                                                     w: '44px', h: '44px', bg: '#EFF6FF', borderRadius: '14px', 
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
                                                 })}>
-                                                    <MapPin size={22} color="#0D2340" />
+                                                    <MapPin size={22} color="#4052D2" />
                                                 </div>
                                                 <div className={css({ flex: 1, minW: 0 })}>
                                                     <div className={css({ fontSize: '17px', fontWeight: '750', color: '#111', mb: '4px', truncate: true })}>{trip.destination}</div>
@@ -238,9 +238,9 @@ export default function TravelLogPage() {
                                 <Link 
                                     href="/trips" 
                                     className={css({ 
-                                        display: 'inline-flex', px: '20px', py: '10px', bg: '#0D2340', 
+                                        display: 'inline-flex', px: '20px', py: '10px', bg: '#4052D2', 
                                         color: 'white', borderRadius: '12px', fontWeight: '700', fontSize: '14px',
-                                        _hover: { bg: '#0D2340', transform: 'scale(1.02)' },
+                                        _hover: { bg: '#4052D2', transform: 'scale(1.02)' },
                                         transition: 'all 0.2s'
                                     })}
                                 >
@@ -268,9 +268,9 @@ export default function TravelLogPage() {
                                                 border: '1px solid', borderColor: isOngoing ? '#FEF3C7' : '#E5E7EB', 
                                                 transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                                                 _hover: { 
-                                                    borderColor: isOngoing ? '#F59E0B' : '#0D2340', 
+                                                    borderColor: isOngoing ? '#F59E0B' : '#4052D2', 
                                                     transform: 'translateY(-2px)',
-                                                    boxShadow: isOngoing ? '0 8px 20px rgba(245, 158, 11, 0.1)' : '0 8px 20px rgba(13, 35, 64, 0.08)'
+                                                    boxShadow: isOngoing ? '0 8px 20px rgba(245, 158, 11, 0.1)' : '0 8px 20px rgba(64, 82, 210, 0.08)'
                                                 }
                                             })}
                                         >

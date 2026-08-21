@@ -17,7 +17,7 @@ const traceOptions = [
   '--gradient-step', '0',
   '--simplify', '1.2',
   '--path-precision', '2',
-  '--palette', '#0D2340,#FF6B5C,#FFFFFF',
+  '--palette', '#3342B3,#4052D2,#F8725A,#FFFFFF',
   '--optimize', '2',
 ]
 

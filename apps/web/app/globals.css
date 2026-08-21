@@ -72,7 +72,7 @@ body {
 }
 
 .airbnb-btn-primary {
-    background: #0D2340;
+    background: #4052D2;
     color: #FFFFFF;
     border: none;
     border-radius: 8px; 
@@ -89,7 +89,7 @@ body {
 
 .airbnb-btn-primary:active {
     transform: scale(0.96);
-    background: #081A30;
+    background: #3342B3;
 }
 
 .airbnb-btn-secondary {

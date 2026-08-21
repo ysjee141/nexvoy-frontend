@@ -12,8 +12,8 @@ const webAppRoot = path.join(repositoryRoot, 'apps/web/app')
 const webPublicRoot = path.join(repositoryRoot, 'apps/web/public')
 const webIconRoot = path.join(webPublicRoot, 'icons')
 
-const APP_CORAL = '#DE6653'
-const SURFACE = '#FBF8F4'
+const APP_CORAL = '#F8725A'
+const SURFACE = '#FFFDF8'
 const MONOCHROME = '#000000'
 
 function readBrandSvg(name) {

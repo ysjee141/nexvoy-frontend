@@ -68,7 +68,7 @@ export default defineConfig({
           },
           'shadow.sm': { value: '0 1px 2px rgba(0,0,0,0.05)' },
           'shadow.md': { value: '0 4px 12px rgba(0,0,0,0.08)' },
-          'shadow.primary': { value: '0 8px 20px rgba(13, 35, 64, 0.2)' },
+          'shadow.primary': { value: '0 8px 20px rgba(64, 82, 210, 0.2)' },
         },
       },
     },

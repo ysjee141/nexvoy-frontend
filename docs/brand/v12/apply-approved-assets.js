@@ -8,12 +8,24 @@ const candidateInput = path.join(candidateRoot, 'input')
 const referenceRoot = path.join(root, 'reference')
 
 const colors = {
-  logoNavy: '#051F46',
-  logoCoral: '#FD5644',
-  appBlue: '#192F82',
-  appCoral: '#DE6653',
+  logoNavy: '#3342B3',
+  logoCoral: '#F8725A',
+  appBlue: '#3342B3',
+  appCoral: '#F8725A',
   white: '#FFFFFF',
-  border: '#D9DEEA',
+  border: '#E2E8F0',
+}
+
+function normalizeLogoColors(svg) {
+  return svg
+    .replaceAll('#051F46', colors.logoNavy)
+    .replaceAll('#FD5644', colors.logoCoral)
+}
+
+function normalizeAppColors(svg) {
+  return svg
+    .replaceAll('#192F82', colors.appBlue)
+    .replaceAll('#DE6653', colors.appCoral)
 }
 
 function inner(svg) {
@@ -40,7 +52,7 @@ function copyReferenceInputs() {
 }
 
 function applyLogoAssets() {
-  const primary = inner(fs.readFileSync(path.join(candidateOutput, 'logo-corrected.svg'), 'utf8'))
+  const primary = normalizeLogoColors(inner(fs.readFileSync(path.join(candidateOutput, 'logo-corrected.svg'), 'utf8')))
   write(
     'logo-gallae-primary.svg',
     1024,
@@ -88,7 +100,7 @@ function applyLogoAssets() {
 }
 
 function applyAppIconAssets() {
-  const approved = inner(fs.readFileSync(path.join(candidateOutput, 'app-icon-corrected.svg'), 'utf8'))
+  const approved = normalizeAppColors(inner(fs.readFileSync(path.join(candidateOutput, 'app-icon-corrected.svg'), 'utf8')))
   write(
     'app-icon.svg',
     446,
@@ -101,7 +113,7 @@ function applyAppIconAssets() {
   fs.copyFileSync(path.join(root, 'app-icon.svg'), path.join(root, 'favicon.svg'))
 
   const light = approved
-    .replace(/fill="#192F82"/g, `fill="${colors.white}" stroke="${colors.border}" stroke-width="1.5"`)
+    .replace(/fill="#3342B3"/g, `fill="${colors.white}" stroke="${colors.border}" stroke-width="1.5"`)
     .replace(/stroke="#FFFFFF"/g, `stroke="${colors.appBlue}"`)
   write(
     'app-icon-light.svg',
@@ -113,7 +125,7 @@ function applyAppIconAssets() {
   )
 
   const outline = approved
-    .replace(/fill="#192F82"/g, `fill="${colors.white}" stroke="${colors.appCoral}" stroke-width="1.5"`)
+    .replace(/fill="#3342B3"/g, `fill="${colors.white}" stroke="${colors.appCoral}" stroke-width="1.5"`)
     .replace(/stroke="#FFFFFF"/g, `stroke="${colors.appBlue}"`)
   write(
     'app-icon-outline.svg',
@@ -125,8 +137,8 @@ function applyAppIconAssets() {
   )
 
   const coral = approved
-    .replace(/fill="#192F82"/g, `fill="${colors.appCoral}"`)
-    .replace(/cx="339" cy="290\.5" r="36\.5" fill="#DE6653"/, `cx="339" cy="290.5" r="36.5" fill="${colors.appBlue}"`)
+    .replace(/fill="#3342B3"/g, `fill="${colors.appCoral}"`)
+    .replace(/cx="339" cy="290\.5" r="36\.5" fill="#F8725A"/, `cx="339" cy="290.5" r="36.5" fill="${colors.appBlue}"`)
   write(
     'app-icon-coral.svg',
     446,
