@@ -49,7 +49,7 @@
 
 ### App icon
 
-canonical app icon은 Deep Navy 바탕에 흰색 `갈래` 워드마크와 Coral 경로를 놓은 형태다. 보드에 포함된 다음 파생본은 배경과 노출 환경에 따라 사용한다.
+canonical app icon은 Journey Indigo 700 바탕에 흰색 `갈래` 워드마크와 Departure Coral 경로를 놓은 형태다. 보드에 포함된 다음 파생본은 배경과 노출 환경에 따라 사용한다.
 
 - `app-icon-light.svg`
 - `app-icon-dark.svg`
@@ -81,16 +81,17 @@ v12 제품 SVG에는 `<image>`, embedded bitmap, 외부 폰트와 스크립트�
 
 | 역할 | 토큰 | 값 |
 | --- | --- | --- |
-| UI 워드마크·기본 아이콘 토큰 | `deep-navy-900` | `#0D2340` |
-| UI 경로·웨이포인트·초대 토큰 | `coral-500` | `#FF6B5C` |
+| 워드마크·앱 배경 | `journey-indigo-700` | `#3342B3` |
+| UI 기본 강조 | `journey-indigo-600` | `#4052D2` |
+| UI 경로·웨이포인트·초대 | `departure-coral-500` | `#F8725A` |
 | 밝은 표면 | `surface` | `#FFFFFF` |
-| 제품 배경 | `background` | `#F7F8FC` |
-| 따뜻한 보드 표면 | `background-warm` | `#FBF8F4` |
+| 제품 배경 | `background` | `#F8FAFF` |
+| 따뜻한 보드 표면 | `background-warm` | `#FFFDF8` |
 | 기본 텍스트 | `ink-900` | `#1D2433` |
 | 보조 텍스트 | `ink-500` | `#667085` |
-| 구분선 | `border` | `#D9DEEA` |
+| 구분선 | `border` | `#E2E8F0` |
 
-로고와 앱 아이콘은 Deep Navy, Coral, Surface를 중심으로 사용한다. Teal이나 임의의 보조 색상을 로고에 추가하지 않는다.
+로고와 앱 아이콘은 Journey Indigo, Departure Coral, Surface를 중심으로 사용한다. Teal이나 임의의 보조 색상을 로고에 추가하지 않는다.
 
 ### 승인 raster artwork 색상
 
@@ -98,8 +99,8 @@ v12 제품 SVG에는 `<image>`, embedded bitmap, 외부 폰트와 스크립트�
 
 | 자산 | Navy 계열 | Coral 계열 |
 | --- | --- | --- |
-| Primary logo | `#051F46` | `#FD5644` |
-| App icon | `#192F82` | `#DE6653` |
+| Primary logo | `#3342B3` | `#F8725A` |
+| App icon | `#3342B3` | `#F8725A` |
 
 UI 컴포넌트에는 위 artwork 색상을 임의로 확장하지 않고 `DESIGN.md`의 UI 토큰을 사용한다.
 

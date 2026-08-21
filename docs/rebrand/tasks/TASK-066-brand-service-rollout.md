@@ -8,7 +8,7 @@
 
 ## 목적
 
-현재 서비스 런타임은 레거시 `온여정 / OnVoy` 브랜드와 v6 자산, Cobalt Blue 토큰을 사용한다. 승인된 `갈래 / Nextward` 브랜드 시스템을 실제 Web과 Mobile 서비스에 적용하여 다음 항목을 하나의 기준으로 통일한다.
+현재 서비스 런타임은 레거시 `온여정 / OnVoy` 브랜드와 v6 자산, Cobalt Blue 토큰을 사용한다. 승인된 `갈래 / Nextward` 브랜드 시스템을 실제 Web과 Mobile 서비스에 적용하고, 기존 Indigo/Coral 색상 언어로 제품 색상을 통일하여 다음 항목을 하나의 기준으로 정리한다.
 
 - 사용자 노출 브랜드명과 소개 문구
 - canonical 로고와 앱 아이콘
@@ -50,12 +50,13 @@ UI와 artwork의 색상을 같은 토큰으로 억지로 통합하지 않는다.
 
 | 구분 | 값 | 사용 |
 | --- | --- | --- |
-| `deep-navy-900` | `#0D2340` | UI primary action, text, selected state |
-| `coral-500` | `#FF6B5C` | UI route, waypoint, invitation, departure |
-| logo navy | `#051F46` | canonical primary logo artwork |
-| logo coral | `#FD5644` | canonical primary route artwork |
-| app blue | `#192F82` | canonical app icon background |
-| app coral | `#DE6653` | canonical app icon waypoint |
+| `journey-indigo-700` | `#3342B3` | wordmark, app background, strong brand surface |
+| `journey-indigo-600` | `#4052D2` | UI primary action, selected state |
+| `departure-coral-500` | `#F8725A` | UI route, waypoint, invitation, departure |
+| logo indigo | `#3342B3` | canonical primary logo artwork |
+| logo coral | `#F8725A` | canonical primary route artwork |
+| app indigo | `#3342B3` | canonical app icon background |
+| app coral | `#F8725A` | canonical app icon waypoint |
 
 상태 표현은 색상만으로 전달하지 않는다. 텍스트, 아이콘, 모양과 함께 제공한다. 성공·오류·경고 의미를 Coral 하나로 대체하지 않으며, 기존 semantic status token의 의미를 보존한다.
 
@@ -190,7 +191,7 @@ rg -n '<image|data:image|font-family|@font-face|<script|<text' \
 | 브랜드명 교체가 기술 식별자까지 변경됨 | 표시 문자열과 scheme/package/API를 별도 목록으로 검증 |
 | Android mask에서 아이콘이 잘림 | adaptive foreground 안전 영역과 실기기 launcher 검증 |
 | Splash와 favicon에서 artwork가 과도하게 작아짐 | 플랫폼별 canvas와 minimum size를 별도로 렌더링 |
-| UI token 교체로 semantic status가 변질됨 | Deep Navy/Coral과 success/error 의미를 분리 |
+| UI token 교체로 semantic status가 변질됨 | Journey Indigo/Departure Coral과 success/error 의미를 분리 |
 | PWA cache가 이전 아이콘을 유지함 | manifest, cache version, fresh install을 함께 확인 |
 | 외부 공유·알림 문구가 레거시 이름으로 남음 | 사용자 노출 문자열 inventory를 Web/Mobile 외부 모듈까지 확장 |
 
@@ -211,7 +212,7 @@ rg -n '<image|data:image|font-family|@font-face|<script|<text' \
 - `6b47f62 feat(TASK-066): apply canonical brand asset pipeline`: v12 canonical 기반 Web/Mobile 파생 자산 생성 파이프라인과 공통 토큰 적용
 - `04d8443 feat(TASK-066): apply gallae web branding`: Web 메타데이터, 자산 경로와 사용자 노출 카피 적용
 - `8b1a87f feat(TASK-066): apply gallae mobile branding`: Mobile 인증·알림 카피와 Expo 표시명·브랜드 자산 적용
-- `467859a refactor(TASK-066): align legacy web blue accents`: 남은 사용자 화면의 직접 Blue accent를 Deep Navy 기준으로 정렬
+- `467859a refactor(TASK-066): align legacy web blue accents`: 남은 사용자 화면의 직접 Blue accent를 초기 적용 팔레트 기준으로 정렬
 
 canonical 원본은 `docs/brand/v12`에 유지하고, 제품 런타임은 해당 SVG에서 생성한 플랫폼별 자산을
 사용한다. 기존 `scheme`, bundle/package identifier, API path와 외부 식별자는 유지했다.
@@ -231,12 +232,25 @@ canonical 원본은 `docs/brand/v12`에 유지하고, 제품 런타임은 해당
 실제 Android/iOS 런처와 소형 아이콘의 시각 확인, local Supabase 기반 E2E 재실행은 PR의 후속
 검증 항목으로 남긴다.
 
+### 팔레트 후속 변경
+
+초기 적용의 Deep Navy/Coral 조합이 서비스 화면과 앱 아이콘에서 무겁게 보이는 문제를 반영해,
+기존 브랜드 시안의 Journey Indigo/Departure Coral 팔레트로 제품 색상을 복원했다.
+
+- Journey Indigo 700 `#3342B3`: 워드마크, 앱 배경, 강한 브랜드 surface
+- Journey Indigo 600 `#4052D2`: Web/Mobile UI primary action
+- Departure Coral 500 `#F8725A`: route, waypoint, invitation, notification
+
+사용자 제공 raster reference는 원본 보존 대상으로 남기고, canonical SVG와 플랫폼 파생본은 같은
+팔레트로 재생성한다. 따라서 reference와 제품 벡터 사이의 색상 차이는 의도된 정규화 결과이며,
+형태와 구조 정합성을 별도로 검수한다.
+
 ## 완료 조건
 
 - [x] PR #392 canonical 브랜드 에셋이 기준 브랜치에 반영됨
 - [x] Web과 Mobile의 표시명이 `갈래` 기준으로 통일됨
 - [x] Web favicon, manifest, Apple Touch icon과 Mobile launcher/splash/notification이 v12 자산을 사용함
-- [x] UI 토큰이 Deep Navy/Coral 기준으로 통일되고 레거시 Cobalt/Mint 신규 사용이 없음
+- [x] UI와 canonical artwork가 Journey Indigo/Departure Coral 기준으로 통일됨
 - [x] 제품 SVG에 raster wrapper, 외부 폰트, script, text가 없음
 - [ ] Web E2E 통과: local Supabase와 Playwright browser 설치 후 재검증 필요
 - [x] Web production build 통과

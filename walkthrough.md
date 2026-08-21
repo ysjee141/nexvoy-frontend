@@ -12,8 +12,8 @@
 - v12 canonical SVG에서 Web favicon, Apple icon, PWA icon, Mobile launcher/adaptive/monochrome/
   notification/splash/store 자산을 재생성하는 `scripts/apply-brand-assets.cjs` 파이프라인을 정리했다.
 - 제품 SVG는 `<image>`, embedded bitmap, 외부 폰트, `<text>`, script 없는 path 기반 자산만 사용한다.
-- 공통 UI 색상은 Deep Navy `#0D2340`와 Coral `#FF6B5C` 기준으로 갱신하고, canonical artwork의
-  logo navy/app blue와 UI 토큰은 용도를 분리했다.
+- 공통 UI 색상은 Journey Indigo 600 `#4052D2`, Indigo 700 `#3342B3`, Departure Coral
+  `#F8725A` 기준으로 갱신하고, canonical artwork도 같은 팔레트를 공유한다.
 - Web metadata, manifest, 인증·공유·프로필·초대·이메일 카피와 Mobile 인증·알림 카피를 `갈래`로
   변경했다.
 - `onvoy://`, bundle/package identifier, API path와 analytics/storage 기술 식별자는 변경하지 않았다.
@@ -35,6 +35,34 @@
 - `04d8443 feat(TASK-066): apply gallae web branding`
 - `8b1a87f feat(TASK-066): apply gallae mobile branding`
 - `467859a refactor(TASK-066): align legacy web blue accents`
+
+---
+
+# Walkthrough: TASK-066 팔레트 복원 및 브랜드 자산 정렬
+
+## 결정
+
+초기 TASK-066 적용에서 사용한 Deep Navy/Coral 조합은 서비스 화면과 앱 아이콘 모두에 무게감이
+있었다. 기존 브랜드 시안의 더 밝은 색상 언어를 복원해 Journey Indigo 700 `#3342B3`, Indigo
+600 `#4052D2`, Departure Coral 500 `#F8725A`를 UI와 canonical artwork의 공통 팔레트로 채택했다.
+
+## 구현
+
+- canonical primary logo와 app icon 생성 단계에서 승인 raster의 구조는 유지하고 제품 팔레트로 색상을
+  정규화하도록 `docs/brand/v12/apply-approved-assets.js`를 갱신했다.
+- Web/Mobile favicon, launcher, adaptive, splash, store PNG와 SVG를 다시 생성했다.
+- 공통 디자인 토큰, Web 직접 색상, manifest/theme color, Android adaptive 배경과 notification color를
+  같은 Indigo/Coral 기준으로 맞췄다.
+- 제공 raster reference는 원본 보존 대상으로 유지하고, 문서에 구조 검수용 reference와 제품 색상
+  기준을 분리해 기록했다.
+
+## 검증
+
+- canonical 및 플랫폼 자산 재생성 PASS
+- `pnpm build:packages` PASS
+- Panda codegen, Web/Mobile TypeScript, Mobile lint PASS
+- `pnpm build` 및 `pnpm build:mobile` PASS
+- primary logo, app icon, Web/Mobile source의 색상값 일치 확인
 
 ---
 

@@ -10,7 +10,7 @@
 | 글로벌 공식 표시명 | `Nextward` |
 | primary logo | v12 승인 canonical 반영 |
 | canonical app icon | v12 승인 canonical 반영 |
-| 핵심 컬러 | Deep Navy `#0D2340`, Coral `#FF6B5C` |
+| 핵심 컬러 | Journey Indigo 700 `#3342B3`, Indigo 600 `#4052D2`, Departure Coral `#F8725A` |
 | 제품 런타임 적용 | 별도 마이그레이션 필요 |
 
 ## 문서 구조
