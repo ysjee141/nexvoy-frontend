@@ -77,18 +77,19 @@ cat docs/brand/v12/comparison-metrics.json
 
 ```ts
 export const brandColors = {
-  deepNavy900: '#0D2340',
-  coral500: '#FF6B5C',
+  journeyIndigo700: '#3342B3',
+  journeyIndigo600: '#4052D2',
+  departureCoral500: '#F8725A',
   surface: '#FFFFFF',
-  background: '#F7F8FC',
-  warmBackground: '#FBF8F4',
+  background: '#F8FAFF',
+  warmBackground: '#FFFDF8',
   ink900: '#1D2433',
   ink500: '#667085',
-  border: '#D9DEEA',
+  border: '#E2E8F0',
 } as const
 ```
 
-로고와 앱 아이콘은 Deep Navy·Coral·Surface를 중심으로 사용한다. 색상만으로 상태를 전달하지 않고 텍스트, 아이콘과 모양을 함께 제공한다.
+로고와 앱 아이콘은 Journey Indigo·Departure Coral·Surface를 중심으로 사용한다. 색상만으로 상태를 전달하지 않고 텍스트, 아이콘과 모양을 함께 제공한다.
 
 ## 5. UI 실행 규칙
 

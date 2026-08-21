@@ -23,8 +23,8 @@
 | 한국 공식 표시명 | `갈래` |
 | 글로벌 공식 표시명 | `Nextward` |
 | primary logo | `갈래` + 경로 + 웨이포인트 |
-| canonical app icon | Deep Navy 바탕 + 흰색 워드마크 + Coral 경로 |
-| UI 핵심 컬러 | Deep Navy `#0D2340`, Coral `#FF6B5C` |
+| canonical app icon | Journey Indigo 700 바탕 + 흰색 워드마크 + Departure Coral 경로 |
+| UI 핵심 컬러 | Journey Indigo 700 `#3342B3`, Indigo 600 `#4052D2`, Departure Coral `#F8725A` |
 | 내부 canonical ID | `nextward` |
 | 제작자 | `Oreonix` |
 
@@ -97,7 +97,7 @@ primary logo는 글자와 경로가 분리된 장식이 아니라 하나의 읽�
 
 canonical dark icon은 작은 화면에서 `갈래`를 직접 읽히게 하는 방향을 택한다. 앱 이름 자체가 식별 자산이므로 별도 심벌을 얹어 의미를 복잡하게 만들지 않는다.
 
-- Deep Navy는 안정감과 방향성을 만든다.
+- Journey Indigo 700은 안정감과 방향성을 만든다.
 - 흰색 워드마크는 작은 크기에서도 브랜드명을 우선 전달한다.
 - Coral 경로는 선택과 출발의 감정을 전달한다.
 - app icon의 rounded tile은 reference에 포함된 형태를 보존하되, OS mask와 중복 적용하지 않는다.
@@ -106,14 +106,15 @@ canonical dark icon은 작은 화면에서 `갈래`를 직접 읽히게 하는 �
 
 | 토큰 | 값 | 역할 |
 | --- | --- | --- |
-| `deep-navy-900` | `#0D2340` | primary wordmark, icon base, strong text |
-| `coral-500` | `#FF6B5C` | route, waypoint, invitation, departure |
+| `journey-indigo-700` | `#3342B3` | wordmark, icon base, strong brand surface |
+| `journey-indigo-600` | `#4052D2` | UI primary action and selected state |
+| `departure-coral-500` | `#F8725A` | route, waypoint, invitation, departure |
 | `surface` | `#FFFFFF` | reverse wordmark, light surface |
-| `background` | `#F7F8FC` | product background |
-| `background-warm` | `#FBF8F4` | brand board, editorial surface |
+| `background` | `#F8FAFF` | product background |
+| `background-warm` | `#FFFDF8` | brand board, editorial surface |
 | `ink-900` | `#1D2433` | product text |
 | `ink-500` | `#667085` | secondary text |
-| `border` | `#D9DEEA` | separators and controls |
+| `border` | `#E2E8F0` | separators and controls |
 
 로고 자산에는 Teal, 임의의 보라색과 gradient를 추가하지 않는다. 제품 상태 컬러가 필요하면 DESIGN.md에서 별도 의미와 대비를 정의한다.
 
@@ -127,14 +128,14 @@ font-family: Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSyste
 
 실제 앱에 Pretendard를 번들하지 않는 환경에서는 시스템 폴백을 사용한다. 여기어때 잘난체, 하이커체, 카페24 써라운드, 주아체, 리아체와 둥근바람은 감성 참고일 뿐 그대로 차용하지 않는다.
 
-승인 SVG는 원본 raster 정합성을 위해 primary logo `#051F46/#FD5644`, app icon `#192F82/#DE6653`를 보존한다. 이 값은 UI 토큰 `#0D2340/#FF6B5C`와 구분한다.
+승인 SVG는 사용자가 제공한 구조와 형태를 보존하되, 제품 적용에서는 Journey Indigo 700 `#3342B3`, Indigo 600 `#4052D2`, Departure Coral `#F8725A`로 색상을 정규화한다. 원본 raster는 색상 비교가 아닌 형태·구조 검수용으로 보관한다.
 
 사진은 실제 장소와 함께 계획하는 행동이 보이는 이미지를 우선한다. 지나치게 어둡거나 추상적인 이미지로 로고와 장소의 식별성을 희생하지 않는다.
 
 ## 10. 성공 기준
 
 - 제공된 raster board와 primary logo의 구조가 오버레이에서 일치한다.
-- primary logo, lockup, symbol과 app icon이 같은 Deep Navy·Coral 언어를 공유한다.
+- primary logo, lockup, symbol과 app icon이 같은 Journey Indigo·Departure Coral 언어를 공유한다.
 - 앱 아이콘이 16px에서도 `갈래`와 Coral 경로를 식별 가능하게 유지한다.
 - `갈래`가 `갈태`로 읽히지 않으며, 글자 끝은 둥글고 골격은 반듯하다.
 - 제품 UI는 로고와 일관된 형태·색상을 사용하지만 로고를 폰트로 재조판하지 않는다.

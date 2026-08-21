@@ -64,7 +64,7 @@ node docs/brand/v12/compare-reference-and-vector.js
 - clean true-vector SVG는 승인 후보를 기준으로 하며, 원본 보드 trace는 VTracer QA intermediate로만 사용한다.
 - 제품 SVG에는 `<image>`, embedded bitmap, 외부 폰트와 스크립트를 넣지 않는다.
 - `brand-system.svg`, reference PNG와 comparison board는 문서·QA용이며 제품 런타임에 직접 배포하지 않는다.
-- UI 토큰은 Deep Navy `#0D2340`와 Coral `#FF6B5C`를 사용한다. canonical artwork는 원본 정합성을 위해 primary `#051F46/#FD5644`, app icon `#192F82/#DE6653`를 보존한다.
+- UI와 canonical artwork는 Journey Indigo 700 `#3342B3`, Indigo 600 `#4052D2`, Departure Coral `#F8725A`를 공유한다. 제공 raster는 구조·형태 검수용으로 보존하고, 제품 SVG는 이 승인 팔레트로 정규화한다.
 - 워드마크의 글자 형태, 경로 곡률, 웨이포인트 위치와 비율을 유지한다.
 - logo와 app icon을 한 자산 안에서 중복 조합하지 않는다.
 - SVG의 `role`, `title`, `desc` 또는 화면 컨텍스트의 accessible name을 제공한다.
