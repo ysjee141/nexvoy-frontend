@@ -4,11 +4,11 @@
     "totalAbsoluteRgbDelta": 0
   },
   "logo": {
-    "changedPixelsOver24Delta": 34915,
-    "totalAbsoluteRgbDelta": 6839192
+    "changedPixelsOver24Delta": 167451,
+    "totalAbsoluteRgbDelta": 28973999
   },
   "appIcon": {
-    "changedPixelsOver24Delta": 12535,
-    "totalAbsoluteRgbDelta": 3957657
+    "changedPixelsOver24Delta": 155746,
+    "totalAbsoluteRgbDelta": 16607812
   }
 }
