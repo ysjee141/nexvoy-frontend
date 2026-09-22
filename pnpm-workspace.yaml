@@ -1,3 +1,11 @@
 packages:
   - "packages/*"
   - "apps/*"
+allowBuilds:
+  '@firebase/util': true
+  '@sentry/cli': true
+  dtrace-provider: true
+  esbuild: true
+  protobufjs: true
+  sharp: true
+  unrs-resolver: true
