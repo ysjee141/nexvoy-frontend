@@ -1,3 +1,45 @@
+# Walkthrough: 이메일 로그인 중복 리다이렉트 수정 (#394)
+
+## 결과
+
+기준 브랜치 `refactoring/local-first-architecture`에서 분기한 `feature/fix-login-redirect-394`에서
+이메일/비밀번호 로그인 성공 시 리다이렉트가 두 번 실행되던 문제를 수정했다.
+
+## 구현
+
+- `apps/web/app/login/page.tsx`: 비밀번호 로그인 중에는 `passwordLoginInFlight` ref로
+  `onAuthStateChange('SIGNED_IN')` 리스너의 리다이렉트를 막는다. 로그인 실패 시 ref를 되돌려
+  소셜/딥링크 로그인은 기존처럼 리스너가 처리한다.
+- `router.push(nextUrl) + router.refresh()`를 `router.replace(nextUrl)`로 바꿔 뒤로가기 시
+  `/login`으로 돌아가지 않게 했다. `/`는 `HomeClient`·`Navbar`가 auth 이벤트로 세션을 반영하므로
+  서버 재검증이 필요 없다.
+- `apps/web/e2e/account-isolation.spec.ts`: 로그인 후 수동 `page.goto('/')`를 제거하고 자동
+  리다이렉트(`toHaveURL('/')`)를 검증한다.
+- 부수 작업: `apps/mobile`에 `eas-cli` devDependency, pnpm 11 `allowBuilds` 설정과 lockfile 갱신.
+
+## 검증
+
+- `pnpm typecheck`: PASS
+- `pnpm build`: PASS
+- `pnpm build:mobile`: PASS
+- 기준 브랜치 대상 사전 병합 검사: 충돌 없음
+- `account-isolation` E2E: BLOCKED. `supabase start`가 기존 마이그레이션
+  `20260712000001_task021_signaling_realtime_authorization.sql`에서
+  `must be owner of table messages (SQLSTATE 42501)`로 실패해 로컬 Supabase를 띄울 수 없다.
+
+## 후속 권고
+
+- `next` 쿼리 파라미터 검증 (외부 URL 오픈 리다이렉트 가능성, 기존 동작)
+- 로컬 Supabase 마이그레이션의 `realtime.messages` 소유권 오류 해결
+- `apps/web/app/signup/page.tsx`의 동일한 `push + refresh` 리스너 패턴 점검
+
+## 커밋
+
+- `3ff4bba fix(web): prevent duplicate redirect after password login`
+- `b755fe4 chore: add eas-cli and pnpm allowBuilds`
+
+---
+
 # Walkthrough: TASK-066 갈래 브랜드 서비스 적용
 
 ## 결과
