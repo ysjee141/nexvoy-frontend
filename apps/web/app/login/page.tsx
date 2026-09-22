@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import { css } from 'styled-system/css'
@@ -22,15 +22,15 @@ function LoginForm() {
     const [loading, setLoading] = useState(false)
     const [socialError, setSocialError] = useState<string | null>(null)
     const [showEmailForm, setShowEmailForm] = useState(false)
+    const passwordLoginInFlight = useRef(false)
 
     // 세션 상태 변화 감지하여 자동 리다이렉트 (모바일 딥링크 대응)
     useEffect(() => {
         const supabase = createClient()
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
-            if (event === 'SIGNED_IN' && session) {
+            if (event === 'SIGNED_IN' && session && !passwordLoginInFlight.current) {
                 console.log('[Login] Session detected, redirecting to home...')
-                router.push(nextUrl)
-                router.refresh()
+                router.replace(nextUrl)
             }
         })
         return () => subscription.unsubscribe()
@@ -49,6 +49,7 @@ function LoginForm() {
         e.preventDefault()
         setLoading(true)
         setMessage(null)
+        passwordLoginInFlight.current = true
         const supabase = createClient()
 
         const { error } = await supabase.auth.signInWithPassword({
@@ -57,6 +58,7 @@ function LoginForm() {
         })
 
         if (error) {
+            passwordLoginInFlight.current = false
             setMessage({ type: 'error', text: error.message === 'Invalid login credentials' ? '이메일 또는 비밀번호를 다시 한번 확인해 주시겠어요?' : error.message })
             setLoading(false)
         } else {
@@ -66,8 +68,7 @@ function LoginForm() {
             } else {
                 localStorage.removeItem('rememberedEmail')
             }
-            router.push(nextUrl)
-            router.refresh()
+            router.replace(nextUrl)
         }
     }
 
