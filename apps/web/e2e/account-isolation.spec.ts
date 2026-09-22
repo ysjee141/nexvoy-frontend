@@ -65,10 +65,10 @@ async function loginWithEmail(page: Page, email: string): Promise<void> {
   await page.locator('input[type="email"]').fill(email)
   await page.locator('input[type="password"]').fill(TEST_PASSWORD)
   await page.getByRole('button', { name: '여정 시작하기' }).click()
+  await expect(page).toHaveURL('/', { timeout: 15000 })
   await expect(page.getByRole('button', { name: '로그아웃' })).toBeVisible({
     timeout: 15000,
   })
-  await page.goto('/')
 }
 
 async function countCachedTripForAccount(
